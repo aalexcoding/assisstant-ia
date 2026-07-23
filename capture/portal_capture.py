@@ -155,33 +155,49 @@ class Portal:
         )
 
 
-def grab_frames(fd, node_id, n_frames, timeout_s):
-    pipeline = Gst.parse_launch(
-        f"pipewiresrc fd={fd} path={node_id} ! videoconvert "
-        f"! video/x-raw,format=BGR ! appsink name=sink max-buffers=1 drop=true sync=false"
-    )
-    sink = pipeline.get_by_name("sink")
-    pipeline.set_state(Gst.State.PLAYING)
+class FrameStream:
+    """Pipeline de GStreamer que se queda abierto y del que se puede leer
+    un frame (numpy BGR) cada vez que haga falta, sin recrear la sesion."""
 
-    frames = []
-    timestamps = []
+    def __init__(self, fd, node_id):
+        self.pipeline = Gst.parse_launch(
+            f"pipewiresrc fd={fd} path={node_id} ! videoconvert "
+            f"! video/x-raw,format=BGR ! appsink name=sink max-buffers=1 drop=true sync=false"
+        )
+        self.sink = self.pipeline.get_by_name("sink")
+        self.pipeline.set_state(Gst.State.PLAYING)
+
+    def read(self, timeout_s=5.0):
+        sample = self.sink.emit("try-pull-sample", int(timeout_s * Gst.SECOND))
+        if sample is None:
+            return None
+        caps = sample.get_caps().get_structure(0)
+        width, height = caps.get_value("width"), caps.get_value("height")
+        buf = sample.get_buffer()
+        ok, mapinfo = buf.map(Gst.MapFlags.READ)
+        if not ok:
+            return None
+        import numpy as np
+        frame = np.ndarray((height, width, 3), buffer=mapinfo.data, dtype=np.uint8).copy()
+        buf.unmap(mapinfo)
+        return frame
+
+    def close(self):
+        self.pipeline.set_state(Gst.State.NULL)
+
+
+def grab_frames(fd, node_id, n_frames, timeout_s):
+    stream = FrameStream(fd, node_id)
+    frames, timestamps = [], []
     try:
         for _ in range(n_frames):
-            sample = sink.emit("try-pull-sample", int(timeout_s * Gst.SECOND))
-            if sample is None:
+            frame = stream.read(timeout_s)
+            if frame is None:
                 break
             timestamps.append(time.monotonic())
-            caps = sample.get_caps().get_structure(0)
-            width, height = caps.get_value("width"), caps.get_value("height")
-            buf = sample.get_buffer()
-            ok, mapinfo = buf.map(Gst.MapFlags.READ)
-            if ok:
-                import numpy as np
-                frame = np.ndarray((height, width, 3), buffer=mapinfo.data, dtype=np.uint8).copy()
-                frames.append(frame)
-                buf.unmap(mapinfo)
+            frames.append(frame)
     finally:
-        pipeline.set_state(Gst.State.NULL)
+        stream.close()
     return frames, timestamps
 
 
@@ -214,6 +230,18 @@ def open_screencast_session(log=print):
     node_id, stream_props = streams[0]
     fd = portal.open_pipewire_remote(session_handle)
     return portal, session_handle, fd, node_id, stream_props
+
+
+def open_frame_stream(log=print):
+    """
+    Como open_screencast_session pero ademas deja el pipeline de GStreamer
+    listo para leer frames repetidamente con FrameStream.read(). Devuelve
+    (portal, session_handle, fd, stream, stream_props); el llamador cierra
+    con stream.close(), os.close(fd) y portal.close_session(session_handle).
+    """
+    portal, session_handle, fd, node_id, stream_props = open_screencast_session(log=log)
+    stream = FrameStream(fd, node_id)
+    return portal, session_handle, fd, stream, stream_props
 
 
 def get_one_frame(timeout_s=10.0, log=print):
