@@ -4,8 +4,16 @@ Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y
 
 ## Estructura
 
-- `calibration/` — Fase 0: selector de recuadro y guardado de coordenadas.
-- `capture/` — Fase 1: captura continua vía portal ScreenCast + PipeWire.
+- `calibration/` — Fase 0: `select_region.py` toma un frame de referencia (vía
+  `capture/portal_capture.py`) y deja dibujar con el ratón el recuadro de la mesa;
+  guarda las coordenadas en `calibration/config.local.json` (no versionado).
+- `capture/` — Fase 1: `portal_capture.py` abre una sesión de
+  `org.freedesktop.portal.ScreenCast` y consume el stream de PipeWire con GStreamer.
+  El `restore_token` se guarda en `capture/config.local.json`, aunque en KDE Plasma
+  6.7 el selector de pantalla vuelve a aparecer en cada arranque del proceso (no
+  evita la interacción, solo el permiso). Necesita `PyGObject`/`GStreamer` del
+  sistema — el venv del proyecto se creó con `include-system-site-packages = true`
+  en `.venv/pyvenv.cfg` para verlos sin tener que compilarlos aparte.
 - `vision/` — Fase 3: reconocimiento del estado de mesa (cartas, stacks, pot...).
 - `decision/preflop/` — Fase 4.1: digitalización de rangos y tabla de lookup preflop.
   Ver `decision/preflop/parse_ranges.py` (genera `ranges.json` a partir de las capturas
