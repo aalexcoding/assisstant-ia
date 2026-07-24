@@ -40,13 +40,14 @@ def _assign_player_positions(bgr, region, players, diag, warnings):
     de players. Si el boton no se ve o no se puede asociar con confianza a
     ningun asiento, no se inventa nada: se anota un warning y los jugadores
     quedan sin ese campo."""
-    if len(players) < 2:
+    if not players:
         return players
     button_box = dealer_button.find_dealer_button(bgr, region)
     if button_box is None:
         warnings.append("no se detecto el boton del dealer (tapado o fuera de frame); sin posiciones")
         return players
-    positioned = dealer_button.assign_positions(players, button_box, diag)
+    seat_markers = dealer_button.find_occupied_seat_markers(bgr, region)
+    positioned = dealer_button.assign_positions(players, button_box, diag, seat_markers)
     if positioned is None:
         warnings.append("boton del dealer detectado pero no se pudo asociar a ningun asiento con confianza; sin posiciones")
         return players

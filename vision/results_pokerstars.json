@@ -334,7 +334,7 @@
         "name": "Gpverse",
         "stack": 19500,
         "is_hero": false,
-        "position": "HJ"
+        "position": "EP1"
       },
       {
         "name": "VDiogo",
@@ -373,16 +373,16 @@
         "position": "BB"
       },
       {
-        "name": "gaobig",
-        "stack": 1363790,
+        "name": "Gpverse",
+        "stack": 19500,
         "is_hero": false,
         "position": "EP1"
       },
       {
-        "name": "Gpverse",
-        "stack": 19500,
+        "name": "gaobig",
+        "stack": 1363790,
         "is_hero": false,
-        "position": "HJ"
+        "position": "MP1"
       },
       {
         "name": "VDiogo",
@@ -421,16 +421,16 @@
         "position": "BB"
       },
       {
-        "name": "gaobig",
-        "stack": 1363790,
+        "name": "verse",
+        "stack": 19500,
         "is_hero": false,
         "position": "EP1"
       },
       {
-        "name": "verse",
-        "stack": 19500,
+        "name": "gaobig",
+        "stack": 1363790,
         "is_hero": false,
-        "position": "HJ"
+        "position": "MP1"
       },
       {
         "name": "VDiogo",
@@ -469,16 +469,16 @@
         "position": "BB"
       },
       {
-        "name": "gaobig",
-        "stack": 1363790,
+        "name": "Gpverse",
+        "stack": 19500,
         "is_hero": false,
         "position": "EP1"
       },
       {
-        "name": "Gpverse",
-        "stack": 19500,
+        "name": "gaobig",
+        "stack": 1363790,
         "is_hero": false,
-        "position": "HJ"
+        "position": "MP1"
       },
       {
         "name": "VDiogo",
@@ -517,16 +517,16 @@
         "position": "BB"
       },
       {
-        "name": "gaobig",
-        "stack": 1363790,
-        "is_hero": false,
-        "position": "HJ"
-      },
-      {
         "name": "Gprerse",
         "stack": 19500,
         "is_hero": false,
-        "position": "CO"
+        "position": "EP1"
+      },
+      {
+        "name": "gaobig",
+        "stack": 1363790,
+        "is_hero": false,
+        "position": "MP1"
       }
     ],
     "warnings": [
@@ -559,16 +559,16 @@
         "position": "BB"
       },
       {
-        "name": "gaobig",
-        "stack": 1363790,
-        "is_hero": false,
-        "position": "HJ"
-      },
-      {
         "name": "Gpverse",
         "stack": 19500,
         "is_hero": false,
-        "position": "CO"
+        "position": "EP1"
+      },
+      {
+        "name": "gaobig",
+        "stack": 1363790,
+        "is_hero": false,
+        "position": "MP1"
       }
     ],
     "warnings": [
@@ -601,16 +601,16 @@
         "position": "BB"
       },
       {
-        "name": "gaobig",
-        "stack": 1363790,
-        "is_hero": false,
-        "position": "HJ"
-      },
-      {
         "name": "Gpverse",
         "stack": 19500,
         "is_hero": false,
-        "position": "CO"
+        "position": "EP1"
+      },
+      {
+        "name": "gaobig",
+        "stack": 1363790,
+        "is_hero": false,
+        "position": "MP1"
       }
     ],
     "warnings": [
@@ -646,7 +646,7 @@
         "name": "gaobig",
         "stack": 1363790,
         "is_hero": false,
-        "position": "HJ"
+        "position": "EP1"
       },
       {
         "name": "VDiogo",
@@ -688,7 +688,7 @@
         "name": "gaobig",
         "stack": 1363790,
         "is_hero": false,
-        "position": "HJ"
+        "position": "EP1"
       },
       {
         "name": "VDiogo",
@@ -724,7 +724,7 @@
         "name": "gaobig",
         "stack": 1363790,
         "is_hero": false,
-        "position": "BB"
+        "position": "EP1"
       },
       {
         "name": "VDiogo",
@@ -802,19 +802,19 @@
         "name": "camposea",
         "stack": 744149,
         "is_hero": false,
-        "position": "BTN"
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 1335540,
         "is_hero": false,
-        "position": "SB"
+        "position": "BB"
       },
       {
         "name": "VDiogo",
         "stack": 762862,
         "is_hero": false,
-        "position": "BB"
+        "position": "HJ"
       },
       {
         "name": "Danielx777",
@@ -898,7 +898,7 @@
         "name": "djordy24100",
         "stack": 2561798,
         "is_hero": false,
-        "position": "HJ"
+        "position": "EP1"
       },
       {
         "name": "Danielx777",
@@ -976,7 +976,7 @@
         "name": "djordy24100",
         "stack": 2514548,
         "is_hero": false,
-        "position": "HJ"
+        "position": "EP1"
       },
       {
         "name": "Danielx777",
@@ -1018,7 +1018,7 @@
         "name": "djordy24100",
         "stack": 2514548,
         "is_hero": false,
-        "position": "HJ"
+        "position": "EP1"
       },
       {
         "name": "Danielx777",
@@ -1242,7 +1242,7 @@
         "name": "Danielx777",
         "stack": 502702,
         "is_hero": false,
-        "position": "CO"
+        "position": "HJ"
       }
     ],
     "warnings": [
@@ -1257,23 +1257,25 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 502702,
-        "is_hero": false
+        "name": "djordy24100",
+        "stack": 801311,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "VDiogo",
         "stack": 1083362,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
-        "name": "djordy24100",
-        "stack": 801311,
-        "is_hero": false
+        "name": "Danielx777",
+        "stack": 502702,
+        "is_hero": false,
+        "position": "HJ"
       }
     ],
     "warnings": [
-      "boton del dealer detectado pero no se pudo asociar a ningun asiento con confianza; sin posiciones",
       "no se encontraron las ciegas"
     ]
   },
@@ -1347,7 +1349,7 @@
         "name": "Danielx777",
         "stack": 502702,
         "is_hero": false,
-        "position": "CO"
+        "position": "HJ"
       }
     ],
     "warnings": [
@@ -1679,7 +1681,7 @@
         "name": "gaobig",
         "stack": 2755553,
         "is_hero": false,
-        "position": "CO"
+        "position": "HJ"
       }
     ],
     "warnings": [
@@ -1716,7 +1718,7 @@
         "name": "Igualar",
         "stack": 823811,
         "is_hero": false,
-        "position": "CO"
+        "position": "HJ"
       }
     ],
     "warnings": [
@@ -1827,19 +1829,19 @@
         "name": "gaobig",
         "stack": 1897992,
         "is_hero": true,
-        "position": "SB"
+        "position": "BB"
       },
       {
         "name": "VDiogo",
         "stack": 1057112,
         "is_hero": false,
-        "position": "BB"
+        "position": "CO"
       }
     ],
     "warnings": [
       "no se encontraron las ciegas"
     ],
-    "hero_position": "SB"
+    "hero_position": "BB"
   },
   {
     "image": "sample_1784855348759.png",
@@ -2022,7 +2024,7 @@
         "name": "Danielx777",
         "stack": 442702,
         "is_hero": false,
-        "position": "BB"
+        "position": "HJ"
       },
       {
         "name": "Apostar",
@@ -2127,23 +2129,25 @@
     "blinds": null,
     "players": [
       {
-        "name": "jeque69",
-        "stack": 940220,
-        "is_hero": false
-      },
-      {
         "name": "Danielx777",
         "stack": 408952,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "FRMontero",
         "stack": 752359,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "jeque69",
+        "stack": 940220,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
-      "boton del dealer detectado pero no se pudo asociar a ningun asiento con confianza; sin posiciones",
       "no se encontraron las ciegas"
     ]
   },
@@ -2164,13 +2168,13 @@
         "name": "FRMontero",
         "stack": 752359,
         "is_hero": false,
-        "position": "SB"
+        "position": "BB"
       },
       {
         "name": "jeque69",
         "stack": 940220,
         "is_hero": false,
-        "position": "BB"
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -2203,13 +2207,13 @@
         "name": "DanielX777",
         "stack": 276922,
         "is_hero": false,
-        "position": "SB"
+        "position": "BB"
       },
       {
         "name": "FRMontero",
         "stack": 752359,
         "is_hero": false,
-        "position": "BB"
+        "position": "HJ"
       },
       {
         "name": "jeque69",
