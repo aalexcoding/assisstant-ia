@@ -34,8 +34,8 @@
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 4882,
         "is_hero": true,
         "position": "BB"
       },
@@ -87,8 +87,8 @@
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 4882,
         "is_hero": true,
         "position": "BB"
       },
@@ -141,7 +141,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4882,
         "is_hero": true,
         "position": "BB"
       },
@@ -194,7 +194,7 @@
       },
       {
         "name": "Subir",
-        "stack": null,
+        "stack": 4792,
         "is_hero": true,
         "position": "BB"
       },
@@ -247,7 +247,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4792,
         "is_hero": true,
         "position": "BB"
       },
@@ -303,8 +303,8 @@
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 4792,
         "is_hero": true,
         "position": "BB"
       },
@@ -362,7 +362,7 @@
       },
       {
         "name": "Apostar",
-        "stack": null,
+        "stack": 4702,
         "is_hero": true,
         "position": "BB"
       },
@@ -419,8 +419,8 @@
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 4702,
         "is_hero": true,
         "position": "BB"
       },
@@ -477,8 +477,8 @@
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "Apostar",
+        "stack": 4345,
         "is_hero": true,
         "position": "BB"
       },
@@ -536,7 +536,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4345,
         "is_hero": true,
         "position": "BB"
       },
@@ -593,7 +593,7 @@
         "position": "SB"
       },
       {
-        "name": null,
+        "name": "Apostar",
         "stack": null,
         "is_hero": true,
         "position": "BB"
@@ -874,7 +874,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5708,
         "is_hero": true,
         "position": "SB"
       },
@@ -923,7 +923,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5708,
         "is_hero": true,
         "position": "SB"
       },
@@ -972,7 +972,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5708,
         "is_hero": true,
         "position": "SB"
       },
@@ -1026,8 +1026,8 @@
         "position": "BTN"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 5708,
         "is_hero": true,
         "position": "SB"
       },
@@ -1081,8 +1081,8 @@
         "position": "BTN"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 5708,
         "is_hero": true,
         "position": "SB"
       },
@@ -1137,7 +1137,7 @@
       },
       {
         "name": "Igualar",
-        "stack": null,
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1195,8 +1195,8 @@
         "position": "BTN"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1255,7 +1255,7 @@
       },
       {
         "name": "Pasar",
-        "stack": null,
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1314,7 +1314,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1373,7 +1373,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1432,7 +1432,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1491,7 +1491,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1550,8 +1550,8 @@
         "position": "BTN"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1611,7 +1611,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },
@@ -1667,7 +1667,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 5658,
         "is_hero": true,
         "position": "SB"
       },

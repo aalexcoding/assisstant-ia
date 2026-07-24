@@ -294,10 +294,25 @@ def analyze_layout(image_path):
 
     batch = OcrBatch()
 
-    # texto por zona (nameplates, bote, chat, botones de accion)
+    # cartas del hero y del board (deteccion por color dentro de su zona fija).
+    # Se detectan ANTES de encolar los nameplates porque el del hero se ancla a
+    # la posicion de sus cartas (mas robusto al encuadre que una fraccion fija
+    # del ovalo, que caia en el borde inferior de la ventana y cortaba el stack).
+    hero_px = seat_map.zone_to_px(ref, seat_map.HERO_CARDS_ZONE, bgr.shape)
+    board_px = seat_map.zone_to_px(ref, seat_map.BOARD_ZONE, bgr.shape)
+    hero_boxes = sorted(color_card_detector.find_card_boxes(bgr, hero_px), key=lambda b: b["x"])
+    board_boxes = sorted(color_card_detector.find_card_boxes(bgr, board_px), key=lambda b: b["x"])
+    hero_plate_px = seat_map.hero_plate_from_cards(hero_boxes, bgr.shape)
+
+    # texto por zona (nameplates, bote, chat, botones de accion). El nameplate
+    # del hero se ancla a sus cartas (hero_plate_px); si no las hay ese frame
+    # (entre manos), cae a la fraccion fija del ovalo.
     seat_tsv = {}
     for name in seat_map.SEATS:
-        x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.SEATS[name]["plate"], bgr.shape)
+        if name == seat_map.HERO_SEAT and hero_plate_px is not None:
+            x0, y0, x1, y1 = hero_plate_px
+        else:
+            x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.SEATS[name]["plate"], bgr.shape)
         seat_tsv[name] = batch.add_tsv_job(bgr[y0:y1, x0:x1], scale=3)
     px = seat_map.zone_to_px(ref, seat_map.POT_ZONE, bgr.shape)
     pot_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=3)
@@ -306,11 +321,7 @@ def analyze_layout(image_path):
     px = seat_map.zone_to_px(ref, seat_map.ACTION_ZONE, bgr.shape)
     action_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2)
 
-    # cartas del hero y del board (deteccion por color dentro de su zona fija)
-    hero_px = seat_map.zone_to_px(ref, seat_map.HERO_CARDS_ZONE, bgr.shape)
-    board_px = seat_map.zone_to_px(ref, seat_map.BOARD_ZONE, bgr.shape)
-    hero_boxes = sorted(color_card_detector.find_card_boxes(bgr, hero_px), key=lambda b: b["x"])
-    board_boxes = sorted(color_card_detector.find_card_boxes(bgr, board_px), key=lambda b: b["x"])
+    # cartas del hero y del board: encolar el OCR de rango (cajas ya detectadas)
     hero_jobs = []
     for b in hero_boxes:
         crop = bgr[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]]

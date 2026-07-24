@@ -67,6 +67,23 @@ SEATS = {
 }
 HERO_SEAT = "HERO"
 
+# Nameplate del hero anclado a la posicion de sus CARTAS, no a una fraccion
+# fija del ovalo. El nameplate del hero vive en el borde inferior de la
+# ventana -la zona mas sensible al encuadre/tamaño-, asi que una fraccion fija
+# del ovalo que cuadra en un encuadre se desplaza en otro (y de hecho la que
+# habia cortaba el stack por abajo: 0/111 lecturas). En cambio la capsula
+# nombre+stack cae SIEMPRE justo debajo de las dos cartas del hero (que
+# color_card_detector detecta de forma fiable), asi que se expresa como
+# fracciones del bbox de esas cartas. El avatar y la marca de bounty solapan
+# la parte IZQUIERDA de la capsula, por eso la zona arranca a la derecha del
+# borde izquierdo de las cartas; nombre y stack quedan en la mitad central/
+# derecha. Margenes generosos (sobra tapete alrededor del texto) para que el
+# stack no se corte aunque el encuadre varie unos pixeles: el OCR tolera texto
+# rodeado de fondo mucho mejor que texto cortado por el borde.
+# Fracciones (x0,y0,x1,y1): x respecto al borde izq. de las cartas y su ancho;
+# y respecto al borde inferior de las cartas y su alto.
+HERO_PLATE_FROM_CARDS = (0.13, 0.02, 1.32, 1.60)
+
 # zonas fijas de los elementos de mesa (fracciones del nucleo del tapete)
 HERO_CARDS_ZONE = (0.40, 0.83, 0.62, 1.04)
 BOARD_ZONE = (0.26, 0.28, 0.78, 0.54)
@@ -132,6 +149,26 @@ def zone_to_px(ref, zone, shape):
     y0 = max(0, int(ry + fy0 * rh))
     x1 = min(shape[1], int(rx + fx1 * rw))
     y1 = min(shape[0], int(ry + fy1 * rh))
+    return x0, y0, x1, y1
+
+
+def hero_plate_from_cards(hero_boxes, shape):
+    """Zona (x0,y0,x1,y1 px) del nameplate del hero anclada al bbox de sus
+    cartas ya detectadas (HERO_PLATE_FROM_CARDS). Devuelve None si no hay
+    cartas del hero ese frame (entre manos): sin cartas no hay decision que
+    tomar, asi que el hueco no importa."""
+    if not hero_boxes:
+        return None
+    bx0 = min(b["x"] for b in hero_boxes)
+    bx1 = max(b["x"] + b["w"] for b in hero_boxes)
+    by1 = max(b["y"] + b["h"] for b in hero_boxes)
+    cw = (bx1 - bx0) or 1
+    ch = (by1 - min(b["y"] for b in hero_boxes)) or 1
+    fx0, fy0, fx1, fy1 = HERO_PLATE_FROM_CARDS
+    x0 = max(0, int(bx0 + fx0 * cw))
+    y0 = max(0, int(by1 + fy0 * ch))
+    x1 = min(shape[1], int(bx0 + fx1 * cw))
+    y1 = min(shape[0], int(by1 + fy1 * ch))
     return x0, y0, x1, y1
 
 

@@ -233,7 +233,7 @@
       },
       {
         "name": null,
-        "stack": null,
+        "stack": 4125,
         "is_hero": true,
         "position": "BTN"
       },
@@ -280,7 +280,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4125,
         "is_hero": true,
         "position": "BTN"
       },
@@ -327,7 +327,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4125,
         "is_hero": true,
         "position": "BTN"
       },
@@ -905,7 +905,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4111,
         "is_hero": true,
         "position": "CO"
       },
@@ -957,8 +957,8 @@
         "position": "HJ"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 4111,
         "is_hero": true,
         "position": "CO"
       },
@@ -1011,7 +1011,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4111,
         "is_hero": true,
         "position": "CO"
       },
@@ -1064,7 +1064,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4111,
         "is_hero": true,
         "position": "CO"
       },
@@ -1931,8 +1931,8 @@
         "position": "EP1"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 4097,
         "is_hero": true,
         "position": "HJ"
       },
@@ -1985,7 +1985,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 4097,
         "is_hero": true,
         "position": "HJ"
       },
@@ -2036,8 +2036,8 @@
         "position": "EP1"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 4097,
         "is_hero": true,
         "position": "HJ"
       },
@@ -2521,7 +2521,7 @@
         "position": "SB"
       },
       {
-        "name": null,
+        "name": "alex_delg",
         "stack": null,
         "is_hero": true,
         "position": "BB"
@@ -2570,7 +2570,7 @@
         "position": "SB"
       },
       {
-        "name": null,
+        "name": "alex_delg",
         "stack": null,
         "is_hero": true,
         "position": "BB"
@@ -2680,8 +2680,8 @@
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "Pasar",
+        "stack": 3982,
         "is_hero": true,
         "position": "BB"
       },
@@ -2740,7 +2740,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3982,
         "is_hero": true,
         "position": "BB"
       },
@@ -2799,7 +2799,7 @@
       },
       {
         "name": "Pasar",
-        "stack": null,
+        "stack": 3982,
         "is_hero": true,
         "position": "BB"
       },
@@ -2859,7 +2859,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3982,
         "is_hero": true,
         "position": "BB"
       },
@@ -2919,7 +2919,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3982,
         "is_hero": true,
         "position": "BB"
       },
@@ -2978,8 +2978,8 @@
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 3982,
         "is_hero": true,
         "position": "BB"
       },
@@ -3039,7 +3039,7 @@
       },
       {
         "name": null,
-        "stack": null,
+        "stack": 3982,
         "is_hero": true,
         "position": "BB"
       },
@@ -3205,7 +3205,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3917,
         "is_hero": true,
         "position": "SB"
       },
@@ -3260,7 +3260,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3917,
         "is_hero": true,
         "position": "SB"
       },
@@ -3315,7 +3315,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3917,
         "is_hero": true,
         "position": "SB"
       },
@@ -3370,7 +3370,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3917,
         "is_hero": true,
         "position": "SB"
       },
@@ -3978,7 +3978,7 @@
         "position": "CO"
       },
       {
-        "name": null,
+        "name": "alex_delg",
         "stack": null,
         "is_hero": true,
         "position": "BTN"
@@ -4025,7 +4025,7 @@
         "position": "CO"
       },
       {
-        "name": "alex_delg",
+        "name": null,
         "stack": null,
         "is_hero": true,
         "position": "BTN"
@@ -4456,8 +4456,8 @@
         "position": "HJ"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 3887,
         "is_hero": true,
         "position": "CO"
       },
@@ -4503,8 +4503,8 @@
         "position": "HJ"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 3887,
         "is_hero": true,
         "position": "CO"
       },
@@ -4551,7 +4551,7 @@
       },
       {
         "name": "Igualar",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -4598,7 +4598,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -4645,7 +4645,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -4696,7 +4696,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -4746,8 +4746,8 @@
         "position": "HJ"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "alex_delg",
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -4798,7 +4798,7 @@
       },
       {
         "name": "Pasar",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -4850,7 +4850,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -4902,7 +4902,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -4954,7 +4954,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -5006,7 +5006,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3787,
         "is_hero": true,
         "position": "CO"
       },
@@ -5058,7 +5058,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3287,
         "is_hero": true,
         "position": "CO"
       },
@@ -5110,7 +5110,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3287,
         "is_hero": true,
         "position": "CO"
       },
@@ -5162,7 +5162,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3287,
         "is_hero": true,
         "position": "CO"
       },
@@ -5214,7 +5214,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3287,
         "is_hero": true,
         "position": "CO"
       },
@@ -5266,7 +5266,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3287,
         "is_hero": true,
         "position": "CO"
       },
@@ -5318,7 +5318,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3287,
         "is_hero": true,
         "position": "CO"
       },
@@ -5371,7 +5371,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3287,
         "is_hero": true,
         "position": "CO"
       },
@@ -5424,7 +5424,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": null,
+        "stack": 3287,
         "is_hero": true,
         "position": "CO"
       },
