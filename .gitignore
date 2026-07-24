@@ -7,3 +7,4 @@ config.local.json
 decision/preflop/tessdata/
 vision/samples/
 vision/samples_pokerstars/
+decision/rag/audio/

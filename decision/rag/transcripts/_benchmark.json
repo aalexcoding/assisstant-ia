@@ -1,0 +1,67 @@
+[
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_4_juego_en_botes_raiseados_juego_con_iniciativa_1_como_aprender_juego_con_iniciativa_actualmente_en_zerospoker_com",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/4. Juego en botes raiseados (Juego con iniciativa)/1. Cómo aprender juego con iniciativa actualmente en ZerosPoker.com.mp4",
+    "audio_duration_s": 500.72,
+    "extract_s": 3.07,
+    "transcribe_s": 67.19,
+    "n_segments": 69,
+    "n_chunks": 9,
+    "language": "es",
+    "language_probability": 1,
+    "wav_bytes": 16911780,
+    "json_bytes": 13065
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_3_juego_en_3bet_pots_y_4bet_pots_juego_con_y_sin_iniciativa_ip_y_oop_1_cuando_estara_disponible_el_contenido_de_este_curso_en_3bet_pots_y_4bet",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/3. Juego en 3bet pots y 4bet pots (Juego con y sin iniciativa IP y OOP)/1. Cuándo estará disponible el contenido de este curso en 3bet pots y 4bet.mp4",
+    "audio_duration_s": 623.61,
+    "extract_s": 4.85,
+    "transcribe_s": 81.53,
+    "n_segments": 144,
+    "n_chunks": 11,
+    "language": "es",
+    "language_probability": 1,
+    "wav_bytes": 20213838,
+    "json_bytes": 17567
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_29_como_jugar_cuando_te_enfrentas_a_una_delayed_cbet_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/29. Cómo jugar cuando te enfrentas a una delayed cbet [P1].mp4",
+    "audio_duration_s": 1999.98,
+    "extract_s": 8.73,
+    "transcribe_s": 344.5,
+    "n_segments": 1574,
+    "n_chunks": 34,
+    "language": "es",
+    "language_probability": 1,
+    "wav_bytes": 65085518,
+    "json_bytes": 54810
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_2_cuando_hacer_fold_vs_2barrel_jugando_rangos_cerrados_desde_btn",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/2. Cuándo hacer fold vs 2barrel jugando rangos cerrados desde BTN+.mp4",
+    "audio_duration_s": 2330.69,
+    "extract_s": 10.98,
+    "transcribe_s": 334.25,
+    "n_segments": 860,
+    "n_chunks": 40,
+    "language": "es",
+    "language_probability": 1,
+    "wav_bytes": 89021176,
+    "json_bytes": 64169
+  },
+  {
+    "video": "5_contenido_de_teoria_postflop_intermedio_1_juego_en_botes_raiseados_juego_con_iniciativa_oop_2_4_como_jugar_en_el_flop_con_iniciativa_fuera_de_posicion",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/5. CONTENIDO DE TEORÍA POSTFLOP (Intermedio)/1. Juego en botes raiseados (Juego con iniciativa OOP)/2.4. Cómo jugar en el flop con iniciativa fuera de posición.mp4",
+    "audio_duration_s": 1767.49,
+    "extract_s": 8.51,
+    "transcribe_s": 231.24,
+    "n_segments": 460,
+    "n_chunks": 31,
+    "language": "es",
+    "language_probability": 1,
+    "wav_bytes": 56994552,
+    "json_bytes": 46620
+  }
+]

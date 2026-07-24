@@ -31,7 +31,21 @@ Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y
   leyenda usa `tesserocr`, que necesita datos de idioma inglés instalados en el sistema
   (`sudo dnf install tesseract-langpack-eng` en Nobara) o, en su defecto, un
   `decision/preflop/tessdata/eng.traineddata` local (no versionado).
-- `decision/rag/` — Fase 4.2-3: transcripción de vídeos, embeddings y motor RAG postflop.
+- `decision/rag/` — Fase 4.2: transcripción de vídeos (Fase 4.3, embeddings/retrieval,
+  queda pendiente). `video_index.py` localiza y ordena los vídeos de
+  `TORNEOS/6. EL CURSO ABSOLUTO...` y `TORNEOS/5. CONTENIDO DE TEORÍA POSTFLOP...`
+  (las dos carpetas prioritarias). `extract_audio.py` saca el audio a WAV mono 16kHz
+  con ffmpeg. `transcribe.py` transcribe con `faster-whisper` (modelo `small`, CPU,
+  int8 — ver docstring para la comparativa con `medium`). `chunk.py` agrupa las frases
+  de Whisper en fragmentos de ~60s. `pipeline.py` encadena los tres pasos por vídeo y
+  escribe `decision/rag/transcripts/<video_id>.json` (lista de
+  `{video, video_path, chunk_index, start_time, end_time, text}`) más
+  `decision/rag/transcripts/_benchmark.json` con el tiempo/tamaño real de cada vídeo
+  procesado, usado para extrapolar el coste del corpus completo. El audio intermedio
+  (`decision/rag/audio/*.wav`) no se versiona (grande y reproducible desde el vídeo
+  fuente); los JSON de `transcripts/` sí, por ser el producto final y pesar poco.
+  De momento solo se ha corrido sobre un subconjunto de validación, no el corpus
+  completo (ver notas en `prompt.md`).
 - `hud/` — Fase 5: panel de salida con la recomendación.
 - `packaging/` — Fase 6: manifest Flatpak (pendiente hasta tener un core funcional).
 - `tests/` — Fase 7: capturas de referencia y tests de regresión.
