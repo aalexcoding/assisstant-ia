@@ -1,0 +1,15 @@
+#!/bin/bash
+# Ejecutable alpha: calibra el recuadro de la mesa si hace falta y arranca
+# el analisis en vivo (alpha.py). Uso: ./poker-assistant [--recalibrate]
+set -e
+cd "$(dirname "$0")"
+
+if [ "$1" == "--recalibrate" ]; then
+    shift
+    .venv/bin/python calibration/select_region.py
+elif [ ! -f calibration/config.local.json ]; then
+    echo "No hay recuadro calibrado todavia, calibrando..."
+    .venv/bin/python calibration/select_region.py
+fi
+
+.venv/bin/python alpha.py "$@"

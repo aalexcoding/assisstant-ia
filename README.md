@@ -2,6 +2,15 @@
 
 Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y las fases del proyecto.
 
+## Uso (alpha)
+
+`./poker-assistant` — calibra el recuadro de la mesa si hace falta (o con `--recalibrate`
+para forzarlo) y arranca `alpha.py`: un lazo de diagnóstico que captura la mesa cada
+pocos segundos, corre el reconocimiento de la Fase 3 (mazo de 4 colores) y va imprimiendo
+por consola lo que detecta (cartas, board, pot, ciegas, jugadores) para validarlo en vivo
+mientras juegas. Todavía no da recomendaciones (eso es la Fase 4/5) ni dispara por cambio
+de board (Fase 2) — es solo para comprobar que la visión funciona contra partidas reales.
+
 ## Estructura
 
 - `calibration/` — Fase 0: `select_region.py` toma un frame de referencia (vía
@@ -24,7 +33,12 @@ Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y
   `tesserocr` aislado en `ocr_worker.py` (mismo motivo que
   `decision/preflop/ocr_worker.py`: evitar corrupcion de memoria al mezclarlo
   con opencv en el mismo proceso), invocado desde `ocr_client.py`. `run_samples.py`
-  corre el pipeline contra `vision/samples/` y vuelca `vision/results.json`.
+  corre el pipeline contra `vision/samples/` y vuelca `vision/results.json`. Esto es
+  para el mazo blanco (capturas de YouTube); el mazo real de PokerStars (4 colores,
+  fondo de color + texto blanco) tiene su propia rama: `color_card_detector.py`
+  (palo por color de fondo, sin plantilla) + `color_rank_ocr.py`, orquestados por
+  `table_state.analyze_color_deck()`. `run_samples_pokerstars.py` corre esta rama
+  contra `vision/samples_pokerstars/` y vuelca `vision/results_pokerstars.json`.
 - `decision/preflop/` — Fase 4.1: digitalización de rangos y tabla de lookup preflop.
   Ver `decision/preflop/parse_ranges.py` (genera `ranges.json` a partir de las capturas
   de ZEROSPOKER.COM en `/mnt/qnap/Poker/CAPTURAS HERRAMIENTAS PREFLOP/`). El OCR de la
@@ -44,8 +58,9 @@ Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y
   procesado, usado para extrapolar el coste del corpus completo. El audio intermedio
   (`decision/rag/audio/*.wav`) no se versiona (grande y reproducible desde el vídeo
   fuente); los JSON de `transcripts/` sí, por ser el producto final y pesar poco.
-  De momento solo se ha corrido sobre un subconjunto de validación, no el corpus
-  completo (ver notas en `prompt.md`).
+  `run_batch.py` reparte los 126 vídeos prioritarios en N procesos `pipeline.py` en
+  paralelo para bajar el tiempo de reloj (cada proceso ya usa varios núcleos, pero no
+  todos). Fase 4.3 (embeddings/retrieval) queda pendiente.
 - `hud/` — Fase 5: panel de salida con la recomendación.
 - `packaging/` — Fase 6: manifest Flatpak (pendiente hasta tener un core funcional).
 - `tests/` — Fase 7: capturas de referencia y tests de regresión.
