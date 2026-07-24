@@ -65,6 +65,10 @@ Enfoque híbrido, construido a partir del inventario real de `/mnt/qnap/Poker/` 
 3. En tiempo real: si la mano sigue en preflop → responder con la tabla de lookup (instantáneo). Si ya hay flop/turn/river → convertir el `GameState` a descripción en lenguaje natural, recuperar fragmentos relevantes de las transcripciones y generar la recomendación + justificación con un LLM (viable en tiempo, dado el margen de 5s).
 4. Registrar cada recomendación (y, si hay feedback del usuario, la acción que realmente tomó) para poder afinar el modelo más adelante si se consiguen hand histories.
 
+**Auditoría de `decision/preflop/ranges.json` (2026-07-24)**: verificación estructural completa (331 escenarios, 0 errores: cada uno suma 169 manos, sin manos duplicadas ni inválidas) + coherencia con teoría de poker (el rango de open-raise crece monótonamente EP1→SB en las profundidades probadas, colapsa a shove-or-fold puro a 8bb) + comparación manual celda-por-celda contra las capturas originales en varios escenarios (coincidencia exacta). Limitaciones conocidas y aceptadas:
+- Faltan 9 de 340 combinaciones posibles: 8 porque `3BET-CALL/10BB/1BB (My position)/` está vacía de verdad en el origen (no es un fallo de digitalización), y 1 por una colisión sin resolver (`20BB, BB vs MP1`).
+- Las celdas de frecuencia mixta (ej. una mano jugada "80% 3bet / 20% call") se clasifican por el color dominante, perdiendo el matiz de la frecuencia exacta — razonable para un motor de decisión binario (acción única por mano), pero es una simplificación real frente al rango original.
+
 ### Fase 5 — HUD de salida
 Panel GTK sin bordes, "always on top", posicionado en coordenadas fijas justo debajo del recuadro calibrado. Muestra: resumen del estado detectado + recomendación (acción + sizing) + justificación breve.
 
