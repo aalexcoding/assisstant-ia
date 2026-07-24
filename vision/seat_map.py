@@ -29,6 +29,7 @@ hero abajo-centro, mas superior-centro, 2 superiores laterales y 2 laterales
 medios).
 """
 import math
+import re
 
 import cv2
 import numpy as np
@@ -276,6 +277,109 @@ def parse_facing(action_text):
     if any(w in low for w in FACING_CHECK_WORDS):
         return "check"
     return None
+
+
+# --- importe apostado por asiento (para inferir quien subio) ---
+# En preflop, cada jugador que ha metido fichas tiene su importe dibujado
+# delante del asiento, hacia el centro del tapete (la ciega su ciega, un raiser
+# un importe mayor). Cada zona es una fraccion (x0,y0,x1,y1) del nucleo del
+# tapete, situada entre el nameplate del asiento y el centro -donde cae el
+# numero-, con margen generoso para no cortarlo. Medidas sobre samples_layout2/
+# (chips "50"/"90"/"100"/"45" verificados uno a uno). El numero del importe cae
+# siempre en el lado del stack de fichas que mira al centro; se leen todos los
+# enteros de la zona y se toma el mayor (el total apostado siempre iguala o
+# supera a la denominacion impresa en cada ficha, e ignora la marca de bounty
+# "0,31 €", que no es un entero). La zona del HERO arranca por debajo del borde
+# del ovalo para no tragarse las fichas de ante/bote del centro.
+SEAT_BET_ZONES = {
+    "TOPC": (0.48, -0.02, 0.72, 0.14),
+    "UL":   (0.12, 0.16, 0.36, 0.34),
+    "UR":   (0.62, 0.12, 0.88, 0.30),
+    "ML":   (0.10, 0.58, 0.30, 0.76),
+    "MR":   (0.70, 0.58, 0.86, 0.76),
+    "HERO": (0.30, 0.68, 0.58, 0.87),
+}
+
+# El cliente muestra los importes en dos unidades segun la config del usuario:
+#   - FICHAS: enteros con separador de miles ("5.892", "1.900").
+#   - BIG BLINDS: coma decimal + sufijo BB ("123,4 BB", "3,75 BB", "89 BB").
+# En modo BB el valor leido YA ES la profundidad/apuesta en bb (no hace falta
+# dividir por la ciega). Se auto-detecta el modo por la presencia del sufijo BB.
+
+# modo FICHAS: tira de digitos (con separador de miles opcional). Se extrae de
+# cada token en vez de exigir que el token entero cuadre, para tolerar glifos
+# pegados del OCR sobre el tapete/fichas ("B50" -> 50).
+_BET_DIGITS_RE = re.compile(r"\d{1,3}(?:[.,]\d{3})+|\d{1,6}")
+
+# modo BB: numero (con coma decimal opcional) seguido del sufijo BB.
+_BB_AMOUNT_RE = re.compile(r"(\d{1,3}(?:,\d{1,2})?)\s*BB", re.IGNORECASE)
+
+
+def parse_bet_amount(lines):
+    """Modo FICHAS: importe apostado (int) o None. Toma el mayor entero de la
+    zona: el total apostado siempre iguala o supera la denominacion impresa en
+    las fichas del stack, e ignora la marca de bounty ("0,31 €", no es entero)."""
+    best = None
+    for ln in lines:
+        for m in _BET_DIGITS_RE.finditer(ln["text"]):
+            val = int(m.group(0).replace(".", "").replace(",", ""))
+            if val > 0 and (best is None or val > best):
+                best = val
+    return best
+
+
+def parse_amount_bb(lines):
+    """Modo BB: valor (float) que lleva el sufijo BB ("123,4 BB" -> 123.4,
+    "3,75 BB" -> 3.75). Ignora las denominaciones impresas en las fichas
+    (enteros sin sufijo) y la marca de bounty. None si no hay ningun "N BB"."""
+    text = " ".join(ln["text"] for ln in lines)
+    m = _BB_AMOUNT_RE.search(text)
+    if m:
+        return float(m.group(1).replace(",", "."))
+    return None
+
+
+def has_bb_marker(lines):
+    """True si en las lineas OCR aparece el sufijo de unidad BB (stacks/apuestas
+    mostrados en big blinds, p.ej. "Media: 89 BB" en la esquina o "44,5 BB" en
+    un nameplate)."""
+    for ln in lines:
+        for w in ln["text"].split():
+            if w.strip(".,;:'\"|()").upper() == "BB":
+                return True
+    return bool(_BB_AMOUNT_RE.search(" ".join(ln["text"] for ln in lines)))
+
+
+def detect_raiser(players, bb):
+    """Con el importe apostado por asiento ya leido (player["bet"]), decide si
+    hay UNA sola subida preflop y quien la hizo. Devuelve (vs_position, code):
+      - "single": un unico rival (no-hero) con apuesta > bb -> vs_position = su
+        posicion; es una subida unica que el hero enfrenta.
+      - "no_raise": nadie por encima de la bb -> vs_position None (bote sin
+        abrir, solo ciegas/limps); el hero abre.
+      - "multiway": >=2 rivales por encima de la bb -> None (bote multiway o
+        3bet ya presente); no se adivina.
+      - "hero_raised": el propio hero por encima de la bb -> None (ya subio y
+        enfrenta una resubida, fuera del modelo threebet_call).
+      - "raiser_no_pos": subida unica pero el raiser sin posicion -> None.
+      - "no_bb": sin ciega grande para juzgar -> None.
+    Conservador por diseño: ante cualquier duda devuelve None (mejor no
+    recomendar defensa que recomendarla contra una posicion equivocada)."""
+    if not bb:
+        return None, "no_bb"
+    above = [p for p in players
+             if isinstance(p.get("bet"), (int, float)) and p["bet"] > bb]
+    if any(p.get("is_hero") for p in above):
+        return None, "hero_raised"
+    opp = [p for p in above if not p.get("is_hero")]
+    if not opp:
+        return None, "no_raise"
+    if len(opp) > 1:
+        return None, "multiway"
+    pos = opp[0].get("position")
+    if pos is None:
+        return None, "raiser_no_pos"
+    return pos, "single"
 
 
 # --- ocupacion (nameplate presente) ---

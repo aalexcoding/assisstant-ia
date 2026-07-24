@@ -7,54 +7,47 @@ Solo cubre preflop (board vacio): si ya hay flop/turn/river no hay nada que
 recomendar con este motor, eso es la Fase 4.3 (RAG postflop), que todavia
 no existe.
 
-Limitacion conocida, no resuelta aqui: el GameState actual no registra el
-historial de acciones de la mano (quien ha subido, por cuanto), asi que no
-hay forma fiable de saber si el hero esta abriendo el bote o respondiendo a
-una subida ajena. Por ahora se asume siempre facing="open_raise": es el
-caso mas comun y el unico con cobertura completa de stacks en ranges.json
-(threebet_call no tiene los stacks 4/6/8/12.5bb). Cuando el GameState
-registre el historial de apuestas de la mano, esto se puede corregir para
-distinguir open_raise de threebet_call de verdad.
+Defensa contra una subida ajena (facing="threebet_call"): si el GameState
+trae facing="bet" (hay un boton "Igualar/Pagar", asi que hay una apuesta que
+enfrentar) y a partir del importe apostado por asiento (table_state /
+seat_map.detect_raiser) se identifica UNA sola subida clara -un unico rival
+con apuesta por encima de la ciega grande-, se consulta el rango de defensa
+con vs_position = la posicion de ese raiser. La ciega grande usada es la
+EFECTIVA (blinds.local.json manda sobre la detectada), de ahi que la subida
+se recompute aqui y no se confie sin mas en state["vs_position"].
 
-Investigado (2026-07-24) si se podia inferir "facing"/vs_position sin ese
-historial, con una sola imagen, contra las 93 capturas reales de
-vision/samples_pokerstars/. Dos señales candidatas, ninguna resulto fiable:
-- Ficha de importe delante de cada asiento: es legible y persiste varios
-  frames seguidos (a diferencia de las fichas de ciega del commit
-  212262d, que solo se ven un frame), pero el importe por si solo no
-  distingue una subida real de un limp/complete de ciega: en
-  sample_1784855328674.png / sample_1784855333696.png (mano reconstruida
-  y cuadrada contra el bote) un jugador en HJ iguala la BB y otro en SB
-  completa su ciega, ambos dejando 30.000 delante -mismo aspecto que una
-  subida real, indistinguible sin saber cual era el importe a igualar en
-  ese momento, algo que no se registra en ningun sitio. Ademas, el mismo
-  marcador de "este jugador acaba de actuar" que hace visible el importe
-  sustituye temporalmente su nombre y rompe el emparejamiento nombre+stack
-  de find_players(), desincronizando las posiciones de todos los demas
-  jugadores justo en el frame que interesa (ver sample_1784854879707.png:
-  el raise de djordy24100 a 107.000 le hace desaparecer de la lista de
-  jugadores esa misma imagen).
-- Texto del boton de accion del hero ("Igualar X" vs "Pasar"): en
-  sample_1784855333696.png se confirma con el marcador verde de turno que
-  es el turno del hero (gaobig) y aun asi no aparece ningun boton de
-  accion dentro de la region capturada; 0 de 93 capturas lo muestran en
-  ningun momento. La region de calibracion (capture/calibration, fuera de
-  alcance de esta investigacion) probablemente no llega a esa franja de
-  la ventana.
-Forzar cualquiera de las dos habria dado recomendaciones incorrectas en
-casos reales verificables (arriba), asi que se descarta: sigue sin haber
-forma fiable de saber si el hero abre o responde a una subida ajena.
+Conservador por diseño: si hay varias apuestas por encima de la ciega
+(bote multiway o 3bet ya presente), si el propio hero ya ha subido (enfrenta
+una resubida), o si el raiser no tiene posicion asignada, NO se adivina ->
+se abstiene con un warning (una defensa contra la posicion equivocada es
+peor que ninguna). Si no hay ninguna subida (solo ciegas/limps, o no hay
+apuesta que enfrentar) se sigue con open_raise como antes: el hero abre.
+
+Limitaciones aceptadas: solo se cubre la subida unica heads-up (el rango
+threebet_call no tiene 4/6/8/12.5bb, asi que a esas profundidades no habra
+rango y se abstiene); en frames de transicion entre manos el cliente puede
+mostrar importes de una mano ya resuelta -no se distingue de una subida en
+curso con una sola imagen-; y sigue sin registrarse el historial de apuestas
+de la calle, asi que el juicio es sobre lo que hay dibujado en ese frame.
 
 Requiere decision/preflop en sys.path (lo hace el caller, igual que
 vision/table_state.py no gestiona su propio sys.path para importar a sus
 hermanos de vision/).
 
-Ciegas manuales: el nivel de ciegas es transitorio en pantalla (solo sale
-en el chat al subir de nivel) pero el usuario lo sabe y cambia cada varios
-minutos, asi que se puede fijar a mano. Si existe blinds.local.json en la
-raiz del repo (lo escribe el comando ./set-blinds mientras la app corre),
-su valor MANDA sobre lo que detecte la vision. El stack del hero sigue
-siendo automatico (cambia cada mano; meterlo a mano seria insufrible).
+Unidades (state["stack_unit"], lo pone la vision): el cliente muestra los
+importes en FICHAS o en BIG BLINDS ("123,4 BB") segun la config del usuario.
+En modo BB el stack leido YA es la profundidad en bb: se usa directamente
+como stack_bb y NO hacen falta ciegas (ni detectadas ni manuales), y una
+subida es cualquier apuesta > 1 bb. En modo fichas todo sigue igual: se
+divide el stack por la ciega grande efectiva.
+
+Ciegas manuales (solo modo fichas): el nivel de ciegas es transitorio en
+pantalla (solo sale en el chat al subir de nivel) pero el usuario lo sabe y
+cambia cada varios minutos, asi que se puede fijar a mano. Si existe
+blinds.local.json en la raiz del repo (lo escribe el comando ./set-blinds
+mientras la app corre), su valor MANDA sobre lo que detecte la vision. El
+stack del hero sigue siendo automatico (cambia cada mano; meterlo a mano
+seria insufrible).
 
 Cache del stack del hero: cuando es el turno del hero, su nameplate deja
 de mostrar el numero de fichas y muestra la accion ("Igualar X", "All-in",
@@ -73,9 +66,77 @@ import time
 from lookup import recommend
 
 _MANUAL_BLINDS_PATH = os.path.join(os.path.dirname(__file__), "..", "blinds.local.json")
+_DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.jsonl")
 
 _HERO_STACK_TTL_S = 90.0
-_last_hero_stack = {"chips": None, "t": 0.0}
+_last_hero_stack = {"value": None, "t": 0.0, "unit": None}
+
+
+def _cached_hero_stack(hero, unit):
+    """Stack del hero, con cache reciente: cuando es su turno el nameplate deja
+    de mostrar el numero de fichas (muestra la accion o lo tapan los botones),
+    asi que se reutiliza el ultimo leido si es reciente y de la MISMA unidad
+    (fichas o bb; no se mezclan si el usuario cambia de modo). Devuelve
+    (valor, cacheado)."""
+    val = hero.get("stack") if hero else None
+    if val is not None:
+        _last_hero_stack.update(value=val, t=time.monotonic(), unit=unit)
+        return val, False
+    if (_last_hero_stack["value"] is not None and _last_hero_stack["unit"] == unit
+            and time.monotonic() - _last_hero_stack["t"] <= _HERO_STACK_TTL_S):
+        return _last_hero_stack["value"], True
+    return None, False
+
+
+def _detect_raiser(players, bb):
+    """Gemelo de seat_map.detect_raiser, reimplementado aqui para no acoplar el
+    motor a vision/ (cv2): con el importe apostado por asiento y la ciega
+    grande EFECTIVA, decide si hay una subida unica que enfrentar. Devuelve
+    (vs_position, code) con code en {single, no_raise, multiway, hero_raised,
+    raiser_no_pos, no_bb}. Ver seat_map.detect_raiser para el detalle."""
+    if not bb:
+        return None, "no_bb"
+    above = [p for p in players
+             if isinstance(p.get("bet"), (int, float)) and p["bet"] > bb]
+    if any(p.get("is_hero") for p in above):
+        return None, "hero_raised"
+    opp = [p for p in above if not p.get("is_hero")]
+    if not opp:
+        return None, "no_raise"
+    if len(opp) > 1:
+        return None, "multiway"
+    pos = opp[0].get("position")
+    if pos is None:
+        return None, "raiser_no_pos"
+    return pos, "single"
+
+
+def _log_decision(state, recommendation, abstain_reason):
+    """Anota una linea JSONL por cada decision (recomendacion o abstencion con
+    motivo). Semilla para 'aprender el estilo' mas adelante; por ahora es solo
+    registro. Un fallo al escribir nunca debe tumbar decide()."""
+    try:
+        entry = {
+            "t": time.time(),
+            "image": state.get("image"),
+            "hero_cards": state.get("hero_cards") or [],
+            "board_empty": not state.get("board"),
+            "hero_position": state.get("hero_position"),
+            "facing": state.get("facing"),
+            "vs_position": state.get("vs_position"),
+            "stack_unit": state.get("stack_unit"),
+        }
+        if recommendation is not None:
+            entry["stack_bb"] = round(recommendation.get("stack_bb"), 2)
+            entry["action"] = recommendation.get("action")
+            entry["facing_used"] = recommendation.get("facing_used")
+            entry["vs_position"] = recommendation.get("vs_position")
+        else:
+            entry["abstain"] = abstain_reason
+        with open(_DECISIONS_LOG_PATH, "a") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
 
 
 def _manual_blinds():
@@ -98,64 +159,107 @@ def _hero_player(state):
     return None
 
 
+_RAISE_ABSTAIN = {
+    "multiway": "hay varias apuestas por encima de la ciega (bote multiway o 3bet ya "
+                "presente); no se recomienda defensa contra una posicion incierta",
+    "hero_raised": "el hero ya ha subido y enfrenta una resubida; fuera del modelo "
+                   "(open_raise / threebet_call)",
+    "raiser_no_pos": "se detecto una subida pero el raiser no tiene posicion asignada; "
+                     "sin defensa fiable",
+    "no_bb": "no se pudo determinar la ciega grande para juzgar la subida",
+}
+
+
 def decide(state):
     warnings = state.setdefault("warnings", [])
 
-    if state.get("board"):
-        warnings.append("hay board (ya no es preflop); este motor solo cubre preflop, "
-                         "el postflop es la Fase 4.3 (RAG) y todavia no existe")
+    def abstain(reason):
+        warnings.append(reason)
+        _log_decision(state, None, reason)
         return None
+
+    if state.get("board"):
+        return abstain("hay board (ya no es preflop); este motor solo cubre preflop, "
+                       "el postflop es la Fase 4.3 (RAG) y todavia no existe")
 
     hero_cards = state.get("hero_cards") or []
     if len(hero_cards) != 2:
-        warnings.append("faltan las 2 cartas del hero; no se puede recomendar")
-        return None
+        return abstain("faltan las 2 cartas del hero; no se puede recomendar")
 
     hero = _hero_player(state)
     hero_position = state.get("hero_position") or (hero.get("position") if hero else None)
     if hero_position is None:
-        warnings.append("no se detecto la posicion del hero; no se puede recomendar")
-        return None
+        return abstain("no se detecto la posicion del hero; no se puede recomendar")
 
-    manual = _manual_blinds()
-    blinds = manual or state.get("blinds")
-    if not blinds or not blinds.get("bb"):
-        warnings.append("no hay ciegas (ni manuales via ./set-blinds ni detectadas); "
-                        "no se puede calcular el stack en bb")
-        return None
+    # Profundidad efectiva en bb. En modo BB el stack leido YA esta en bb (no
+    # hacen falta ciegas). En modo fichas se divide por la ciega grande
+    # efectiva (blinds.local.json manda sobre la detectada).
+    unit = state.get("stack_unit") or "chips"
+    if unit == "bb":
+        stack_val, stack_cacheado = _cached_hero_stack(hero, "bb")
+        if stack_val is None:
+            return abstain("no se encontro el stack del hero en bb (ni reciente en cache); "
+                           "no se puede calcular la profundidad")
+        stack_bb = stack_val
+        bb_efectiva = 1
+        blinds = None
+        fuente = "stacks en BB"  # sin ciegas necesarias
+    else:
+        manual = _manual_blinds()
+        blinds = manual or state.get("blinds")
+        if not blinds or not blinds.get("bb"):
+            return abstain("no hay ciegas (ni manuales via ./set-blinds ni detectadas); "
+                           "no se puede calcular el stack en bb")
+        stack_val, stack_cacheado = _cached_hero_stack(hero, "chips")
+        if stack_val is None:
+            return abstain("no se encontro el stack del hero (ni reciente en cache); "
+                           "no se puede calcular el stack en bb")
+        stack_bb = stack_val / blinds["bb"]
+        bb_efectiva = blinds["bb"]
+        fuente = "ciegas manuales" if manual else "ciegas del chat"
 
-    stack = hero.get("stack") if hero else None
-    stack_cacheado = False
-    if stack is not None:
-        _last_hero_stack["chips"] = stack
-        _last_hero_stack["t"] = time.monotonic()
-    elif (_last_hero_stack["chips"] is not None
-          and time.monotonic() - _last_hero_stack["t"] <= _HERO_STACK_TTL_S):
-        stack = _last_hero_stack["chips"]
-        stack_cacheado = True
-
-    if stack is None:
-        warnings.append("no se encontro el stack del hero (ni reciente en cache); "
-                        "no se puede calcular el stack en bb")
-        return None
-
-    stack_bb = stack / blinds["bb"]
-    fuente = "manual" if manual else "chat"
     nota_cache = " stack cacheado de un frame anterior;" if stack_cacheado else ""
 
-    result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
-    if result is None:
-        warnings.append(f"sin rango para {hero_position} a {stack_bb:.1f}bb (facing=open_raise)")
-        return None
+    # Defensa vs subida ajena: si el hero enfrenta una apuesta (facing="bet") y
+    # se identifica una subida unica, se usa el rango threebet_call contra el
+    # raiser. La ciega grande efectiva (1 en modo BB) decide que cuenta como
+    # subida, por eso se recomputa aqui.
+    facing = "open_raise"
+    vs_position = None
+    if state.get("facing") == "bet":
+        vs_position, code = _detect_raiser(state.get("players", []), bb_efectiva)
+        if vs_position is not None:
+            facing = "threebet_call"
+        elif code != "no_raise":
+            return abstain(_RAISE_ABSTAIN[code])
 
-    return {
+    if facing == "threebet_call":
+        result = recommend(hero_cards, hero_position, stack_bb,
+                           facing="threebet_call", vs_position=vs_position)
+        if result is None:
+            return abstain(f"sin rango de defensa para {hero_position} vs {vs_position} "
+                           f"a {stack_bb:.1f}bb (threebet_call)")
+        reasoning = (f"Defensa (3bet/call) de {hero_position} a {stack_bb:.1f}bb efectivos "
+                     f"contra la subida de {vs_position} ({fuente};{nota_cache} "
+                     f"subida inferida del importe apostado en la mesa)")
+    else:
+        result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
+        if result is None:
+            return abstain(f"sin rango para {hero_position} a {stack_bb:.1f}bb (facing=open_raise)")
+        reasoning = (f"Rango de apertura de {hero_position} a {stack_bb:.1f}bb efectivos "
+                     f"({fuente};{nota_cache} sin subida que enfrentar, el hero abre el bote)")
+
+    recommendation = {
         "action": result["action"],
-        "reasoning": f"Rango preflop de {hero_position} a {stack_bb:.1f}bb efectivos "
-                     f"(ciegas {fuente};{nota_cache} asumiendo que el hero abre el bote, el motor "
-                     f"no distingue todavia open_raise de respuesta a una subida ajena)",
+        "reasoning": reasoning,
         "hero_cards": hero_cards,
         "hero_position": hero_position,
         "stack_bb": stack_bb,
+        "stack_unit": unit,
         "stack_cacheado": stack_cacheado,
         "blinds": blinds,
+        "facing_used": facing,
+        "vs_position": vs_position,
     }
+    _log_decision(state, recommendation, None)
+    return recommendation

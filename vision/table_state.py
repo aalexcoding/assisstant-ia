@@ -298,6 +298,8 @@ def analyze_layout(image_path):
         "players": [],
         "hero_position": None,
         "facing": None,
+        "vs_position": None,
+        "stack_unit": None,
         "warnings": [],
     }
     if bgr is None:
@@ -331,6 +333,13 @@ def analyze_layout(image_path):
         else:
             x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.SEATS[name]["plate"], bgr.shape)
         seat_tsv[name] = batch.add_tsv_job(bgr[y0:y1, x0:x1], scale=3)
+    # importe apostado por asiento (zona hacia el centro del tapete), para
+    # inferir quien subio; se encola para todos y luego se lee solo en los
+    # asientos ocupados.
+    bet_tsv = {}
+    for name in seat_map.SEATS:
+        bx = seat_map.zone_to_px(ref, seat_map.SEAT_BET_ZONES[name], bgr.shape)
+        bet_tsv[name] = batch.add_tsv_job(bgr[bx[1]:bx[3], bx[0]:bx[2]], scale=3)
     px = seat_map.zone_to_px(ref, seat_map.POT_ZONE, bgr.shape)
     pot_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=3)
     px = seat_map.zone_to_px(ref, seat_map.CHAT_ZONE, bgr.shape)
@@ -369,13 +378,28 @@ def analyze_layout(image_path):
     # de reentrada; esos pocos frames quedan con un hero fantasma (limitacion
     # conocida) a cambio de no perder el hero en los frames entre manos, en que
     # no tiene cartas y el OCR de su nameplate suele fallar.
+    # unidad de los importes: el cliente muestra stacks/apuestas/bote en FICHAS
+    # (enteros con separador de miles) o en BIG BLINDS ("123,4 BB", coma decimal
+    # + sufijo BB). Se detecta por la presencia del sufijo BB en la esquina
+    # ("Media: N BB") o en los nameplates. En modo BB el valor leido ya es la
+    # profundidad/apuesta en bb (no hace falta dividir por la ciega).
+    seat_lines = {name: parse_tsv_lines(results[seat_tsv[name]]) for name in seat_map.SEATS}
+    corner_lines = parse_tsv_lines(results[corner_idx])
+    unit = "bb" if (seat_map.has_bb_marker(corner_lines)
+                    or any(seat_map.has_bb_marker(ls) for ls in seat_lines.values())) else "chips"
+    state["stack_unit"] = unit
+
     occupied = {}
     for name in seat_map.SEATS:
-        lines = parse_tsv_lines(results[seat_tsv[name]])
-        n, stk = _seat_plate_name_stack(lines)
+        lines = seat_lines[name]
+        n, stk_chips = _seat_plate_name_stack(lines)
+        stk = seat_map.parse_amount_bb(lines) if unit == "bb" else stk_chips
         occ = True if name == seat_map.HERO_SEAT else _plate_occupied(lines)
         if occ:
-            occupied[name] = {"name": n, "stack": stk}
+            bet_lines = parse_tsv_lines(results[bet_tsv[name]])
+            bet = (seat_map.parse_amount_bb(bet_lines) if unit == "bb"
+                   else seat_map.parse_bet_amount(bet_lines))
+            occupied[name] = {"name": n, "stack": stk, "bet": bet}
 
     # boton -> posiciones (orden de reparto horario entre los ocupados)
     button_seat = seat_map.detect_button_seat(bgr, ref)
@@ -386,7 +410,7 @@ def analyze_layout(image_path):
         if button_seat not in occupied:
             # el dealer es siempre un jugador sentado: si el boton se detecto en
             # ese asiento pero el OCR no leyo su nameplate, esta ocupado igual.
-            occupied[button_seat] = {"name": None, "stack": None}
+            occupied[button_seat] = {"name": None, "stack": None, "bet": None}
         order = seat_map.dealing_order(list(occupied), ref)
         n = len(order)
         if n in seat_map.SEATING_BY_N:
@@ -401,6 +425,7 @@ def analyze_layout(image_path):
         player = {
             "name": info["name"],
             "stack": info["stack"],
+            "bet": info.get("bet"),
             "is_hero": name == seat_map.HERO_SEAT,
         }
         if name in positions:
@@ -421,11 +446,21 @@ def analyze_layout(image_path):
     # esquina (SB/BB(ante), la fuente mas fiable), luego el aviso del chat
     # (transitorio) como respaldo.
     state["pot"] = find_pot(parse_tsv_lines(results[pot_idx]))
-    corner_lines = parse_tsv_lines(results[corner_idx])
     chat_lines = parse_tsv_lines(results[chat_idx])
     state["blinds"] = (find_blinds_corner(corner_lines, require_double=False)
                        or find_blinds_chat(chat_lines) or find_blinds(chat_lines))
     state["facing"] = seat_map.parse_facing(" ".join(ln["text"] for ln in parse_tsv_lines(results[action_idx])))
+
+    # vs_position: quien subio, a partir del importe apostado por asiento. Solo
+    # se rellena si el hero enfrenta una apuesta (facing="bet") y hay UNA subida
+    # clara; en cualquier otro caso queda None. En modo BB la ciega grande es 1;
+    # en modo fichas la detectada. El motor lo recalcula con la ciega efectiva
+    # (que en fichas puede venir de blinds.local.json), pero se expone aqui para
+    # el HUD/depuracion.
+    bb_for_raiser = 1 if unit == "bb" else (state["blinds"]["bb"] if state["blinds"] else None)
+    if state["facing"] == "bet":
+        vs, _code = seat_map.detect_raiser(state["players"], bb_for_raiser)
+        state["vs_position"] = vs
 
     if not state["hero_cards"]:
         state["warnings"].append("no se detectaron las cartas del hero")
