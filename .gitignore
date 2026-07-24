@@ -7,5 +7,6 @@ config.local.json
 decision/preflop/tessdata/
 vision/samples/
 vision/samples_pokerstars/
+vision/samples_pokerstars_2/
 decision/rag/audio/
 decision/rag/batch_worker_*.log
