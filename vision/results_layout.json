@@ -563,7 +563,8 @@
       "Td",
       "7h",
       "Qh",
-      "Qd"
+      "Qd",
+      "2h"
     ],
     "pot": 5773,
     "blinds": null,
@@ -608,7 +609,6 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "1 carta(s) de board detectada(s) pero sin rango legible",
       "no se encontraron las ciegas (esquina/chat)"
     ]
   },
@@ -622,7 +622,8 @@
       "Td",
       "7h",
       "Qh",
-      "Qd"
+      "Qd",
+      "2h"
     ],
     "pot": 5773,
     "blinds": null,
@@ -667,7 +668,6 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "1 carta(s) de board detectada(s) pero sin rango legible",
       "no se encontraron las ciegas (esquina/chat)"
     ]
   },
@@ -681,7 +681,8 @@
       "Td",
       "7h",
       "Qh",
-      "Qd"
+      "Qd",
+      "2h"
     ],
     "pot": 5773,
     "blinds": null,
@@ -726,7 +727,6 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "1 carta(s) de board detectada(s) pero sin rango legible",
       "no se encontraron las ciegas (esquina/chat)"
     ]
   },
@@ -1633,7 +1633,6 @@
       "3c"
     ],
     "board": [
-      "2c",
       "Qs",
       "Qc",
       "3h"
@@ -1681,6 +1680,7 @@
     "hero_position": "SB",
     "facing": null,
     "warnings": [
+      "1 carta(s) de board detectada(s) pero sin rango legible",
       "no se encontraron las ciegas (esquina/chat)"
     ]
   }

@@ -265,7 +265,8 @@ def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
     cards = []
     unresolved = 0
     for box, start, end in card_jobs:
-        rank = color_rank_ocr.resolve_rank(batch_results[start:end])
+        crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
+        rank = color_rank_ocr.resolve_rank(batch_results[start:end], crop)
         code = card_code(rank, box["suit"])
         if code:
             cards.append(code)
@@ -507,7 +508,8 @@ def analyze_color_deck(image_path):
 
     resolved = []
     for b, (start, end) in zip(all_card_boxes, rank_job_ranges):
-        rank = color_rank_ocr.resolve_rank(results[start:end])
+        crop = bgr[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]]
+        rank = color_rank_ocr.resolve_rank(results[start:end], crop)
         code = card_code(rank, b["suit"])
         resolved.append({"box": b, "rank": rank, "suit": b["suit"], "code": code})
 
