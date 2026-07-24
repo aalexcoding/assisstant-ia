@@ -1,0 +1,1208 @@
+[
+  {
+    "image": "sample_1784849707497.png",
+    "hero_cards": [
+      "As",
+      "Jd"
+    ],
+    "board": [],
+    "pot": 22671,
+    "blinds": null,
+    "players": [
+      {
+        "name": "propofol-san",
+        "stack": 11733,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 27974,
+        "is_hero": true
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849711522.png",
+    "hero_cards": [
+      "As",
+      "Jd"
+    ],
+    "board": [],
+    "pot": 22671,
+    "blinds": {
+      "sb": 300,
+      "bb": 600,
+      "ante": 90
+    },
+    "players": [
+      {
+        "name": "propofol-san",
+        "stack": 11733,
+        "is_hero": false
+      },
+      {
+        "name": "babecalime",
+        "stack": 16185,
+        "is_hero": false
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784849715544.png",
+    "hero_cards": [
+      "As",
+      "Ad"
+    ],
+    "board": [
+      "Kd",
+      "6s",
+      "2d"
+    ],
+    "pot": 40692,
+    "blinds": {
+      "sb": 300,
+      "bb": 600,
+      "ante": null
+    },
+    "players": [
+      {
+        "name": "propofol-san",
+        "stack": 11733,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 9953,
+        "is_hero": true
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784849719561.png",
+    "hero_cards": [
+      "As",
+      "Ad"
+    ],
+    "board": [
+      "Kd",
+      "6s",
+      "2d",
+      "4h",
+      "6h"
+    ],
+    "pot": 40692,
+    "blinds": {
+      "sb": 300,
+      "bb": 600,
+      "ante": 90
+    },
+    "players": [
+      {
+        "name": "Spraggy",
+        "stack": 9953,
+        "is_hero": true
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784849727605.png",
+    "hero_cards": [
+      "2c",
+      "Ad"
+    ],
+    "board": [],
+    "pot": 2040,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Cbi4b",
+        "stack": 39688,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 12633,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 9913,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 12883,
+        "is_hero": true
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849735653.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 11911,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Wwilly222444",
+        "stack": 3856,
+        "is_hero": false
+      },
+      {
+        "name": "Cbi4b",
+        "stack": 40698,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 19392,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 12973,
+        "is_hero": false
+      },
+      {
+        "name": "Succeeed",
+        "stack": 21470,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 10613,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849739675.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 20742,
+    "blinds": null,
+    "players": [
+      {
+        "name": "aceofspades528",
+        "stack": 36992,
+        "is_hero": false
+      },
+      {
+        "name": "willy222444",
+        "stack": 3856,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 19392,
+        "is_hero": false
+      },
+      {
+        "name": "Succeeed",
+        "stack": 21470,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 12973,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849743695.png",
+    "hero_cards": [],
+    "board": [
+      "7c",
+      "3d",
+      "5h",
+      "9d",
+      "2c"
+    ],
+    "pot": 20742,
+    "blinds": {
+      "sb": 400,
+      "bb": 800,
+      "ante": 120
+    },
+    "players": [
+      {
+        "name": "cbi4b",
+        "stack": 31867,
+        "is_hero": false
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784849747715.png",
+    "hero_cards": [
+      "7c",
+      "Kc"
+    ],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "aceofspadesS28",
+        "stack": 22240,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 20962,
+        "is_hero": false
+      },
+      {
+        "name": "moors",
+        "stack": 54486,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849751737.png",
+    "hero_cards": [
+      "7c",
+      "Kc"
+    ],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Cbi4b",
+        "stack": 36674,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 11673,
+        "is_hero": true
+      },
+      {
+        "name": "aceofspades528",
+        "stack": 22240,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849755760.png",
+    "hero_cards": [
+      "6c",
+      "Kc"
+    ],
+    "board": [],
+    "pot": 5640,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Scarmak3r",
+        "stack": 9002,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 10053,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 11673,
+        "is_hero": true
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849759780.png",
+    "hero_cards": [
+      "Ac",
+      "Kc"
+    ],
+    "board": [
+      "Tc",
+      "7s",
+      "7d"
+    ],
+    "pot": 8040,
+    "blinds": {
+      "sb": 600,
+      "bb": 1200,
+      "ante": 180
+    },
+    "players": [
+      {
+        "name": "aceofspadesS28",
+        "stack": 22240,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 20962,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 19002,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 10053,
+        "is_hero": false
+      },
+      {
+        "name": "Succeeed",
+        "stack": 15660,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 10473,
+        "is_hero": true
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784849763801.png",
+    "hero_cards": [
+      "Ac",
+      "Kc"
+    ],
+    "board": [
+      "Tc",
+      "7s",
+      "7d",
+      "4d"
+    ],
+    "pot": 9240,
+    "blinds": {
+      "sb": 600,
+      "bb": 1200,
+      "ante": 180
+    },
+    "players": [
+      {
+        "name": "Cbhi4b",
+        "stack": 35474,
+        "is_hero": false
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784849851781.png",
+    "hero_cards": [
+      "7c",
+      "Jh"
+    ],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Cbhi4b",
+        "stack": 14442,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmalar",
+        "stack": 36014,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 16336,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 12484,
+        "is_hero": true
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 20535,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849854811.png",
+    "hero_cards": [
+      "7c"
+    ],
+    "board": [],
+    "pot": 19064,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Cbi4b",
+        "stack": 14442,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmalkar",
+        "stack": 36014,
+        "is_hero": false
+      },
+      {
+        "name": "Succeeed",
+        "stack": 646,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 16336,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "carta del hero detectada en {'x': 652, 'y': 628, 'w': 90, 'h': 68, 'group_id': 0, 'group_kind': 'pair'} pero no se pudo leer con confianza (rank=None, suit=heart)",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849860857.png",
+    "hero_cards": [
+      "7c"
+    ],
+    "board": [],
+    "pot": 19064,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Cbl4b",
+        "stack": 14442,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 36014,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 20535,
+        "is_hero": false
+      },
+      {
+        "name": "Succeeed",
+        "stack": 20640,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 16336,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "carta del hero detectada en {'x': 656, 'y': 632, 'w': 94, 'h': 65, 'group_id': 0, 'group_kind': 'pair'} pero no se pudo leer con confianza (rank=None, suit=heart)",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849863876.png",
+    "hero_cards": [
+      "7c",
+      "Qh"
+    ],
+    "board": [],
+    "pot": 19064,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Scarmak3r",
+        "stack": 36014,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 20535,
+        "is_hero": false
+      },
+      {
+        "name": "Succeeed",
+        "stack": 20640,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 16336,
+        "is_hero": false
+      },
+      {
+        "name": "Cbi4b",
+        "stack": 14442,
+        "is_hero": false
+      },
+      {
+        "name": "paren",
+        "stack": 13184,
+        "is_hero": true
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849866896.png",
+    "hero_cards": [
+      "Ac",
+      "Th"
+    ],
+    "board": [],
+    "pot": 8680,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Cbi4b",
+        "stack": 14442,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 36014,
+        "is_hero": false
+      },
+      {
+        "name": "propofol-san",
+        "stack": 16336,
+        "is_hero": false
+      },
+      {
+        "name": "Succeeed",
+        "stack": 20640,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849875969.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 36311,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Cbi4b",
+        "stack": 722,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 35294,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849878991.png",
+    "hero_cards": [],
+    "board": [
+      "9s"
+    ],
+    "pot": 33712,
+    "blinds": {
+      "sb": 800,
+      "bb": 1600,
+      "ante": 240
+    },
+    "players": [
+      {
+        "name": "Cbl4b",
+        "stack": 13722,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 35294,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 2999,
+        "is_hero": false
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784849882011.png",
+    "hero_cards": [],
+    "board": [
+      "9s",
+      "Qs",
+      "7d"
+    ],
+    "pot": 33712,
+    "blinds": null,
+    "players": [
+      {
+        "name": "vs737",
+        "stack": 54486,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 2599,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849885030.png",
+    "hero_cards": [],
+    "board": [
+      "9s",
+      "Qs",
+      "Js",
+      "7d",
+      "Qc"
+    ],
+    "pot": 33712,
+    "blinds": {
+      "sb": 800,
+      "bb": 1600,
+      "ante": 244
+    },
+    "players": [
+      {
+        "name": "Scarmak3r",
+        "stack": 35294,
+        "is_hero": false
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784849891076.png",
+    "hero_cards": [
+      "7s",
+      "Ah"
+    ],
+    "board": [],
+    "pot": 3840,
+    "blinds": null,
+    "players": [
+      {
+        "name": "gustavoodias",
+        "stack": 36071,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 35054,
+        "is_hero": false
+      },
+      {
+        "name": "aceofspades528",
+        "stack": 22333,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849894098.png",
+    "hero_cards": [
+      "7c",
+      "Ah"
+    ],
+    "board": [],
+    "pot": 21944,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Sehs171",
+        "stack": 54486,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 36071,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 35054,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849897119.png",
+    "hero_cards": [
+      "7s",
+      "Ah"
+    ],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "gustavoodias",
+        "stack": 36071,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 35054,
+        "is_hero": false
+      },
+      {
+        "name": "vs737",
+        "stack": 54486,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849900140.png",
+    "hero_cards": [
+      "7s",
+      "Ah"
+    ],
+    "board": [],
+    "pot": 40048,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Scarmak3r",
+        "stack": 35054,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849903161.png",
+    "hero_cards": [
+      "Qs",
+      "Ah"
+    ],
+    "board": [
+      "Jd",
+      "4c",
+      "8h"
+    ],
+    "pot": 40048,
+    "blinds": null,
+    "players": [
+      {
+        "name": "gustavoodias",
+        "stack": 17967,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 5054,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849906180.png",
+    "hero_cards": [
+      "7s",
+      "Ah"
+    ],
+    "board": [
+      "Jd",
+      "4c",
+      "8h",
+      "Ad"
+    ],
+    "pot": 40048,
+    "blinds": null,
+    "players": [
+      {
+        "name": "aceotspadesS28",
+        "stack": 323,
+        "is_hero": false
+      },
+      {
+        "name": "Chl4b",
+        "stack": 882,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 17967,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 54,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849909199.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "gustavoodias",
+        "stack": 37991,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 20024,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849912218.png",
+    "hero_cards": [
+      "3c",
+      "Qd"
+    ],
+    "board": [],
+    "pot": 3840,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Cbi4b",
+        "stack": 10842,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 37751,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 19784,
+        "is_hero": true
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849915239.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 6120,
+    "blinds": null,
+    "players": [
+      {
+        "name": "Sthst71",
+        "stack": 54486,
+        "is_hero": false
+      },
+      {
+        "name": "Cbi4b",
+        "stack": 10062,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 39794,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849918260.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "gustavoodias",
+        "stack": 38111,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 16504,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849921279.png",
+    "hero_cards": [
+      "Qs",
+      "7h"
+    ],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "vs737",
+        "stack": 54486,
+        "is_hero": false
+      },
+      {
+        "name": "Cbi4b",
+        "stack": 9792,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 37841,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 16234,
+        "is_hero": true
+      },
+      {
+        "name": "aceofspades528",
+        "stack": 23563,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 39524,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849924299.png",
+    "hero_cards": [
+      "4s",
+      "Ah"
+    ],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "gustavoodias",
+        "stack": 37841,
+        "is_hero": false
+      },
+      {
+        "name": "Spraggy",
+        "stack": 16234,
+        "is_hero": true
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  },
+  {
+    "image": "sample_1784849927319.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": {
+      "sb": 900,
+      "bb": 1800,
+      "ante": null
+    },
+    "players": [
+      {
+        "name": "Chi4b",
+        "stack": 9792,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 39524,
+        "is_hero": false
+      },
+      {
+        "name": "koutb",
+        "stack": 501,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot"
+    ]
+  },
+  {
+    "image": "sample_1784849930339.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": {
+      "sb": 900,
+      "bb": 1800,
+      "ante": null
+    },
+    "players": [
+      {
+        "name": "Chi4b",
+        "stack": 9792,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 37841,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 39524,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot"
+    ]
+  },
+  {
+    "image": "sample_1784849933359.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": {
+      "sb": 900,
+      "bb": 1800,
+      "ante": 270
+    },
+    "players": [
+      {
+        "name": "vs737",
+        "stack": 54486,
+        "is_hero": false
+      },
+      {
+        "name": "Cbhl4b",
+        "stack": 9792,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 33701,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 39524,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot"
+    ]
+  },
+  {
+    "image": "sample_1784849936380.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": "vs737",
+        "stack": 54486,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 33701,
+        "is_hero": false
+      },
+      {
+        "name": "Scarmak3r",
+        "stack": 39524,
+        "is_hero": false
+      },
+      {
+        "name": "Cbl4b",
+        "stack": 9792,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas"
+    ]
+  }
+]

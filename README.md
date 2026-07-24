@@ -15,6 +15,16 @@ Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y
   sistema — el venv del proyecto se creó con `include-system-site-packages = true`
   en `.venv/pyvenv.cfg` para verlos sin tener que compilarlos aparte.
 - `vision/` — Fase 3: reconocimiento del estado de mesa (cartas, stacks, pot...).
+  `table_state.py` (`analyze(image_path) -> GameState`) orquesta `table_region.py`
+  (localiza el ovalo por el borde rojo), `card_detector.py` (cartas por contorno
+  blanco+forma, sin coordenadas fijas ni color de tapete), `suit_classifier.py`
+  (palo por color + forma contra las plantillas de `card_templates/`, generadas
+  una vez por `generate_card_templates.py`) y `text_extract.py` (pot/ciegas/
+  jugador+stack por regex sobre lineas OCR, sin posiciones fijas). El OCR usa
+  `tesserocr` aislado en `ocr_worker.py` (mismo motivo que
+  `decision/preflop/ocr_worker.py`: evitar corrupcion de memoria al mezclarlo
+  con opencv en el mismo proceso), invocado desde `ocr_client.py`. `run_samples.py`
+  corre el pipeline contra `vision/samples/` y vuelca `vision/results.json`.
 - `decision/preflop/` — Fase 4.1: digitalización de rangos y tabla de lookup preflop.
   Ver `decision/preflop/parse_ranges.py` (genera `ranges.json` a partir de las capturas
   de ZEROSPOKER.COM en `/mnt/qnap/Poker/CAPTURAS HERRAMIENTAS PREFLOP/`). El OCR de la

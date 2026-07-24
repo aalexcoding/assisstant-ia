@@ -6,3 +6,4 @@ __pycache__/
 config.local.json
 decision/preflop/tessdata/
 vision/samples/
+vision/samples_pokerstars/
