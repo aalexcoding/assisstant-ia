@@ -37,6 +37,27 @@ BLINDS_ANTE_WORD_RE = re.compile(
 # otros pares "x/y" del HUD que no son ciegas (posicion en el torneo, etc).
 BLINDS_ANTE_NO_VALUE_RE = re.compile(rf"^\$?({_NUM})\s*/\s*\$?({_NUM})\s*ante\b", re.IGNORECASE)
 
+# indicador compacto de ciegas/ante junto al reloj de mano, en la esquina
+# superior derecha ("17,5K/35K(4,5K)", "12.500/25.000 ante 3.250" tambien
+# aparece asi a veces, pero el formato propio de esta zona usa notacion K/M
+# con coma decimal: "12,5K"=12500, "1,2M"=1200000). Verificado contra las 93
+# capturas de vision/samples_pokerstars/: mucho mas legible que la barra de
+# titulo (fuente mas grande, fondo solido) y por tanto con mejor cobertura.
+_CORNER_NUM = r"\d+(?:[.,]\s?\d+)?[KM]?"
+BLINDS_CORNER_RE = re.compile(rf"({_CORNER_NUM})\s*/\s*({_CORNER_NUM})\s*\(\s*({_CORNER_NUM})\s*\)")
+
+
+def _to_int_corner(s):
+    s = s.strip().replace(" ", "")
+    mult = 1
+    if s and s[-1] in "KkMm":
+        mult = 1000 if s[-1] in "Kk" else 1_000_000
+        s = s[:-1]
+    try:
+        return int(round(float(s.replace(",", ".")) * mult))
+    except ValueError:
+        return None
+
 
 def _to_int(s):
     return int(re.sub(r"[,\.]", "", s))
@@ -166,6 +187,34 @@ def find_blinds(lines):
         m = BLINDS_ANTE_NO_VALUE_RE.search(ln["text"])
         if m:
             result = _blinds_dict(_to_int(m.group(1)), _to_int(m.group(2)), None)
+            if result:
+                return result
+    return None
+
+
+def find_blinds_corner(*line_sets):
+    """Busca el indicador compacto de ciegas ("17,5K/35K(4,5K)") en cada
+    conjunto de lineas de line_sets, probados en orden (paradas al primer
+    acierto). Se pasan varios conjuntos -no ya fusionados por
+    merge_line_sets()- porque un mismo error de OCR (un caracter espurio en
+    una de las pasadas) no aparece igual en todas: si la pasada de mayor
+    prioridad da un numero corrupto, la siguiente puede dar el bueno, y
+    fusionar antes perderia esa segunda oportunidad (merge_line_sets se
+    queda con la primera lectura de cada posicion, corrupta o no).
+    Verificado contra las 93 capturas: la gran mayoria de aciertos cumplen
+    bb == 2*sb (estructura estandar de este torneo), asi que se exige esa
+    relacion como filtro de cordura contra OCR corrupto (un caracter de mas
+    o de menos en el "K"/"M" da un valor que ya no encaja)."""
+    for lines in line_sets:
+        for ln in lines:
+            m = BLINDS_CORNER_RE.search(ln["text"])
+            if not m:
+                continue
+            sb, bb = _to_int_corner(m.group(1)), _to_int_corner(m.group(2))
+            ante = _to_int_corner(m.group(3))
+            if not sb or not bb or bb != 2 * sb:
+                continue
+            result = _blinds_dict(sb, bb, ante)
             if result:
                 return result
     return None

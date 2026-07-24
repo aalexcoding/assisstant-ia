@@ -742,7 +742,11 @@
     "hero_cards": [],
     "board": [],
     "pot": 57000,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "barbosa1984",
@@ -787,16 +791,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784854929894.png",
     "hero_cards": [],
     "board": [],
     "pot": 82000,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "camposea",
@@ -823,16 +829,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784854934914.png",
     "hero_cards": [],
     "board": [],
     "pot": 94500,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "barbosa1984",
@@ -865,16 +873,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784854939935.png",
     "hero_cards": [],
     "board": [],
     "pot": 94500,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "barbosa1984",
@@ -907,16 +917,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784854944955.png",
     "hero_cards": [],
     "board": [],
     "pot": 141750,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "barbosa1984",
@@ -943,16 +955,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784854949976.png",
     "hero_cards": [],
     "board": [],
     "pot": 189000,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "barbosa1984",
@@ -985,16 +999,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784854954995.png",
     "hero_cards": [],
     "board": [],
     "pot": 236250,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "barbosa1984",
@@ -1027,9 +1043,7 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855010192.png",
@@ -1040,7 +1054,11 @@
       "5c"
     ],
     "pot": 132000,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "camposea",
@@ -1079,9 +1097,7 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855015216.png",
@@ -1092,7 +1108,11 @@
       "5c"
     ],
     "pot": 132000,
-    "blinds": null,
+    "blinds": {
+      "sb": 15000,
+      "bb": 30000,
+      "ante": 3750
+    },
     "players": [
       {
         "name": "camposea",
@@ -1131,16 +1151,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855253339.png",
     "hero_cards": [],
     "board": [],
     "pot": 63750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "gaobig",
@@ -1167,16 +1189,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855258368.png",
     "hero_cards": [],
     "board": [],
     "pot": 63750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "gaobig",
@@ -1209,16 +1233,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855263393.png",
     "hero_cards": [],
     "board": [],
     "pot": 514426,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "gaobig",
@@ -1245,16 +1271,18 @@
         "position": "HJ"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855268415.png",
     "hero_cards": [],
     "board": [],
     "pot": 3728155,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "djordy24100",
@@ -1275,9 +1303,7 @@
         "position": "HJ"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855273439.png",
@@ -1291,7 +1317,11 @@
       "3s"
     ],
     "pot": 9651,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Danielx777",
@@ -1316,8 +1346,7 @@
     ],
     "warnings": [
       "no se detecto el boton del dealer (tapado o fuera de frame); sin posiciones",
-      "hero identificado pero sin posicion asignada",
-      "no se encontraron las ciegas"
+      "hero identificado pero sin posicion asignada"
     ]
   },
   {
@@ -1325,7 +1354,11 @@
     "hero_cards": [],
     "board": [],
     "pot": null,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "gaobig",
@@ -1353,8 +1386,7 @@
       }
     ],
     "warnings": [
-      "no se encontro texto de pot",
-      "no se encontraron las ciegas"
+      "no se encontro texto de pot"
     ]
   },
   {
@@ -1362,7 +1394,11 @@
     "hero_cards": [],
     "board": [],
     "pot": 63750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "djordy24100",
@@ -1395,16 +1431,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855288502.png",
     "hero_cards": [],
     "board": [],
     "pot": 1025102,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "djordy24100",
@@ -1425,16 +1463,18 @@
         "position": "BB"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855293525.png",
     "hero_cards": [],
     "board": [],
     "pot": null,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "djordy24100",
@@ -1462,8 +1502,7 @@
       }
     ],
     "warnings": [
-      "no se encontro texto de pot",
-      "no se encontraron las ciegas"
+      "no se encontro texto de pot"
     ]
   },
   {
@@ -1471,7 +1510,11 @@
     "hero_cards": [],
     "board": [],
     "pot": 63750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "VDiogo",
@@ -1504,16 +1547,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855303569.png",
     "hero_cards": [],
     "board": [],
     "pot": 63750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "VDiogo",
@@ -1546,16 +1591,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855308590.png",
     "hero_cards": [],
     "board": [],
     "pot": 63750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "VDiogo",
@@ -1582,16 +1629,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855313611.png",
     "hero_cards": [],
     "board": [],
     "pot": 63750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "VDiogo",
@@ -1618,16 +1667,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855318632.png",
     "hero_cards": [],
     "board": [],
     "pot": 857561,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "VDiogo",
@@ -1648,16 +1699,18 @@
         "position": "BB"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855323654.png",
     "hero_cards": [],
     "board": [],
     "pot": null,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "VDiogo",
@@ -1685,8 +1738,7 @@
       }
     ],
     "warnings": [
-      "no se encontro texto de pot",
-      "no se encontraron las ciegas"
+      "no se encontro texto de pot"
     ]
   },
   {
@@ -1694,7 +1746,11 @@
     "hero_cards": [],
     "board": [],
     "pot": 93750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Danielx777",
@@ -1721,16 +1777,18 @@
         "position": "HJ"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855333696.png",
     "hero_cards": [],
     "board": [],
     "pot": 108750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Danielx777",
@@ -1763,16 +1821,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855338717.png",
     "hero_cards": [],
     "board": [],
     "pot": 108750,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Danielx777",
@@ -1805,9 +1865,7 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855343738.png",
@@ -1817,7 +1875,11 @@
     ],
     "board": [],
     "pot": 1756372,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Danielx777",
@@ -1838,9 +1900,7 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ],
+    "warnings": [],
     "hero_position": "BB"
   },
   {
@@ -1857,7 +1917,11 @@
       "Kh"
     ],
     "pot": 1756372,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Danielx777",
@@ -1884,9 +1948,7 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ],
+    "warnings": [],
     "hero_position": "BB"
   },
   {
@@ -1900,7 +1962,11 @@
       "Kh"
     ],
     "pot": 1756372,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Danielx777",
@@ -1921,9 +1987,7 @@
         "position": "BB"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855358803.png",
@@ -1960,7 +2024,11 @@
       "3d"
     ],
     "pot": 157500,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "jeques9",
@@ -1993,9 +2061,7 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855398884.png",
@@ -2006,7 +2072,11 @@
       "3d"
     ],
     "pot": 247500,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "jeques9",
@@ -2033,19 +2103,20 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855403904.png",
     "hero_cards": [],
     "board": [],
     "pot": 22500,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [],
     "warnings": [
-      "no se encontraron las ciegas",
       "no se emparejo ningun jugador (nombre+stack)"
     ]
   },
@@ -2054,7 +2125,11 @@
     "hero_cards": [],
     "board": [],
     "pot": 67500,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Jeisus10997",
@@ -2081,16 +2156,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855413943.png",
     "hero_cards": [],
     "board": [],
     "pot": 67500,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Jeisus10997",
@@ -2117,16 +2194,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855418962.png",
     "hero_cards": [],
     "board": [],
     "pot": 214530,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Danielx777",
@@ -2147,16 +2226,18 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855423982.png",
     "hero_cards": [],
     "board": [],
     "pot": 346560,
-    "blinds": null,
+    "blinds": {
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
+    },
     "players": [
       {
         "name": "Jeisus10997",
@@ -2177,9 +2258,7 @@
         "position": "CO"
       }
     ],
-    "warnings": [
-      "no se encontraron las ciegas"
-    ]
+    "warnings": []
   },
   {
     "image": "sample_1784855429002.png",
@@ -2192,9 +2271,9 @@
     ],
     "pot": 346560,
     "blinds": {
-      "sb": 15000,
-      "bb": 30000,
-      "ante": null
+      "sb": 17500,
+      "bb": 35000,
+      "ante": 4500
     },
     "players": [
       {
@@ -2218,6 +2297,1590 @@
       {
         "name": "jeque69",
         "stack": 940220,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895300871.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 52500,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Dimonchik553",
+        "stack": 967548,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 590176,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 983691,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 450282,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 503647,
+        "is_hero": false,
+        "position": "HJ"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895305964.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 52500,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Dimonchik553",
+        "stack": 967548,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 590176,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 983691,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 786260,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 450282,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 503647,
+        "is_hero": false,
+        "position": "HJ"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895311060.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 363898,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Dimonchik553",
+        "stack": 967548,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "mnz10",
+        "stack": 590176,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 983691,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 450282,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 503647,
+        "is_hero": false,
+        "position": "HJ"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895316113.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 655296,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Dimonchik553",
+        "stack": 967548,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 590176,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 786260,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 450282,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 503647,
+        "is_hero": false,
+        "position": "HJ"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895321210.png",
+    "hero_cards": [],
+    "board": [
+      "Td",
+      "5d",
+      "4c",
+      "3h"
+    ],
+    "pot": 655296,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Dimonchik553",
+        "stack": 967548,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 590176,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 692293,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 786260,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 450282,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 503647,
+        "is_hero": false,
+        "position": "HJ"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895326286.png",
+    "hero_cards": [],
+    "board": [
+      "Td",
+      "5d",
+      "4c",
+      "3h",
+      "3c"
+    ],
+    "pot": 655296,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 590176,
+        "is_hero": false
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 786260,
+        "is_hero": false
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 967548,
+        "is_hero": false
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 450282,
+        "is_hero": false
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 503647,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se detecto el boton del dealer (tapado o fuera de frame); sin posiciones"
+    ]
+  },
+  {
+    "image": "sample_1784895331362.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 20000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [],
+    "warnings": [
+      "no se emparejo ningun jugador (nombre+stack)"
+    ]
+  },
+  {
+    "image": "sample_1784895336425.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 50000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1335089,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 763760,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 447782,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895341496.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 50000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnz10",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 763760,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Tiempo",
+        "stack": 748430,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 447782,
+        "is_hero": false,
+        "position": "EP2"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895346538.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 90000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 763760,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Subir",
+        "stack": 407782,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895351591.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 90000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "hadzhi9",
+        "stack": 1335089,
+        "is_hero": false
+      },
+      {
+        "name": "Demonich02",
+        "stack": 763760,
+        "is_hero": false
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 407782,
+        "is_hero": false
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false
+      },
+      {
+        "name": "Piton",
+        "stack": 351068,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "boton del dealer detectado pero no se pudo asociar a ningun asiento con confianza; sin posiciones"
+    ]
+  },
+  {
+    "image": "sample_1784895356651.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 90000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnz10",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1335089,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 763760,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 407782,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895361686.png",
+    "hero_cards": [],
+    "board": [
+      "6c",
+      "8s",
+      "2h"
+    ],
+    "pot": 110000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnz10",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 407782,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895366746.png",
+    "hero_cards": [],
+    "board": [
+      "6c",
+      "8s",
+      "9h"
+    ],
+    "pot": 110000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 743760,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895371784.png",
+    "hero_cards": [],
+    "board": [
+      "6c",
+      "8s",
+      "9h",
+      "5c"
+    ],
+    "pot": 110000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1335089,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 743760,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 407782,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895376852.png",
+    "hero_cards": [],
+    "board": [
+      "6c",
+      "8s",
+      "9h",
+      "5c"
+    ],
+    "pot": 146300,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Apostar",
+        "stack": 707460,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895381926.png",
+    "hero_cards": [],
+    "board": [
+      "6c",
+      "8s",
+      "9h",
+      "5c"
+    ],
+    "pot": 182600,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 707460,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895386985.png",
+    "hero_cards": [],
+    "board": [
+      "6c",
+      "8s",
+      "9h",
+      "5c",
+      "7c"
+    ],
+    "pot": 182600,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1335089,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 707460,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 371482,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895392025.png",
+    "hero_cards": [],
+    "board": [
+      "6c",
+      "8s",
+      "9h",
+      "5c",
+      "7c"
+    ],
+    "pot": 182600,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "jmnzi0",
+        "stack": 587676,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1335089,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Pasar",
+        "stack": 707460,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 371482,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 501147,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 965048,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895397072.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 20000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [],
+    "warnings": [
+      "no se emparejo ningun jugador (nombre+stack)"
+    ]
+  },
+  {
+    "image": "sample_1784895402129.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 90000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "hadzhi9",
+        "stack": 1332589,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 694960,
+        "is_hero": false,
+        "position": "SB"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895407191.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 90000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Demonich02",
+        "stack": 694960,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 551582,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 498647,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 922548,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 585176,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895412229.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 90000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "hadzhi9",
+        "stack": 1332589,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 694960,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 551582,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 498647,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 922548,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "jmnzio0",
+        "stack": 585176,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895417269.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 70000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "hadzhi9",
+        "stack": 1332589,
+        "is_hero": false
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 585176,
+        "is_hero": false
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 942548,
+        "is_hero": false
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 551582,
+        "is_hero": false
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 498647,
+        "is_hero": false
+      }
+    ],
+    "warnings": [
+      "no se detecto el boton del dealer (tapado o fuera de frame); sin posiciones"
+    ]
+  },
+  {
+    "image": "sample_1784895422324.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 50000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [],
+    "warnings": [
+      "no se emparejo ningun jugador (nombre+stack)"
+    ]
+  },
+  {
+    "image": "sample_1784895427385.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 70000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Demonicho2",
+        "stack": 692460,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 529082,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 496147,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1010048,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 582676,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1330089,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895432430.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 70000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Demonich02",
+        "stack": 692460,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 529082,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 496147,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1010048,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 582676,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1330089,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895437509.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 90000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Irsvdn",
+        "stack": 529082,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 496147,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1010048,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 582676,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895442577.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 90000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Demonicho2",
+        "stack": 692460,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 529082,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 496147,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1010048,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "jmnzi0",
+        "stack": 582676,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895447639.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 200000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Demonicho2",
+        "stack": 692460,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Subir",
+        "stack": 603430,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 496147,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1010048,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "jmnz10",
+        "stack": 582676,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1310089,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895452713.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 200000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Demonich02",
+        "stack": 692460,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 529082,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 496147,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1010048,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "jmnzio0",
+        "stack": 582676,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1310089,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895457775.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Demot",
+        "stack": 692460,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 102,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Irsvdn",
+        "stack": 529082,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 496147,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1010048,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "jmnz10",
+        "stack": 582676,
+        "is_hero": false,
+        "position": "HJ"
+      }
+    ],
+    "warnings": [
+      "no se encontro texto de pot"
+    ]
+  },
+  {
+    "image": "sample_1784895462870.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 70000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Irsvdn",
+        "stack": 516582,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 473647,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Igualar",
+        "stack": 303568,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "imnz10",
+        "stack": 580176,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1307589,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 689960,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895467907.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 140000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Irsvdn",
+        "stack": 516582,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 473647,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1007548,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Subir",
+        "stack": 510176,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 689960,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895472945.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 140000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Irsvdn",
+        "stack": 516582,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 473647,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1007548,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "jmnz10",
+        "stack": 510176,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 589,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "Demonich02",
+        "stack": 689960,
+        "is_hero": false,
+        "position": "CO"
+      }
+    ],
+    "warnings": []
+  },
+  {
+    "image": "sample_1784895478019.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": 140000,
+    "blinds": {
+      "sb": 12500,
+      "bb": 25000,
+      "ante": 3250
+    },
+    "players": [
+      {
+        "name": "Irsvdn",
+        "stack": 516582,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "gattzz01993",
+        "stack": 473647,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Dimonchik553",
+        "stack": 1007548,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "jmnz10",
+        "stack": 510176,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "hadzhi9",
+        "stack": 1307589,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "Demonicho2",
+        "stack": 689960,
         "is_hero": false,
         "position": "CO"
       }

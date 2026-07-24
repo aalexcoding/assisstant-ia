@@ -23,7 +23,7 @@ from ocr_client import OcrBatch
 from rank_ocr import card_code, normalize_rank, rank_crop_variants
 from suit_classifier import classify_suit
 from table_region import find_table_region
-from text_extract import find_blinds, find_players, find_pot, merge_line_sets, parse_tsv_lines
+from text_extract import find_blinds, find_blinds_corner, find_players, find_pot, merge_line_sets, parse_tsv_lines
 
 # la barra de titulo de la ventana (nombre de mesa, ciegas, torneo) queda
 # fuera del ovalo de la mesa y su fuente es demasiado fina para el OCR a
@@ -32,6 +32,16 @@ from text_extract import find_blinds, find_players, find_pot, merge_line_sets, p
 # alto en vez de pixeles fijos: es la franja superior de la ventana
 # capturada, no una coordenada de la mesa.
 TITLE_BAR_HEIGHT_FRAC = 0.06
+
+# el indicador compacto de ciegas ("17,5K/35K(4,5K)") vive en la esquina
+# superior derecha, junto al reloj de mano; su fuente es mas legible que la
+# barra de titulo pero sigue siendo pequeña para el OCR a tamaño de frame
+# completo. Dos recortes (alto x ancho x escala) calibrados contra las 93
+# capturas de vision/samples_pokerstars/: entre los dos cubren tanto las
+# capturas que incluyen la barra de titulo del sistema (el indicador queda
+# mas abajo) como las que no (el indicador queda mas arriba), sin necesidad
+# de saber de antemano cual es cual.
+CORNER_BLINDS_CROPS = [(0.12, 0.55, 4), (0.15, 0.50, 4)]
 
 
 def _assign_player_positions(bgr, region, players, diag, warnings):
@@ -110,6 +120,10 @@ def analyze(image_path):
     tsv_idx_1 = batch.add_tsv_job(bgr, scale=1)
     tsv_idx_2 = batch.add_tsv_job(bgr, scale=2)
     tsv_idx_title = batch.add_tsv_job(bgr[0:int(bgr.shape[0] * TITLE_BAR_HEIGHT_FRAC), :], scale=4)
+    tsv_idx_corners = [
+        batch.add_tsv_job(bgr[0:int(bgr.shape[0] * fh), int(bgr.shape[1] * fw):], scale=sc)
+        for fh, fw, sc in CORNER_BLINDS_CROPS
+    ]
 
     all_card_boxes = hero_boxes + board_boxes
     rank_job_ranges = []
@@ -134,9 +148,11 @@ def analyze(image_path):
                "bottom": ln["bottom"] // 2, "cx": ln["cx"] / 2, "cy": ln["cy"] / 2} for ln in parse_tsv_lines(tsv2)]
     lines = merge_line_sets(lines1, lines2)
     title_lines = parse_tsv_lines(results[tsv_idx_title])
+    corner_lines = [parse_tsv_lines(results[idx]) for idx in tsv_idx_corners]
 
     state["pot"] = find_pot(lines)
-    state["blinds"] = find_blinds(lines) or find_blinds(title_lines)
+    state["blinds"] = (find_blinds_corner(*corner_lines, lines1, lines2)
+                        or find_blinds(lines) or find_blinds(title_lines))
 
     hero_ref_box = hero_boxes[0] if hero_boxes else None
     players = find_players(lines, diag, hero_ref_box)
@@ -217,6 +233,10 @@ def analyze_color_deck(image_path):
     tsv_idx_1 = batch.add_tsv_job(bgr, scale=1)
     tsv_idx_2 = batch.add_tsv_job(bgr, scale=2)
     tsv_idx_title = batch.add_tsv_job(bgr[0:int(bgr.shape[0] * TITLE_BAR_HEIGHT_FRAC), :], scale=4)
+    tsv_idx_corners = [
+        batch.add_tsv_job(bgr[0:int(bgr.shape[0] * fh), int(bgr.shape[1] * fw):], scale=sc)
+        for fh, fw, sc in CORNER_BLINDS_CROPS
+    ]
 
     all_card_boxes = hero_boxes + board_boxes
     rank_job_ranges = []
@@ -233,9 +253,11 @@ def analyze_color_deck(image_path):
                "bottom": ln["bottom"] // 2, "cx": ln["cx"] / 2, "cy": ln["cy"] / 2} for ln in parse_tsv_lines(tsv2)]
     lines = merge_line_sets(lines1, lines2)
     title_lines = parse_tsv_lines(results[tsv_idx_title])
+    corner_lines = [parse_tsv_lines(results[idx]) for idx in tsv_idx_corners]
 
     state["pot"] = find_pot(lines)
-    state["blinds"] = find_blinds(lines) or find_blinds(title_lines)
+    state["blinds"] = (find_blinds_corner(*corner_lines, lines1, lines2)
+                        or find_blinds(lines) or find_blinds(title_lines))
 
     hero_ref_box = hero_boxes[0] if hero_boxes else None
     players = find_players(lines, diag, hero_ref_box)
