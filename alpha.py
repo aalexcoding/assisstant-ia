@@ -1,7 +1,9 @@
 """
 Bucle de diagnostico en vivo: captura la mesa cada pocos segundos, corre el
-reconocimiento de Fase 3 (mazo de 4 colores, el real de produccion) y
-muestra el GameState por consola para validar en directo mientras juegas.
+reconocimiento de Fase 3 por zonas fijas (table_state.analyze_layout: mapa de
+asientos anclado al ovalo del tapete, boton por ancla-por-asiento, ciegas del
+chat) y muestra el GameState por consola para validar en directo mientras
+juegas.
 
 No es el HUD final (Fase 5, panel bajo la ventana) ni dispara por cambio de
 board (Fase 2, deteccion de cambios) - es un lazo de polling simple para
@@ -46,9 +48,13 @@ def format_state(state, recommendation):
     if state["blinds"]:
         b = state["blinds"]
         lines.append(f"Ciegas: {b.get('sb')}/{b.get('bb')} ante {b.get('ante')}")
+    if state.get("facing"):
+        lines.append(f"Enfrenta: {state['facing']}")
     for p in state["players"]:
         marker = "  <- tu" if p["is_hero"] else ""
-        lines.append(f"  {p['name']}: {p['stack']}{marker}")
+        pos = f" [{p['position']}]" if p.get("position") else ""
+        name = p["name"] if p["name"] is not None else "(?)"
+        lines.append(f"  {name}{pos}: {p['stack']}{marker}")
     if recommendation:
         lines.append(f"Recomendacion: {recommendation['action']}")
     if state["warnings"]:
@@ -71,7 +77,7 @@ def main():
             if frame is not None:
                 crop = frame[y:y + h, x:x + w]
                 cv2.imwrite(TMP_FRAME_PATH, crop)
-                state = ts.analyze_color_deck(TMP_FRAME_PATH)
+                state = ts.analyze_layout(TMP_FRAME_PATH)
                 recommendation = engine.decide(state)
                 text = format_state(state, recommendation)
                 if text != last_printed:

@@ -1,0 +1,1705 @@
+[
+  {
+    "image": "sample_1784906230270.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [],
+    "pot": 354,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": null,
+        "stack": null,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 4882,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 14335,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": "check",
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906233371.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [],
+    "pot": 354,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 4882,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 14335,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906236418.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [],
+    "pot": 354,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 4882,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 14335,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906239447.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [],
+    "pot": 444,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Subir",
+        "stack": 4792,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 14335,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906242503.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [],
+    "pot": 534,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": null,
+        "stack": null,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 4792,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 14245,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906245558.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [
+      "Td",
+      "7h",
+      "Qh"
+    ],
+    "pot": null,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": null,
+        "stack": 4792,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 14245,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": "check",
+    "warnings": [
+      "no se encontro texto de pot",
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906248603.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [
+      "Td",
+      "7h",
+      "Qh"
+    ],
+    "pot": 624,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": null,
+        "stack": 4702,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 14245,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906251652.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [
+      "Td",
+      "7h",
+      "Qh",
+      "Qd"
+    ],
+    "pot": 714,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 4702,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "Igualar",
+        "stack": 14155,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": "check",
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906254703.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [
+      "Td",
+      "7h",
+      "Qh",
+      "Qd"
+    ],
+    "pot": 1071,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Apostar",
+        "stack": 4345,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 14155,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906257741.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [
+      "Td",
+      "7h",
+      "Qh",
+      "Qd"
+    ],
+    "pot": 1428,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": null,
+        "stack": 4345,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "Igualar",
+        "stack": 13798,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906260816.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [
+      "Td",
+      "7h",
+      "Qh",
+      "Qd"
+    ],
+    "pot": 5773,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Apostar",
+        "stack": null,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13798,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "1 carta(s) de board detectada(s) pero sin rango legible",
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906263887.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [
+      "Td",
+      "7h",
+      "Qh",
+      "Qd"
+    ],
+    "pot": 5773,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "All-in",
+        "stack": null,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13798,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "1 carta(s) de board detectada(s) pero sin rango legible",
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906266953.png",
+    "hero_cards": [
+      "Qc",
+      "Ad"
+    ],
+    "board": [
+      "Td",
+      "7h",
+      "Qh",
+      "Qd"
+    ],
+    "pot": 5773,
+    "blinds": null,
+    "players": [
+      {
+        "name": null,
+        "stack": 5377,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "All-in",
+        "stack": null,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13798,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "1 carta(s) de board detectada(s) pero sin rango legible",
+      "no se encontraron las ciegas (chat)"
+    ]
+  },
+  {
+    "image": "sample_1784906270001.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": "is18092001",
+        "stack": null,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5112,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5238,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "moafia111",
+        "stack": 5872,
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": null,
+        "stack": null,
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13798,
+        "is_hero": false,
+        "position": "EP1"
+      }
+    ],
+    "hero_position": "BB",
+    "facing": null,
+    "warnings": [
+      "no se detectaron las cartas del hero",
+      "no se encontro texto de pot"
+    ]
+  },
+  {
+    "image": "sample_1784906273044.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 5097,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": null,
+        "stack": null,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "aananc",
+        "stack": 13783,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": [
+      "no se detectaron las cartas del hero",
+      "no se encontro texto de pot"
+    ]
+  },
+  {
+    "image": "sample_1784906276104.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [],
+    "pot": 240,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 5097,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": null,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": "moafia111",
+        "stack": null,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5708,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": "bet",
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906279173.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [],
+    "pot": 240,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 5097,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": null,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": "moafia111",
+        "stack": null,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5708,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": "bet",
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906282231.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [],
+    "pot": 240,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 5097,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": null,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": "moafia111",
+        "stack": null,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5708,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": "bet",
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906285296.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [],
+    "pot": 340,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Igualar",
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5708,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906288356.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [],
+    "pot": 340,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5708,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906291405.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Igualar",
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906294445.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "7c",
+      "Qs",
+      "Qc"
+    ],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": null,
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "Pasar",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906297499.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "7c",
+      "Qs",
+      "Qc"
+    ],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Pasar",
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906300555.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "7c",
+      "Qs",
+      "Qc"
+    ],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906303608.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "7c",
+      "Qs",
+      "Qc"
+    ],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906306685.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "7c",
+      "Qs",
+      "Qc"
+    ],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906309730.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "7c",
+      "Qs",
+      "Qc"
+    ],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906312784.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "7c",
+      "Qs",
+      "Qc",
+      "3h"
+    ],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": null,
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": "check",
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906315860.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "7c",
+      "Qs",
+      "Qc",
+      "3h"
+    ],
+    "pot": 390,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
+    "players": [
+      {
+        "name": null,
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "eyeeel",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": []
+  },
+  {
+    "image": "sample_1784906318916.png",
+    "hero_cards": [
+      "6d",
+      "3c"
+    ],
+    "board": [
+      "2c",
+      "Qs",
+      "Qc",
+      "3h"
+    ],
+    "pot": 390,
+    "blinds": null,
+    "players": [
+      {
+        "name": "is18092001",
+        "stack": 5362,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": null,
+        "stack": 4997,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": null,
+        "stack": 5223,
+        "is_hero": false,
+        "position": "CO"
+      },
+      {
+        "name": null,
+        "stack": 5857,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "alex_delg",
+        "stack": 5658,
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "Pasar",
+        "stack": 13683,
+        "is_hero": false,
+        "position": "BB"
+      }
+    ],
+    "hero_position": "SB",
+    "facing": null,
+    "warnings": [
+      "no se encontraron las ciegas (chat)"
+    ]
+  }
+]

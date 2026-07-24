@@ -18,12 +18,15 @@ import cv2
 import color_card_detector
 import color_rank_ocr
 import dealer_button
+import seat_map
 from card_detector import classify_boxes, find_card_boxes
 from ocr_client import OcrBatch
 from rank_ocr import card_code, normalize_rank, rank_crop_variants
 from suit_classifier import classify_suit
 from table_region import find_table_region
-from text_extract import find_blinds, find_blinds_corner, find_players, find_pot, merge_line_sets, parse_tsv_lines
+from text_extract import (_clean_name, _is_name_candidate, _is_number_candidate, _to_int, find_blinds,
+                          find_blinds_chat, find_blinds_corner, find_players, find_pot, merge_line_sets,
+                          parse_tsv_lines)
 
 # la barra de titulo de la ventana (nombre de mesa, ciegas, torneo) queda
 # fuera del ovalo de la mesa y su fuente es demasiado fina para el OCR a
@@ -194,6 +197,165 @@ def analyze(image_path):
         state["warnings"].append("no se encontraron las ciegas")
     if not state["players"]:
         state["warnings"].append("no se emparejo ningun jugador (nombre+stack)")
+
+    return state
+
+
+def _seat_plate_name_stack(lines):
+    """De las lineas OCR de la zona de un nameplate, devuelve (name, stack):
+    la primera linea que parece nombre y la primera que parece numero."""
+    name = None
+    stack = None
+    for ln in lines:
+        if name is None and _is_name_candidate(ln["text"]):
+            name = _clean_name(ln["text"])
+        if stack is None and _is_number_candidate(ln["text"].strip()):
+            stack = _to_int(ln["text"].strip())
+    return name, stack
+
+
+def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
+    """Resuelve las cartas de una zona (board o hero) usando la deteccion por
+    color de color_card_detector y el OCR de rango de color_rank_ocr, ya
+    encolado en el batch. card_jobs = [(box, start, end), ...]."""
+    cards = []
+    unresolved = 0
+    for box, start, end in card_jobs:
+        rank = color_rank_ocr.resolve_rank(batch_results[start:end])
+        code = card_code(rank, box["suit"])
+        if code:
+            cards.append(code)
+        else:
+            unresolved += 1
+    return cards, unresolved
+
+
+def analyze_layout(image_path):
+    """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
+    produccion para el cliente real de PokerStars capturado limpio. Ancla una
+    referencia independiente del color (nucleo del tapete por contraste) y lee
+    cada elemento en su zona fija: ocupacion + nombre/stack por asiento, cartas
+    del hero y board (reutilizando la deteccion de palo por color y el OCR de
+    rango del color-deck, ya validados), bote, ciegas (del chat) y boton del
+    dealer por ancla-por-asiento -> posiciones por aritmetica horaria. Ademas
+    expone "facing" ("bet"/"check"/None) segun los botones de accion del hero.
+
+    Produce el MISMO esquema de GameState que analyze_color_deck() (mas el
+    campo "facing") para que decision/engine.py y alpha.py funcionen sin
+    cambios."""
+    bgr = cv2.imread(image_path)
+    state = {
+        "image": os.path.basename(image_path),
+        "hero_cards": [],
+        "board": [],
+        "pot": None,
+        "blinds": None,
+        "players": [],
+        "hero_position": None,
+        "facing": None,
+        "warnings": [],
+    }
+    if bgr is None:
+        state["warnings"].append("no se pudo leer la imagen")
+        return state
+
+    ref = seat_map.find_reference(bgr)
+    if ref[4]:
+        state["warnings"].append("no se detecto el ovalo del tapete por contraste; "
+                                 "se usa la posicion tipica dentro del recuadro (fallback)")
+
+    batch = OcrBatch()
+
+    # texto por zona (nameplates, bote, chat, botones de accion)
+    seat_tsv = {}
+    for name in seat_map.SEATS:
+        x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.SEATS[name]["plate"], bgr.shape)
+        seat_tsv[name] = batch.add_tsv_job(bgr[y0:y1, x0:x1], scale=3)
+    px = seat_map.zone_to_px(ref, seat_map.POT_ZONE, bgr.shape)
+    pot_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=3)
+    px = seat_map.zone_to_px(ref, seat_map.CHAT_ZONE, bgr.shape)
+    chat_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2)
+    px = seat_map.zone_to_px(ref, seat_map.ACTION_ZONE, bgr.shape)
+    action_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2)
+
+    # cartas del hero y del board (deteccion por color dentro de su zona fija)
+    hero_px = seat_map.zone_to_px(ref, seat_map.HERO_CARDS_ZONE, bgr.shape)
+    board_px = seat_map.zone_to_px(ref, seat_map.BOARD_ZONE, bgr.shape)
+    hero_boxes = sorted(color_card_detector.find_card_boxes(bgr, hero_px), key=lambda b: b["x"])
+    board_boxes = sorted(color_card_detector.find_card_boxes(bgr, board_px), key=lambda b: b["x"])
+    hero_jobs = []
+    for b in hero_boxes:
+        crop = bgr[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]]
+        s, e = color_rank_ocr.add_rank_jobs(batch, crop)
+        hero_jobs.append((b, s, e))
+    board_jobs = []
+    for b in board_boxes:
+        crop = bgr[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]]
+        s, e = color_rank_ocr.add_rank_jobs(batch, crop)
+        board_jobs.append((b, s, e))
+
+    results = batch.run()
+
+    # ocupacion (capsula del nameplate, estable) + nombre/stack por OCR
+    occupied = {}
+    for name in seat_map.SEATS:
+        n, stk = _seat_plate_name_stack(parse_tsv_lines(results[seat_tsv[name]]))
+        if seat_map.seat_occupied(bgr, ref, name) or n is not None or stk is not None:
+            occupied[name] = {"name": n, "stack": stk}
+
+    # boton -> posiciones (orden de reparto horario entre los ocupados)
+    button_seat = seat_map.detect_button_seat(bgr, ref)
+    positions = {}
+    if button_seat is None:
+        state["warnings"].append("no se detecto el boton del dealer; sin posiciones")
+    elif button_seat not in occupied:
+        state["warnings"].append(f"boton detectado en asiento {button_seat} pero ahi no se leyo "
+                                 "ningun jugador; sin posiciones")
+    else:
+        order = seat_map.dealing_order(list(occupied), ref)
+        n = len(order)
+        if n in seat_map.SEATING_BY_N:
+            bi = order.index(button_seat)
+            rotated = order[bi:] + order[:bi]
+            positions = dict(zip(rotated, seat_map.SEATING_BY_N[n]))
+        else:
+            state["warnings"].append(f"{n} asientos ocupados: fuera del rango con posiciones definidas")
+
+    for name in seat_map.dealing_order(list(occupied), ref) if occupied else []:
+        info = occupied[name]
+        player = {
+            "name": info["name"],
+            "stack": info["stack"],
+            "is_hero": name == seat_map.HERO_SEAT,
+        }
+        if name in positions:
+            player["position"] = positions[name]
+        state["players"].append(player)
+    if seat_map.HERO_SEAT in positions:
+        state["hero_position"] = positions[seat_map.HERO_SEAT]
+
+    # cartas
+    state["hero_cards"], hero_unresolved = _resolve_zone_cards(bgr, hero_px, results, hero_jobs)
+    state["board"], board_unresolved = _resolve_zone_cards(bgr, board_px, results, board_jobs)
+    if hero_unresolved:
+        state["warnings"].append(f"{hero_unresolved} carta(s) del hero detectada(s) pero sin rango legible")
+    if board_unresolved:
+        state["warnings"].append(f"{board_unresolved} carta(s) de board detectada(s) pero sin rango legible")
+
+    # bote, ciegas (del chat), facing
+    state["pot"] = find_pot(parse_tsv_lines(results[pot_idx]))
+    chat_lines = parse_tsv_lines(results[chat_idx])
+    state["blinds"] = find_blinds_chat(chat_lines) or find_blinds(chat_lines)
+    state["facing"] = seat_map.parse_facing(" ".join(ln["text"] for ln in parse_tsv_lines(results[action_idx])))
+
+    if not state["hero_cards"]:
+        state["warnings"].append("no se detectaron las cartas del hero")
+    if not state["pot"]:
+        state["warnings"].append("no se encontro texto de pot")
+    if not state["blinds"]:
+        state["warnings"].append("no se encontraron las ciegas (chat)")
+    if not occupied:
+        state["warnings"].append("ningun asiento ocupado detectado")
 
     return state
 

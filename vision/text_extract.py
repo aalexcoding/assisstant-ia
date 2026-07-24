@@ -46,6 +46,13 @@ BLINDS_ANTE_NO_VALUE_RE = re.compile(rf"^\$?({_NUM})\s*/\s*\$?({_NUM})\s*ante\b"
 _CORNER_NUM = r"\d+(?:[.,]\s?\d+)?[KM]?"
 BLINDS_CORNER_RE = re.compile(rf"({_CORNER_NUM})\s*/\s*({_CORNER_NUM})\s*\(\s*({_CORNER_NUM})\s*\)")
 
+# mensaje del repartidor en el panel de chat (cliente en castellano):
+# "Los limites suben: Ciegas 50/100 Ante 15". Es la fuente mas fiable y
+# universal de las ciegas en este torneo (no estan en la esquina), asi que el
+# mapa de asientos las lee del chat. La ante puede faltar.
+BLINDS_CIEGAS_RE = re.compile(
+    rf"ciegas?\s+\$?({_NUM})\s*/\s*\$?({_NUM})(?:\s*ante\s+\$?({_NUM}))?", re.IGNORECASE)
+
 
 def _to_int_corner(s):
     s = s.strip().replace(" ", "")
@@ -218,6 +225,24 @@ def find_blinds_corner(*line_sets):
             if result:
                 return result
     return None
+
+
+def find_blinds_chat(lines):
+    """Ciegas leidas de los mensajes "Ciegas sb/bb Ante N" del chat. En un
+    torneo las ciegas solo suben, asi que si aparecen varios avisos (historial
+    en el panel) se queda con el de bb mayor (el nivel actual), en vez de
+    depender del orden de las lineas OCR."""
+    best = None
+    for ln in lines:
+        m = BLINDS_CIEGAS_RE.search(ln["text"])
+        if not m:
+            continue
+        sb, bb = _to_int(m.group(1)), _to_int(m.group(2))
+        ante = _to_int(m.group(3)) if m.group(3) else None
+        result = _blinds_dict(sb, bb, ante)
+        if result and (best is None or result["bb"] > best["bb"]):
+            best = result
+    return best
 
 
 def _clean_name(text):
