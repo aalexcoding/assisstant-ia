@@ -17,7 +17,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -28,14 +28,14 @@
         "position": "BTN"
       },
       {
-        "name": null,
-        "stack": null,
+        "name": "Igualar",
+        "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": "alex_delg",
-        "stack": 4882,
+        "name": null,
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -70,7 +70,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -81,14 +81,14 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": "alex_delg",
-        "stack": 4882,
+        "name": null,
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -123,7 +123,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -134,14 +134,14 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "alex_delg",
-        "stack": 4882,
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -176,7 +176,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -187,14 +187,14 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Subir",
-        "stack": 4792,
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -229,7 +229,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -241,13 +241,13 @@
       },
       {
         "name": null,
-        "stack": null,
+        "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "alex_delg",
-        "stack": 4792,
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -286,7 +286,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -297,14 +297,14 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
-        "stack": 4792,
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -344,7 +344,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -355,14 +355,14 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": 4702,
+        "name": "Apostar",
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -402,7 +402,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -413,14 +413,14 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": "alex_delg",
-        "stack": 4702,
+        "name": null,
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -460,7 +460,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -471,14 +471,14 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": "Apostar",
-        "stack": 4345,
+        "name": null,
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -518,7 +518,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -529,14 +529,14 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": null,
-        "stack": 4345,
+        "name": "alex_delg",
+        "stack": null,
         "is_hero": true,
         "position": "BB"
       },
@@ -576,7 +576,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -587,13 +587,13 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": "Apostar",
+        "name": null,
         "stack": null,
         "is_hero": true,
         "position": "BB"
@@ -635,7 +635,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -646,13 +646,13 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": "All-in",
+        "name": "alex_delg",
         "stack": null,
         "is_hero": true,
         "position": "BB"
@@ -694,7 +694,7 @@
       },
       {
         "name": null,
-        "stack": 5112,
+        "stack": null,
         "is_hero": false,
         "position": "CO"
       },
@@ -705,13 +705,13 @@
         "position": "BTN"
       },
       {
-        "name": "moafia111",
+        "name": null,
         "stack": 5872,
         "is_hero": false,
         "position": "SB"
       },
       {
-        "name": "All-in",
+        "name": "alex_delg",
         "stack": null,
         "is_hero": true,
         "position": "BB"
@@ -827,7 +827,7 @@
         "position": "SB"
       },
       {
-        "name": "aananc",
+        "name": null,
         "stack": 13783,
         "is_hero": false,
         "position": "BB"
@@ -855,32 +855,26 @@
     },
     "players": [
       {
-        "name": null,
+        "name": "is18092001",
         "stack": 5362,
-        "is_hero": false,
-        "position": "EP1"
-      },
-      {
-        "name": null,
-        "stack": 5097,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
-        "stack": null,
+        "stack": 5097,
         "is_hero": false,
         "position": "CO"
       },
       {
-        "name": "moafia111",
-        "stack": null,
+        "name": null,
+        "stack": 5857,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delg",
-        "stack": 5708,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -910,32 +904,26 @@
     },
     "players": [
       {
-        "name": null,
+        "name": "is18092001",
         "stack": 5362,
-        "is_hero": false,
-        "position": "EP1"
-      },
-      {
-        "name": null,
-        "stack": 5097,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
-        "stack": null,
+        "stack": 5097,
         "is_hero": false,
         "position": "CO"
       },
       {
-        "name": "moafia111",
-        "stack": null,
+        "name": null,
+        "stack": 5857,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delg",
-        "stack": 5708,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -968,29 +956,23 @@
         "name": null,
         "stack": 5362,
         "is_hero": false,
-        "position": "EP1"
+        "position": "HJ"
       },
       {
         "name": null,
         "stack": 5097,
         "is_hero": false,
-        "position": "HJ"
-      },
-      {
-        "name": null,
-        "stack": null,
-        "is_hero": false,
         "position": "CO"
       },
       {
-        "name": "moafia111",
-        "stack": null,
+        "name": null,
+        "stack": 5857,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delg",
-        "stack": 5708,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1044,8 +1026,8 @@
         "position": "BTN"
       },
       {
-        "name": "alex_delg",
-        "stack": 5708,
+        "name": null,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1099,8 +1081,8 @@
         "position": "BTN"
       },
       {
-        "name": "alex_delg",
-        "stack": 5708,
+        "name": null,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1155,7 +1137,7 @@
       },
       {
         "name": "Igualar",
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1214,7 +1196,7 @@
       },
       {
         "name": null,
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1273,7 +1255,7 @@
       },
       {
         "name": "Pasar",
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1332,7 +1314,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1391,7 +1373,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1450,7 +1432,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1509,13 +1491,13 @@
       },
       {
         "name": "alex_delg",
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
       {
-        "name": "eyeeel",
-        "stack": 13683,
+        "name": "franavinn",
+        "stack": null,
         "is_hero": false,
         "position": "BB"
       }
@@ -1569,7 +1551,7 @@
       },
       {
         "name": null,
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1629,7 +1611,7 @@
       },
       {
         "name": "alex_delg",
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },
@@ -1660,7 +1642,7 @@
     "blinds": null,
     "players": [
       {
-        "name": "is18092001",
+        "name": null,
         "stack": 5362,
         "is_hero": false,
         "position": "EP1"
@@ -1678,14 +1660,14 @@
         "position": "CO"
       },
       {
-        "name": null,
+        "name": "moafa111",
         "stack": 5857,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delg",
-        "stack": 5658,
+        "stack": null,
         "is_hero": true,
         "position": "SB"
       },

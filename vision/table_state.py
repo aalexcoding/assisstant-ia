@@ -24,9 +24,9 @@ from ocr_client import OcrBatch
 from rank_ocr import card_code, normalize_rank, rank_crop_variants
 from suit_classifier import classify_suit
 from table_region import find_table_region
-from text_extract import (_clean_name, _is_name_candidate, _is_number_candidate, _to_int, find_blinds,
-                          find_blinds_chat, find_blinds_corner, find_players, find_pot, merge_line_sets,
-                          parse_tsv_lines)
+from text_extract import (_clean_name, _is_name_candidate, _is_number_candidate, _is_username_token, _to_int,
+                          find_blinds, find_blinds_chat, find_blinds_corner, find_players, find_pot,
+                          merge_line_sets, parse_tsv_lines)
 
 # la barra de titulo de la ventana (nombre de mesa, ciegas, torneo) queda
 # fuera del ovalo de la mesa y su fuente es demasiado fina para el OCR a
@@ -214,6 +214,34 @@ def _seat_plate_name_stack(lines):
     return name, stack
 
 
+# verbos/estados que el cliente pone en el nameplate en lugar del nombre cuando
+# el jugador acaba de actuar o esta sentado sin nombre visible; su presencia
+# implica que el asiento esta OCUPADO aunque no se lea nombre ni stack.
+SEAT_STATUS_WORDS = {
+    "igualar", "iguala", "pasar", "pasa", "apostar", "apuesta", "subir", "sube",
+    "resubir", "poner", "ausente", "ante", "allin", "paga", "espera", "sentado",
+}
+
+
+def _plate_occupied(lines):
+    """True si la zona del nameplate contiene texto propio de un asiento
+    ocupado: un nombre (por palabra suelta, para pillar nombres de dos
+    palabras como "david sagunt"), un stack numerico, o un verbo/estado de
+    accion ("Igualar"/"Pasar"/"Ausente"/"Poner CP"/"No ir"...). Un asiento
+    vacio -sillas granate sobre fondo oscuro- no da ninguno de estos."""
+    for ln in lines:
+        low = ln["text"].lower()
+        if "no ir" in low or "noir" in low:
+            return True
+        for word in ln["text"].split():
+            wl = word.lower().strip(".,;:'\"|")
+            if wl in SEAT_STATUS_WORDS:
+                return True
+            if _is_username_token(word) or _is_number_candidate(word.strip()):
+                return True
+    return False
+
+
 def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
     """Resuelve las cartas de una zona (board o hero) usando la deteccion por
     color de color_card_detector y el OCR de rango de color_rank_ocr, ya
@@ -296,11 +324,23 @@ def analyze_layout(image_path):
 
     results = batch.run()
 
-    # ocupacion (capsula del nameplate, estable) + nombre/stack por OCR
+    # ocupacion por CONTENIDO del nameplate (texto), no por oscuridad: un
+    # asiento vacio muestra las sillas granate sobre fondo casi-negro, tan
+    # oscuras como la capsula de un asiento ocupado, asi que la fraccion de
+    # pixeles oscuros NO distingue vacio de ocupado (medido sobre
+    # samples_layout2/: ~0.5-0.8 en ambos casos, sin separacion). La señal
+    # fiable es el texto: un asiento ocupado siempre lo tiene, uno vacio no.
+    # El hero es NUESTRO propio asiento (el jugador que observa): se da por
+    # ocupado siempre. En caso de bust el cliente lo reemplaza por un dialogo
+    # de reentrada; esos pocos frames quedan con un hero fantasma (limitacion
+    # conocida) a cambio de no perder el hero en los frames entre manos, en que
+    # no tiene cartas y el OCR de su nameplate suele fallar.
     occupied = {}
     for name in seat_map.SEATS:
-        n, stk = _seat_plate_name_stack(parse_tsv_lines(results[seat_tsv[name]]))
-        if seat_map.seat_occupied(bgr, ref, name) or n is not None or stk is not None:
+        lines = parse_tsv_lines(results[seat_tsv[name]])
+        n, stk = _seat_plate_name_stack(lines)
+        occ = True if name == seat_map.HERO_SEAT else _plate_occupied(lines)
+        if occ:
             occupied[name] = {"name": n, "stack": stk}
 
     # boton -> posiciones (orden de reparto horario entre los ocupados)
@@ -308,10 +348,11 @@ def analyze_layout(image_path):
     positions = {}
     if button_seat is None:
         state["warnings"].append("no se detecto el boton del dealer; sin posiciones")
-    elif button_seat not in occupied:
-        state["warnings"].append(f"boton detectado en asiento {button_seat} pero ahi no se leyo "
-                                 "ningun jugador; sin posiciones")
     else:
+        if button_seat not in occupied:
+            # el dealer es siempre un jugador sentado: si el boton se detecto en
+            # ese asiento pero el OCR no leyo su nameplate, esta ocupado igual.
+            occupied[button_seat] = {"name": None, "stack": None}
         order = seat_map.dealing_order(list(occupied), ref)
         n = len(order)
         if n in seat_map.SEATING_BY_N:

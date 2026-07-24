@@ -265,6 +265,27 @@ def _is_name_candidate(text):
     return True
 
 
+def _is_username_token(text):
+    """Como _is_name_candidate pero SIN exigir minusculas: acepta nicks en
+    MAYUSCULAS (p.ej. "SHARKOS54"). Se usa solo para decidir la OCUPACION de un
+    asiento, no para emparejar jugador+stack en find_players -ahi la exigencia
+    de minusculas descarta etiquetas de UI en mayusculas, pero para "hay o no
+    hay alguien sentado" un nick todo en mayusculas es evidencia valida-."""
+    cleaned = _clean_name(text)
+    if len(cleaned) < 5:
+        return False
+    if not RANK_WORDS_RE.match(cleaned):
+        return False
+    low = cleaned.lower()
+    if low in NAME_BLACKLIST:
+        return False
+    if any(len(bw) >= 4 and (bw in low or low in bw) for bw in NAME_BLACKLIST):
+        return False
+    if not any(c.isalpha() for c in cleaned):
+        return False
+    return True
+
+
 def _is_number_candidate(text):
     cleaned = text.strip()
     return bool(NUMBER_RE.match(cleaned))

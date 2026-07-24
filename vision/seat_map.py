@@ -46,14 +46,24 @@ CORE_OPEN_KERNEL = 41
 # --- mapa de asientos (fracciones del nucleo del tapete) ---
 # Cada asiento: zona OCR del nameplate (nombre+stack) y ancla de boton (punto
 # donde aparece el disco del dealer cuando ese asiento reparte). El hero es
-# siempre el de abajo-centro. Layout de 6 plazas medido sobre samples_layout/.
+# siempre el de abajo-centro. Mesa de 6 plazas (torneo "6-Max").
+#
+# Plate y button RE-MEDIDOS sobre samples_layout2/ (111 frames de la misma
+# sesion en vivo, calibracion mas ajustada que samples_layout/): las anclas
+# de boton se verificaron una a una contra frames reales donde el boton estaba
+# en ese asiento (disco blanco con pica roja, aislado sobre el tapete), no
+# extrapoladas ni por espejo como en el mapa anterior. Las de MR/UR eran las
+# unicas validadas en el primer dataset (0.838/0.752 y 0.904/0.283); ahora el
+# boton pasa por los seis asientos y las seis quedan medidas. HERO era una pura
+# estimacion (0.66,0.90) y estaba mal: el disco del dealer del hero aparece
+# arriba-IZQUIERDA de sus cartas, en ~(0.368,0.872), no a su derecha.
 SEATS = {
-    "TOPC": {"plate": (0.30, -0.16, 0.62, 0.03), "button": (0.567, 0.144)},
-    "UL":   {"plate": (-0.14, -0.03, 0.20, 0.22), "button": (0.096, 0.283)},
-    "UR":   {"plate": (0.80, -0.03, 1.16, 0.22), "button": (0.904, 0.283)},
-    "ML":   {"plate": (-0.14, 0.57, 0.18, 0.85), "button": (0.162, 0.752)},
-    "MR":   {"plate": (0.82, 0.58, 1.17, 0.86), "button": (0.838, 0.752)},
-    "HERO": {"plate": (0.37, 0.98, 0.75, 1.19), "button": (0.66, 0.90)},
+    "TOPC": {"plate": (0.36, -0.16, 0.69, 0.06), "button": (0.563, 0.142)},
+    "UL":   {"plate": (-0.13, -0.02, 0.23, 0.22), "button": (0.104, 0.320)},
+    "UR":   {"plate": (0.79, -0.02, 1.14, 0.22), "button": (0.901, 0.308)},
+    "ML":   {"plate": (-0.13, 0.60, 0.21, 0.85), "button": (0.090, 0.570)},
+    "MR":   {"plate": (0.81, 0.60, 1.14, 0.85), "button": (0.833, 0.803)},
+    "HERO": {"plate": (0.37, 0.89, 0.74, 1.13), "button": (0.368, 0.872)},
 }
 HERO_SEAT = "HERO"
 
@@ -70,8 +80,8 @@ CHAT_ZONE = (-0.155, 1.29, 0.47, 1.62)
 ACTION_ZONE = (0.73, 1.40, 1.18, 1.62)
 
 # ancla de boton: media-zona (fraccion del nucleo) alrededor del punto ancla
-BUTTON_HALF_W = 0.075
-BUTTON_HALF_H = 0.14
+BUTTON_HALF_W = 0.070
+BUTTON_HALF_H = 0.120
 
 # posiciones por numero de asientos ocupados, empezando en BTN y siguiendo el
 # orden de reparto (horario). Misma convencion que dealer_button.SEATING_BY_N /
@@ -144,13 +154,28 @@ def dealing_order(seat_names, ref):
     return sorted(seat_names, key=lambda s: math.atan2(centers[s][1] - cy, centers[s][0] - cx))
 
 
+# El disco del dealer es BLANCO-dominante con una pequeña pica roja al centro.
+# Medido sobre samples_layout2/: fraccion de pixeles blancos ~0.42-0.44 y de
+# rojos ~0.27-0.29 (asi que blanco > rojo, con margen ~0.15), area ~600-640.
+# Las fichas de apuesta ("5"/"25"/"100") y las marcas de recompensa ("⊕0,31€",
+# el crosshair de bounty presente en cada asiento) tambien son blanco+rojo pero
+# ROJO-dominantes (blanco ~0.25-0.28 < rojo ~0.38-0.42), y los blancos puros de
+# la UI no tienen rojo; exigir blanco>rojo y rojo>=0.12 separa el boton de todos
+# ellos sin depender del color del tapete.
+BUTTON_AREA_MIN = 380
+BUTTON_AREA_MAX = 820
+BUTTON_RED_MIN = 0.12
+BUTTON_WHITE_MARGIN = 0.04  # blanco debe superar al rojo por este margen
+
+
 def detect_button_seat(bgr, ref):
     """Devuelve el nombre del asiento que tiene el boton del dealer, o None.
     Enfoque por ancla-por-asiento: dentro de la zona-ancla de cada asiento
-    busca el disco del boton (blanco+pica roja) como un blob compacto
-    (blanco union rojo) circular, aislado sobre el tapete (no toca los bordes
-    de la zona -eso descarta dorsos de carta, avatares tipo bandera y fichas,
-    que estan pegados a estructuras mayores- y contiene rojo en el centro)."""
+    busca el disco del boton (blanco+pica roja) como un blob compacto circular,
+    aislado sobre el tapete (no toca los bordes de la zona -eso descarta dorsos
+    de carta, avatares y fichas pegados a estructuras mayores-), blanco-dominante
+    y con rojo al centro (descarta fichas de apuesta y marcas de recompensa, que
+    son rojo-dominantes)."""
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     h, s, v = hsv[:, :, 0].astype(np.int32), hsv[:, :, 1].astype(np.int32), hsv[:, :, 2].astype(np.int32)
     white = (s < 80) & (v > 175)
@@ -160,7 +185,7 @@ def detect_button_seat(bgr, ref):
     obj = cv2.morphologyEx(obj, cv2.MORPH_CLOSE, k, iterations=1)
 
     rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
-    best, best_area = None, -1
+    best, best_margin = None, -1
     for name, cfg in SEATS.items():
         fx, fy = cfg["button"]
         cx, cy = rx + fx * rw, ry + fy * rh
@@ -169,6 +194,7 @@ def detect_button_seat(bgr, ref):
         x1 = min(bgr.shape[1], int(cx + BUTTON_HALF_W * rw))
         y1 = min(bgr.shape[0], int(cy + BUTTON_HALF_H * rh))
         sub = obj[y0:y1, x0:x1]
+        wsub = white[y0:y1, x0:x1]
         rsub = red[y0:y1, x0:x1]
         if sub.size == 0:
             continue
@@ -176,20 +202,23 @@ def detect_button_seat(bgr, ref):
         contours, _ = cv2.findContours(sub, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for c in contours:
             area = cv2.contourArea(c)
-            if area < 250 or area > 1500:
+            if area < BUTTON_AREA_MIN or area > BUTTON_AREA_MAX:
                 continue
             x, y, w, h_ = cv2.boundingRect(c)
             ar = w / h_ if h_ else 0
-            if not (0.6 <= ar <= 1.7):
+            if not (0.7 <= ar <= 1.4):
                 continue
-            if area / (w * h_) < 0.62:
+            if area / (w * h_) < 0.65:
                 continue
             if x <= 1 or y <= 1 or x + w >= ww - 1 or y + h_ >= hh - 1:
                 continue
-            if rsub[y:y + h_, x:x + w].mean() < 0.10:
+            wf = wsub[y:y + h_, x:x + w].mean()
+            rf = rsub[y:y + h_, x:x + w].mean()
+            if rf < BUTTON_RED_MIN or wf < rf + BUTTON_WHITE_MARGIN:
                 continue
-            if area > best_area:
-                best_area = area
+            margin = wf - rf
+            if margin > best_margin:
+                best_margin = margin
                 best = name
             break
     return best
@@ -213,32 +242,14 @@ def parse_facing(action_text):
 
 
 # --- ocupacion (nameplate presente) ---
-# La ocupacion se decide por la presencia de la CAPSULA del nameplate (la
-# placa oscura de nombre+stack), NO por que el OCR lea el texto: cuando un
-# jugador acaba de actuar, el cliente sustituye su nombre por el verbo de la
-# accion ("Iguala"/"Apuesta"/"No ir") y a veces tambien tapa el stack, asi que
-# depender del OCR hace que el asiento "desaparezca" en frames sueltos y
-# descuadre las posiciones de toda la mesa. La capsula, en cambio, esta
-# siempre mientras el jugador este sentado. Se mide como fraccion de pixeles
-# oscuros/poco saturados en la zona del nameplate: en samples_layout/ los 6
-# asientos ocupados dan 0.43-0.83 de forma estable en las 30 capturas.
-# NOTA: el dataset no tiene asientos vacios, asi que el umbral que separa
-# ocupado de vacio no esta validado; se elige por debajo del rango ocupado
-# (0.35) asumiendo que un asiento vacio -mayormente tapete brillante- daria una
-# fraccion oscura menor. Habria que confirmarlo con capturas de mesas con
-# huecos.
-OCCUPANCY_DARK_FRAC = 0.35
-
-
-def seat_occupied(bgr, ref, seat_name):
-    x0, y0, x1, y1 = zone_to_px(ref, SEATS[seat_name]["plate"], bgr.shape)
-    crop = bgr[y0:y1, x0:x1]
-    if crop.size == 0:
-        return False
-    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
-    s, v = hsv[:, :, 1], hsv[:, :, 2]
-    dark = (v < 105) & (s < 95)
-    return bool(dark.mean() > OCCUPANCY_DARK_FRAC)
+# La ocupacion NO se decide aqui por pixeles: se probo la fraccion de pixeles
+# oscuros de la capsula del nameplate y NO separa vacio de ocupado sobre
+# samples_layout2/ (un asiento vacio muestra las sillas granate sobre fondo
+# casi-negro, tan oscuras como la capsula; ambos dan ~0.5-0.8). Tampoco separa
+# ninguna metrica de brillo/gris/color simple (medido). La señal fiable es el
+# TEXTO del nameplate (nombre/stack/verbo de accion), que solo tienen los
+# asientos ocupados; esa decision vive en table_state._plate_occupied(), donde
+# ya estan las lineas OCR por asiento.
 
 
 # Nota: se exploro exponer un campo opcional in_hand por asiento a partir del
