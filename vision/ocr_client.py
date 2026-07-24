@@ -39,6 +39,10 @@ class OcrBatch:
         return len(self._jobs)
 
     def add_tsv_job(self, bgr_full_frame, scale=1):
+        if bgr_full_frame is None or bgr_full_frame.size == 0:
+            idx = len(self._jobs)
+            self._jobs.append(None)
+            return idx
         enhanced = _clahe_enhance(bgr_full_frame)
         if scale != 1:
             enhanced = cv2.resize(enhanced, (enhanced.shape[1] * scale, enhanced.shape[0] * scale),
