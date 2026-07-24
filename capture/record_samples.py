@@ -48,13 +48,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--interval", type=float, default=3.0, help="segundos entre capturas")
     parser.add_argument("--duration", type=float, default=None, help="segundos totales (por defecto, indefinido hasta Ctrl+C)")
+    parser.add_argument("--out-dir", default=OUT_DIR, help="carpeta de salida (por defecto vision/samples)")
     args = parser.parse_args()
 
     x, y, w, h = load_region()
-    os.makedirs(OUT_DIR, exist_ok=True)
+    os.makedirs(args.out_dir, exist_ok=True)
 
     portal, session_handle, fd, stream, _props = pc.open_frame_stream()
-    print(f"Grabando cada {args.interval}s en {OUT_DIR} (Ctrl+C para parar)...")
+    print(f"Grabando cada {args.interval}s en {args.out_dir} (Ctrl+C para parar)...")
     n = 0
     start = time.monotonic()
     try:
@@ -63,7 +64,7 @@ def main():
             if frame is not None:
                 crop = frame[y:y + h, x:x + w]
                 if looks_like_table(crop):
-                    path = os.path.join(OUT_DIR, f"sample_{int(time.time() * 1000)}.png")
+                    path = os.path.join(args.out_dir, f"sample_{int(time.time() * 1000)}.png")
                     cv2.imwrite(path, crop)
                     n += 1
                     print(f"[{n}] {os.path.basename(path)}")
@@ -73,7 +74,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        print(f"\nParado. {n} capturas guardadas en {OUT_DIR}")
+        print(f"\nParado. {n} capturas guardadas en {args.out_dir}")
         stream.close()
         os.close(fd)
         portal.close_session(session_handle)
