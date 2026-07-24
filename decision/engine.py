@@ -55,13 +55,27 @@ minutos, asi que se puede fijar a mano. Si existe blinds.local.json en la
 raiz del repo (lo escribe el comando ./set-blinds mientras la app corre),
 su valor MANDA sobre lo que detecte la vision. El stack del hero sigue
 siendo automatico (cambia cada mano; meterlo a mano seria insufrible).
+
+Cache del stack del hero: cuando es el turno del hero, su nameplate deja
+de mostrar el numero de fichas y muestra la accion ("Igualar X", "All-in",
+"Ganado"...) o lo tapan los botones -es decir, el stack desaparece de
+pantalla justo en el momento en que se quiere recomendar. Se cachea el
+ultimo stack leido (visible unos frames antes, cuando aun no era el turno)
+y se reutiliza si el frame actual no lo trae, mientras sea reciente
+(_HERO_STACK_TTL_S). Es una aproximacion (el stack efectivo baja al meter
+fichas), pero para elegir el rango preflop por profundidad es suficiente y
+es mucho mejor que no recomendar. Se anota en el reasoning cuando se usa.
 """
 import json
 import os
+import time
 
 from lookup import recommend
 
 _MANUAL_BLINDS_PATH = os.path.join(os.path.dirname(__file__), "..", "blinds.local.json")
+
+_HERO_STACK_TTL_S = 90.0
+_last_hero_stack = {"chips": None, "t": 0.0}
 
 
 def _manual_blinds():
@@ -110,12 +124,24 @@ def decide(state):
                         "no se puede calcular el stack en bb")
         return None
 
-    if hero is None or hero.get("stack") is None:
-        warnings.append("no se encontro el stack del hero; no se puede calcular el stack en bb")
+    stack = hero.get("stack") if hero else None
+    stack_cacheado = False
+    if stack is not None:
+        _last_hero_stack["chips"] = stack
+        _last_hero_stack["t"] = time.monotonic()
+    elif (_last_hero_stack["chips"] is not None
+          and time.monotonic() - _last_hero_stack["t"] <= _HERO_STACK_TTL_S):
+        stack = _last_hero_stack["chips"]
+        stack_cacheado = True
+
+    if stack is None:
+        warnings.append("no se encontro el stack del hero (ni reciente en cache); "
+                        "no se puede calcular el stack en bb")
         return None
 
-    stack_bb = hero["stack"] / blinds["bb"]
+    stack_bb = stack / blinds["bb"]
     fuente = "manual" if manual else "chat"
+    nota_cache = " stack cacheado de un frame anterior;" if stack_cacheado else ""
 
     result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
     if result is None:
@@ -125,10 +151,11 @@ def decide(state):
     return {
         "action": result["action"],
         "reasoning": f"Rango preflop de {hero_position} a {stack_bb:.1f}bb efectivos "
-                     f"(ciegas {fuente}; asumiendo que el hero abre el bote, el motor no "
-                     f"distingue todavia open_raise de respuesta a una subida ajena)",
+                     f"(ciegas {fuente};{nota_cache} asumiendo que el hero abre el bote, el motor "
+                     f"no distingue todavia open_raise de respuesta a una subida ajena)",
         "hero_cards": hero_cards,
         "hero_position": hero_position,
         "stack_bb": stack_bb,
+        "stack_cacheado": stack_cacheado,
         "blinds": blinds,
     }
