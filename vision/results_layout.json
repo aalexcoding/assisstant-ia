@@ -49,7 +49,7 @@
     "hero_position": "BB",
     "facing": "check",
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -102,7 +102,7 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -155,7 +155,7 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -208,7 +208,7 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -261,7 +261,7 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -319,7 +319,7 @@
     "facing": "check",
     "warnings": [
       "no se encontro texto de pot",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -376,7 +376,7 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -434,7 +434,7 @@
     "hero_position": "BB",
     "facing": "check",
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -492,7 +492,7 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -550,7 +550,7 @@
     "hero_position": "BB",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -609,7 +609,7 @@
     "facing": null,
     "warnings": [
       "1 carta(s) de board detectada(s) pero sin rango legible",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -668,7 +668,7 @@
     "facing": null,
     "warnings": [
       "1 carta(s) de board detectada(s) pero sin rango legible",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -727,7 +727,7 @@
     "facing": null,
     "warnings": [
       "1 carta(s) de board detectada(s) pero sin rango legible",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1681,7 +1681,7 @@
     "hero_position": "SB",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   }
 ]

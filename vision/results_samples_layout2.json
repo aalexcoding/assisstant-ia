@@ -47,7 +47,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -98,7 +98,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -149,7 +149,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -200,7 +200,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -247,7 +247,7 @@
     "hero_position": "BTN",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -294,7 +294,7 @@
     "hero_position": "BTN",
     "facing": "bet",
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -341,7 +341,7 @@
     "hero_position": "BTN",
     "facing": "bet",
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -387,7 +387,7 @@
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -433,7 +433,7 @@
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -478,7 +478,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -523,7 +523,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -572,7 +572,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -621,7 +621,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -670,7 +670,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -719,7 +719,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -769,7 +769,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -820,7 +820,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -866,7 +866,7 @@
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -919,7 +919,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -972,7 +972,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1025,7 +1025,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1078,7 +1078,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1129,7 +1129,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1180,7 +1180,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1231,7 +1231,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1282,7 +1282,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1337,7 +1337,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1392,7 +1392,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1447,7 +1447,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1502,7 +1502,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1558,7 +1558,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1614,7 +1614,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1671,7 +1671,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1728,7 +1728,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1785,7 +1785,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1842,7 +1842,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1893,7 +1893,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1946,7 +1946,7 @@
     "hero_position": "HJ",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -1999,7 +1999,7 @@
     "hero_position": "HJ",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -2052,7 +2052,7 @@
     "facing": null,
     "warnings": [
       "1 carta(s) del hero detectada(s) pero sin rango legible",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -2103,7 +2103,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -2154,7 +2154,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -2205,7 +2205,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -2217,7 +2217,11 @@
       "5d"
     ],
     "pot": 700,
-    "blinds": null,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
     "players": [
       {
         "name": null,
@@ -2259,8 +2263,7 @@
     "hero_position": "HJ",
     "facing": null,
     "warnings": [
-      "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se detectaron las cartas del hero"
     ]
   },
   {
@@ -2272,7 +2275,11 @@
       "5d"
     ],
     "pot": 700,
-    "blinds": null,
+    "blinds": {
+      "sb": 50,
+      "bb": 100,
+      "ante": 15
+    },
     "players": [
       {
         "name": null,
@@ -2314,8 +2321,7 @@
     "hero_position": "HJ",
     "facing": null,
     "warnings": [
-      "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se detectaron las cartas del hero"
     ]
   },
   {
@@ -2370,7 +2376,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -3162,7 +3168,7 @@
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -3847,7 +3853,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -3899,7 +3905,7 @@
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -3946,7 +3952,7 @@
     "hero_position": "BTN",
     "facing": "bet",
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -3993,7 +3999,7 @@
     "hero_position": "BTN",
     "facing": "bet",
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4040,7 +4046,7 @@
     "hero_position": "BTN",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4085,7 +4091,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4134,7 +4140,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4183,7 +4189,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4232,7 +4238,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4282,7 +4288,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4333,7 +4339,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4384,7 +4390,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4424,7 +4430,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4471,7 +4477,7 @@
     "hero_position": "CO",
     "facing": "bet",
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4518,7 +4524,7 @@
     "hero_position": "CO",
     "facing": "bet",
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4565,7 +4571,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4612,7 +4618,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4659,7 +4665,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4710,7 +4716,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4761,7 +4767,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4812,7 +4818,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4864,7 +4870,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4916,7 +4922,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -4968,7 +4974,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5020,7 +5026,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5072,7 +5078,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5124,7 +5130,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5176,7 +5182,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5228,7 +5234,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5280,7 +5286,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5332,7 +5338,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5385,7 +5391,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5438,7 +5444,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5491,7 +5497,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5544,7 +5550,7 @@
     "hero_position": "CO",
     "facing": null,
     "warnings": [
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5595,7 +5601,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5628,7 +5634,7 @@
       "no se detecto el boton del dealer; sin posiciones",
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5673,7 +5679,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5722,7 +5728,7 @@
     "warnings": [
       "1 carta(s) de board detectada(s) pero sin rango legible",
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   },
   {
@@ -5771,7 +5777,7 @@
     "facing": null,
     "warnings": [
       "no se detectaron las cartas del hero",
-      "no se encontraron las ciegas (chat)"
+      "no se encontraron las ciegas (esquina/chat)"
     ]
   }
 ]

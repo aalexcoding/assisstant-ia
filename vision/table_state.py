@@ -46,6 +46,22 @@ TITLE_BAR_HEIGHT_FRAC = 0.06
 # de saber de antemano cual es cual.
 CORNER_BLINDS_CROPS = [(0.12, 0.55, 4), (0.15, 0.50, 4)]
 
+# analyze_layout (mapa de asientos): el cliente real muestra en la esquina
+# superior derecha un recuadro fijo (junto al reloj de nivel y "Media: XX,XXK")
+# con las ciegas en formato SB/BB(ante) -"250/500(80)", "17,5K/35K(4,5K)"-.
+# Es PERSISTENTE (a diferencia del aviso del chat, que solo sale unos segundos
+# al subir de nivel), asi que es la fuente automatica mas fiable. El recuadro
+# esta anclado a la esquina de la VENTANA, no al ovalo del tapete, por eso se
+# expresa como fraccion del FRAME (como TITLE_BAR_HEIGHT_FRAC) y no como zona
+# del mapa de asientos. Margen generoso por cada lado (x desde 0.55 hasta el
+# borde, y desde 0 hasta 0.17) para que aunque el encuadre baile unos pixeles
+# el texto no se corte: el OCR lee bien texto rodeado de fondo, lo que no
+# perdona es texto cortado por el borde. Escala x4 porque la fuente es pequeña
+# a tamaño de frame completo, igual que la barra de titulo en analyze_color_deck.
+# (x0, y0, x1, y1) en fracciones del frame.
+CORNER_BLINDS_ZONE = (0.55, 0.0, 1.0, 0.17)
+CORNER_BLINDS_SCALE = 4
+
 
 def _assign_player_positions(bgr, region, players, diag, warnings):
     """Detecta el boton del dealer y, si esta lo bastante cerca de algun
@@ -320,6 +336,12 @@ def analyze_layout(image_path):
     chat_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2)
     px = seat_map.zone_to_px(ref, seat_map.ACTION_ZONE, bgr.shape)
     action_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2)
+    # recuadro de ciegas de la esquina superior derecha (fraccion del frame)
+    fh, fw = bgr.shape[0], bgr.shape[1]
+    cz = CORNER_BLINDS_ZONE
+    corner_idx = batch.add_tsv_job(
+        bgr[int(fh * cz[1]):int(fh * cz[3]), int(fw * cz[0]):int(fw * cz[2])],
+        scale=CORNER_BLINDS_SCALE)
 
     # cartas del hero y del board: encolar el OCR de rango (cajas ya detectadas)
     hero_jobs = []
@@ -394,10 +416,14 @@ def analyze_layout(image_path):
     if board_unresolved:
         state["warnings"].append(f"{board_unresolved} carta(s) de board detectada(s) pero sin rango legible")
 
-    # bote, ciegas (del chat), facing
+    # bote, ciegas, facing. Ciegas: primero el recuadro persistente de la
+    # esquina (SB/BB(ante), la fuente mas fiable), luego el aviso del chat
+    # (transitorio) como respaldo.
     state["pot"] = find_pot(parse_tsv_lines(results[pot_idx]))
+    corner_lines = parse_tsv_lines(results[corner_idx])
     chat_lines = parse_tsv_lines(results[chat_idx])
-    state["blinds"] = find_blinds_chat(chat_lines) or find_blinds(chat_lines)
+    state["blinds"] = (find_blinds_corner(corner_lines, require_double=False)
+                       or find_blinds_chat(chat_lines) or find_blinds(chat_lines))
     state["facing"] = seat_map.parse_facing(" ".join(ln["text"] for ln in parse_tsv_lines(results[action_idx])))
 
     if not state["hero_cards"]:
@@ -405,7 +431,7 @@ def analyze_layout(image_path):
     if not state["pot"]:
         state["warnings"].append("no se encontro texto de pot")
     if not state["blinds"]:
-        state["warnings"].append("no se encontraron las ciegas (chat)")
+        state["warnings"].append("no se encontraron las ciegas (esquina/chat)")
     if not occupied:
         state["warnings"].append("ningun asiento ocupado detectado")
 
