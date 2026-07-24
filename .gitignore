@@ -8,3 +8,4 @@ decision/preflop/tessdata/
 vision/samples/
 vision/samples_pokerstars/
 decision/rag/audio/
+decision/rag/batch_worker_*.log
