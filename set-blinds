@@ -1,0 +1,37 @@
+#!/bin/bash
+# Fija el nivel de ciegas que usa el motor de decision, mientras la app corre.
+# El motor (decision/engine.py) lee blinds.local.json en cada analisis, asi que
+# el cambio surte efecto sin reiniciar la app.
+#
+# Uso:
+#   ./set-blinds 100/200/30     # SB/BB/ante
+#   ./set-blinds 100/200        # sin ante
+#   ./set-blinds                # muestra el nivel actual
+cd "$(dirname "$0")"
+
+if [ -z "$1" ]; then
+    if [ -f blinds.local.json ]; then
+        echo "Ciegas actuales: $(cat blinds.local.json)"
+    else
+        echo "No hay ciegas fijadas. Uso: ./set-blinds SB/BB[/ante]  ej: ./set-blinds 100/200/30"
+    fi
+    exit 0
+fi
+
+IFS='/' read -r sb bb ante <<< "$1"
+ante="${ante:-0}"
+
+for v in "$sb" "$bb" "$ante"; do
+    if ! [[ "$v" =~ ^[0-9]+$ ]]; then
+        echo "Valor invalido: '$v'. Uso: ./set-blinds SB/BB[/ante]  ej: ./set-blinds 100/200/30"
+        exit 1
+    fi
+done
+
+if [ "$bb" -eq 0 ]; then
+    echo "La ciega grande (BB) no puede ser 0."
+    exit 1
+fi
+
+printf '{"sb": %s, "bb": %s, "ante": %s}\n' "$sb" "$bb" "$ante" > blinds.local.json
+echo "Ciegas fijadas: SB=$sb BB=$bb ante=$ante"

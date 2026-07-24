@@ -48,8 +48,33 @@ forma fiable de saber si el hero abre o responde a una subida ajena.
 Requiere decision/preflop en sys.path (lo hace el caller, igual que
 vision/table_state.py no gestiona su propio sys.path para importar a sus
 hermanos de vision/).
+
+Ciegas manuales: el nivel de ciegas es transitorio en pantalla (solo sale
+en el chat al subir de nivel) pero el usuario lo sabe y cambia cada varios
+minutos, asi que se puede fijar a mano. Si existe blinds.local.json en la
+raiz del repo (lo escribe el comando ./set-blinds mientras la app corre),
+su valor MANDA sobre lo que detecte la vision. El stack del hero sigue
+siendo automatico (cambia cada mano; meterlo a mano seria insufrible).
 """
+import json
+import os
+
 from lookup import recommend
+
+_MANUAL_BLINDS_PATH = os.path.join(os.path.dirname(__file__), "..", "blinds.local.json")
+
+
+def _manual_blinds():
+    """Lee blinds.local.json (si existe y es valido). None si no hay o esta mal."""
+    try:
+        with open(_MANUAL_BLINDS_PATH) as f:
+            data = json.load(f)
+        bb = data.get("bb")
+        if isinstance(bb, (int, float)) and bb > 0:
+            return {"sb": data.get("sb"), "bb": bb, "ante": data.get("ante")}
+    except (FileNotFoundError, ValueError, TypeError):
+        pass
+    return None
 
 
 def _hero_player(state):
@@ -78,9 +103,11 @@ def decide(state):
         warnings.append("no se detecto la posicion del hero; no se puede recomendar")
         return None
 
-    blinds = state.get("blinds")
+    manual = _manual_blinds()
+    blinds = manual or state.get("blinds")
     if not blinds or not blinds.get("bb"):
-        warnings.append("no se detectaron las ciegas; no se puede calcular el stack en bb")
+        warnings.append("no hay ciegas (ni manuales via ./set-blinds ni detectadas); "
+                        "no se puede calcular el stack en bb")
         return None
 
     if hero is None or hero.get("stack") is None:
@@ -88,6 +115,7 @@ def decide(state):
         return None
 
     stack_bb = hero["stack"] / blinds["bb"]
+    fuente = "manual" if manual else "chat"
 
     result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
     if result is None:
@@ -97,9 +125,10 @@ def decide(state):
     return {
         "action": result["action"],
         "reasoning": f"Rango preflop de {hero_position} a {stack_bb:.1f}bb efectivos "
-                     f"(asumiendo que el hero abre el bote; el motor no distingue todavia "
-                     f"open_raise de respuesta a una subida ajena)",
+                     f"(ciegas {fuente}; asumiendo que el hero abre el bote, el motor no "
+                     f"distingue todavia open_raise de respuesta a una subida ajena)",
         "hero_cards": hero_cards,
         "hero_position": hero_position,
         "stack_bb": stack_bb,
+        "blinds": blinds,
     }

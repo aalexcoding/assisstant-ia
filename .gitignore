@@ -9,3 +9,6 @@ vision/samples/
 vision/samples_pokerstars/
 decision/rag/audio/
 decision/rag/batch_worker_*.log
+vision/samples_layout/
+vision/samples_layout2/
+blinds.local.json
