@@ -18,9 +18,12 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "capture"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "vision"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "decision"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "decision", "preflop"))
 
 import cv2
 
+import engine
 import portal_capture as pc
 import table_state as ts
 
@@ -34,7 +37,7 @@ def load_region():
     return region["x"], region["y"], region["width"], region["height"]
 
 
-def format_state(state):
+def format_state(state, recommendation):
     lines = []
     hero = " ".join(state["hero_cards"]) or "?"
     board = " ".join(state["board"]) or "(preflop)"
@@ -46,6 +49,8 @@ def format_state(state):
     for p in state["players"]:
         marker = "  <- tu" if p["is_hero"] else ""
         lines.append(f"  {p['name']}: {p['stack']}{marker}")
+    if recommendation:
+        lines.append(f"Recomendacion: {recommendation['action']}")
     if state["warnings"]:
         lines.append("Avisos: " + "; ".join(state["warnings"]))
     return "\n".join(lines)
@@ -67,7 +72,8 @@ def main():
                 crop = frame[y:y + h, x:x + w]
                 cv2.imwrite(TMP_FRAME_PATH, crop)
                 state = ts.analyze_color_deck(TMP_FRAME_PATH)
-                text = format_state(state)
+                recommendation = engine.decide(state)
+                text = format_state(state, recommendation)
                 if text != last_printed:
                     print(f"--- {time.strftime('%H:%M:%S')} ---")
                     print(text)

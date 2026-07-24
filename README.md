@@ -44,7 +44,23 @@ de board (Fase 2) — es solo para comprobar que la visión funciona contra part
   de ZEROSPOKER.COM en `/mnt/qnap/Poker/CAPTURAS HERRAMIENTAS PREFLOP/`). El OCR de la
   leyenda usa `tesserocr`, que necesita datos de idioma inglés instalados en el sistema
   (`sudo dnf install tesseract-langpack-eng` en Nobara) o, en su defecto, un
-  `decision/preflop/tessdata/eng.traineddata` local (no versionado).
+  `decision/preflop/tessdata/eng.traineddata` local (no versionado). `lookup.py`
+  (`recommend(hero_cards, hero_position, stack_bb, facing, vs_position=None)`) consulta
+  `ranges.json`: normaliza las cartas del hero a la notación del rango (orden de rango
+  alto primero), busca el stack_bb más cercano entre las claves disponibles para ese
+  `facing` y devuelve la etiqueta de acción tal cual salió de la leyenda, o `None` si
+  falta algún dato. `test_lookup.py` es un script suelto (sin pytest, el proyecto no lo
+  usa) que lo verifica contra casos leídos a mano de `ranges.json`.
+- `decision/engine.py` — Fase 4 (primera pieza): dado el `GameState` de `vision/`, si es
+  preflop y hay cartas+posición+stack_bb (stack del hero / `blinds["bb"]`), llama a
+  `decision/preflop/lookup.py` y devuelve `{action, reasoning, hero_cards, hero_position,
+  stack_bb}`. Si falta cualquier dato (sin board vacío, sin ciegas, sin posición...)
+  devuelve `None` y anota el motivo en `warnings`. Limitación conocida: el `GameState`
+  no registra el historial de apuestas de la mano, así que no se puede saber si el hero
+  abre el bote o responde a una subida ajena; por ahora se asume siempre
+  `facing="open_raise"` (único caso con cobertura completa de stacks en `ranges.json`).
+  `alpha.py` ya lo integra: imprime `Recomendacion: <accion>` bajo el resto del estado
+  cuando hay recomendación.
 - `decision/rag/` — Fase 4.2: transcripción de vídeos (Fase 4.3, embeddings/retrieval,
   queda pendiente). `video_index.py` localiza y ordena los vídeos de
   `TORNEOS/6. EL CURSO ABSOLUTO...` y `TORNEOS/5. CONTENIDO DE TEORÍA POSTFLOP...`
