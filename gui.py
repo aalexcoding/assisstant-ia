@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.join(BASE_DIR, "decision", "preflop"))
 import cv2
 
 import engine
+import hand_strength as hstr
 import portal_capture as pc
 import table_state as ts
 
@@ -143,7 +144,8 @@ class AnalysisWorker(threading.Thread):
                     cv2.imwrite(TMP_FRAME_PATH, crop)
                     state = ts.analyze_layout(TMP_FRAME_PATH)
                     recommendation = engine.decide(state)
-                    GLib.idle_add(self.win.on_result, state, recommendation)
+                    hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
+                    GLib.idle_add(self.win.on_result, state, recommendation, hand)
                 self._stop.wait(self.interval)
         finally:
             try:
@@ -177,6 +179,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.set_child(root)
 
         root.append(self._build_state_frame())
+        root.append(self._build_hand_frame())
         root.append(self._build_recommendation_frame())
         root.append(self._build_blinds_frame())
         root.append(self._build_controls())
@@ -203,6 +206,39 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         for w in (self.hero_label, self.board_label, self.pot_label, players_title, self.players_label):
             box.append(w)
         frame.set_child(box)
+        return frame
+
+    def _build_hand_frame(self):
+        frame = Gtk.Frame(label="Mano actual")
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_margin_top(8)
+        box.set_margin_bottom(8)
+        box.set_margin_start(8)
+        box.set_margin_end(8)
+
+        self.made_label = Gtk.Label()
+        self.made_label.set_use_markup(True)
+        self.made_label.set_halign(Gtk.Align.START)
+        self.made_label.set_xalign(0.0)
+        self.made_label.set_markup('<span size="large" weight="bold">-</span>')
+
+        self.draws_label = self._markup_label("<i>-</i>")
+        self.draws_label.set_wrap(True)
+        self.draws_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+
+        note = self._markup_label(
+            '<span size="small" foreground="#95a5a6"><i>Probabilidad de COMPLETAR el '
+            'proyecto (calculo exacto; entre corchetes la regla del 2 y 4), '
+            'no de ganar la mano.</i></span>')
+        note.set_wrap(True)
+        note.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+
+        box.append(self.made_label)
+        box.append(self.draws_label)
+        box.append(note)
+        frame.set_child(box)
+        self.hand_frame = frame
+        frame.set_visible(False)
         return frame
 
     def _build_recommendation_frame(self):
@@ -261,8 +297,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.calibrate_button.connect("clicked", self._on_calibrate)
 
         interval_label = Gtk.Label(label="Intervalo (s)")
-        self.interval_spin = Gtk.SpinButton.new_with_range(1.0, 10.0, 0.5)
-        self.interval_spin.set_digits(1)
+        self.interval_spin = Gtk.SpinButton.new_with_range(0.25, 10.0, 0.25)
+        self.interval_spin.set_digits(2)
         self.interval_spin.set_value(self.default_interval)
 
         box.append(self.start_button)
@@ -399,7 +435,41 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.status_label.set_markup("Parado.")
         return False
 
-    def on_result(self, state, recommendation):
+    @staticmethod
+    def _draw_line(d):
+        name = GLib.markup_escape_text(d["name"])
+        outs = d["outs"]
+        if d.get("pct_river") is not None:
+            pct = (f"~{d['pct_river']}% al river, ~{d['pct_next']}% a la siguiente "
+                   f"[regla 2/4: {d['pct_next_rule']}%/{d['pct_river_rule']}%]")
+        else:
+            pct = f"~{d['pct_next']}% al river [regla del 2: {d['pct_next_rule']}%]"
+        body = f"{name}: {outs} outs, {pct}"
+        if d.get("combined"):
+            return f'<span foreground="#2ecc71" weight="bold">&#8226; {body}</span>'
+        if d.get("speculative"):
+            return f'<span foreground="#95a5a6"><i>&#8226; {body}</i></span>'
+        return f"&#8226; {body}"
+
+    def _update_hand(self, hand):
+        if not hand:
+            self.hand_frame.set_visible(False)
+            return
+        self.hand_frame.set_visible(True)
+        self.made_label.set_markup(
+            f'<span size="large" weight="bold">{GLib.markup_escape_text(hand["made_name"])}</span>')
+        draws = hand.get("draws") or []
+        if draws:
+            self.draws_label.set_markup("\n".join(self._draw_line(d) for d in draws))
+        elif hand.get("street") == "river":
+            self.draws_label.set_markup("<i>Sin proyectos (river: no quedan cartas por venir).</i>")
+        elif hand.get("street") == "preflop":
+            self.draws_label.set_markup("<i>Proyectos: se calculan a partir del flop.</i>")
+        else:
+            self.draws_label.set_markup("<i>Sin proyectos.</i>")
+        return False
+
+    def on_result(self, state, recommendation, hand=None):
         self.hero_label.set_markup("Tus cartas: " + cards_markup(state.get("hero_cards")))
         self.board_label.set_markup("Board: " + (cards_markup(state.get("board"))
                                                  if state.get("board") else "<i>(preflop)</i>"))
@@ -407,6 +477,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.pot_label.set_markup(f"Bote: {GLib.markup_escape_text(str(pot))}" if pot is not None
                                   else "Bote: <i>-</i>")
         self.players_label.set_markup(players_markup(state.get("players")))
+        self._update_hand(hand)
 
         if recommendation:
             action = str(recommendation["action"]).upper()

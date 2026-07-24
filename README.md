@@ -14,10 +14,13 @@ de board (Fase 2) — es solo para comprobar que la visión funciona contra part
 `.venv/bin/python gui.py` — panel de control GTK4 (Fase 5): envuelve el mismo flujo que
 `alpha.py` en una ventana no bloqueante. El análisis (captura + OCR) corre en un hilo
 aparte y actualiza los widgets vía `GLib.idle_add`, así que la UI no se congela. Muestra el
-estado detectado (tus cartas, board, bote, jugadores con posición y stack), la recomendación
-de `engine.decide` en grande (o el motivo si no la hay), un campo de ciegas que escribe
-`blinds.local.json` en el mismo formato que `./set-blinds` (intercambiables), y botones para
-iniciar/parar el análisis y relanzar la calibración del recuadro.
+estado detectado (tus cartas, board, bote, jugadores con posición y stack), una sección
+"Mano actual" con la mano formada y los proyectos + % que devuelve `decision/hand_strength.py`
+(oculta entre manos, cuando no hay cartas del hero), la recomendación de `engine.decide` en
+grande (o el motivo si no la hay), un campo de ciegas que escribe `blinds.local.json` en el
+mismo formato que `./set-blinds` (intercambiables), y botones para iniciar/parar el análisis
+y relanzar la calibración del recuadro. El selector de intervalo baja hasta 0.25s ("analiza
+en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
 
 ## Estructura
 
@@ -69,6 +72,15 @@ iniciar/parar el análisis y relanzar la calibración del recuadro.
   `facing="open_raise"` (único caso con cobertura completa de stacks en `ranges.json`).
   `alpha.py` ya lo integra: imprime `Recomendacion: <accion>` bajo el resto del estado
   cuando hay recomendación.
+- `decision/hand_strength.py` — evaluación de mano para el HUD (no es motor de decisión).
+  `evaluate_hand(hero_cards, board)` devuelve (a) la **mano formada** (mejor combinación de 5,
+  nombrada en español: "Pareja de Reyes", "Color de corazones", "Doble pareja (Ases y Reyes)"...;
+  en preflop, "AK suited"/"Pareja de Ochos") y (b) la lista de **proyectos** (color 9 outs,
+  escalera abierta 8, gutshot 4, sobrecartas, doble proyecto color+escalera con outs limpios
+  sin solapar) con outs y % de **completar** el proyecto, tanto exacto (combinatoria) como por
+  la regla del 2 y 4. **No** es equity contra el rango rival (eso exigiría Monte Carlo): es
+  mano actual + probabilidad de ligar, etiquetado así en la UI para no engañar. Pure Python, sin
+  dependencias nuevas. `test_hand_strength.py` es un script suelto (sin pytest) con casos a mano.
 - `decision/rag/` — Fase 4.2: transcripción de vídeos (Fase 4.3, embeddings/retrieval,
   queda pendiente). `video_index.py` localiza y ordena los vídeos de
   `TORNEOS/6. EL CURSO ABSOLUTO...` y `TORNEOS/5. CONTENIDO DE TEORÍA POSTFLOP...`
