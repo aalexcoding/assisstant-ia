@@ -16,6 +16,35 @@ caso mas comun y el unico con cobertura completa de stacks en ranges.json
 registre el historial de apuestas de la mano, esto se puede corregir para
 distinguir open_raise de threebet_call de verdad.
 
+Investigado (2026-07-24) si se podia inferir "facing"/vs_position sin ese
+historial, con una sola imagen, contra las 93 capturas reales de
+vision/samples_pokerstars/. Dos señales candidatas, ninguna resulto fiable:
+- Ficha de importe delante de cada asiento: es legible y persiste varios
+  frames seguidos (a diferencia de las fichas de ciega del commit
+  212262d, que solo se ven un frame), pero el importe por si solo no
+  distingue una subida real de un limp/complete de ciega: en
+  sample_1784855328674.png / sample_1784855333696.png (mano reconstruida
+  y cuadrada contra el bote) un jugador en HJ iguala la BB y otro en SB
+  completa su ciega, ambos dejando 30.000 delante -mismo aspecto que una
+  subida real, indistinguible sin saber cual era el importe a igualar en
+  ese momento, algo que no se registra en ningun sitio. Ademas, el mismo
+  marcador de "este jugador acaba de actuar" que hace visible el importe
+  sustituye temporalmente su nombre y rompe el emparejamiento nombre+stack
+  de find_players(), desincronizando las posiciones de todos los demas
+  jugadores justo en el frame que interesa (ver sample_1784854879707.png:
+  el raise de djordy24100 a 107.000 le hace desaparecer de la lista de
+  jugadores esa misma imagen).
+- Texto del boton de accion del hero ("Igualar X" vs "Pasar"): en
+  sample_1784855333696.png se confirma con el marcador verde de turno que
+  es el turno del hero (gaobig) y aun asi no aparece ningun boton de
+  accion dentro de la region capturada; 0 de 93 capturas lo muestran en
+  ningun momento. La region de calibracion (capture/calibration, fuera de
+  alcance de esta investigacion) probablemente no llega a esa franja de
+  la ventana.
+Forzar cualquiera de las dos habria dado recomendaciones incorrectas en
+casos reales verificables (arriba), asi que se descarta: sigue sin haber
+forma fiable de saber si el hero abre o responde a una subida ajena.
+
 Requiere decision/preflop en sys.path (lo hace el caller, igual que
 vision/table_state.py no gestiona su propio sys.path para importar a sus
 hermanos de vision/).
