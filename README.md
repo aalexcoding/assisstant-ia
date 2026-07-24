@@ -17,10 +17,12 @@ aparte y actualiza los widgets vía `GLib.idle_add`, así que la UI no se congel
 estado detectado (tus cartas, board, bote, jugadores con posición y stack), una sección
 "Mano actual" con la mano formada y los proyectos + % que devuelve `decision/hand_strength.py`
 (oculta entre manos, cuando no hay cartas del hero), la recomendación de `engine.decide` en
-grande (o el motivo si no la hay), un campo de ciegas que escribe `blinds.local.json` en el
-mismo formato que `./set-blinds` (intercambiables), y botones para iniciar/parar el análisis
-y relanzar la calibración del recuadro. El selector de intervalo baja hasta 0.25s ("analiza
-en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
+grande (o el motivo si no la hay), una sección "Mano anterior" que resume la última mano
+terminada leyendo el resultado del panel de chat (`vision/hand_result.py`: ganador, importe,
+mano ganadora, jugadores de showdown y si el hero ganó/perdió), un campo de ciegas que escribe
+`blinds.local.json` en el mismo formato que `./set-blinds` (intercambiables), y botones para
+iniciar/parar el análisis y relanzar la calibración del recuadro. El selector de intervalo baja
+hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
 
 ## Estructura
 
@@ -50,6 +52,14 @@ en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
   (palo por color de fondo, sin plantilla) + `color_rank_ocr.py`, orquestados por
   `table_state.analyze_color_deck()`. `run_samples_pokerstars.py` corre esta rama
   contra `vision/samples_pokerstars/` y vuelca `vision/results_pokerstars.json`.
+  `hand_result.py` parsea el resultado de la última mano terminada de las líneas
+  del chat (`parse_hand_result`: nº de mano, ganador, importe, mano ganadora y
+  showdown; tolerante al ruido del OCR, no inventa) y OCR-ea la zona del chat por
+  su cuenta (`read_chat_lines`, reutilizando `seat_map` + `OcrBatch`, ya que
+  `analyze_layout` lee el chat pero no lo expone en el GameState); `hero_outcome`
+  decide si el hero ganó/perdió con la evidencia del chat. `test_hand_result.py`
+  es un script suelto (sin pytest) que lo verifica con las líneas de chat reales
+  más variantes con ruido de OCR. Lo consume el panel "Mano anterior" de `gui.py`.
 - `decision/preflop/` — Fase 4.1: digitalización de rangos y tabla de lookup preflop.
   Ver `decision/preflop/parse_ranges.py` (genera `ranges.json` a partir de las capturas
   de ZEROSPOKER.COM en `/mnt/qnap/Poker/CAPTURAS HERRAMIENTAS PREFLOP/`). El OCR de la

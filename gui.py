@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.join(BASE_DIR, "decision", "preflop"))
 import cv2
 
 import engine
+import hand_result as hr
 import hand_strength as hstr
 import portal_capture as pc
 import table_state as ts
@@ -145,7 +146,15 @@ class AnalysisWorker(threading.Thread):
                     state = ts.analyze_layout(TMP_FRAME_PATH)
                     recommendation = engine.decide(state)
                     hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
+                    # resumen de la mano anterior: OCR aparte de la zona del chat
+                    # (analyze_layout la lee para las ciegas pero no la expone). Un
+                    # fallo aqui no debe tumbar el analisis principal.
+                    try:
+                        result = hr.read_hand_result(TMP_FRAME_PATH)
+                    except Exception:  # noqa: BLE001
+                        result = None
                     GLib.idle_add(self.win.on_result, state, recommendation, hand)
+                    GLib.idle_add(self.win.on_hand_result, result)
                 self._stop.wait(self.interval)
         finally:
             try:
@@ -170,6 +179,13 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.worker = None
         self.running = False
         self.default_interval = interval
+        # estado cross-frame del resumen de mano anterior: nombre del hero
+        # cacheado (ultimo no-nulo del asiento is_hero; su nameplate a veces
+        # muestra la accion en vez del nombre) y firma de la ultima mano ya
+        # mostrada (numero de mano, o resumen si no se leyo), para no reescribir
+        # el panel en cada frame de la misma mano (evita el parpadeo).
+        self._hero_name = None
+        self._prev_hand_sig = None
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         root.set_margin_top(16)
@@ -181,6 +197,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         root.append(self._build_state_frame())
         root.append(self._build_hand_frame())
         root.append(self._build_recommendation_frame())
+        root.append(self._build_prev_hand_frame())
         root.append(self._build_blinds_frame())
         root.append(self._build_controls())
         root.append(self._build_status_frame())
@@ -260,6 +277,29 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
         box.append(self.rec_label)
         box.append(self.reasoning_label)
+        frame.set_child(box)
+        return frame
+
+    def _build_prev_hand_frame(self):
+        frame = Gtk.Frame(label="Mano anterior")
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_margin_top(8)
+        box.set_margin_bottom(8)
+        box.set_margin_start(8)
+        box.set_margin_end(8)
+
+        self.prev_main_label = self._markup_label("<i>sin manos terminadas todavia</i>")
+        self.prev_showdown_label = self._markup_label("")
+        self.prev_hero_label = self._markup_label("")
+        # hueco preparado para el coaching (Fase 4.3): NO se implementa aqui, va
+        # el RAG postflop + historial de acciones, una pieza mayor aparte.
+        self.prev_coach_label = self._markup_label("")
+
+        for w in (self.prev_main_label, self.prev_showdown_label,
+                  self.prev_hero_label, self.prev_coach_label):
+            w.set_wrap(True)
+            w.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            box.append(w)
         frame.set_child(box)
         return frame
 
@@ -470,6 +510,14 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         return False
 
     def on_result(self, state, recommendation, hand=None):
+        # cachea el nombre del hero (ultimo no-nulo del asiento is_hero): su
+        # nameplate a veces muestra la accion ("Igualar"/"Pasar") en vez del
+        # nombre, asi que solo se actualiza cuando hay nombre.
+        for p in state.get("players") or []:
+            if p.get("is_hero") and p.get("name"):
+                self._hero_name = p["name"]
+                break
+
         self.hero_label.set_markup("Tus cartas: " + cards_markup(state.get("hero_cards")))
         self.board_label.set_markup("Board: " + (cards_markup(state.get("board"))
                                                  if state.get("board") else "<i>(preflop)</i>"))
@@ -495,6 +543,60 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         warnings = state.get("warnings") or []
         self.warnings_label.set_markup(
             ("Avisos: " + GLib.markup_escape_text("; ".join(warnings))) if warnings else "")
+        return False
+
+    @staticmethod
+    def _result_sig(result):
+        return "|".join(str(result.get(k) or "") for k in ("winner", "amount", "winning_hand"))
+
+    def on_hand_result(self, result):
+        # solo actualiza el panel cuando la mano terminada es NUEVA (numero de
+        # mano distinto del ya mostrado; si no hay numero legible, se usa el
+        # resumen como firma). Asi el panel refleja la ultima mano y no parpadea.
+        if not result:
+            return False
+        sig = result.get("hand_number") or self._result_sig(result)
+        if not sig or sig == self._prev_hand_sig:
+            return False
+        self._prev_hand_sig = sig
+        self._render_prev_hand(result)
+        return False
+
+    def _render_prev_hand(self, result):
+        esc = GLib.markup_escape_text
+        winner = result.get("winner")
+        if winner:
+            line = f"Anterior mano: Gano <b>{esc(winner)}</b>"
+            if result.get("winning_hand"):
+                line += f" — Mano: {esc(result['winning_hand'])}"
+            if result.get("amount"):
+                line += f"  (bote {esc(result['amount'])})"
+        else:
+            line = "Anterior mano: <i>resultado no legible</i>"
+        self.prev_main_label.set_markup(line)
+
+        opps = [f"{esc(s['player'])} ({esc(s['hand'])})"
+                for s in result.get("showdown", [])
+                if not hr._names_match(s.get("player", ""), winner or "")]
+        self.prev_showdown_label.set_markup(
+            "mano a mano con: " + ", ".join(opps) if opps else "")
+
+        outcome = hr.hero_outcome(result, self._hero_name)
+        if outcome["status"] == "won":
+            body = ("Ganaste esta mano con: " + esc(outcome["hero_hand"])
+                    if outcome["hero_hand"] else "Ganaste esta mano")
+            self.prev_hero_label.set_markup(f'<span foreground="#2ecc71" weight="bold">{body}</span>')
+        elif outcome["status"] == "lost":
+            body = ("Perdiste con: " + esc(outcome["hero_hand"])
+                    if outcome["hero_hand"] else "Perdiste esta mano")
+            self.prev_hero_label.set_markup(f'<span foreground="#e74c3c" weight="bold">{body}</span>')
+        else:
+            # sin evidencia de si el hero jugo la mano: no se afirma nada
+            self.prev_hero_label.set_markup("")
+
+        self.prev_coach_label.set_markup(
+            '<span size="small" foreground="#95a5a6"><i>Tu juego y como mejorar: '
+            '(analisis del RAG postflop — pendiente)</i></span>')
         return False
 
     def _on_close(self, *_a):
