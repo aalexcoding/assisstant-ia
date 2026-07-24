@@ -239,18 +239,30 @@ def decide(state):
         if result is None:
             return abstain(f"sin rango de defensa para {hero_position} vs {vs_position} "
                            f"a {stack_bb:.1f}bb (threebet_call)")
+        action = result["action"]
         reasoning = (f"Defensa (3bet/call) de {hero_position} a {stack_bb:.1f}bb efectivos "
                      f"contra la subida de {vs_position} ({fuente};{nota_cache} "
                      f"subida inferida del importe apostado en la mesa)")
+    elif hero_position == "BB":
+        # La BB nunca ABRE el bote. Si aqui no hay subida que enfrentar, es la
+        # opcion de la BB en un bote limpeado/sin subir. No tenemos digitalizado
+        # el rango de "raise over limpers" (solo Open Raise y 3bet/Call), asi que
+        # por defecto pasar (ver flop gratis) y avisar de la limitacion.
+        action = "Pasar (opcion de la BB)"
+        reasoning = (f"Estas en la BB con opcion a {stack_bb:.1f}bb ({fuente};{nota_cache} "
+                     f"nadie ha subido). Por defecto PASAR y ver el flop gratis; no tengo "
+                     f"digitalizado tu rango de 'raise over limpers' para decir si subir.")
     else:
         result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
         if result is None:
-            return abstain(f"sin rango para {hero_position} a {stack_bb:.1f}bb (facing=open_raise)")
+            return abstain(f"sin rango de apertura para {hero_position} a {stack_bb:.1f}bb "
+                           f"(open_raise); revisa que la posicion/stack esten en las tablas")
+        action = result["action"]
         reasoning = (f"Rango de apertura de {hero_position} a {stack_bb:.1f}bb efectivos "
                      f"({fuente};{nota_cache} sin subida que enfrentar, el hero abre el bote)")
 
     recommendation = {
-        "action": result["action"],
+        "action": action,
         "reasoning": reasoning,
         "hero_cards": hero_cards,
         "hero_position": hero_position,
