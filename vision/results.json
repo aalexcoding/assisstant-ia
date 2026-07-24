@@ -103,6 +103,11 @@
     },
     "players": [
       {
+        "name": "propofol-san",
+        "stack": 11733,
+        "is_hero": false
+      },
+      {
         "name": "Spraggy",
         "stack": 9953,
         "is_hero": true
@@ -445,6 +450,11 @@
         "is_hero": false
       },
       {
+        "name": "Succeeed",
+        "stack": 640,
+        "is_hero": false
+      },
+      {
         "name": "Spraggy",
         "stack": 12484,
         "is_hero": true
@@ -472,6 +482,11 @@
       {
         "name": "Cbi4b",
         "stack": 14442,
+        "is_hero": false
+      },
+      {
+        "name": "gustavoodias",
+        "stack": 535,
         "is_hero": false
       },
       {
@@ -631,6 +646,11 @@
         "name": "Scarmak3r",
         "stack": 35294,
         "is_hero": false
+      },
+      {
+        "name": "PSpraggy",
+        "stack": 18344,
+        "is_hero": false
       }
     ],
     "warnings": [
@@ -711,6 +731,11 @@
       "ante": 244
     },
     "players": [
+      {
+        "name": "Cbi4b",
+        "stack": 13722,
+        "is_hero": false
+      },
       {
         "name": "Scarmak3r",
         "stack": 35294,

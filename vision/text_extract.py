@@ -19,17 +19,27 @@ NAME_BLACKLIST = {
 }
 
 RANK_WORDS_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_\-\.]{2,19}$")
-NUMBER_RE = re.compile(r"^\d{1,3}(?:,\d{3})+$|^\d{3,6}$")
-POT_RE = re.compile(r"pot[:\.]?\s*\$?([\d][\d,]*)", re.IGNORECASE)
+# el cliente en ingles agrupa miles con "," (12,500); el cliente en
+# castellano (vision/samples_pokerstars/) con "." (12.500). Aceptar ambos
+# formatos, nunca mezclados dentro del mismo numero.
+NUMBER_RE = re.compile(r"^\d{1,3}(?:,\d{3})+$|^\d{1,3}(?:\.\d{3})+$|^\d{3,6}$")
+_NUM = r"[\d][\d,\.]*"
+POT_RE = re.compile(rf"(?:pot|bote)[:\.]?\s*\$?({_NUM})", re.IGNORECASE)
 BLINDS_LABELED_RE = re.compile(
-    r"blinds?\s+\$?([\d][\d,]*)\s*/\s*\$?([\d][\d,]*)(?:\s*ante\s+\$?([\d][\d,]*))?", re.IGNORECASE)
-BLINDS_COMPACT_RE = re.compile(r"\$?([\d][\d,]*)\s*/\s*\$?([\d][\d,]*)\s*\(\s*([\d][\d,]*)\s*\)")
+    rf"blinds?\s+\$?({_NUM})\s*/\s*\$?({_NUM})(?:\s*ante\s+\$?({_NUM}))?", re.IGNORECASE)
+BLINDS_COMPACT_RE = re.compile(rf"\$?({_NUM})\s*/\s*\$?({_NUM})\s*\(\s*({_NUM})\s*\)")
 BLINDS_ANTE_WORD_RE = re.compile(
-    r"^\$?([\d][\d,]*)\s*/\s*\$?([\d][\d,]*)\s*ante\s+\$?([\d][\d,]*)$", re.IGNORECASE)
+    rf"^\$?({_NUM})\s*/\s*\$?({_NUM})\s*ante\s+\$?({_NUM})$", re.IGNORECASE)
+# la barra de titulo del cliente en castellano ("15.000/30.000 ante 3.750")
+# a veces pierde el valor de la ante en el OCR (fuente muy fina): se acepta
+# igual sb/bb con la ante a None antes que descartar la linea entera. La
+# palabra "ante" (sin valor detras) sigue exigiendose para no confundir con
+# otros pares "x/y" del HUD que no son ciegas (posicion en el torneo, etc).
+BLINDS_ANTE_NO_VALUE_RE = re.compile(rf"^\$?({_NUM})\s*/\s*\$?({_NUM})\s*ante\b", re.IGNORECASE)
 
 
 def _to_int(s):
-    return int(s.replace(",", ""))
+    return int(re.sub(r"[,\.]", "", s))
 
 
 def parse_tsv_lines(tsv_text):
@@ -152,6 +162,12 @@ def find_blinds(lines):
                 result = _blinds_dict(sb, bb, ante)
                 if result:
                     return result
+    for ln in lines:
+        m = BLINDS_ANTE_NO_VALUE_RE.search(ln["text"])
+        if m:
+            result = _blinds_dict(_to_int(m.group(1)), _to_int(m.group(2)), None)
+            if result:
+                return result
     return None
 
 
