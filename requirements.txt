@@ -3,3 +3,4 @@ pillow
 numpy
 tesserocr
 faster-whisper
+fastembed
