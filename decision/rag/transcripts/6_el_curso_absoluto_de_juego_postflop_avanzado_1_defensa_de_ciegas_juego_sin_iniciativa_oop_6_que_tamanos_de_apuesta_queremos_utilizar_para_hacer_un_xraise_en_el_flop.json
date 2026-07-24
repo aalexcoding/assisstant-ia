@@ -1,0 +1,370 @@
+[
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 0,
+    "start_time": 13.68,
+    "end_time": 72.68,
+    "text": "Buenas a todos, aquí ceros y bienvenidos a un nuevo vídeo en el que vamos a estar analizando situaciones de check-rays. Concretamente voy a hacer tres o cuatro vídeos sobre este tema y el primero de todos ellos va a ser un estudio de Scythians. Vamos a analizar una serie de manos, solamente llegadas al flop. Y vamos a analizar los tamaños de apuesta a la hora de hacer un check-rays en diferentes tipos de boar. Para esta situación en concreto me ha parecido interesante hacer esta serie de análisis porque yo mismo estaba teniendo alguna duda en algún que otro boar y las he querido resolver y he decidido hacer un vídeo al respecto. Sin más dilación, vamos a empezar con las manos porque con algo delante que podamos observar es mucho más fácil reflexionar que hablar de teorías y un poco hablando del aire, ¿no? Así que nada, la primera mano que nos va a servir de ejemplo es este dama ocho de corazones."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 1,
+    "start_time": 72.68,
+    "end_time": 132.68,
+    "text": "Tenemos a Sir Fuji que hace un open-race en el botón, bastante fuerte, defendemos. Y llegamos a un boar diez seis cinco. En esta situación el rival decidió apostar a un tercio del bote y yo decidí resubir mi backdoor flash con backdoor straight a ochenta dólares. Es decir, si el bote total tenía unos cien yo metí ochenta más y esto es más o menos un poco más de tres x el tamaño de apuesta que hizo el rival. Para analizar cuáles son los mejores tamaños de apuesta que podemos realizar en una situación como esta lo que voy a hacer es poner los parámetros de esta mano en un solver como pio solver. Concretamente como podéis comprobar es el mismo árbol, mismo boar, mismo bote en el flop, setenta y cinco dólares y en este efectivo he puesto como si estuviéramos jugando con cien bebés que eso es un poco lo de menos. El rival apuesta un tercio del bote, es decir apuesta veinticinco en un bote de setenta y cinco, es decir treinta y tres por ciento del bote"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 2,
+    "start_time": 132.68,
+    "end_time": 192.68,
+    "text": "y en lo que se refiere a nosotros jugando fuera de posición le he dado al solver las opciones de resubir a tres x, cuatro x, cuatro coma cinco x y cinco x, o sea le he dado cuatro tamaños de apuesta para resubir en el flop. Así que si nos vamos a la situación en cuestión como podéis comprobar cuando en el flop nosotros chequeamos con todo obviamente no dón quedamos nada y el rival apuesta un tercio del bote con todo este rango. Nosotros teniendo cuatro opciones de tamaño de reis vamos a querer hacer la de resubir a setenta y cinco dólares y la de resubir a cien, por contexto yo resubí a ochenta, así que me quedé un poco cerca de hacer a setenta y cinco pero un poquito más que eso y esto sería yéndonos aquí entre tres x y cuatro x, vale, es decir el tamaño de che reis mejor para este bote en concreto sería resubir entre tres x y cuatro x el tamaño de apuesta que ha hecho el rival. Pues bien analizando esta mano de esta manera como podéis comprobar podemos ver a qué tamaño de apuesta"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 3,
+    "start_time": 192.68,
+    "end_time": 249.68,
+    "text": "se inclina el solver hemos dejado al solver jugando millones de manos en esta misma situación y ha llegado la conclusión de que los tamaños de apuesta para resubir más rentables son estos dos entre acera a setenta y cinco o cien obviamente no hay apenas diferencia de rentabilidad pero te suele interesar como jugador quedarte cerca de los tamaños de apuesta que quieres hacer más frecuentemente de hecho cuando en este mismo curso me veais haciendo análisis del estilo de en este tipo de boas suelo apostar pequeño en este tipo de situación suelo apostar grande y demás todas esas cosas que yo digo siempre están basadas en estos estudios que yo he realizado a lo largo de pues bueno de muchos años de carrera y demás y os las intento compartir de forma simplificada y sencilla de entender es decir intento no haceros pasar por decenas de horas de estudios de más o cientos incluso de horas intento no haceros perder el tiempo vamos para que podáis obtener la información que buscáis sin tener que pasar por toda la parte tediosa de digamos tener que calcularla y para la inmensa"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 4,
+    "start_time": 249.68,
+    "end_time": 306.68,
+    "text": "mayoría de situaciones además las cosas son más sencillas es decir hay muchas situaciones que solamente queremos hacer un tamaño de apuesta o como mucho un par de tamaños de apuesta y las estrategias que queremos realizar realmente no cambian mucho de un boar a otro así que no veo necesidad en ese tipo de situaciones de rizar demasiado el rizo simplemente os digo hacer esto y palante no esta situación de los chatraces me resulta un pelín más compleja porque nosotros no tenemos la llave de la primera apuesta es decir nosotros estamos reaccionando a una apuesta del rival chequeamos el rival apuesta y nosotros reaccionamos no y una variable que puede cambiar es el tamaño de apuesta que está realizando el rival en el flop y esto me parece muy importante introducirlo porque no solamente nos tenemos que preocupar de entender si queremos resubir aquí a los mismos tamaños de apuesta en diferentes tipos de boas que hay muchos muchos tipos de boas que podrían a lo mejor influir en el tamaño de apuesta que queremos hacer vale no solamente nos tenemos que preocupar de que haya muchos boas sino también nos tenemos"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 5,
+    "start_time": 306.68,
+    "end_time": 364.68,
+    "text": "que preocupar de que el rival pueda apostar en el flop a muchos tamaños de apuesta lo cual podría generar el efecto de que no sepamos exactamente si queremos resubir a la misma proporción y me explico si aquí por ejemplo el rival estuviera apostando a 50 dólares en un bote de 75 y estuviera apostando a dos tercios del bote vamos a querer resubir 4x eso sería como resubir a 200 no parece un poco excesivo vamos realmente a querer resubir a 200 y el rival nos apuesta a 50 todo esto son cuestiones y preguntas muy razonables que nos tenemos que hacer porque al final cuando estamos reaccionando al tamaño de apuesta del rival y estamos construyendo una estrategia alrededor de ello queremos saber simplemente queremos saber si nuestro tamaño de apuesta quiere seguir siendo igual de fuerte de forma exponencial o si debemos adaptarlo y reducir el tamaño que hacemos y el tamaño de apuesta que el rival hace cambia lamentablemente el juego del poker es así de cabrón es decir es un juego que tiene multitud de cosas que pueden llegar"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 6,
+    "start_time": 364.68,
+    "end_time": 420.68,
+    "text": "a suceder y resulta lamentablemente que las estrategias que queremos hacer cuando alguna variable cambia no siempre son las mismas pero bueno al final de este para final de este vídeo espero vais a tener una idea clara de cuáles son los tamaños de apuesta que queréis realizar haciendo cherraces porque os voy a decir las simplificaciones y las normas de juego que yo uso para esta situación y al mismo tiempo habremos pasado por por todos los motivos por los cuales yo construyo mi juego de esa manera si que vamos a analizar para continuar con lo que estaba diciendo como querríamos reaccionar en esta situación si el rival en lugar de apostar a 25 en 75 apostará a 50 que de hecho es un tamaño de apuesta mejor para jugar en un boar neutro bajo de este estilo que no tiene proyectos completados jugando composición como open racer este tipo de boar es de hecho mejor para apostar lo fuerte que pequeño sí que nos vamos a este árbol vale y asumiendo que el rival apostará a 52 en un bote de 75 vale como podéis comprobar teniendo tres opciones"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 7,
+    "start_time": 420.68,
+    "end_time": 479.68,
+    "text": "hacer a 2,5x 3x y 3,5x vale una cosa fijaros como he quitado los tamaños de resubida más fuertes 4x y 5x porque cuando he hecho la primera versión de este cálculo me he dado cuenta de que no queríamos usar esos tamaños nunca vale e incluso 3,5x es muy alto eso sería resubir a 180 en el flop vale imaginaros que apuesta a 50 nosotros resubimos a 180 vale pues no queremos hacer nunca ese tamaño de apuesta de hecho por querer no queremos ni siquiera resubir a 156 que sería un 3x simple lo que queremos hacer más a menudo es un 2,5x que sería hacer a 130 por lo tanto si el rival es lugar de apostar aquí a 25 apostará a 50 él estaría metiendo 50 en un bote de 75 el bote total de eso sería 135 vale o por ahí aquí los tamaños de apuesta no son exactamente los mismos pero son casi casi iguales creo o sea si él apuesta a 52 está montando un bote de 127 lo he contado mal si él apostará aquí"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 8,
+    "start_time": 479.68,
+    "end_time": 536.68,
+    "text": "en lugar de 25 a 50 el bote sería de 125 o sea 125 no 130 vale es decir en un bote de 125 que tendría esto suponiendo que esto en lugar de 25 fuera 50 vale el tamaño de apuesta óptimo que querríamos realizar sería 130 es el tamaño de apuesta que tiene que tiene más preferencia lo queremos hacer un 10% de las veces en contraposición al 1,31% del 3x y al 0,82% del 3,5x así que de esto podemos aprender algo muy importante no queremos resubir a tamaños de forma exponencial y sin límites cuando el rival apuesta un tamaño de apuesta diferente y podemos llegar a una simplificación que es la que yo os decía en uno de los vídeos anteriores y es que las manos de check raise yo habitualmente las subo en el flop a una cantidad aproximada lo que hay en el bote sumando el bote y el tamaño de la apuesta que hace el rival en el flop"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 9,
+    "start_time": 536.68,
+    "end_time": 594.68,
+    "text": "esta es la lógica de juego que en esta situación yo sigo sumo el tamaño de apuesta del rival y lo que hay en el bote en este caso 25 y 75 suman 100 vale y lo hemos visto hace un momento que esa norma suele funcionar muy bien porque por ejemplo cuando lo hemos calculado aquí hemos visto que el tamaño de apuesta que queremos hacer más a menudo para resubir es 100 el rival apuesta 25 pues el tamaño de apuesta de cian vale si nos vamos a cualquier mano comprobaremos que es el color que está más a menudo seleccionado lo podéis ver ahí es el semirrosa ese no sé ni no sé cómo nombrarlo porque son todo tonalidades pero lo podéis ver claramente que el color que está representando el cian el tamaño de apuesta de cian es el que hacemos más frecuentemente y cian es justamente lo que hay en el bote cuando el rival apuesta 25 y en el otro árbol que hemos calculado como podéis comprobar si el bote tiene 127 estamos haciendo 130 como el tamaño de apuesta principal vale así que una cosa que siempre intentó"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 10,
+    "start_time": 594.68,
+    "end_time": 654.68,
+    "text": "transmitir con mis vídeos y que lo iréis viendo que sucede todo el rato a lo largo de las decenas y decenas y decenas de vídeos que vais a seguir viendo en este curso vale una de las cosas que siempre intentó transmitir con mis contenidos es hacer del juego del poco que era algún poquito más fácil de entender algún poquito menos complicado de jugar vale y aquí podemos llegar a esa lógica de juego vale la lógica de juego de que para resubir en el flop habitualmente el mejor tamaño de apuesta que podemos realizar y que además esta lógica de juego se adapta a diferentes tamaños de apuesta que nos que nos hagan vale es resubir a una cantidad parecida a lo que haya ya en el bote existente me he repetido mucho pero quería de alguna forma establecer esto no porque nos permite adaptarnos a que el rival apuesta a diferentes tamaños de apuesta y ahí simplificamos nos quitamos un marrón de encima de tres paredes de cojones porque no tenemos que aprender dos estrategias o varias estrategias en función de cuánto tamaño apuesta el rival ahora nos queda un problema y es investigar si en este boar concretamente queremos jugar de esta manera y en otros no"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 11,
+    "start_time": 654.68,
+    "end_time": 714.68,
+    "text": "o si esta lógica de juego que acabamos de establecer pues bueno cambia o no cambia en función de otros tipos de boas no vamos a ver eso en lo que se refiere a juego postflop todo ese tema lo vamos a ver luego en vídeos posteriores vale voy a tratar de centrar este vídeo exclusivamente en el tema de los tamaños de apuesta porque una vez lo tengamos ese tema resuelto ya los próximos vídeos pues no me tengo que entretener en repasar ese tipo de temas y van a ser más sencillo de entender en definitiva así que nada la siguiente mano que tenemos aquí es un ray jota vale defiendo y en esta situación decidí hacer un check raise es cuestionable pero vamos a centrarnos en el tamaño de apuesta esta mano la resolveremos en vídeos posteriores vale como podéis comprobar el rival está apostando en este caso a 15,93 en un bote de 50 lo cual da un bote total de 65 pues bueno siguiendo la norma de más o menos apostar una cantidad parecida a lo que hay en el bote o ligeramente menos vale esa es la norma de juego que os dije en algún vídeo anterior pues yo estoy aquí resolviendo a 56"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 12,
+    "start_time": 714.68,
+    "end_time": 772.68,
+    "text": "antes de continuar voy a deciros una de las de las funciones principales que tiene el movimiento del check raise cuando el rival apuesta aquí a 16 lo hace con un rango compuesto de manos de valor ya pueden ser manos marginales manos medias o manos fuertes de valor hay varios podemos categorizarlo dentro de diferentes niveles no es lo mismo que el rival tenga aquí unas jota o unas ray o un 2,2 que un 8,8 o que un 6,7 o que un rey dama o unas dama o unos ases o un set son manos de un nivel muy diferente cuando tú haces un check raise lo que tú estás presionando principalmente es a la zona marginal de manos de valor es decir este raise te beneficia en tanto en cuanto podrías obtener un fold de unas jota, de unas ray, de un 2,2 de ese tipo de manos y luego el segundo beneficio mayor o el mayor beneficio realmente de hacer un check raise es robarle el bote a una mano como la tuya es decir el rival te puede estar aquí faroleando un jota 10"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 13,
+    "start_time": 772.68,
+    "end_time": 830.68,
+    "text": "o un rey jota o cualquier mano de este estilo podemos incluso contar unas dos como un farol y no tanto como una mano de valor realmente marginal unas dos con el as de picas por ejemplo es un farol ese tipo de manos podemos robarles el bote al hacer este movimiento así que ese es el principal beneficio que existe de hacer un check raise robarle el bote a ese tipo de manos cuando nosotros tenemos un farol y por otro lado este tipo de manos lo que están haciendo es equilibrar las manos por valor que tenemos que quieren resubir para ganar más dinero y nosotros tenemos aquí un 5-5, un 6-6, 1-5, 1-6 y demás todas esas son manos muy razonables para resubir en el flop y el motivo de que quieren resubir en el flop es que quieren montar un bote más grande quieren recuperar la iniciativa y asegurarse de que juegan un gran bote porque son manos que tienen el valor suficiente como para querer ganar mucho más dinero y el check raise es un movimiento que hacemos exclusivamente para eso para ganar dinero y para robarle el bote a los faroles cuando tengamos nosotros un farol y toda la pesca"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 14,
+    "start_time": 830.68,
+    "end_time": 890.68,
+    "text": "este movimiento no es un movimiento que yo crea que es buena idea desequilibrarlo de forma alguna jugando en situaciones de juego tempranas ya sea en apuestas de continuación o movidas de ese estilo me da un poco igual contra qué tipo de rival me está enfrentando estas no son situaciones en las que quieres check raise mucho de menos contra un jugador o check raise mucho de más contra otro jugador porque si bien es cierto sobre todo contra los jugadores que apuestan mucho más de la cuenta y demás o que hacen mucho más open raise de la cuenta y demás si bien es cierto que puede haber perfiles de jugador contra los que un check raise te pueda beneficiar más que contra otros y demás son detalles que realmente afectan poquísimo a tu rentabilidad a largo plazo como jugador es decir, ganas poquísimo dinero cuando aciertas de ese tipo de detalles y pienso que el dinero está en otras partes de tu juego, ¿vale? creo que no te interesa desequilibrar tu juego en una secuencia de juego tan temprana cuando quedan todavía tantas cosas por suceder desde el flow hasta el river así que esta secuencia concretamente"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 15,
+    "start_time": 890.68,
+    "end_time": 948.68,
+    "text": "es una de esas secuencias que intento jugar lo mejor posible e intento aprender con qué tipos de manos en diferentes tipos de boas quiero check raise y me gusta ser relativamente estricto teniendo faroles en mi estrategia, ¿vale? y no solamente manos fuertes, ¿vale? esto también creo que es importante decirlo y el motivo es ese no pienso que haya un gran beneficio de jugar desequilibrado y sí que puede haber bastantes problemas de jugar desequilibrado mayor problema es que parezca que eres un jugador demasiado tight y demás y si un jugador percibe que solamente resubes con manos fuertes y que no lo haces lo suficientemente a menudo con faroles el problema gravísimo que vas a causar en tu juego es que tus rivales se den cuenta de eso y que no te quieran pagar tus resubidas y se tiren de todas las manos medias y de todas las manos marginales de valor si llegas a un escenario en el que tus rivales actúan de esa forma contra ti vas a estar no ganando dinero de tus manos más fuertes lo cual es absolutamente lamentable y algo que no debería suceder jamás en tu estrategia los faroles son muy importantes para construir una imagen de jugador"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 16,
+    "start_time": 948.68,
+    "end_time": 1008.68,
+    "text": "que de alguna forma te haga cobrar cuando tú tengas una mano fuerte así que con todo esto claro, ¿vale? vamos a continuar por donde empezamos hace un momento que es en el tema de los tamaños de apuesta y vamos a ver si este tamaño de apuesta en este bar concretamente fue una buena elección como podéis comprobar con las opciones de hacer a 3,5x contra una apuesta de 33% del bote 4x, 4,5x y 5x, ¿vale? todos estos tamaños de apuesta los tamaños de apuesta más pequeños 3x y 3,5x si no me equivoco estos tamaños serían los que son más interesantes para nuestra estrategia de hecho concretamente el que es más frecuente de todos sería justamente el que yo hice 56, ¿vale? es decir, ligeramente menos que el dinero que hay en el bote si en el bote hay 65, 66 estamos haciendo aproximadamente 10 dólares menos 8 o 9, 10 dólares menos, ¿vale? algunos se podría preguntar es realmente importante hacer un poco menos o un poco más y yo la respuesta de eso la tengo clara"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 17,
+    "start_time": 1008.68,
+    "end_time": 1066.68,
+    "text": "no es importante, ¿vale? lo que importa es que te quedes más o menos cerca, ¿vale? si por ejemplo tu rival te hace aquí a 15 y tú resubes a 90 te vas a estar quedando lejos del tamaño de apuesta que quieres realizar o si por ejemplo te hace a 15 y resubes a 35 o a 40 también te vas a estar quedando lejos del tamaño de apuesta que quieres realizar esas son las cosas que quieres evitar no te quieres quedar muy lejos del tamaño de apuesta que querrías realizar pero entre quedarte un 10% arriba, un 10% abajo incluso un 20% arriba, un 20% abajo no pasa absolutamente nada de hecho en la mano anterior lo podéis comprobar que cuando el rival aquí me hizo un bet yo resubí a 80 que en el boar que justo estamos viendo hace un momento sería el tamaño de apuesta perfecto pero en este boar que estábamos analizando anteriormente vimos que 100 era un tamaño de resubida mejor en esta situación en concreto y es que me parece muy importante que sepáis que no se... que no se muere un gatito cada vez que que resubes 10 dólares más o menos"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 18,
+    "start_time": 1066.68,
+    "end_time": 1126.68,
+    "text": "de lo que debes y yo personalmente no me quita el sueño lo más mínimo equivocarme por este tipo de márgenes en este tipo de de situaciones lo que estamos tratando de establecer, ¿vale? es cuáles son los tamaños de apuesta más frecuentes que queremos realizar en la inmensa mayoría de boars hay tantísimas combinaciones de boars esto podría ser 10-8-5 10-6-5 10-6-2 ¿sabe lo que os digo? luego puede venir un boar que es Re9-2 Re9-5 que es más conectado A8-3, ¿vale? hay tanta cantidad de combinaciones de boars que es súper súper importante que simplifiquemos nuestro juego en una estrategia que tiene sentido y que funciona bien para todos esos boars en conjunto es decir, en ningún caso vamos a construir una estrategia para cada uno de esos boars o nos volveríamos absolutamente locos vamos a ver ahora un nuevo boar aquí tenemos un Re5 que defendemos contra este jugador y llegamos a un boar 10-8-3 aquí el rival apuesta"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 19,
+    "start_time": 1126.68,
+    "end_time": 1186.68,
+    "text": "en este caso a potbet y yo resubí a 70, ¿vale? fijaros lo que hago, resubir a 70 el botete tiene 67 y el rival me está haciendo una apuesta desproporcionada me hace 35 en 32 pero yo voy y resubo a 70 en esta situación le di al solver varias opciones le di la opción de que fuera 2x una resubita súper pequeña, 2.5x 3x y 4x pero hice un cambio, ¿vale? el rival aquí me apostó a potbet que sería 100% del bote me hizo 35 en un bote de 32 y yo aquí pues bueno, puset 75 porque me parece un tamaño que es más habitual que haga la gente que tuviera este tamaño antes que 100 pero bueno, sería parecido y si nos vamos al solver como podéis comprobar cuando el rival apuesta 24 en 32 que sería 75% del bote estaría montando un bote de 56 y fijaros en la tendencia de juego que tenemos y también otro cambio que he hecho pero era por no calentarme en la cabeza y no perder mucho el tiempo he puesto como si este árbol fuera de ciega grande contra botón"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 20,
+    "start_time": 1186.68,
+    "end_time": 1246.68,
+    "text": "esta posición es un poco más temprana pero podemos seguir las mismas lógicas de juego para otras posiciones también imaginaros si no solamente nos tuviéramos que preocupar de que el rival apuesta a diferentes tamaños de apuesta sino que también para elegir nuestro tamaño nos ponemos ahora a rayarnos que si abre desde mp o botón o cutoff, ¿no? vamos a simplificar y vamos a elegir una cosa que tiene sentido y nos vamos a centrar en ella y punto entonces, si el rival apuesta 24 en un bote que tenía 32 ¿vale? asumiendo este escenario ¿vale? el tamaño de check raise óptimo sería en la zona de 48 60 y 72 es decir, el tamaño de apuesta de resubida más fuerte que sería 3x que sería a 96, ¿vale? es un tamaño de apuesta que no queremos hacer nunca así que, fijaros que curioso, ¿no? aquí no quieres resubir a 90 a pesar de que proporcionalmente hablando no no chirría, o sea, no chirría lo más mínimo que cuando te apuesta aquí un tío 25 o algo así le suba a 90, realmente y a 72 pues chirría menos todavía, de hecho parece lo más sensato, ¿no? a nivel de proporciones"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 21,
+    "start_time": 1246.68,
+    "end_time": 1306.68,
+    "text": "parece sensato resubir a 70 pero nos estaríamos equivocando porque a pesar de que este tamaño de apuesta es correcto el tamaño de apuesta más frecuente y el que queremos hacer más a menudo sería 60, es decir, resubimos a 60 en un bote de 56, ¿vale? y esta es la lógica que yo sigo cuando construyo mis tamaños de apuesta a la hora de hacer un check raise, ¿vale? cuando me apuesta un fuerte, ¿vale? como resubir un poco más pequeño de la cuenta se me queda demasiado mini raise y no me gusta, ¿vale? aquí no me gusta resubir a 55 por poneros un ejemplo, es que el rival folde lo suficiente y el check raise pues, no sé, se siente un poco raro, entonces como no me gusta hacer ese tipo de de adaptaciones y no tiene sentido vamos, siempre cuando el rival me haga una apuesta fuerte en el flop, una adaptación que voy a hacer es nunca resubir a menos que el bote, pero sí que mantengo un poco la tendencia de resubir al tamaño de al tamaño que tiene el bote o un poquito más que es básicamente lo que hice aquí, en un bote de 67 resubí a 70, y esto es aun así un mini raise en esta situación pero es que cuando estoy analizando este tipo de situaciones, habitualmente, ¿vale? pues"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 22,
+    "start_time": 1306.68,
+    "end_time": 1366.68,
+    "text": "me doy cuenta de eso, de que siempre un poco está esta tendencia, de que el mejor tamaño de apuesta para resubirse aun, está en la zona del tamaño que tiene el bote, sumando el bet del rival y la cantidad previa que había, ¿no? y es es curioso, ¿no? es curioso, pero al mismo tiempo que es curioso, también es bueno porque nos permite lo que os decía antes crear una sola estrategia para adaptarnos a todos los tamaños de apuesta que podría estar haciendo el rival en el flop y eso es bueno. El siguiente boar que quiero que le echemos un ojo, para ver cómo nos queremos adaptar a él, es a los boars three straight bajos, ¿vale? aquí tenemos un boar three straight bajo, existe posibilidad de escalera y el boar es 652, ¿no? ¿Cómo queremos resubir en esta situación? aquí concretamente el rival me está apostando un tercio en un bote de 25 meter 7 y pico y el bote total se va 32 ¿A cuánto tengo que resubir yo? pues como podéis comprobar, subo ligeramente menos que el tamaño total que tiene el bote, ¿vale? y esta es una adaptación o sea, estos son los tamaños de apuesta que yo suelo realizar cuando el rival me apuesta una cantidad pequeña"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 23,
+    "start_time": 1366.68,
+    "end_time": 1426.68,
+    "text": "suelo irme más a la zona de resubir ligeramente menos que lo que tiene el bote sumando la apuesta del rival y el centro ¿vale? y como podéis comprobar hago a 27, vamos a ver si esto es correcto en esta situación si el rival apuesta un tercio, que sería apostar a 8 en un bote de 25 y el bote total se va a 33 ¿vale? como podéis comprobar los mejores tamaños de apuesta, serían 24 28, o sea, aquí le di es que le di al árbol 3 tamaños muy parecidos le di 3x, 3,5x y 4x, respecto al 33% ok entonces, estamos hablando de que el tamaño de apuesta más frecuente sería más o menos el que yo hice, yo hice a 27 pues 28 sería el tamaño de apuesta más frecuente pero no pasa nada por resubir también a 32 que sería meter 32 en un bote de 33, que sería más o menos lo que tiene el bote, así que lo podéis ver aquí no existe una norma exacta, no existe un mejor tamaño de apuesta al 100% de las veces ni nada del estilo pero sí que podemos guiarnos un poco"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 24,
+    "start_time": 1426.68,
+    "end_time": 1486.68,
+    "text": "por las tendencias, vamos a la hora de hacer este tipo de análisis ¿no? previamente hacer estos 3 tamaños, obviamente le di la opción al solver de que resubiera a 5x, 6x y demás pero luego acabé quitando esos tamaños de resubida porque no los hacía nunca ¿no? y quería hacer el árbol un poquito menos complejo para que fuera más fácil de ver pero es lo que os digo, digamos que esta lógica de resubir o al bote o ligeramente menos que lo que tiene el bote cuando el rival apuesta a un tercio del bote se sigue manteniendo lo cual es estupendo ¿no? y así es como se estudia así es como se estudian los tamaños de apuesta no solamente para esto sino para cualquier otra situación ¿vale? y podéis comprobar un poco pues la lógica que que os decían vídeos anteriores porque es de la manera que es ahora vamos a hablar sobre un tipo de boar que realmente me ha sorprendido cuando lo he estado estudiando para hacer este vídeo y es un tipo de boar que yo estoy jugando un poco, osea yo como he estandarizado y simplificado mi juego para seguir la lógica anterior que ya os he explicado pues básicamente actuó de esa manera"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 25,
+    "start_time": 1486.68,
+    "end_time": 1546.68,
+    "text": "en todos los boars y me ha sorprendido encontrar un par de boars en los que he visto que el tamaño de apuesta de resubida podía ser más fuerte de lo que yo estaba haciendo y esos boars son los two grabs estos que tienen cartas intermedias un boar two grab ¿vale? grab, grab es un término que se usa en omaja para definir la cantidad de proyectos de escalera que hay en un boar concreto ¿vale? y aquí hay proyectos de escalera entre el 9 y la dama ¿vale? y entre el 9 y el 6 es decir, two grab, ese es el término two grab, lo que significa en este tipo de boar el rival espero que apueste más fuerte, mucho más a menudo eso de entrada este concretamente hizo cerca de dos tercios y aquí en un bote de 50 pues yo estoy resubiendo a 52 es decir, este tipo de boar two grab tiendo a resubir el bote ¿vale? lo que tiene en el bote suelo resubir más o menos eso es decir, raramente me quedaría aquí en 45 cosas de ese estilo y eso es lo que vengo haciendo ¿no? habiendo analizado las manos anteriores, tiene todo el sentido del mundo de que estuviera haciendo este tamaño de apuesta, vamos a ver piosolver que dice"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 26,
+    "start_time": 1546.68,
+    "end_time": 1606.68,
+    "text": "sorprendentemente en esta situación cuando el rival apuesta a 21 en un bote de 32 montando un bote de 50 y poco, curiosamente ¿vale? podemos hacer resubidas súper fuertes y es correcto hacerlo ¿vale? de hecho el tamaño de apuesta del bote prácticamente es inexistente es decir, resubir a 63 en un bote de 53 que es como mucho más fuerte de lo que veníamos incluso analizando anteriormente ¿vale? este es uno de los poquísimos boars en los que he visto que podamos hacer resubidas masivas realmente en el flow ¿vale? podemos resubir a 80, 90 opción sin ningún tipo de piedad ¿no? y esto da a entender que en esta situación particularmente existe un beneficio de denegar la máxima equity posible a los proyectos ¿vale? aquí podemos resubir a 5x ¿vale? el rival nos hace a 20 podemos resubir a 100 en un bote de 50 estamos haciendo una una overview realmente, estamos haciendo una tamaño de apuesta muy proqué muy muy grande para lo que es este boar ¿no? y cuál es el objetivo de ese tamaño de apuesta? pues poner en presión a los proyectos, cuando nosotros hacemos aquí a 100 el rival tiene una situación súper súper complicada con manos como un rejota"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 27,
+    "start_time": 1606.68,
+    "end_time": 1665.68,
+    "text": "se tiene que tirar cuando normalmente contra cualquier otro tamaño de apuesta un rejota está flotando todo el día, si yo hago aquí a 63 fijaros que rejota puede pagar el 100% de las veces es decir en esta situación concretamente si tú resubes a lo que yo estoy haciendo literalmente casi todos los proyectos que el rival tenga pueden pagar la resubida y flotarnos pero si hacemos la estrategia de resubir a 80 entre 80 y 100, muchas gadgets las pones en un lugar en el que no se sienten cómodas esas manos ¿vale? y ha sido un descubrimientos cuando estaba estudiando para hacer este vídeo he descubierto esto y me ha parecido literalmente ver esta diferencia es decir, ver que mi razonamiento, mi estrategia tenía un pequeño déficit en este tipo de boas me ha hecho querer hacer este vídeo porque me ha parecido interesante compartirlo literalmente ¿vale? así que nada, es interesante que veáis justamente los motivos por los cuales este tamaño de apuesta tan grande tiene sentido en un boar como este y es completamente diferente en los boas que no son tu grab ¿vale? hemos visto con anterioridad"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 28,
+    "start_time": 1665.68,
+    "end_time": 1725.68,
+    "text": "otro tipo de boas en los que simplemente no queremos hacer esto, por ejemplo este boar de aquí estamos viendo antes, si estos boars tienen proyectos pero no tienen la misma cantidad de proyectos que un boar tu grab, ni remotamente y además existen proyectos completados, lo cual cambia completamente la dinámica de juego que queremos realizar en un boar de estos ¿vale? que el boar sea 3 straight o que tenga el color completado, cosas de ese estilo sí, el rival puede tener proyectos en ese tipo de boas, pero también tiene mucha más cantidad de mano fuertes ¿vale? y eso hace que tu juego quiera polarizarse de una determinada manera y seguir un estilo de juego en definitiva, el que no le beneficia ese tipo de overbeats tan masivas ¿vale? en este otro tipo de boar por ejemplo lo mismo, es un boar con una carta alta y dos bajas, bueno una carta media y dos bajas en este tipo de boars existen proyectos definitivamente si pillamos al rival con un 9.7 ¿vale? o con un 9.8 nos beneficia que en lugar de resubirle a 80 nos beneficia que le resubamos a 140 ¿vale? pero es que el 9.7 y el 9.8 proporcionalmente hablando en relación a la cantidad de parejas o otro tipo de faroles que tiene el rival"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 29,
+    "start_time": 1725.68,
+    "end_time": 1785.68,
+    "text": "simplemente no tiene tanto peso en el rango del rival, es decir, no existe un beneficio particular de inclinar tu estrategia a resubir y per fuerte para ver si penalizas a un par de manos que tiene el rival ¿entendéis? es una situación muy diferente así que en esta situación concretamente ¿vale? podemos diferenciar los boars estos tu grab ¿vale? que tienen multitud de proyectos de escalera aquí, quien dice un rajota, dice un J10, dice un J8, un 10.8 un 7.8 un 8.5 ¿vale? todo eso ¿vale? en este tipo de situaciones pues bueno hemos aprendido eso ¿no? vamos a ver otro boar, tu grab parecido a este en esta mano defendemos contra un open raise del cutoff y llegamos a un boar reinueve 5 ¿vale? en esta situación concretamente el rival apostó a medio bote, este boar es también para apostarlo medio fuerte ¿vale? pero vamos a hacer este análisis como si el rival estuviera apostando a lo que apostó que es medio bote ¿vale? para ver si esto mismo que hemos aprendido hace un momento cuando el rival apuesta a dos tercios del bote se mantiene más o menos igual en un boar"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 30,
+    "start_time": 1785.68,
+    "end_time": 1845.68,
+    "text": "como este cuando el rival cambia su tamaño de apuesta a algo un poquito más pequeño y como podéis comprobar se mantiene ¿vale? si el rival apuesta a 15 ¿vale? le podemos hacer un 5x literalmente le podemos hacer un 5x que sería resubir a 80 ¿vale? y 80 literalmente es el tamaño de apuesta que tiene más frecuencia a pesar de que es perfectamente razonable hacer a 72 o hacer a 64 porque todos los tamaños de apuesta definitivamente están en el rango no hay ningún problema en hacer otros tamaños de apuesta más pequeños simplemente vemos que esta tendencia de hacer tamaños de resubida y per fuertes para castigar a las gachots en este boar concretamente lo que estamos castigando son pues cuando el rival tenga un dama jota, un dama 10, jota 10 un 6x7, un 6x8 ¿vale? ese tipo de manos resubir y per fuerte para que ese rango no nos flote beneficia a muchas manos de nuestro rango si por ejemplo nosotros tenemos un que se llama un backdoor o alguna mierda del estilo que tampoco tenemos muchos pero bueno en este boar como es muy ofensivo tenemos muy poco rango de chase race ¿vale? pero bueno en definitiva nos beneficia meter ese tipo de presión ¿no? si resubimos aquí"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 31,
+    "start_time": 1845.68,
+    "end_time": 1905.68,
+    "text": "con un 6x8 de corazones a ti con un 6x8 de corazones no te interesa que tu rival te flote aquí con un jota 10 porque te roba el bote luego a ti lo que te interesa cuando tú resubes aquí un 8x6 de corazones es que el rival se tire de toda esa zona de su rango ¿no? de todos esos proyectos y para conseguir el efecto de que se tire de todas esas manos necesitas resubir y per fuerte pero una cosa que es importante tener en cuenta es lo que os decía antes sobre todo en boars ofensivos y demás y también cuando hagamos tamaños de apuestas muy fuertes nuestras estrategias van a estar mucho más polarizadas ¿vale? y con polarizadas me refiero a que lo haremos con manos muy fuertes o con faroles muy claros faroles que se benefician de tirar a faroles mejores ¿no? lo que os digo 8x6 por ejemplo sería un farol débil que se beneficia de tratar de robarle el bote a proyectos que le superan y no queremos que nos floten y este estilo de juego en el que hacemos todo esto de forma polarizada implica que no podemos resubir una enorme cantidad de manos a un tamaño de apuesta tan fuerte ¿vale? no resubimos manos medias ni cosas de ese estilo ¿no? manos de valor marginal ni muchísimo menos así que básicamente"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 32,
+    "start_time": 1905.68,
+    "end_time": 1965.68,
+    "text": "resubimos un pequeño porcentaje de manos a un gran tamaño de apuesta ¿no? luego más adelante en este vídeo vamos a analizar también algunos otros boars en los que resubimos despolarizado ¿vale? resubimos un gran rango de manos resubimos muchísima cantidad de manos en el flop eso va a suceder sobre todo en algunos boars emparejados ¿vale? pero lo hacemos a un tamaño de apuesta más pequeño porque conforme más amplios nuestro rango menos fuerte queremos apostar ¿vale? esta es una lógica de juego que no solamente aplica a los charracers sino aplica también a otras muchas situaciones conforme más amplios el rango que apostamos lo hacemos a un tamaño de apuesta más pequeño habitualmente así que nada con esto concluimos esta anomalía digamos en la lógica que serían los boars to grab de este rollo ¿vale? y vamos a ver ahora un boar que es to grab pero que es ligeramente diferente a estos que hemos visto aquí tenemos una mano que es un 2-2 que defendemos contra el cutoff y llegamos a un boar 9-6-2 ¿vale? el rival apuesta en esta situación medio bote y yo hice lo que estoy acostumbrado a hacer"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 33,
+    "start_time": 1965.68,
+    "end_time": 2025.68,
+    "text": "que es que en este tipo de situaciones resudo aproximadamente la cantidad que hay en el bote que en este caso sería 47.5 y este boar es lo que os decía es un to grab también tiene proyectos de escalera entre el 9 y el 6 y el 2 pero la diferencia que hay entre este boar to grab y los anteriores es que este boar tiene muchas más cartas más bajas que impactan menos con el rango de open race que va a tener el rival y esta mano la he calculado como si el rival estuviera en el botón pero ya os digo me sirve las mismas tendencias de juego las voy a copiar para jugar contra el cutoff mp o utg me da un poco igual ¿vale? entonces la diferencia que hay entre este boar to grab y los anteriores es esa el rival tiene o conecta menos a menudo con ese tipo de proyectos a los cuales nos beneficiamos de presionar me parece muy importante establecer esto vamos a ver como queremos reaccionar en esta situación ¿vale? y este boar es el anterior no es el de ahora aquí lo tenemos ¿vale? cuando el rival apuesta a medio bote en un bote de 32 apuesta a 16 como podéis comprobar con un 2-2 vamos a querer resubir pero no estamos haciendo a un 4x"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 34,
+    "start_time": 2025.68,
+    "end_time": 2085.68,
+    "text": "o un 5x o mierdas de ese estilo estamos resubiendo nuevamente al tamaño que tiene el bote como tamaño de apuesta principal es decir resubimos a 48 en un bote de 48 que es básicamente lo que yo hice ¿vale? resubirá a 45 en un bote de 47 y me parecía muy interesante mostraros esto porque gracias a esta mano comparándola con la anterior podemos entender la anomalía podemos entender en qué momento la lógica de juego de resubir el tamaño de apuesta que tiene el bote en ese momento ¿vale? en qué momento esa lógica deja de funcionar y eso sucede en el momento en el que el rival conecta una enorme cantidad de proyectos en un boar concreto no es tanto que sea tu grab porque si el boar es tu grab pero es bajo y el rival no impacta en él, da un poco igual es decir, jugamos parecido en 10-6-5 que en 9-6-2 son boars digamos que los podríamos meter en una categoría similar y este es uno de los motivos por los cuales también nunca os digo estrategias que podéis hacer de forma general"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 35,
+    "start_time": 2085.68,
+    "end_time": 2145.68,
+    "text": "en cada tipo de boar porque como podéis comprobar en cada situación del juego y en la naturaleza tu grab los podríamos categorizar como boars que también son bajos y ¿sabe lo que os trato de decir? queremos jugar exactamente igual en 10-6-5 que en 9-6-2 por eso no podemos crear normas de juego en función del tipo de boar que estamos jugando porque hay muchas veces que queremos jugar exactamente igual en un boar que en otro y lo que tenemos que tratar de entender son precisamente las lógicas de juego que hacen que queramos jugar de una manera o de otra y todo esto siempre teniendo la cabeza en simplificar y hacer el juego menos complicado así que nada gracias a esta mano podemos entender literalmente cuál es el momento en el que la lógica de juego de resubir al tamaño que tiene el bote en el flop justo gracias a esta mano podemos entender cuándo eso sucede porque hemos comprobado que aquí no queremos resubir más fuerte y es por eso el rival no ha conectado una enorme cantidad de proyectos en este boar a los cuales queramos presionar y una cosa curiosa es que desde el punto de vista del rival vamos a olvidarnos de los charracers"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 36,
+    "start_time": 2145.68,
+    "end_time": 2205.68,
+    "text": "en este momento es interesante porque desde el punto de vista del rival como penraiser que se tiene que enfrentar a la decisión de hacer una apuesta de continuación en este boar curiosamente en este tipo de boars a él le interesa hacer apuestas de continuación fuertes él se quedó corto aquí, este tamaño de apuesta está mal él tendría que haber apostado aquí en la zona de 22, 23 o por ahí y curiosamente ese tamaño de apuesta que él tendría que haber hecho aquí es exactamente el mismo que el que quería realizar en este flop aquí, ese jugador también apostó mal menos de lo que debe y fijaros que en esta situación en concreto como openraiser la lógica de juego que él debe seguir en este tipo de boars to grab es apostar fuerte él debe apostar fuerte en este tipo de boar to grab, pero siendo to grab rey95 y siendo to grab 962 exactamente igual debe jugar la misma estrategia en ambos tipos de boars así que fijaros como aquí el tipo de boar osea él quiere jugar igual en el mismo tipo de boar pero en una situación diferente que es el charracer desde nuestro punto de vista no queremos jugar exactamente igual porque el tipo de boar tenga una naturaleza parecida por eso os digo"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 37,
+    "start_time": 2205.68,
+    "end_time": 2265.68,
+    "text": "no podemos crear normas que apliquen al 100% de las situaciones del poker porque cada situación del juego es diferente y al final tenemos que ser humildes y tratar de entender por donde van los tiros en definitiva tenemos que tratar de entender como funcionan las cosas sin llegar a oversimplificar pero sin tampoco desde luego tratar de hacer las cosas más complejas de lo que realmente son vamos ahora a los boars emparejados que diría que son el otro tipo de boars principales en los que nuestra estrategia puede ser un poco llamativa vale y nada, aquí tenemos un 17 que vamos a defender Ciarán de Contrakatov y llegamos a un boar 774 el rival apuesta en esta situación hizo medio bote que es un poco excesivamente fuerte y en esta situación yo resubí a lo que tenía el bote como el tamaño de apuesta que me hizo mi rival era más de medio bote cuando eso sucede yo no resubo demasiado pequeño, resubo a lo que hay en el bote más o menos para que mi tamaño de apuesta se quede cerca de ser o lo más cerca posible de ser un 3x en definitiva pero bueno, siempre me guío por lo que tiene el bote"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 38,
+    "start_time": 2265.68,
+    "end_time": 2325.68,
+    "text": "y nada, vamos a ver esta mano y la tenemos justo aquí cuando arriba la apuesta 23 una cosa que os puede llamar la atención es que el rango que resubimos es mucho más amplio en estas situaciones que antes estamos resubiendo en total por encima del 20% de las manos antes que estamos viendo chess races que eran de 8 de 5, mierdas así tenemos muy inferiores a 20% una de las cosas que quiero deciros es que los boars emparejados sobre todo si son de cartas bajas son boars en los que ni nuestro rival ni nosotros conectamos a penal es decir, son boars que por decirlo de una manera oversimplificada son boars que no son de nadie y que se los puede llevar un poco el más listo vamos a decir, pero al mismo tiempo si bien eso que acabo de decir tiene sentido no es tanto así el motivo por el cual queremos chess racear mucho nosotros tenemos una parte de nuestro rango que es muy fuerte, que son los 7 y cuando el rival apenas tiene casi ninguna mano mejor que esa obviamente vamos a querer resubir y ganar dinero de ese tipo de manos"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 39,
+    "start_time": 2325.68,
+    "end_time": 2385.68,
+    "text": "así que cuando miramos aquí lo que queremos hacer con los 7 vais a comprobar que siempre que tengamos un 7 o casi siempre vamos a querer resubirlo en el flop y vamos a tratar de ganar dinero de él y luego en esta situación concretamente seguimos lógicas de juego en relación al tamaño de apuesta parecidas a las que hemos visto en el resto de boars es decir, se podría decir que en los boars emparejados y en los boars que no son emparejados no los tura, los demás todos los demás, se podría decir que en la inmensa mayoría de boars y en los boars emparejados podemos resubir al mismo tamaño así que aquí tenemos buenas noticias no tenemos que crear una sola nueva estrategia a la hora de decidir cuál es el tamaño de apuesta que queremos realizar para resubir, nos podemos guiar por lo que tiene el bote, pero es curioso incluso ver que aunque el rival apuesta es medio fuerte el tamaño de apuesta que queremos realizar en los boars emparejados es ligeramente menos que lo que hay en el bote, es decir, el tamaño de apuesta que queremos hacer más a menudo de 57 por encima de 69 y 92 por supuesto ¿cuál es la mayor diferencia entre los boars emparejados y los boars que no son emparejados? pues bien, la mayor diferencia va a ser simplemente la amplitud del rango"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 40,
+    "start_time": 2385.68,
+    "end_time": 2445.68,
+    "text": "esto lo veremos en vídeos posteriores pero el hecho de que juguemos un rango tan amplio y que resubamos tan despolarizado o sea que queremos resubir incluso a veces parejas bajas, como un 64 un pequeño porcentaje de veces manos como 5 y 6 es un pequeño de veces 13 y 12 ya no porque no les beneficia mucho pero bueno vemos tendencias de juegos súper agresivas ¿vale? aquí tenemos un 19 tocando los cojones de vez en cuando un j10 tocando los cojones con el con el backdoor de trebles estas tendencias de juego hiperagresivas van a ser casi exclusivas de los boars emparejados y una cosa que va a definir también cómo de agresivos somos en un boar emparejado lo que es la altura del boar y la cantidad de veces que tenemos trips aquí tenemos otra mano y otro boar en el que queremos jugar hiperagro defendemos aquí un 2-3 y llegamos a un boar que es dama 3-3 el rival apuesta y nosotros resubimos en esta situación y el tamaño de apuesta que hice, fijaros el bote total tiene 80 y yo hice a 60"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 41,
+    "start_time": 2445.68,
+    "end_time": 2505.68,
+    "text": "¿qué cambia en esta mano en relación a la anterior? pues mira lo principal que cambia es el tamaño de apuesta del rival que en lugar de haberme apostado a medio bote o más me hace una apuesta de 25% del bote, atentos con eso pues si miramos como queremos reaccionar a una apuesta de 25% del bote el tamaño de apuesta óptimo en un bote de 80 es el tamaño de apuesta óptimo para resubir sería 40, es decir querríamos resubir aquí en un bote de 80 que querríamos resubir a 40 y cuando le damos la opción al solver de resubir tan pequeño, fijaros que lo que queremos hacer con todo nuestro rango es resubir un amplísimo, es decir por mi más amplio es el rango más pequeño resubimos o más pequeño apostamos en definitiva que es una cosa que os había dicho antes ¿vale? y podéis ver aquí que en este bote ahora estamos resubiendo 15 más 8 más 4, 12 más 15 cerca de 30% ¿vale? si yo eliminara la opción de que resubiéramos a 40 y dejar a opciones de tamaño de apuesta más fuertes, que aquí la más pequeña que le he dado es 64, si yo eliminara el 48 y el 40 de las opciones"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 42,
+    "start_time": 2505.68,
+    "end_time": 2565.68,
+    "text": "de tamaño de apuesta y solamente resubiéramos a 64, lo cual me parece bastante razonable desde luego pues básicamente el porcentaje de cherries que tendríamos se reduciría es decir cherries haríamos menos a menudo pero lo haríamos a un tamaño de apuesta más fuerte, porque al apostar más fuerte queremos jugar más polarizado y menos despolarizado en definitiva y una medio norma que podemos seguir a la hora de jugar este tipo de situaciones es también resubir mucho más a menudo conforme la carta emparejada es más baja porque cuando la carta emparejada es más alta, impacta más a menudo en el rango de open raise del rival y una situación que ejemplifica muy bien esto y que sería muy exagerada es cuando juguemos un boar as as x o incluso ray ray x, voy a poneros dos ejemplos de esto justo aquí acabo de calcular otro árbol más para mostraros lo que quería que vierais y este árbol sería asumiendo que el flow es as as 6 dos ases y un 6"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 43,
+    "start_time": 2565.68,
+    "end_time": 2625.68,
+    "text": "mismos tamaños de apuesta que antes y demás, si que es cierto porque este boar era otro lo podría haber cambiado, aquí el rival lo normal es que apueste mucho más pequeño pero bueno, no pasa nada fijaros como en este boar que es lo que os digo, he cambiado solamente el boar he mantenido todo lo demás exactamente igual fijaros como en esta situación no queremos resubir rollo un 20% de las veces, lo hacemos aproximadamente un 12 así que hay que tener mucho más cuidado cuando haces resubidas en un boar que es emparejado con dos ases cuando juegues un boar asas x o ray ray x o dama dama x y demás no vas a querer cheque reisear exactamente tanto como que rías cheque reisear cuando esté jugando en un boar de cartas bajas, que no es digamos de nadie que el rival tiene mucha más cantidad de highcast a las cuales te interesa presionar o cosas de este estilo es un poco donde quería acabar este tema y bueno, en relación a diferencias entre este boar"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 44,
+    "start_time": 2625.68,
+    "end_time": 2685.68,
+    "text": "y la anterior realmente tampoco hay muchas el tamaño de apuesta que queremos usar para resubir en este boar asas x es parecido, sería 57 en un bote de 62 así que seguimos un poco con esta lógica general de que el mejor tamaño es o el bote o un poquito menos que el bote y como recomendación personal os diría que en este tipo de boars asa xx cheque reiseis más polarizado y que los ases simplemente los dejéis en vuestra estrategia de cheque call, porque os aseguro que os podéis encontrar con situaciones muy pero que muy muy complicadas si cheque reiseais este tipo de este tipo de ases en el flop pero bueno si lo decidís hacer obviamente nunca sería un problema ni muchísimo menos con esto vamos a concluir el vídeo ¿vale? Quedaros con el tema de por qué en la mayoría de boars ¿vale? Vamos a hacer resubidas al tamaño que tiene el bote o ligeramente menos ¿vale? Si el tamaño de apuesta del rival es pequeño en ese tipo de situaciones especialmente resubiré un poquito menos que lo que tiene el bote, si el tamaño de apuesta"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_1_defensa_de_ciegas_juego_sin_iniciativa_oop_6_que_tamanos_de_apuesta_queremos_utilizar_para_hacer_un_xraise_en_el_flop",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/6. Qué tamaños de apuesta queremos utilizar para hacer un Xraise en el flop.mp4",
+    "chunk_index": 45,
+    "start_time": 2685.68,
+    "end_time": 2743.68,
+    "text": "que hace el rival es medio bote o más habitualmente me inclinaré más a resubir lo que tiene el bote o ligeramente más que lo que tiene el bote y como extra pues bueno podemos sacar también que en algunos boars tu grab en los que el rival tenga mogollón de proyectos y lo sepamos porque es una cosa como que es muy obvia ¿no? si el rival tiene multitud de proyectos que sabemos que nos van a flotar contra un tamaño de apuesta más pequeño en ese tipo de situaciones ya hemos aprendido que podemos hacer resubidas 5x aunque parezca que es súper super overbed ese tipo de movimientos serían correctos en relación a la morfología y a los tipos de manos que queremos utilizar para hacer los cherrieses y tal este vídeo concretamente no era para tratar ese tipo de temas así que seguiremos profundizando en esos los próximos vídeos que podéis ver a continuación así que nada lo dicho por haber estado viendo esto espero que os haya resultado interesante dejado un like si os ha gustado el vídeo y nos vemos en el próximo chao chao"
+  }
+]

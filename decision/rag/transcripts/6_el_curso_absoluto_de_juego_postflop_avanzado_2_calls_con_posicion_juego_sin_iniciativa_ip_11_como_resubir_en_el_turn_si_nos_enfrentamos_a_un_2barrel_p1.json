@@ -1,0 +1,322 @@
+[
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 0,
+    "start_time": 13.58,
+    "end_time": 67.58,
+    "text": "¡Muy buenas a todos, aquí ceros y bienvenidos a un nuevo vídeo en el que vamos a estar analizando situaciones en las que hacemos Raze en el turn después de haber pagado una apuesta de continuación en el flop. Para ello, he marcado unas 20 manos en total, más o menos, tanto de cash como de torneos como es habitual, y nada, sin más dilación, ¡vamos al leo! La primera mano que tenemos aquí es un J10 en ciega grande contra ciega pequeña. Vamos a estar viendo situaciones de todos tipos de posiciones, botes multiway, botes con stack por ratios pequeños, de todo, ¿vale? Haceros la idea, vamos a ver de todo. Y esta primera mano que tenemos aquí sería una situación típica de jugar con aproximadamente 100 ciegas, un poquito menos en este caso, en la que, pues eso, tenemos un J10 y llegamos a un flop Ray Dama 5, en el que el rival nos apuesta medio bote."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 1,
+    "start_time": 67.58,
+    "end_time": 123.58,
+    "text": "Aquí pagamos, como es normal, y el turn es un 9 y tenemos escalera. El rival apuesta de nuevo y hacemos un Raze, ¿vale? Este Raze aquí no tuve que hacerlo excesivamente grande porque el dinero que tenía el jugador detrás preflop no era tampoco enorme, ¿vale? Los tamaños de Raze en el turn los vamos a hacer a un tamaño que nos permita ir cómodamente en el river, creando un stack por ratio en el river de aproximadamente 1. En esta situación, pues bueno, si nos paga el bote se iría a 270 y a él le quedarían por detrás unos 300 aproximadamente, un poquito menos. Así que sería razonable, podría haber resuido un pelín más fuerte, igual 115 o 112 hubiera sido un poco mejor, algo del estilo, ¿vale? De esta mano quería hablaros de varias cosas, muy importantes. ¿Cómo construimos nuestro rango de Raze en este tipo de situación? ¿Qué tipos de manos de valor queremos utilizar? ¿Y qué tipos de faloles queremos utilizar? Esas son las dos preguntas más importantes que tú te tienes que hacer."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 2,
+    "start_time": 123.58,
+    "end_time": 178.58,
+    "text": "Y lo primero que debéis saber es que este boar, al ser un boar ofensivo de cartas altas, es el tipo de boar que beneficia mucho más a nuestro rival que a nosotros. Nosotros podemos haber conseguido una escalera y tener la mejor mano, como es el caso de esta situación, pero proporcionalmente hablando de todas las manos que vamos a tener en general en este tipo de situación, de todas las manos que podríamos tener, esta mano es una excepción. Y dentro de todas las manos que podría tener el rival en este tipo de boar también, él en general, en términos generales, siempre iría bastante por delante de nosotros. Y eso genera el efecto de que en términos generales, nuestro estilo de juego, en este tipo de boar se quiere inclinar mucho más alcohol que al Raze. Antes de hacer este vídeo, había analizado esta mano, compio Solver y estaba viendo que el porcentaje de Raze que queremos tener es en torno al 30 a 50%. Es decir, no necesitamos resubir el 100% de las veces las escaleras en este tipo de situación."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 3,
+    "start_time": 178.58,
+    "end_time": 236.58,
+    "text": "Podemos pagar nuevamente y en el River ya resubimos y nos apuestan de nuevo o apostamos al tamaño que consideremos oportuno si el rival chequea. Dicho esto, a mí hay una lógica de juego que me gusta muchísimo en el turn, cuando estemos jugando con Ciden ciegas, 80, 90 o está deep en general. Ya sea en caso en torneos, obviamente aplica exactamente igual. Y esta lógica de juego que a mí personalmente me gusta utilizar es la de Tengo una mano que quiera jugar por todo o no. En esta situación es obvio que tenemos una mano que quiere jugar por todo. Entonces, una forma que puedes utilizar para básicamente decidir cómo quieres jugar en el turn o cuando quieres Rizer en el turn, mejor dicho, es justamente esa. Y os digo esto porque los boars ofensivos al final son excepcionales. La mayoría de boars que vas a jugar van a ser boar neutros, low raps, o sea, en general, boar bajos, o sea, hay de todo, ¿no?"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 4,
+    "start_time": 236.58,
+    "end_time": 293.58,
+    "text": "Los boars ofensivos son uno de esos muchos boars a los que te puedes estar enfrentando por lo tanto. No veo importantísimo, digamos, al menos en este boar, preocuparme mucho de chequear a veces, o sea, de pagar a veces y de resubir a veces. ¿Entendéis lo que os trato de decir? Aunque el juego óptimo sea pagar aquí el 50% de las veces, me lo invento, y resubir el otro 50%, porque queremos fortalecer nuestro rango de Cold para proteger otro tipo de manos más débiles, llegadas al Riveret y todo eso. Aunque ese es el estilo de juego óptimo, esta es una situación en la que podéis, en mi opinión, jugar al rollo de esa lógica y siempre y cuando tengas una mano que te sientas cómodo jugando por todo, básicamente resubirla siempre. ¿Y qué faroles podemos utilizar para equilibrar este tipo de resubida en el turn, vale? Pues básicamente los mejores faroles que puedes utilizar y los únicos que necesitas utilizar piensan que esta mano aquí la tienes de forma bastante infrecuente. O sea, tampoco tienes una cantidad gigantesca de veces que vayas a resubir esta mano."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 5,
+    "start_time": 293.58,
+    "end_time": 350.58,
+    "text": "Si jugamos juego óptimo, vale, aproximadamente la mitad de las veces querría resubir manos tipo J5 o 10-5. Esas serían las mejores manos para resubir aquí de Farol, dos por dos motivos, bloqueas la escalera y bloqueas el bottom set de 5-5. Y al mismo tiempo es una pareja que no es la leche para ir pagando. Por lo tanto, ese sería el mejor tipo de Farol que puedes utilizar, seguido por supuesto de un 10-9 o un J9 o cosas de ese estilo. Pero un 10-9 o un J9, si bien obviamente sería un raíz bueno de Farol, es una mano que ya tiene suficiente valor como para que prefieras jugar Cold con ella siempre. Por lo tanto, no utilizarías esa mano, sería mejor utilizar un J5 o 10-5. Siempre también tienes que pensar que con esa mano tienes potencial de conseguir unas trips en el river con un cicatro 5 o de conseguir una escalera. Así que al final tu mano es un proyecto entre comillas, no querrías utilizar proyectos de color así normales,"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 6,
+    "start_time": 350.58,
+    "end_time": 408.58,
+    "text": "porque si tu rival te fuera o lín contra tu resubidad estarías en una situación incómoda. Sí que sería razonable resubir Convodros. Convodros no hay ningún problema. Si tienes aquí un J9 de corazones o un 10-9 de corazones o cosas de este estilo, es perfectamente viable resubirlo en el turn y si tu rival te va o lín tienes un Cold comodísimo, porque tienes tanta equity que te da igual. Pero si tienes una 5 también sería un Convodros, pero tiene valor de showdom, lo inclinaría más alcohol, unas 4 pues se verían en una situación ahí un poco medio fea y luego por supuesto cualquier proyecto de color peor que un As, pues no encajaría mucho. Y luego los Convodros tipo 10-7 de corazones o cosas de este estilo, gachos más proyectos, lo que os digo serían races perfectamente razonables, pero también innecesarios, porque tú realmente no quieres resubir una cantidad enorme de manos por valor en esta situación. Siguiente cosa muy pero que muy muy importante, en los Boards ofensivos, cuando el turn completa escalera y tú tengas una escalera, nunca vas a resubir dobles parejas."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 7,
+    "start_time": 408.58,
+    "end_time": 467.58,
+    "text": "Las dobles parejas son manos de Cal Down, en Boards de cartas más bajas y menos conectadas, pero en Boards que tengan cartas bajas en general, aunque el turn completa la escalera, algunas situaciones, sobre todo si el Boards está agapeado, bueno luego los mostraré porque tengo una mano para eso, sobre todo si el Boards está agapeado y tal, básicamente sí que podremos resubir a veces dobles parejas, será razonable, no tienes que hacerlo el 100% de las veces, pero será razonable, pero en Boards ofensivos no quieres hacerlo, así que esta es una cosa que quería también establecer aquí ya dentro. Que si tienes aquí un reinueve o cosas de este estilo, esta mano no sería reis en el turn, si estás jugando con un stack por ratio profundo, que en el cual necesitarías ir all in de nuevo en el river para sacarle todo el rival, porque en términos generales el rango que te va a acabar pagando el all in será muy parecido al tuyo y eso significa que no podrías realmente jugar adecuadamente tu mano consiguiendo calls de suficiente cantidad de manos peores. Así que nada, esto sería todo en relación a esta mano, recordad que no tenéis que resubir aquí siempre,"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 8,
+    "start_time": 467.58,
+    "end_time": 525.58,
+    "text": "pero que si queréis resubir siempre, aceldo solamente con escaleras, vale, y que para equilibrar este tipo de faroles, quieres utilizar manos tipo 10-5 o j5 para resubir en el turn y para ir all in en el river, vale, en general, vale, y nada, aquí esta mano pues fui all in y el rival acabo foldando, vale. La siguiente mano que tengo es básicamente idéntica, vale, aquí me enfrento a un open raise, defiendo, me apuestan un tercio en el flop, pago, y aquí estamos jugando ya con 100, con 100 bebés, o sea, aquí la mano anterior del rival no tenía 100 bebés enteras, pero aquí sí, este jugador sí que tenía el stack completo al iniciar la mano, de 9500, ¿no? y pino una escalera y me apuesta dos tercios aproximadamente. En este tipo de situación fijaros como adapto mi tamaño de resubida para montar un stack por ratio más cómodo para irme all in con el en el river, vale, si él me paga aquí le van a quedar 338 en un bote de 323, lo cual es un stack por ratio cómodísimo para mí, para irle all in yo en el river, ¿entendéis?"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 9,
+    "start_time": 525.58,
+    "end_time": 585.58,
+    "text": "Así que muy importante, vale, cuando vayáis a hacer raises en el turn, hacer esta medio norma, vale, es una medio norma que creo que funciona muy bien. Monta el bote para que el stack por ratio del river sea parecido a 1, que sea parecido a 1 más o menos cuando juegues con cien ciegas, vale, ese sería un poco el consejo que os daría. Y en relación a qué manos resubir aquí es más de lo mismo, esta mano igual el 30, 50% de las veces en juego óptimo la querrías resubir en conjunto de algún j4 o dama4, las manos suited que hayan defendido preflop, dama4 off y j4 off no deberían estar en el rango de raise porque en principio no deberían haber defendido preflop muy a menudo salvo que estés jugando en un torneo o cosas de ese estilo. En cuyo caso, ten cuidado también con la frecuencia de veces que utilizas porque de manos offsuit tendrías 12 combinaciones de cada una de ellas, de dama4 y de j4, ¿entendéis? Por lo tanto, depende de la cantidad de combinaciones de escalera que resubas, pero hazte una idea de que quieres resubir aproximadamente el 50% de las veces de farol."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 10,
+    "start_time": 585.58,
+    "end_time": 644.58,
+    "text": "Por lo tanto, si resubes el 100% de las veces damajota serían 16 combos, asumiendo que solamente defiendes con damajota pues querrías resubir 16 combos también de faroles pues igual la mitad de las veces un dama4 y la mitad de las veces un j4 en el caso de que tengas todas esas manos offsuit en tu rango. En el hipotético caso de que no las tengas y solamente defiendas con las manos suited porque estás en un cash game y esas manos son muy débiles para defender y demás, pues entonces resubes el j4 y el dama4 los combos suited que tienes que son 6. Eso sería un poco el rollo que querrías seguir y alguna que otra vez, algún que otro combo draw y todo eso, con eso ya llegas a los faroles que necesitas, ¿vale? No es importante que equilibres de forma exacta la cantidad de faroles que utilizas porque tus rivales no se van a dar ni puta cuenta de qué coño estás haciendo. Al final el poker es un juego de información incompleta y ellos no van a obtener nunca una cantidad de información lo suficientemente grande como para saber que faroleas un 10 o un 20% de más o de menos."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 11,
+    "start_time": 644.58,
+    "end_time": 703.58,
+    "text": "Lo que sí que es relativamente importante es que algunas veces te vean un farol porque si no muestras nunca un farol, entonces sí que es relativamente obvio que solamente resúes por valor y estas situaciones en particular de más son buenas para resubir de farol porque es muy obvia la escalera, ¿entendéis? Estas situaciones son muy obvias. Fijaros cómo la gente me paga cuando les voy oling en el river me foldean. Así que son situaciones buenas. Son situaciones que de forma explotativa, si reconocéis la oportunidad de resubir aquí un 15 o un j5, vais a ganar dinero de media, resubiendo en el turn y yendo oling en el river con 100 bebés. Siempre y cuando juguéis niveles en los que la gente foldea. A partir de no liminción para arriba estoy convencido de que ese tipo de faroles ganarán bastante dinero en general contra la mayoría de jugadores. Obviamente no se puede generalizar. Cuando niveles bajos tendrían más cuidado y en relación a si quiero jugar de alguna forma explotativa a niveles bajos aplicando lo que he hablado en estas dos manos, la respuesta sería que exactamente igual en barro ofensivos no resubiría manos como dobles parejas, ¿vale? Solamente resubiría escaleras."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 12,
+    "start_time": 703.58,
+    "end_time": 762.58,
+    "text": "En ambos casos me preocuparía cero del equilibrio, es decir, tanto si juguáis niveles bajos como niveles medios como high stakes, en esta situación en particular no le daría ningún tipo de importancia al equilibrio y si te parece adecuado resubir el 100% de las veces una escalera lo haría y simplemente aprovecharía las oportunidades con los faroles que considerarán oportunos porque esta es una situación en la que creo que probablemente ganas más dinero tanto resubiendo por valor como resubiendo de farol que simplemente pagando. Esa es un poco la sensación que a mí me da. Pero bueno, eso sería más o menos todo, ¿vale? en relación a estas manos. Así que vamos a la siguiente. Aquí tenemos un Rey 4. Me enfrento a un mini-raise de un jugador recreational, ¿vale? Este tío no es un pro. Me hace un tamaño de apuesta de Asia pequeña que no tiene mucho sentido, muy pequeño. Y llegamos al flop y me apuesta también muy pequeño, 25% del bote en un bar Rey 9.2. Aquí pago, ¿vale? Y llegó el turn que es un 10. Aquí en el flop no vamos a hacer nada más que pagar todavía, ¿vale? Tenemos una mano que en general es una muy buena mano para esta situación."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 13,
+    "start_time": 762.58,
+    "end_time": 822.58,
+    "text": "El hecho de que apueste tan pequeño genera el efecto de que el valor de nuestra mano se incremente porque básicamente si nos estuviera apostando la vida de dinero en principio tendría manos más fuertes, ¿entendéis? La lógica es un poco así. Si te apuesta mucho dinero, pues algo tendrá, o no, pero si te apuesta muy poquito dinero, muy habitualmente este tipo de apuestas pueden estar más inclinadas a manos marginales, a faroles o a manos marginales de valor. O sea, manos que son peores que un Rey. En definitiva, así que de momento pues el valor de mi Rey va creciendo, pero no veo tampoco que mi mano sea para resubir aquí. Así que pago. Pero luego ya un turn que es un 10 que completa escalera y mi rival me hace una mierda vez de estas otra vez. Y cuando tu rival te hace esto aquí aquí ya tienes un problema y es que lo más probable es que tú tengas la mejor mano todavía pero aquí el boar se ha puesto de una manera que hay muchísimas cartas en el river que tú no quieres ver, tú no quieres ver una dama, una jota, una pica, un corazón. Así que teniendo en cuenta que tú tienes la mejor mano prácticamente siempre, esta es una situación que contra un recreacional yo me inclino a resubir. Podría haber hecho a 30, perfectamente, dice 25, podría haber hecho a 30. Lo que estoy haciendo aquí es básicamente intentar sacar dinero"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 14,
+    "start_time": 822.58,
+    "end_time": 881.58,
+    "text": "de esta situación. Y si el river fuera muy seco me podría plantear una apuesta de medio bote o algo así. Contra él. En este caso el river fue una mierda y además del river Donqueo. En este river aquí me parece razonable chequear behind. Sería lo normal, vale. Hacer un cheque behind en un river que no te beneficia sería lo normal después de haber jugado de esta manera en el turn. No descarto obviamente que apostando pudiéramos ganar más dinero de algunas manos pero también podríamos perderlo contra otras. Así que no es tampoco una situación para ser hiper felices pero en este caso ni siquiera tuvimos que plantearnos esta situación porque el rival Donqueo un octavo. Esto es un instacol y a ver qué coño tiene y es lo que os decía. Manos de valor intermedio que le tienen miedo a un rey. Es lo que suele ser. Por eso es importante cuando detectes que un recreational te está haciendo mierda vez de estos en tanto en cuanto tengas tú una mano de valor que claramente ganas las manos puedes resubir aquí. Esto es 100% explotativo, vale. O sea, vamos a resubir y vamos a montar un bote lo más grande que podamos en el cual nos sigan pagando todas las manos peores posible, vale."
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 15,
+    "start_time": 881.58,
+    "end_time": 941.58,
+    "text": "Ese sería el rollo. La siguiente mano que tengo aquí sería un 8-6 que defiendo contra ciega pequeña y llegamos a un flop 7-6-2, vale. El rival apuesta, yo pago y el turn es un 8. Y esta mano le ha marcado para hablaros precisamente del race en el turn con dobles parejas en boars bajos, vale. Y esta mano es muy interesante. La he estado revisando también antes de grabar este vídeo para que mis comentarios fueran lo mejor posibles y esta es una situación en la que tenemos que distinguir entre los boars que completan escaleras en el turn y la completan de esta manera sin espacios y los boars en los que se completa la escalera pero está más gapeada como por ejemplo si el turn fuera un 9 si el turn fuera un 9 se queda un hueco un gap, esto es un gap un hueco, vale. Se queda un hueco en el 8, ¿verdad? Básicamente en los turns que gapean o se completan escaleras pero están gapeadas hay menos cantidad de escaleras tal cual, vale. Aquí por ejemplo puede haber escalera con 5-4"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 16,
+    "start_time": 941.58,
+    "end_time": 1000.58,
+    "text": "y con 10-9 pero si el turn fuera un 9 solamente habría escaleras con 10-8 porque 8-5 no debería tenerlo el muy a menudo abriendo preflop es más que nada por eso también es por las manos que sube el preflop, ¿vale? por lo tanto solamente por ese pequeño detalle de que vaya a haber más escaleras voy a hacer otra cosa en 9-7-6 hay escaleras de 10-8 y de 5-4 pero en este turn 8 hay más escaleras de 10-9 de 5-4 y también de 9-8-5 o sea, hay más escaleras también en ese sentido de 9-5 por nuestro lado que se me había olvido de mencionarlo o sea, no solamente es que su rango de open-race conecte menos con algunas escaleras sino que también hay más escaleras en general en un voar que no está gapeado, ¿vale? hay más escaleras en general para que lo tengáis en cuenta pero bueno, sea como sea ¿cómo afecta esto a la forma en la que queremos jugar nosotros? el hecho de que este turn haya más o menos escaleras básicamente en este turn"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 17,
+    "start_time": 1000.58,
+    "end_time": 1060.58,
+    "text": "concretamente que hay más posibilidades escaleras sería un turn en el que con dobles parejas nos queremos inclinar alcohol ¿vale? yo aquí resubí y cuando he revisado esta mano me he dado cuenta de que era más normal hacer solamente call pero por ejemplo si el turn hubiera sido un 9 con un 9-7 sí que queríamos resubir ¿entendéis lo que digo? o con un 9-6 relativamente a menudo no tenemos que resubir siempre vale, si tenemos aquí un 6-2 no tenemos que resubir en un turn 9 vale, no tenemos que resubir al 100% de las dobles parejas pero las mejores dobles parejas en conjunto de las escaleras sí que sería un rango razonable con el que resubir ahora quiero hablaros sobre una cosa que sucede en el juego con posición y que no sucede en el juego fuera de posición y es el tema de la capacidad que tenemos nosotros de controlar los botes en el river cuando caigan cartas que no nos gustan hacer esto aquí independientemente de que en el juego óptimo no sea lo mejor en un turn que completa escalera y que no está agapeado aunque resubir unas dobles parejas no sea lo correcto en este tipo de turn no hay demasiado perjuicio de hacer esto"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 18,
+    "start_time": 1060.58,
+    "end_time": 1120.58,
+    "text": "porque si el river es una de las cartas feas de verdad que no queremos ver como podría ser un 10 un 9 un 5 un 4 o un corazón nosotros el 100% de esas veces cuando nosotros hayamos resubido en el turn habremos conectado algunas de esas manos con faroles o con cosas que utilizamos para resubir en el turn estaremos defendidos lo suficientemente bien como para que al rival no le interese donquear y vaya a chequear siempre en el river y nosotros podamos chequear behind en el river con este tipo de dobles parejas es decir si el rival aquí nos pagase por ejemplo con un as 8 me lo invento y el river es un 9 no va a suceder esta situación que sucedería cuando jugamos fuera de posición en la que nosotros vemos ese river 9 chequeamos y el rival tiene un turno de apuesta para robarnos el bote esto es fantástico o sea en general tener posición te permite resubir este tipo de manos en el turn sin el perjuicio de que las cartas que menos quieres ver"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 19,
+    "start_time": 1120.58,
+    "end_time": 1180.58,
+    "text": "te hagan perder dinero entendéis tu rival no te puede pagar aquí para flotarte y robarte el bote si cae una carta que no te guste a ti no te puede robar tu dinero literalmente en ese tipo de de situaciones y eso nos permite en general jugar más agresivo en el turn si queremos con manos de este estilo dicho lo cual tendría relativa tendencia a respetar las normas de juego que os he comentado en plan de no resubir dobles parejas en boas ofensivos y de evitar resubir dobles parejas en turns que completen la escalera y que no estén apeados imaginaros un boar 9, 8, 2 turn 10 no resubéis dobles parejas en ese tipo de situaciones es más que probable que os acabéis aislando contra un rango que va a ir el link con escaleras y con sets mayormente y las dobles parejas estarían muy bien ahí pero si estáis jugando un boar de este estilo como este de aquí que es bajo que impacta menos en los rangos del rival y tal y luego"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 20,
+    "start_time": 1180.58,
+    "end_time": 1240.58,
+    "text": "que hay una carta como podría ser un 10 o un 9 con un 10 7 un 9 7 sí que serían manos que sería razonable empezar a resubir aquí teniendo en cuenta el beneficio que existe de tener posición para chequear behind en los rivers que no te gusten jugando fuera de posición resubir dobles parejas en un turn que completa escalera sería de ser un pésimo jugador de poker en el river y eso es catastrófico para unas dobles parejas en un boar en el que hay tantas cartas que van a caer en el river y que no quieres ver aquí la probabilidad de que el river sea una carta que no te gusta es del 50% aproximadamente vale en la zona del 50 lo cual es una barbaridad y jugando fuera de posición jamás resubirías con una con una mano tan vulnerable en definitiva vamos a hablar sobre ahora sobre cómo resubimos de farol aquí hemos hablado sobre cómo resubimos por valor vamos a hablar sobre cómo resubimos de farol principalmente los faroles que quieres utilizar en una situación como esta son backdoors que han pillado un proyecto que han flotado en el flop por ejemplo aquí un 10-5 de trebles es un backdoor que flotas"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 21,
+    "start_time": 1240.58,
+    "end_time": 1300.58,
+    "text": "vale y cuando llegues al turn ese backdoor tiene una open-ended tanto por abajo con el 4 como con el 9 pues un 10-5 de trebles o de picas o de diamantes sería el tipo de mano ideal para resubir en esta situación fijaros como en un boar bajo ya no necesitas recurrir a la pareja de baja más lagacho aquí es razonable con un 9-2 o un 10-2 resubir de farol por supuesto perfectamente razonable vale irrentable pero en un boar ofensivo tienes como que recurrir a la botón pair porque necesitas que tu farol sea más fuerte es por eso necesitas que tu farol sea más fuerte en un boar ofensivo porque el rango de tu rival es más fuerte también y en un boar ofensivo además ha flotado con menos cantidad de backdoors en el flop por lo tanto tienes menos manos que pueden resubir de farol tienes muchas pero algunas menos entonces lo que tenemos es que utilizar la botón pair más lagacho o más la open-ended y todo eso no es siempre necesario pero sería perfectamente razonable y como farol explotativo"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 22,
+    "start_time": 1300.58,
+    "end_time": 1360.58,
+    "text": "me encanta resubir aquí a este rollo con un 9-2 como farol explotativo porque definitivamente es una situación en la que le pones pues a él tiene aquí un JJ y está vamos está tirándose de los pelos o unas ocho o lo que sea y tiene proyectos de color que te van a pagar o sea que esta situación es muy muy pero que muy muy interesante para hacer ese tipo de faroles explotativos vale y aparte de eso otro grupo de manos que aquí quieres resubir siempre serían los combo duros con pareja o sea las manos que sean tan tan fuertes que les da igual el river y hablamos de manos como un 6-5 o un 6-4 de corazones vale o un 16 de corazones o un 9-6 de corazones o incluso un 7 resubir aquí a 640 con ese tipo de pareja más proyecto o dos cosas así debería ser también una zona un estilo de juego automático por tu parte porque ganas más de presionar al rival que de simplemente jugar conlo o sea te inflas de ganar dinero en cualquiera de las dos cosas con una mano tan fuerte como esa"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 23,
+    "start_time": 1360.58,
+    "end_time": 1420.58,
+    "text": "pero en general en este tipo de situaciones te va a interesar jugar rollo agro ese tipo de manos es un estilo de juego que vas a comprobar que en el general de situaciones te va a hacer un jugador más competente a los ojos de los demás te va a hacer es definitivamente estratégicamente lo mejor como jugamos en el river cuando resubas aquí un 6-5 de corazones y el river sea una dama de trebles check behind cuando resubas en el turn con una botón per con un proyecto como puede ser un 9-2 un 6-5 y tal siempre y cuando haya el riesgo de que tu rival te haya apostado aquí en el turn con un proyecto de color y que aquí te pague la resubida como obviamente va a suceder con manos tipo a 10 de corazones o a dama de corazones si lo tuviera o incluso algún rey dama de corazones o cosas de ese estilo alguna vez siempre y cuando exista el riesgo de que tu rival te haya defendido la resubida con proyectos en el 100% de las veces en los rivers que no los completen pues vas a hacer check behind con cualquier pareja que tengas no te preocupes que el simple hecho de resubir con tanta equity en el turn te hace ganar dinero de todos los rivers"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 24,
+    "start_time": 1420.58,
+    "end_time": 1480.58,
+    "text": "en los que vas a completar algo y de todas las veces que a lo mejor le robas el bote a una mano mejor porque es perfectamente razonable aquí folder un a 8 si el rival tiene aquí un a 8 un dama 8 o una cosa de estas es perfectamente razonable folder la del tirón aquí no tienes que pagar con esa mano si eres el no tienes que meterte en ese lío es innecesario tienes muy poco que ganar porque mi rango tiene demasiadas manos fuertes y demasiados faroles que tienen mucha capacidad de ganar por eso en esta situación es lo que os digo desde nuestro punto de vista como jugadores que resuben podemos ser muy agresivos con las manos que utilizamos para resubir y habitualmente queremos utilizar los grupos de manos que os he mencionado es perfectamente razonable coger aquí un dama 9 un rey 9 también de vez en cuando para hacer esta resubida pero serían manos que tendrían un poco un poquito menos de prioridad y serían innecesarias pero de forma explotativa también son faroles muy atractivos sobre todo en un turn como este que no está agapeado porque es el turn en el que nosotros podemos tener más cantidad de escaleras tanto nosotros tenemos pagando en el flop tanto el 9-5 como el 5-4 como el 10-9 o sea tenemos todas las escaleras podemos tener"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 25,
+    "start_time": 1480.58,
+    "end_time": 1540.58,
+    "text": "mogollón de manos de valor entendéis por lo tanto este es un turn muy bueno para meter presión en definitiva y precisamente porque tenemos muchas manos de valor súper fuertes como escalera lo cual hace más débil una mano como unas dobles porque también esto igual que nos ayuda más a nosotros el 8 también le ayuda más al rival así que nada esto sería más o menos todo lo más importante que debéis saber sobre cómo jugar estas situaciones recordad resubir de farol para ir all in en el river con manos tipo 10-5 o un 9-4 cosas de ese estilo son muy buenas los back 2 que pagáis en el flop para resubir en el turn y para ir all in en el river siempre esas como no tendrían pareja pues en cualquier river quieren ir all in y luego en los rivers que completen el color pues bueno también puedes resubir aquí alguna vez con algún j9 o dam9 que tenga un blocker de corazones para ir all in en el river que completa el color entendéis todo eso tú igualmente con las escaleras que resubes en el turn cuando el river completa el color tus escaleras serían check behind tú resubes aquí con una escalera el river completa el color tú qué vas a hacer"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 26,
+    "start_time": 1540.58,
+    "end_time": 1600.58,
+    "text": "check behind vas all in con los colores que hay agiteado y con algún que otro farol de hecho es que ni siquiera es importantísimo que bloquees el corazón en esa situación de river porque siempre vas a acabar también proyectos de color que te han podido pagar o sea que no es importantísimo el blocker para ir all in en el river ese y tampoco tienes una cantidad enorme de colores en tu rango solamente los comodores que resubas en el turn básicamente así que ahora sería un poco el rollo entero del estilo de juego que quieres realizar en esta situación vale y aquí concretamente el river fue un 10 y pues si te hace un fácil de check fue que hay uno de esos rivers que no queremos ver y esta es la parte maravillosa de resubir composición que incluso una resubida con una mano como esta el rival no nos puede castigar por estar fuera de fuera de posición básicamente no él no puede castigar este raise en un river 10 cuando a lo mejor si hubiera tenido un 8-5 en lugar de un 8-2 teniendo posición él pues al mejor podría decidir farolearme y tratar de robarme el bote no lo sabes nunca y eso sería super malo"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 27,
+    "start_time": 1600.58,
+    "end_time": 1660.58,
+    "text": "por una mano como dobles así que nada sí vamos a la siguiente aquí tenemos un 9-9 y esta mano está aquí representando el tipo de situación en la que no tiene sentido resubir en el turn uno de los tipos de situaciones en los que tenemos una mano muy fuerte pero no queremos resubir en el turn por equismotivos vamos a verlos aquí concretamente estamos jugando un multiway pot y el rival el open raiser hace un bet de un tercio del bote primero aquí no vamos a resubir en el flop porque hay un jugador por detrás y nos puede interesar solamente hacer call para permitirle que se una y meta más dinero él en el bote decidir resubir en esta situación así que es una situación obvia para quedarte alcohol ya resubiremos más adelante vamos a ver qué hace este jugador cuando nosotros tenemos una mano tan tan fuerte no nos interesa sacarle del bote nos interesa que pueda intentar algo si tiene aquí el desde el punto de vista de denbeck en un bote multiway se pueden utilizar botón pairs del estilo de un 5-4 con backdoor un 5-4 un 6-4 de corazones o de diamantes"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 28,
+    "start_time": 1660.58,
+    "end_time": 1720.58,
+    "text": "sería una mano muy interesante para resubir aquí de farol por ejemplo y le das la oportunidad de dándote alcohol de que te resubas 60 algo así de que se juegue el dinero entero entre tánico river entendéis son cosas que van a suceder solamente si te quedas alcohol si tú resubes aquí a 50 pues sí te aislas contra espátula pero al denbeck vamos todos los faroles se tiran entonces denbeck ya no le ganas dinero a denbeck así que solamente call en este caso denbeck paga y el rival el openracer hace otra vez un nuevo pet y esta situación le ha marcado para hablaros sobre como aquí no tiene sentido resubir de nuevo no solamente por denbeck sino porque también el bote este ya se ha quedado bastante grande es un stack por ratio de dos si tú resubes aquí a cuánto lo vas a hacer a 180 y qué consigue resubiendo qué representas de farol este bar tiene un problema de hecho y es que cuando tú pagas en el flow en un bote multiway y pagas otra vez en el turn este tamaño de apuesta o no básicamente tú faroles tienes muy pocos porque el 7 de más completa el 5 o 6 así que en general"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 29,
+    "start_time": 1720.58,
+    "end_time": 1780.58,
+    "text": "es una situación en la que no tiene mucho sentido hacer nada que col o sea simplemente eso no tiene mucho sentido y además tu rival está como con una iniciativa bastante importante o sea se va a montar un stack por ratio en el river no muy grande de dos es una situación distinta a las anteriores y comparamos con esta por ejemplo si yo pago aquí en el turn el bote en el river tendría 100 y nos quedarían 400 o 400 nos quedarían 440 en un bote de 100 o sea si os fijáis es un stack por ratio en el river de 4 con 4 es muy complicado sacarle todo tu dinero o sea todo el dinero al rival en un stack por ratio de 4 con 4 es muy complicado o sea tu rival a lo mejor a lo mejor no a lo mejor si te apuestan el river y entonces le puedes hirolin si perfecto pero se te queda muy overbete se te queda como muy desproporcionado los tamaños de apuesta verdad fijaros que en esta situación es completamente diferente por el hecho de ser un bote multiway lo primero el bote era más grande en el flop y esto es proporcional el mete un tercio en este bote de 3 pues el bote en el turn es más grande además denbep pago"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 30,
+    "start_time": 1780.58,
+    "end_time": 1840.58,
+    "text": "y luego mete 75 de 3 y el bote tiene 90 o sea se ha generado el efecto de que estemos jugando en el river un stack por ratio de 2 y no de 4 con 4 y en este tipo de situaciones en general en general cuando en el river estemos generando un stack por ratio de 2 para abajo son situaciones que en las que muy a menudo no vamos a querer resubir en el turn concasinado vamos a dejarle al rival que siga lo suyo porque conforme más pequeño es el stack por ratio con más manos nos debería apostar el de nuevo en el river o con más manos nos debería pagar así que no tenemos no tenemos inconveniente en general eso me refiero y no tenemos necesidad de resubir en el turn y además es una situación que es muy jodida tanto en el turn como en el river porque en el momento en el que hace check aquí es una situación jodida porque no tenemos una gran cantidad de faroles o sea que puto farol tenemos nosotros aquí como estuvimos viendo en vídeos anteriores en las situaciones en las que no tenemos apenas faroles no podemos pasarnos básicamente no podemos pasarnos con los tamaños de apuestas así que es completamente deseable"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 31,
+    "start_time": 1840.58,
+    "end_time": 1900.58,
+    "text": "ir all in por 2x cuando no hay proyectos de color que representar ni ninguna puta mierda me cuesta mucho meter una line aquí de 500 y tener la esperanza de que mi rival me pague con una dama con unos ases o con unos reyes no tengo ni puta idea de qué coño tendrás chequeando en el river la verdad no tiene mucho sentido el check si lo piensas para qué coño vas a chequear si mis rangos son sets y no faroles si te apuesto porque qué farol tengo yo aquí o sea te tengo que haber pagado en el turn con un j-10 o sea en el flow es probable que le flote con un j-10 de corazones pero le voy a pagar en el turn aquí entendéis lo que os digo es que no hay faroles o sea un 10-8 de corazones es lo único que se me ocurre 10-8 de corazones son 3 combos o sea lo que os digo tengo 3 combos de farol si me aceptas eso tengo eso 10-8 as 5 suites no es una mano aquí para pagar pre-flow es una mano más de tribet quizás muy a menudo pero bueno va mejor una 5 suites alguna vez en la vida en el turn puedo pagar aquí no mucho con un tío detrás pero podría ser razonable no sé o sea si los buscas mucho"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 32,
+    "start_time": 1900.58,
+    "end_time": 1960.58,
+    "text": "encuentras algún farol pero lo que os trato de decir es que no tenemos una gran cantidad de faroles por lo tanto hacer un gran tamaño de apuesta no tendría mucho sentido porque podría parecer que tenemos demasiado a menudo una mano fuerte y no lo suficientemente a menudo un farol por lo tanto en este tipo de situaciones y siguiendo la lógica de juego que os he explicado en vídeos anteriores esta es una situación en la que apostaría algo como esto no me quiero pasar no me quiero pasar de optimista calls de suficientes manos peores esta mano que él tenía es de las pocas que podrían haberme pagado un olean de las pocas pero es tan improbable es tan improbable que él tenga una mano como esa de hecho me sorprende hasta que estén open raise es razonable pero me sorprende hasta que estén open raise por lo tanto es lo que os digo es una situación en la que la inmensa mayoría de veces si quiero que me pague algo va a tener que ser este tamaño e incluso muchísimos jugadores van a saber folder esta apuesta con blue catchers como un jota jota porque se dan cuenta de que es muy complicado que yo tengo un farol entendéis? de hecho si yo soy espátula"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 33,
+    "start_time": 1960.58,
+    "end_time": 2020.58,
+    "text": "y tengo un jota jota yo chefoldeo pero para empezar no lo hubiera jugado de esta manera a lo mejor bueno o si a lo mejor si habría que verlo habría que verlo es una mano complicada es una mano definitivamente complicada un jota jota aquí por eso en este tipo de bars yo tiendo a chequear todo en el flop es que el bar este es para chequear todo en el flop pero bueno es que un jota jota se beneficiaría de apostar un jota jota si que lo se haría un bet de un tercio haría un 70 haría 70 dólares con jota jota en conjunto de incluso sets o cosas de ese estilo para poder defenderme de una resubida si tengo un 9-9 algo así hago 70 el 3 bar el vale porque el rival ya me resubirá el con las manos a las que yo gano básicamente vale y al mismo tiempo hago que sea más probable que me pague con una mano peor que no me va a resubir ni va a hacer nada y que se planterá el call or fold así que si lo que a mi me gusta es hacer un tercio creo que es la mejor salida a esta situación el check call sería lo que os digo"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 34,
+    "start_time": 2020.58,
+    "end_time": 2080.58,
+    "text": "sería la per de todas el check call no es una muy buena idea cuando yo no tengo faroles sería una mala estrategia vale y con 4-3 pues eso yo hubiera apostado se hubiera sido el también bueno siguiente mano tenemos aquí unas 10 de trebles hace open raise el jugador de mp yo pago en 4 y pagan las dos ciegas también vale top doll vale para que lo sepáis pero es un recreational de high stakes vale es un jugador que pierde bastante pasta él tiene un nivel parecido a un jugador de no limit 50 o algo así pero es que un jugador profesional de no limit 50 si se sienta en una mesa de no limit 5000 es un pez básicamente vale esa es la categoría de pez en niveles muy altos como no limit 2000 para arriba serías que un profesional de niveles bajos se te siente arriba por ejemplo porque van a cometer muchísima cantidad de errores en general y van a perder y se encuentra top doll es un jugador que va a jugar parecido a un regular pero cometiendo muchísimos errores de estructura que le pueden costar mucho dinero vale esta situación es muy interesante"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 35,
+    "start_time": 2080.58,
+    "end_time": 2140.58,
+    "text": "porque tenemos un multiway pot vale y él decide apostar a un tercio en este bar este es un bar en el que tú querrías tener muy poco bet vale él como es un jugador que no construye bien su juego pues podría cometer el error de apostarte aquí un proyecto de color en un bar doblado contra tres personas a la vez lo cual está mal pero podría cometer el error de hacer ese tipo de apuestas o podría apostar manos por valor que no debe apostar este es un bar para chequear muchísimo en el lugar de top doll tú aquí quieres chequear un J10 seguramente porque contra tres personas a la vez no puedes hacer tres barrels y esperar que te pague unas nueve entendéis lo que os digo para que tú quieras apostar aquí algo por valor tienes que poder apostar tres veces cómodamente contra cualquier persona que hay aquí si no puedes hacerlo te querrías inclinar al cheque vale así que ya de entrada este bet es un bet que seguro lo ha hecho con una mano que no debía lo que os digo errores que va a cometer al que no tengan opciones de juego de nivel muy alto básicamente vale así que nada aquí desde nuestro punto de vista esta es una situación obvia de col nada más vale no vamos a resubir aquí"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 36,
+    "start_time": 2140.58,
+    "end_time": 2200.58,
+    "text": "en un bote de cuatro personas para irnos o lin con nadie porque muy a menudo solamente nos vamos a ir o lin contra un 19 o un 99 así que es una excepción porque estamos jugando un bote de cuatro personas vale y aquí en un bote de cuatro personas un J10 aquí no es una mano para perder todo tu dinero por lo tanto con unas 10 a que aspiro podrían ser capaces de folder un J10 entendéis lo que os digo contra que me voy a aislar si me pongo aquí a jugarme todo el dinero probablemente contra un full y además un full se puede completar por el camino alguien que tenga aquí un dama 10 a lo mejor le cae una dama en el turn entendéis lo que os digo así que un full se puede completar por el camino así que con unas strips lo que vamos a hacer aquí nada más es call vale solamente call y vamos a ver cómo reaccionan estos dos jugadores que son dos de los mejores jugadores del mundo masherdo vs pill jugamos contra el recreational de dai básicamente en este caso foldera los dos y el turn es un as que completa el color vale y el jugador top 2 la puede estar vale un tercio esta es una situación en la que es perfectamente posible"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 37,
+    "start_time": 2200.58,
+    "end_time": 2260.58,
+    "text": "que esto sea un bet con un color con miedo una norma de juego que puede seguir a nivel general es la que os decía siempre y cuando tengas una mano que sea tan fuerte que quiere jugar por todo el dinero resube y monta el botel para destacar así que esta sería una de esas situaciones de ir en esa ruta tenemos un bote de 1.200 y obviamente voy a querer ganar todo de unas 10 así que resubo aquí hice a 1.800 una cosa interesante de esta mano es que teníamos muchísimo dinero los dos en la mesa el tenía 13.000 y yo 17.000 dólares en la mesa contra un jugador de este nivel no me parece una locura hacer a 2.400 creo que podría haber sido un poco más agresivo incluso con el tamaño de apuesta para montar en el river un bote de 6.000 en el cual a él le quedarían aproximadamente 11.000 vale con un bote de 6.000 y él con 11.000 detrás a lo mejor le puedo meter 5.000 más o incluso le puedo ir a Olympo 2 es que depende incluso este jugador sabría folder un color en el semejante bote pero bueno a lo mejor le puedo sacar 2.400 en el turn y tres cuartos en el river no sé"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 38,
+    "start_time": 2260.58,
+    "end_time": 2320.58,
+    "text": "a lo mejor me quede un poco pequeño aquí con el tamaño de apuesta teniendo en cuenta la cantidad de dinero que teníamos detrás lo digo en relación a eso pero bueno resubo y aquí arriba al folder sí que entiendo que lo más normal es que tuviera alguna gilipollez tipo unas damas sin proyectos de color o algo así o sobre todo un farol algún J10 o sea algún damajota de de picas alguna mierda de esas imagino que tendría pero sí esto es un ejemplo de mano de juego contra un recracional en el flow by respeto porque estamos en un multigway pod vale pero en el turn ya cuando tengo un full house obviamente voy a por todo si yo aquí hubiera tenido un color en el turn solamente me hubiera quedado alcohol vale un J10 obviamente porque cuando completa el color pues hay que tener o sea cuando tienes color y el boar está doblado tienes que tener cuidado aunque sea contra un recracional por el simple hecho de que era un bot de multigway y que este tío tampoco es un 80-20 vale tiene números de regular de non mi 50 lo que os digo vamos pero podría cometer errores de haber apostado proyectos de color que no deben el turn 10 es que no deben el turn y podrían no interpretar correctamente el valor de esas manos en esta situación y perder mucho más dinero"
+  },
+  {
+    "video": "6_el_curso_absoluto_de_juego_postflop_avanzado_2_calls_con_posicion_juego_sin_iniciativa_ip_11_como_resubir_en_el_turn_si_nos_enfrentamos_a_un_2barrel_p1",
+    "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/2. Calls con posición (Juego sin iniciativa IP)/11. Cómo resubir en el Turn si nos enfrentamos a un 2barrel [P1].mp4",
+    "chunk_index": 39,
+    "start_time": 2320.58,
+    "end_time": 2356.58,
+    "text": "del que debe en definitiva y esa es la mano la siguiente que tengo por aquí sería un 19 que vamos a dejar para el siguiente vídeo menudo corte acabo de ver que llevamos ya 46 minutos y me quedan todavía por revisar aproximadamente 14 manos más en el próximo vídeo ya iré más rápido porque todos los cimientos más importantes de cómo reisar en el turn ya los he explicado en este vídeo así que nada lo dicho espero que os haya resultado interesante hasta ahora lo que llevamos visto de races en el turn después de haber pagado una puesta de continuación y lo dicho nos vemos en el siguiente vídeo chao chao"
+  }
+]
