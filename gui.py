@@ -496,8 +496,12 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.hand_frame.set_visible(False)
             return
         self.hand_frame.set_visible(True)
-        self.made_label.set_markup(
-            f'<span size="large" weight="bold">{GLib.markup_escape_text(hand["made_name"])}</span>')
+        made = f'<span size="large" weight="bold">{GLib.markup_escape_text(hand["made_name"])}</span>'
+        explain = hand.get("made_explain")
+        if explain:
+            made += (f'\n<span size="small" color="#888888">'
+                     f'({GLib.markup_escape_text(explain)})</span>')
+        self.made_label.set_markup(made)
         draws = hand.get("draws") or []
         if draws:
             self.draws_label.set_markup("\n".join(self._draw_line(d) for d in draws))

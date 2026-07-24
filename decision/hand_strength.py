@@ -141,10 +141,17 @@ def _describe(rank, det):
 def _preflop_name(hero):
     (v1, s1), (v2, s2) = hero
     if v1 == v2:
-        return "Preflop", f"Pareja de {PLURAL[v1]}"
+        name = f"Pareja de {PLURAL[v1]}"
+        explain = f"dos {PLURAL[v1]} servidos (pareja de mano)"
+        return "Preflop", name, explain
     hi, lo = (v1, v2) if v1 > v2 else (v2, v1)
-    label = "suited" if s1 == s2 else "offsuit"
-    return "Preflop", f"{VAL_RANK[hi]}{VAL_RANK[lo]} {label}"
+    if s1 == s2:
+        name = f"{VAL_RANK[hi]}{VAL_RANK[lo]} suited"
+        explain = f"{SINGULAR[hi]} y {SINGULAR[lo]} del mismo palo (suited)"
+    else:
+        name = f"{VAL_RANK[hi]}{VAL_RANK[lo]} offsuit"
+        explain = f"{SINGULAR[hi]} y {SINGULAR[lo]} de distinto palo (offsuit)"
+    return "Preflop", name, explain
 
 
 def _mk_draw(name, out_cards, unseen, cards_to_come, speculative=False, combined=False):
@@ -231,13 +238,15 @@ def evaluate_hand(hero_codes, board_codes):
     n = len(board)
 
     if n == 0:
-        cat, name = _preflop_name(hero)
+        cat, name, explain = _preflop_name(hero)
         return {"street": "preflop", "cards_to_come": 5,
-                "made_category": cat, "made_name": name, "draws": []}
+                "made_category": cat, "made_name": name, "made_explain": explain,
+                "draws": []}
 
     made_rank, det = _classify(hero + board)
     cat, name = _describe(made_rank, det)
     street = {3: "flop", 4: "turn", 5: "river"}.get(n, "flop")
     draws = _detect_draws(hero, board, made_rank) if n in (3, 4) else []
     return {"street": street, "cards_to_come": 5 - n,
-            "made_category": cat, "made_name": name, "draws": draws}
+            "made_category": cat, "made_name": name, "made_explain": None,
+            "draws": draws}
