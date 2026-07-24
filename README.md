@@ -11,6 +11,14 @@ por consola lo que detecta (cartas, board, pot, ciegas, jugadores) para validarl
 mientras juegas. Todavía no da recomendaciones (eso es la Fase 4/5) ni dispara por cambio
 de board (Fase 2) — es solo para comprobar que la visión funciona contra partidas reales.
 
+`.venv/bin/python gui.py` — panel de control GTK4 (Fase 5): envuelve el mismo flujo que
+`alpha.py` en una ventana no bloqueante. El análisis (captura + OCR) corre en un hilo
+aparte y actualiza los widgets vía `GLib.idle_add`, así que la UI no se congela. Muestra el
+estado detectado (tus cartas, board, bote, jugadores con posición y stack), la recomendación
+de `engine.decide` en grande (o el motivo si no la hay), un campo de ciegas que escribe
+`blinds.local.json` en el mismo formato que `./set-blinds` (intercambiables), y botones para
+iniciar/parar el análisis y relanzar la calibración del recuadro.
+
 ## Estructura
 
 - `calibration/` — Fase 0: `select_region.py` toma un frame de referencia (vía
