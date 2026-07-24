@@ -7,34 +7,40 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 208984,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 769362,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 208984,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 445697,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 2536298,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "camposea",
         "stack": 788149,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
       },
       {
         "name": "gaobig",
         "stack": 743,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 2536298,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -50,34 +56,40 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 208984,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 769362,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 208984,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 445697,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 2536298,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "camposea",
         "stack": 788149,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
       },
       {
         "name": "gaobig",
         "stack": 743,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 2536298,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -93,34 +105,40 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 208984,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 769362,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 208984,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 445697,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 2536298,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "camposea",
         "stack": 788149,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
       },
       {
         "name": "gaobig",
         "stack": 743,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 2536298,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -136,34 +154,40 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 208984,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 769362,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 208984,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 445697,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 2536298,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "camposea",
         "stack": 788149,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
       },
       {
         "name": "gaobig",
         "stack": 743,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 2536298,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -179,34 +203,40 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 208984,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 769362,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 208984,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 445697,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 2536298,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "camposea",
         "stack": 788149,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
       },
       {
         "name": "gaobig",
         "stack": 743,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 2536298,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -222,34 +252,40 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 208984,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 769362,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 208984,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 445697,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 2536298,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "camposea",
         "stack": 788149,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
       },
       {
         "name": "gaobig",
         "stack": 743,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 2536298,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -279,27 +315,32 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 766112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "Gpverse",
         "stack": 19500,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 766112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -316,32 +357,38 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 766112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
       },
       {
         "name": "Gpverse",
         "stack": 19500,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 766112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -358,32 +405,38 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 766112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
-      },
-      {
-        "name": "verse",
-        "stack": 19500,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "verse",
+        "stack": 19500,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 766112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -400,32 +453,38 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 766112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "EP1"
       },
       {
         "name": "Gpverse",
         "stack": 19500,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 766112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -442,27 +501,32 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
       },
       {
         "name": "Gprerse",
         "stack": 19500,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -479,27 +543,32 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
       },
       {
         "name": "Gpverse",
         "stack": 19500,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -516,27 +585,32 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
       },
       {
         "name": "Gpverse",
         "stack": 19500,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -553,27 +627,32 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 766112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 766112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -590,27 +669,32 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 766112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "camposea",
         "stack": 759899,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 766112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -627,22 +711,26 @@
       {
         "name": "Danielx777",
         "stack": 205734,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 766112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 429947,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 1363790,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 766112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -657,39 +745,46 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 202484,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 762862,
-        "is_hero": false
-      },
-      {
         "name": "barbosa1984",
         "stack": 426697,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 2586798,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "camposea",
         "stack": 744149,
-        "is_hero": false
-      },
-      {
-        "name": "gaobig",
-        "stack": 1335540,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "Gpverse",
         "stack": 19500,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "gaobig",
+        "stack": 1335540,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 2586798,
+        "is_hero": false,
+        "position": "MP1"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 762862,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 202484,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -704,24 +799,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 202484,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 762862,
-        "is_hero": false
-      },
-      {
         "name": "camposea",
         "stack": 744149,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "gaobig",
         "stack": 1335540,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 762862,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 202484,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -736,29 +835,34 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 202484,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 762862,
-        "is_hero": false
-      },
-      {
         "name": "barbosa1984",
         "stack": 426697,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "camposea",
         "stack": 731649,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": 1335540,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 762862,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 202484,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -773,29 +877,34 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 202484,
-        "is_hero": false
-      },
-      {
         "name": "barbosa1984",
         "stack": 426697,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "camposea",
         "stack": 731649,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 1335540,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "djordy24100",
         "stack": 2561798,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 202484,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -810,24 +919,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 202484,
-        "is_hero": false
-      },
-      {
         "name": "barbosa1984",
         "stack": 426697,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "camposea",
         "stack": 731649,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "Apostar",
         "stack": 1288290,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 202484,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -842,29 +955,34 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 202484,
-        "is_hero": false
-      },
-      {
         "name": "barbosa1984",
         "stack": 426697,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "camposea",
         "stack": 731649,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 1288290,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "djordy24100",
         "stack": 2514548,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 202484,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -879,29 +997,34 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 202484,
-        "is_hero": false
-      },
-      {
         "name": "barbosa1984",
         "stack": 426697,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "camposea",
         "stack": 684399,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 1288290,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "djordy24100",
         "stack": 2514548,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 202484,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -920,34 +1043,40 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 199234,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 759612,
-        "is_hero": false
-      },
-      {
-        "name": "barbosa1984",
-        "stack": 423447,
-        "is_hero": false
-      },
-      {
-        "name": "Pasar",
-        "stack": 2461298,
-        "is_hero": false
-      },
-      {
         "name": "camposea",
         "stack": 867399,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "gaobig",
         "stack": 1272540,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "Pasar",
+        "stack": 2461298,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 759612,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 199234,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "barbosa1984",
+        "stack": 423447,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -966,34 +1095,40 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 199234,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 759612,
-        "is_hero": false
-      },
-      {
-        "name": "barbosa1984",
-        "stack": 423447,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 2461298,
-        "is_hero": false
-      },
-      {
         "name": "camposea",
         "stack": 867399,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "gaobig",
         "stack": 1272540,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 2461298,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 759612,
+        "is_hero": false,
+        "position": "EP1"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 199234,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "barbosa1984",
+        "stack": 423447,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1008,24 +1143,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "VDiogo",
-        "stack": 1083362,
-        "is_hero": false
-      },
-      {
-        "name": "barbosa1984",
-        "stack": 450676,
-        "is_hero": false
+        "name": "gaobig",
+        "stack": 3213729,
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "djordy24100",
         "stack": 801311,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
-        "name": "gaobig",
-        "stack": 3213729,
-        "is_hero": false
+        "name": "VDiogo",
+        "stack": 1083362,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "barbosa1984",
+        "stack": 450676,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1040,29 +1179,34 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 502702,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 1083362,
-        "is_hero": false
+        "name": "gaobig",
+        "stack": 3213729,
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "djordy24100",
         "stack": 801311,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
-        "name": "gaobig",
-        "stack": 3213729,
-        "is_hero": false
+        "name": "VDiogo",
+        "stack": 1083362,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 502702,
+        "is_hero": false,
+        "position": "HJ"
       },
       {
         "name": "barbosa1984",
         "stack": 1984,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1077,24 +1221,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 502702,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 1083362,
-        "is_hero": false
+        "name": "gaobig",
+        "stack": 3213729,
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "djordy24100",
         "stack": 801311,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
-        "name": "gaobig",
-        "stack": 3213729,
-        "is_hero": false
+        "name": "VDiogo",
+        "stack": 1083362,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 502702,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1125,6 +1273,7 @@
       }
     ],
     "warnings": [
+      "boton del dealer detectado pero no se pudo asociar a ningun asiento con confianza; sin posiciones",
       "no se encontraron las ciegas"
     ]
   },
@@ -1164,6 +1313,8 @@
       }
     ],
     "warnings": [
+      "no se detecto el boton del dealer (tapado o fuera de frame); sin posiciones",
+      "hero identificado pero sin posicion asignada",
       "no se encontraron las ciegas"
     ]
   },
@@ -1175,24 +1326,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 502702,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 1083362,
-        "is_hero": false
+        "name": "gaobig",
+        "stack": 2763053,
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "djordy24100",
         "stack": 801311,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
-        "name": "gaobig",
-        "stack": 2763053,
-        "is_hero": false
+        "name": "VDiogo",
+        "stack": 1083362,
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 502702,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1208,29 +1363,34 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 468952,
-        "is_hero": false
+        "name": "djordy24100",
+        "stack": 797561,
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "VDiogo",
         "stack": 1064612,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
-        "name": "djordy24100",
-        "stack": 797561,
-        "is_hero": false
-      },
-      {
-        "name": "gaobig",
-        "stack": 2759303,
-        "is_hero": false
+        "name": "Danielx777",
+        "stack": 468952,
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "barbosa",
         "stack": 961352,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "gaobig",
+        "stack": 2759303,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1245,19 +1405,22 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 468952,
-        "is_hero": false
+        "name": "djordy24100",
+        "stack": 797561,
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "VDiogo",
         "stack": 1064612,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
-        "name": "djordy24100",
-        "stack": 797561,
-        "is_hero": false
+        "name": "Danielx777",
+        "stack": 468952,
+        "is_hero": false,
+        "position": "BB"
       }
     ],
     "warnings": [
@@ -1272,24 +1435,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 468952,
-        "is_hero": false
+        "name": "djordy24100",
+        "stack": 797561,
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "VDiogo",
         "stack": 1064612,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
-        "name": "djordy24100",
-        "stack": 797561,
-        "is_hero": false
+        "name": "Danielx777",
+        "stack": 468952,
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 2759303,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1305,29 +1472,34 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 450202,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 1060862,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 450202,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 991352,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 793811,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 2755553,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 793811,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1342,29 +1514,34 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 450202,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 1060862,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 450202,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 991352,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 793811,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 2755553,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 793811,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1379,24 +1556,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 450202,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 1060862,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 450202,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 991352,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "djordy24100",
         "stack": 793811,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1411,24 +1592,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 450202,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 1060862,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 450202,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 991352,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "djordy24100",
         "stack": 793811,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1445,17 +1630,20 @@
       {
         "name": "VDiogo",
         "stack": 1060862,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 991352,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 2755553,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       }
     ],
     "warnings": [
@@ -1470,24 +1658,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Danielx777",
-        "stack": 450202,
-        "is_hero": false
-      },
-      {
         "name": "VDiogo",
         "stack": 1060862,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Danielx777",
+        "stack": 450202,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "barbosa1984",
         "stack": 991352,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "gaobig",
         "stack": 2755553,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1505,22 +1697,26 @@
       {
         "name": "Danielx777",
         "stack": 446452,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 972602,
-        "is_hero": false
-      },
-      {
-        "name": "Igualar",
-        "stack": 823811,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 2721803,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "Igualar",
+        "stack": 823811,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1537,27 +1733,32 @@
       {
         "name": "Danielx777",
         "stack": 446452,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 1057112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 957602,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 823811,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 2721803,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 823811,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 1057112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1574,27 +1775,32 @@
       {
         "name": "Danielx777",
         "stack": 446452,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 1057112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 957602,
-        "is_hero": false
-      },
-      {
-        "name": "djordy24100",
-        "stack": 823811,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 2721803,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "djordy24100",
+        "stack": 823811,
+        "is_hero": false,
+        "position": "HJ"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 1057112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1614,22 +1820,26 @@
       {
         "name": "Danielx777",
         "stack": 446452,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 1057112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "gaobig",
         "stack": 1897992,
-        "is_hero": true
+        "is_hero": true,
+        "position": "SB"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 1057112,
+        "is_hero": false,
+        "position": "BB"
       }
     ],
     "warnings": [
       "no se encontraron las ciegas"
-    ]
+    ],
+    "hero_position": "SB"
   },
   {
     "image": "sample_1784855348759.png",
@@ -1650,27 +1860,32 @@
       {
         "name": "Danielx777",
         "stack": 446452,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 1057112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 957602,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "gaobig",
         "stack": 1897992,
-        "is_hero": true
+        "is_hero": true,
+        "position": "BB"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 1057112,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
       "no se encontraron las ciegas"
-    ]
+    ],
+    "hero_position": "BB"
   },
   {
     "image": "sample_1784855353782.png",
@@ -1688,17 +1903,20 @@
       {
         "name": "Danielx777",
         "stack": 446452,
-        "is_hero": false
-      },
-      {
-        "name": "VDiogo",
-        "stack": 1057112,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "barbosa1984",
         "stack": 957602,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "VDiogo",
+        "stack": 1057112,
+        "is_hero": false,
+        "position": "BB"
       }
     ],
     "warnings": [
@@ -1743,29 +1961,34 @@
     "blinds": null,
     "players": [
       {
+        "name": "jeques9",
+        "stack": 943970,
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
         "name": "Jeisus10997",
         "stack": 2217611,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "alvaro880",
         "stack": 165780,
-        "is_hero": false
-      },
-      {
-        "name": "jeques9",
-        "stack": 943970,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "Danielx777",
         "stack": 442702,
-        "is_hero": false
+        "is_hero": false,
+        "position": "HJ"
       },
       {
         "name": "FRMontero",
         "stack": 598609,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1784,24 +2007,28 @@
     "blinds": null,
     "players": [
       {
-        "name": "Jeisus10997",
-        "stack": 2217611,
-        "is_hero": false
-      },
-      {
         "name": "jeques9",
         "stack": 943970,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
+      },
+      {
+        "name": "Jeisus10997",
+        "stack": 2217611,
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "Danielx777",
         "stack": 442702,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "Apostar",
         "stack": 508609,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1830,22 +2057,26 @@
       {
         "name": "Jeisus10997",
         "stack": 2213861,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "alvaro880",
         "stack": 147030,
-        "is_hero": false
-      },
-      {
-        "name": "jeque69",
-        "stack": 940220,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "DanielX777",
         "stack": 408952,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "jeque69",
+        "stack": 940220,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1862,22 +2093,26 @@
       {
         "name": "Jeisus10997",
         "stack": 2213861,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "alvaro880",
         "stack": 147030,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "DanielX777",
         "stack": 408952,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
       },
       {
         "name": "FRMontero",
         "stack": 752359,
-        "is_hero": false
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": [
@@ -1908,6 +2143,7 @@
       }
     ],
     "warnings": [
+      "boton del dealer detectado pero no se pudo asociar a ningun asiento con confianza; sin posiciones",
       "no se encontraron las ciegas"
     ]
   },
@@ -1921,17 +2157,20 @@
       {
         "name": "Jeisus10997",
         "stack": 2213861,
-        "is_hero": false
-      },
-      {
-        "name": "jeque69",
-        "stack": 940220,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "FRMontero",
         "stack": 752359,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
+      },
+      {
+        "name": "jeque69",
+        "stack": 940220,
+        "is_hero": false,
+        "position": "BB"
       }
     ],
     "warnings": [
@@ -1957,22 +2196,26 @@
       {
         "name": "Jeisus10997",
         "stack": 2213861,
-        "is_hero": false
-      },
-      {
-        "name": "jeque69",
-        "stack": 940220,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BTN"
       },
       {
         "name": "DanielX777",
         "stack": 276922,
-        "is_hero": false
+        "is_hero": false,
+        "position": "SB"
       },
       {
         "name": "FRMontero",
         "stack": 752359,
-        "is_hero": false
+        "is_hero": false,
+        "position": "BB"
+      },
+      {
+        "name": "jeque69",
+        "stack": 940220,
+        "is_hero": false,
+        "position": "CO"
       }
     ],
     "warnings": []

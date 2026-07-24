@@ -17,6 +17,7 @@ import cv2
 
 import color_card_detector
 import color_rank_ocr
+import dealer_button
 from card_detector import classify_boxes, find_card_boxes
 from ocr_client import OcrBatch
 from rank_ocr import card_code, normalize_rank, rank_crop_variants
@@ -31,6 +32,41 @@ from text_extract import find_blinds, find_players, find_pot, merge_line_sets, p
 # alto en vez de pixeles fijos: es la franja superior de la ventana
 # capturada, no una coordenada de la mesa.
 TITLE_BAR_HEIGHT_FRAC = 0.06
+
+
+def _assign_player_positions(bgr, region, players, diag, warnings):
+    """Detecta el boton del dealer y, si esta lo bastante cerca de algun
+    asiento conocido, anade "position" (BTN/SB/BB/CO/HJ/...) a cada jugador
+    de players. Si el boton no se ve o no se puede asociar con confianza a
+    ningun asiento, no se inventa nada: se anota un warning y los jugadores
+    quedan sin ese campo."""
+    if len(players) < 2:
+        return players
+    button_box = dealer_button.find_dealer_button(bgr, region)
+    if button_box is None:
+        warnings.append("no se detecto el boton del dealer (tapado o fuera de frame); sin posiciones")
+        return players
+    positioned = dealer_button.assign_positions(players, button_box, diag)
+    if positioned is None:
+        warnings.append("boton del dealer detectado pero no se pudo asociar a ningun asiento con confianza; sin posiciones")
+        return players
+    return positioned
+
+
+def _player_out(p):
+    out = {"name": p["name"], "stack": p["stack"], "is_hero": p["is_hero"]}
+    if "position" in p:
+        out["position"] = p["position"]
+    return out
+
+
+def _set_hero_position(state):
+    for p in state["players"]:
+        if p["is_hero"] and "position" in p:
+            state["hero_position"] = p["position"]
+            return
+    if any(p["is_hero"] for p in state["players"]):
+        state["warnings"].append("hero identificado pero sin posicion asignada")
 
 
 def _resolve_card(card_bgr, w, h, rank_texts):
@@ -103,7 +139,9 @@ def analyze(image_path):
 
     hero_ref_box = hero_boxes[0] if hero_boxes else None
     players = find_players(lines, diag, hero_ref_box)
-    state["players"] = [{"name": p["name"], "stack": p["stack"], "is_hero": p["is_hero"]} for p in players]
+    players = _assign_player_positions(bgr, region, players, diag, state["warnings"])
+    state["players"] = [_player_out(p) for p in players]
+    _set_hero_position(state)
 
     resolved = []
     for b, (start, end) in zip(all_card_boxes, rank_job_ranges):
@@ -200,7 +238,9 @@ def analyze_color_deck(image_path):
 
     hero_ref_box = hero_boxes[0] if hero_boxes else None
     players = find_players(lines, diag, hero_ref_box)
-    state["players"] = [{"name": p["name"], "stack": p["stack"], "is_hero": p["is_hero"]} for p in players]
+    players = _assign_player_positions(bgr, region, players, diag, state["warnings"])
+    state["players"] = [_player_out(p) for p in players]
+    _set_hero_position(state)
 
     resolved = []
     for b, (start, end) in zip(all_card_boxes, rank_job_ranges):
