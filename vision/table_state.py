@@ -391,6 +391,7 @@ def analyze_layout(image_path):
         "stack_unit": None,
         "stack_unit_source": None,
         "to_call": None,
+        "chat_lines": [],
         "warnings": [],
     }
     if bgr is None:
@@ -562,7 +563,15 @@ def analyze_layout(image_path):
     # (x10/x100). Ver find_pot_bb.
     pot_lines = parse_tsv_lines(results[pot_idx])
     state["pot"] = find_pot_bb(pot_lines) if unit == "bb" else find_pot(pot_lines)
+    # Las lineas del chat se EXPONEN en el GameState. Hasta ahora se OCR-eaban
+    # dos veces por frame: aqui para las ciegas de respaldo, y otra vez en
+    # hand_result.read_chat_lines() para el panel "Mano anterior", con un segundo
+    # subproceso y un segundo arranque de tesseract. Medido sobre frames reales,
+    # esa segunda pasada costaba 571 ms de un ciclo de 3,9 s (el 15%). Se guardan
+    # con posicion (no solo el texto) porque parse_hand_result las necesita para
+    # reconstruir el orden de lectura.
     chat_lines = parse_tsv_lines(results[chat_idx])
+    state["chat_lines"] = chat_lines
     state["blinds"] = (find_blinds_corner(corner_lines, require_double=False)
                        or find_blinds_chat(chat_lines) or find_blinds(chat_lines))
     action_lines = parse_tsv_lines(results[action_idx])

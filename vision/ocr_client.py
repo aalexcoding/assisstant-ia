@@ -12,8 +12,14 @@ import sys
 import tempfile
 
 import cv2
+from concurrent.futures import ThreadPoolExecutor
 
 WORKER_PATH = os.path.join(os.path.dirname(__file__), "ocr_worker.py")
+
+# Procesos de OCR en paralelo. Se deja la mayor parte de la maquina libre a
+# proposito: ver el docstring de OcrBatch.run. ThreadPoolExecutor y no
+# ProcessPool porque cada hilo solo espera en subprocess.run, que suelta el GIL.
+MAX_PROCS = max(1, min(6, (os.cpu_count() or 2) - 2))
 
 
 def _clahe_enhance(bgr):
@@ -81,15 +87,38 @@ class OcrBatch:
         self._jobs.append({"mode": "text", "path": path, "whitelist": whitelist, "psm": psm})
         return idx
 
-    def run(self):
-        """Resuelve todos los jobs en una invocacion del subproceso y devuelve
-        una lista alineada con el orden de encolado (los jobs vacios -recorte de
-        tamaño 0- devuelven "").
+    def _run_chunk(self, jobs):
+        """Resuelve un trozo del lote en un subproceso. Devuelve sus resultados
+        en el mismo orden en que se le pasaron."""
+        proc = subprocess.run([sys.executable, WORKER_PATH],
+                              input=json.dumps({"jobs": jobs}),
+                              capture_output=True, text=True, timeout=120)
+        if proc.returncode != 0:
+            raise RuntimeError(f"ocr_worker fallo: {proc.stderr}")
+        return json.loads(proc.stdout)["results"]
 
-        El directorio temporal se borra en un finally: si el worker falla o se
+    def run(self):
+        """Resuelve todos los jobs y devuelve una lista alineada con el orden de
+        encolado (los jobs vacios -recorte de tamaño 0- devuelven "").
+
+        EN PARALELO. Un frame encola ~106 recortes y antes se resolvian todos en
+        serie dentro de un unico subproceso, o sea en 1 nucleo de los 16 de la
+        maquina: 3,85 s, el 83% del ciclo de analisis. Repartidos:
+            1 proceso  3,85 s      8 procesos  1,18 s  (3,3x)
+            4 procesos 1,30 s     12 procesos  1,00 s  (3,8x)
+        Se usan como mucho MAX_PROCS. NO se cogen todos los nucleos a proposito:
+        de 8 a 12 procesos solo se ganan 0,18 s y el resto de la maquina -la
+        propia ventana GTK, la VM con el cliente de poker- se queda sin aire, que
+        es justo el sintoma de lag que se queria arreglar.
+
+        El reparto es INTERCALADO (jobs[i::n]) y no por bloques porque los jobs
+        tienen costes muy distintos: primero van las zonas grandes de texto
+        (nameplates, chat, botones) y luego decenas de recortes minusculos de
+        rango de carta. Por bloques, el primer proceso se comeria todo lo caro.
+
+        El directorio temporal se borra en un finally: si un worker falla o se
         pasa del timeout, el tmpdir se limpia igual. Sin el finally cada fallo
-        de OCR dejaba un /tmp/vision_ocr_* huerfano con sus PNGs dentro, y en un
-        lazo de analisis en vivo eso se acumula durante toda la sesion."""
+        dejaba un /tmp/vision_ocr_* huerfano, y en un lazo en vivo se acumulan."""
         try:
             real_jobs = [j for j in self._jobs if j is not None]
             # sin ningun job real no hace falta arrancar el subproceso (inicializar
@@ -97,12 +126,18 @@ class OcrBatch:
             if not real_jobs:
                 return ["" for _ in self._jobs]
 
-            payload = json.dumps({"jobs": real_jobs})
-            proc = subprocess.run([sys.executable, WORKER_PATH], input=payload,
-                                   capture_output=True, text=True, timeout=120)
-            if proc.returncode != 0:
-                raise RuntimeError(f"ocr_worker fallo: {proc.stderr}")
-            real_results = json.loads(proc.stdout)["results"]
+            n = min(MAX_PROCS, len(real_jobs))
+            if n <= 1:
+                real_results = self._run_chunk(real_jobs)
+            else:
+                trozos = [real_jobs[i::n] for i in range(n)]
+                with ThreadPoolExecutor(max_workers=n) as ex:
+                    partes = list(ex.map(self._run_chunk, trozos))
+                real_results = [None] * len(real_jobs)
+                for i, parte in enumerate(partes):
+                    for k, r in zip(range(i, len(real_jobs), n), parte):
+                        real_results[k] = r
+
             results = []
             real_iter = iter(real_results)
             for j in self._jobs:

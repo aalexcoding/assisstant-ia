@@ -41,7 +41,7 @@ import testing_session as ts_session
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import GLib, Gtk, Pango
+from gi.repository import Gio, GLib, Gtk, Pango
 
 CALIBRATION_PATH = os.path.join(BASE_DIR, "calibration", "config.local.json")
 SELECT_REGION_PATH = os.path.join(BASE_DIR, "calibration", "select_region.py")
@@ -160,11 +160,13 @@ class AnalysisWorker(threading.Thread):
         state = ts.analyze_layout(TMP_FRAME_PATH)
         recommendation = engine.decide(state)
         hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
-        # resumen de la mano anterior: OCR aparte de la zona del chat
-        # (analyze_layout la lee para las ciegas pero no la expone). Un
-        # fallo aqui no debe tumbar el analisis principal.
+        # resumen de la mano anterior. Se parsean las lineas de chat que
+        # analyze_layout YA ha OCR-eado: antes esto hacia una segunda pasada de
+        # OCR sobre la misma zona, con otro subproceso y otro arranque de
+        # tesseract, y costaba 571 ms de un ciclo de 3,9 s. Un fallo aqui no debe
+        # tumbar el analisis principal.
         try:
-            result = hr.read_hand_result(TMP_FRAME_PATH)
+            result = hr.parse_hand_result(state.get("chat_lines"))
         except Exception:  # noqa: BLE001
             result = None
         GLib.idle_add(self.win.on_result, state, recommendation, hand)
@@ -869,10 +871,19 @@ def main():
                         help="construye la ventana y sale (verifica que los widgets se crean)")
     args = parser.parse_args()
 
-    app = Gtk.Application(application_id="org.pokerassistant.gui")
+    # NON_UNIQUE en el self-test: con el id compartido, si ya hay una ventana
+    # abierta GTK conecta la segunda instancia a la primera por D-Bus, "activate"
+    # se dispara en la OTRA y esta sale con codigo 0 sin imprimir nada. O sea que
+    # el smoke test APROBABA en silencio justo cuando no podia comprobar nada.
+    # Un test que no puede fallar no sirve.
+    flags = Gio.ApplicationFlags.NON_UNIQUE if args.self_test else Gio.ApplicationFlags.DEFAULT_FLAGS
+    app = Gtk.Application(application_id="org.pokerassistant.gui", flags=flags)
+
+    construida = {"ok": False}
 
     def on_activate(app):
         win = PokerAssistantWindow(app, args.interval)
+        construida["ok"] = True
         if args.self_test:
             print("self-test OK: ventana y widgets construidos")
             app.quit()
@@ -880,8 +891,12 @@ def main():
             win.present()
 
     app.connect("activate", on_activate)
-    app.run(None)
+    codigo = app.run(None)
+    if args.self_test and not construida["ok"]:
+        print("self-test FALLO: la ventana no llego a construirse", file=sys.stderr)
+        return 1
+    return codigo
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
