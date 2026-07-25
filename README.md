@@ -1,6 +1,36 @@
 # Poker Assistant IA
 
-Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y las fases del proyecto.
+Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y las fases del proyecto,
+y [`docs/PENDIENTE.md`](./docs/PENDIENTE.md) para lo que queda por hacer y en qué orden.
+
+## Modo testing
+
+La casilla **"Grabar sesión de testing"** de la GUI (se activa antes de darle a
+"Iniciar análisis") guarda cada frame junto con TODO lo que la app calculó de él,
+emparejados por nombre:
+
+```
+testing/sesion-2026-07-25_193012/
+    _sesion.json      metadatos: inicio, intervalo, recuadro, commit, nº de frames
+    0001.png          el frame tal cual se analizó
+    0001.json         GameState completo (con warnings), recomendación, evaluación
+                      de mano, equity postflop y resumen de la mano anterior
+    0002.png
+    0002.json
+```
+
+La dupla es por **nombre** (mismo número, distinta extensión), que es lo que
+permite abrir el PNG y mirar el JSON de al lado sin cruzar timestamps. El JSON
+incluye los `warnings`, que suelen ser lo más informativo cuando algo sale mal, y
+el tiempo que tardó el análisis de ese frame.
+
+La **equity postflop se calcula y se graba** aunque todavía no se muestre en el
+HUD: es justo el número que hay que contrastar contra frames reales antes de
+enseñarlo, así que grabarlo es el paso previo a cablearlo.
+
+`testing_session.resumen(carpeta)` da un agregado de la sesión (frames, cuántos
+con recomendación, motivos de abstención más frecuentes) sin abrir los frames uno
+a uno. La carpeta `testing/` no se versiona.
 
 ## Uso (alpha)
 

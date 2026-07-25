@@ -19,6 +19,7 @@ import os
 import subprocess
 import sys
 import threading
+import time
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(BASE_DIR, "capture"))
@@ -29,10 +30,13 @@ sys.path.insert(0, os.path.join(BASE_DIR, "decision", "preflop"))
 import cv2
 
 import engine
+import equity
 import hand_result as hr
 import hand_strength as hstr
 import portal_capture as pc
 import table_state as ts
+
+import testing_session as ts_session
 
 import gi
 
@@ -102,10 +106,14 @@ class AnalysisWorker(threading.Thread):
     """Hilo de analisis: abre el stream, lee frames, recorta, analiza y
     manda cada resultado a la ventana via GLib.idle_add. No toca widgets."""
 
-    def __init__(self, win, interval):
+    def __init__(self, win, interval, sesion=None):
         super().__init__(daemon=True)
         self.win = win
         self.interval = interval
+        # TestingSession o None. Lo pone el hilo principal antes de arrancar y no
+        # se toca despues: la grabacion se decide al iniciar el analisis, no a
+        # mitad, para que una sesion grabada sea de principio a fin.
+        self.sesion = sesion
         self._stop = threading.Event()
 
     def stop(self):
@@ -137,8 +145,29 @@ class AnalysisWorker(threading.Thread):
                           f"Pulsa 'Recalibrar recuadro'.")
         return crop, None
 
+    def _equity_de(self, state):
+        """Equity postflop del frame, o None. Solo se GRABA (modo testing); no se
+        muestra todavia en el HUD, porque antes hay que contrastarla contra
+        capturas reales. Un fallo aqui no puede tumbar el analisis."""
+        if not state.get("board"):
+            return None
+        rivales = sum(1 for p in state.get("players", [])
+                      if p.get("in_hand") and not p.get("is_hero"))
+        if rivales < 1:
+            return None
+        posiciones = [p.get("position") for p in state.get("players", [])
+                      if p.get("in_hand") and not p.get("is_hero")]
+        try:
+            return equity.estimate_equity(
+                state.get("hero_cards"), state.get("board"),
+                state.get("hero_position"), rivales,
+                opponent_positions=posiciones, stack_bb=None, seed=0)
+        except Exception:  # noqa: BLE001
+            return None
+
     def _analyze_and_publish(self, crop):
         """Un ciclo de analisis completo sobre un recorte ya validado."""
+        t0 = time.perf_counter()
         cv2.imwrite(TMP_FRAME_PATH, crop)
         state = ts.analyze_layout(TMP_FRAME_PATH)
         recommendation = engine.decide(state)
@@ -152,6 +181,19 @@ class AnalysisWorker(threading.Thread):
             result = None
         GLib.idle_add(self.win.on_result, state, recommendation, hand)
         GLib.idle_add(self.win.on_hand_result, result)
+
+        # modo testing: la dupla frame + todo lo calculado, para revisarlo luego
+        sesion = self.sesion
+        if sesion is not None:
+            eq = self._equity_de(state)
+            n = sesion.guardar(
+                crop,
+                {"duracion_analisis_s": round(time.perf_counter() - t0, 3),
+                 "state": state, "recommendation": recommendation,
+                 "hand": hand, "equity": eq, "hand_result": result},
+                lambda ruta: cv2.imwrite(ruta, crop))
+            if n is not None:
+                GLib.idle_add(self.win.on_testing_progress, n, sesion.errores)
 
     def run(self):
         try:
@@ -211,6 +253,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.set_default_size(520, 640)
         self.worker = None
         self.running = False
+        self.sesion = None          # TestingSession mientras se graba
         self.default_interval = interval
         # estado cross-frame del resumen de mano anterior: nombre del hero
         # cacheado (ultimo no-nulo del asiento is_hero; su nameplate a veces
@@ -374,10 +417,22 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.interval_spin.set_digits(2)
         self.interval_spin.set_value(self.default_interval)
 
+        # Modo testing: graba cada frame junto con todo lo que se calculo de el,
+        # emparejados por nombre, en testing/sesion-<fecha>/. Es un CheckButton y
+        # no un boton aparte a proposito: la grabacion acompaña al analisis (se
+        # decide antes de darle a "Iniciar"), no es un proceso independiente que
+        # se pueda encender y apagar a mitad y dejar una sesion a trozos.
+        self.testing_check = Gtk.CheckButton(label="Grabar sesion de testing")
+        self.testing_check.set_tooltip_text(
+            "Guarda cada captura y sus resultados en testing/sesion-<fecha>/, "
+            "en duplas 0001.png + 0001.json, para revisar despues por que la app "
+            "dijo lo que dijo. Se activa al iniciar el analisis.")
+
         box.append(self.start_button)
         box.append(self.calibrate_button)
         box.append(interval_label)
         box.append(self.interval_spin)
+        box.append(self.testing_check)
         return box
 
     def _build_status_frame(self):
@@ -390,12 +445,15 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
         self.region_label = self._markup_label("Recuadro: <i>-</i>")
         self.status_label = self._markup_label("Parado.")
+        self.testing_label = self._markup_label("")
+        self.testing_label.set_wrap(True)
         self.warnings_label = self._markup_label("")
         self.warnings_label.set_wrap(True)
         self.warnings_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
 
         box.append(self.region_label)
         box.append(self.status_label)
+        box.append(self.testing_label)
         box.append(self.warnings_label)
         frame.set_child(box)
         return frame
@@ -463,8 +521,31 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.start_button.set_label("Parar analisis")
             self.calibrate_button.set_sensitive(False)
             self.interval_spin.set_sensitive(False)
+            self.testing_check.set_sensitive(False)
             self.status_label.set_markup("Iniciando...")
-            self.worker = AnalysisWorker(self, self.interval_spin.get_value())
+            intervalo = self.interval_spin.get_value()
+
+            self.sesion = None
+            if self.testing_check.get_active():
+                try:
+                    region = None
+                    try:
+                        x, y, w, h = load_region()
+                        region = {"x": x, "y": y, "width": w, "height": h}
+                    except (FileNotFoundError, ValueError, KeyError):
+                        pass
+                    self.sesion = ts_session.TestingSession(interval=intervalo, region=region)
+                    self.testing_label.set_markup(
+                        f'<span foreground="#3498db">Grabando en '
+                        f'{GLib.markup_escape_text(os.path.relpath(self.sesion.dir, BASE_DIR))}'
+                        f' — 0 frames</span>')
+                except OSError as e:
+                    # no poder grabar no debe impedir analizar
+                    self.testing_label.set_markup(
+                        f'<span foreground="#e74c3c">No se pudo crear la carpeta de '
+                        f'testing: {GLib.markup_escape_text(str(e))}</span>')
+
+            self.worker = AnalysisWorker(self, intervalo, sesion=self.sesion)
             self.worker.start()
 
     def _on_calibrate(self, _btn):
@@ -497,6 +578,14 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.status_label.set_markup(f'<span foreground="#e74c3c">{GLib.markup_escape_text(msg)}</span>')
         return False
 
+    def on_testing_progress(self, n, errores):
+        aviso = f"  ({errores} sin guardar)" if errores else ""
+        self.testing_label.set_markup(
+            f'<span foreground="#3498db">Grabando en '
+            f'{GLib.markup_escape_text(os.path.relpath(self.sesion.dir, BASE_DIR))} — '
+            f'{n} frames{GLib.markup_escape_text(aviso)}</span>')
+        return False
+
     def on_stopped(self):
         self.running = False
         self.worker = None
@@ -504,6 +593,16 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.start_button.set_sensitive(True)
         self.calibrate_button.set_sensitive(True)
         self.interval_spin.set_sensitive(True)
+        self.testing_check.set_sensitive(True)
+        if self.sesion is not None:
+            carpeta = self.sesion.cerrar()
+            n, errores = self.sesion.n, self.sesion.errores
+            self.sesion = None
+            self.testing_label.set_markup(
+                f'<span foreground="#2ecc71">Sesion guardada: {n} frames en '
+                f'{GLib.markup_escape_text(os.path.relpath(carpeta, BASE_DIR))}'
+                f'{GLib.markup_escape_text(f"  ({errores} sin guardar)" if errores else "")}'
+                f'</span>')
         if not self.status_label.get_text().startswith("No se pudo"):
             self.status_label.set_markup("Parado.")
         return False

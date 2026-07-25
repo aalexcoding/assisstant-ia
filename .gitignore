@@ -15,3 +15,4 @@ blinds.local.json
 decision/decisions.local.jsonl
 vision/samples_bb/
 vision/tessdata/
+testing/
