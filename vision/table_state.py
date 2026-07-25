@@ -514,17 +514,35 @@ def analyze_layout(image_path):
         else:
             state["warnings"].append(f"{n} asientos ocupados: fuera del rango con posiciones definidas")
 
+    # quien sigue en la mano (dorso de carta visible). El hero se resuelve por sus
+    # propias cartas, que van boca arriba. Es lo que necesita la equity postflop
+    # para saber contra cuantos rivales simula.
+    en_mano = seat_map.detect_in_hand_seats(bgr, ref)
+
     for name in seat_map.dealing_order(list(occupied), ref) if occupied else []:
         info = occupied[name]
+        es_hero = name == seat_map.HERO_SEAT
         player = {
             "name": info["name"],
             "stack": info["stack"],
             "bet": info.get("bet"),
-            "is_hero": name == seat_map.HERO_SEAT,
+            "is_hero": es_hero,
+            "in_hand": bool(state["hero_cards"]) if es_hero else (name in en_mano),
         }
         if name in positions:
             player["position"] = positions[name]
         state["players"].append(player)
+
+    # un asiento con cartas repartidas pero que no se juzgo ocupado es una
+    # contradiccion entre las dos señales (texto del nameplate vs dorso), y
+    # significa que el recuento de asientos -y por tanto TODAS las posiciones-
+    # puede estar mal
+    fantasmas = en_mano - set(occupied)
+    if fantasmas:
+        state["warnings"].append(
+            f"asiento(s) con cartas repartidas pero sin nameplate legible: "
+            f"{sorted(fantasmas)}; el recuento de ocupados puede estar mal y con el "
+            f"las posiciones")
     if seat_map.HERO_SEAT in positions:
         state["hero_position"] = positions[seat_map.HERO_SEAT]
 

@@ -272,6 +272,86 @@ def detect_button_seat(bgr, ref):
     return best
 
 
+# --- quien sigue en la mano: dorsos de carta por asiento ---
+#
+# Esta nota SUSTITUYE a la que habia al final del fichero diciendo que la
+# deteccion de dorsos no era viable. Aquel intento fallo por MUESTREO RADIAL
+# (buscar los dorsos a un offset fijo desde el centro del asiento), y el
+# diagnostico de entonces era correcto: caen a offsets distintos segun el asiento.
+# La conclusion que se saco, en cambio, no lo era. Lo que hacia falta es lo que la
+# propia nota pedia -"una zona de dorso propia por asiento y mas medicion"- y con
+# eso funciona.
+#
+# Color del dorso, MEDIDO sobre las capturas reales: HSV (178, 131, 127), un
+# granate oscuro desaturado. Se separa de todo lo demas con holgura:
+#   dorso de carta      H=178  S=131  V=127
+#   silla vacia          H=110  S= 31  V= 35   <- desaturada y oscura
+#   tapete               H= 68  S=200  V=116   <- verde
+#   carta boca arriba    S~190  V~254          <- mucho mas viva
+#
+# Zonas medidas por busqueda ciega de blobs sobre 141 frames (samples_layout2 +
+# samples_layout): 253 blobs, 245 de ellos agrupados en estos cinco asientos con
+# una desviacion tipica <= 0.016 en fracciones del nucleo. El blob de un par de
+# cartas mide ~0.174 x 0.084, asi que las zonas llevan margen generoso alrededor.
+#
+# NO hay zona para el HERO: sus cartas van boca arriba y state["hero_cards"] ya
+# responde a "¿esta el hero en la mano?". Es justo el caso que la nota antigua
+# señalaba como problematico, y desaparece por construccion.
+CARD_BACK_H = (168, 6)        # H circular: >=168 o <=6
+CARD_BACK_S = (95, 175)
+CARD_BACK_V = (85, 175)
+CARD_BACK_MIN_AREA_FRAC = 0.10   # area del mayor blob / area de la zona
+
+CARD_BACK_ZONES = {
+    "TOPC": (0.39, -0.30, 0.62, -0.14),
+    "UL":   (-0.10, -0.10, 0.13, 0.05),
+    "UR":   (0.87, -0.10, 1.10, 0.05),
+    "ML":   (-0.14, 0.51, 0.10, 0.69),
+    "MR":   (0.91, 0.51, 1.15, 0.69),
+}
+
+
+def card_back_fractions(bgr, ref):
+    """{asiento: fraccion del area de su zona ocupada por el mayor blob granate}.
+
+    Se devuelve la metrica cruda y no solo el si/no para que el test pueda
+    afirmar el MARGEN entre las dos poblaciones y para poder depurar en vivo,
+    igual que detect_button_seat expone sus constantes medidas."""
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+    h = hsv[:, :, 0].astype(np.int32)
+    s = hsv[:, :, 1].astype(np.int32)
+    v = hsv[:, :, 2].astype(np.int32)
+    mask = (((h >= CARD_BACK_H[0]) | (h <= CARD_BACK_H[1]))
+            & (s >= CARD_BACK_S[0]) & (s <= CARD_BACK_S[1])
+            & (v >= CARD_BACK_V[0]) & (v <= CARD_BACK_V[1])).astype(np.uint8) * 255
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE,
+                            cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
+
+    out = {}
+    for name, zona in CARD_BACK_ZONES.items():
+        x0, y0, x1, y1 = zone_to_px(ref, zona, bgr.shape)
+        sub = mask[y0:y1, x0:x1]
+        if sub.size == 0:
+            out[name] = 0.0
+            continue
+        n, _lab, stats, _c = cv2.connectedComponentsWithStats(sub, connectivity=8)
+        mayor = max((stats[i, cv2.CC_STAT_AREA] for i in range(1, n)), default=0)
+        out[name] = float(mayor) / sub.size
+    return out
+
+
+def detect_in_hand_seats(bgr, ref):
+    """Asientos rivales con cartas repartidas (dorso granate visible).
+
+    LIMITACION que hay que tener presente: en un all-in o en el showdown el
+    cliente da la vuelta a las cartas, los dorsos desaparecen y el recuento BAJA.
+    Eso infla la equity del hero, que es la direccion peligrosa, asi que quien
+    consuma esto debe abstenerse cuando el recuento llegue a cero con el hero aun
+    con cartas, y calcular solo cuando sea el turno del hero."""
+    return {n for n, frac in card_back_fractions(bgr, ref).items()
+            if frac >= CARD_BACK_MIN_AREA_FRAC}
+
+
 # --- facing: que enfrenta el hero, segun los botones de accion ---
 # Si el hero puede IGUALAR/PAGAR una cantidad, enfrenta una apuesta ("bet").
 # Si sus opciones son PASAR (check) o APOSTAR (bet inicial), no enfrenta nada
@@ -495,9 +575,14 @@ def detect_raiser(players, bb):
 # ya estan las lineas OCR por asiento.
 
 
-# Nota: se exploro exponer un campo opcional in_hand por asiento a partir del
-# dorso rojo de las cartas repartidas (el reverso de PokerStars es rojo
-# oscuro), pero un muestreo radial simple no localiza los dorsos de forma
-# fiable (caen a offsets distintos segun el asiento, y el hero va boca arriba),
-# asi que no se incluye para no exponer una señal casi siempre falsa. Haria
-# falta una zona de dorso propia por asiento y mas medicion.
+# Nota historica (RESUELTA, ver CARD_BACK_ZONES / detect_in_hand_seats mas
+# arriba): se exploro exponer un campo in_hand por asiento a partir del dorso
+# rojo de las cartas repartidas y se descarto porque "un muestreo radial simple
+# no localiza los dorsos de forma fiable (caen a offsets distintos segun el
+# asiento, y el hero va boca arriba)". El diagnostico era correcto y la
+# conclusion no: lo que fallaba era el muestreo radial, no la señal. Haciendo lo
+# que la propia nota pedia -una zona de dorso propia por asiento y mas medicion-
+# la separacion es limpia: sobre 141 frames x 5 asientos = 705 observaciones,
+# "sin cartas" llega como mucho a 0.0085 y "con cartas" empieza en 0.1159, con
+# CERO observaciones en la banda intermedia. Y el hero no necesita zona: sus
+# cartas van boca arriba y hero_cards ya responde por el.

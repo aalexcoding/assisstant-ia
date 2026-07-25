@@ -17,6 +17,7 @@
         "stack": 3955,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -24,6 +25,7 @@
         "stack": 8430,
         "bet": 868,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -31,6 +33,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -38,6 +41,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -45,6 +49,7 @@
         "stack": 4177,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       }
     ],
@@ -77,6 +82,7 @@
         "stack": 3955,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -84,6 +90,7 @@
         "stack": 8430,
         "bet": 868,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -91,6 +98,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -98,6 +106,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -105,6 +114,7 @@
         "stack": 4177,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       }
     ],
@@ -137,6 +147,7 @@
         "stack": 3955,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -144,6 +155,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -151,6 +163,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -158,6 +171,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -165,6 +179,7 @@
         "stack": 4177,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       }
     ],
@@ -197,6 +212,7 @@
         "stack": 6152,
         "bet": 2197,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -204,6 +220,7 @@
         "stack": 8430,
         "bet": 868,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -211,6 +228,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -218,6 +236,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -225,6 +244,7 @@
         "stack": 4177,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       }
     ],
@@ -254,6 +274,7 @@
         "stack": 6048,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -261,6 +282,7 @@
         "stack": 8416,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -268,6 +290,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -275,6 +298,7 @@
         "stack": 4125,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -282,6 +306,7 @@
         "stack": 4118,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -310,6 +335,7 @@
         "stack": 6048,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -317,6 +343,7 @@
         "stack": 8416,
         "bet": 66,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -324,6 +351,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -331,6 +359,7 @@
         "stack": 4125,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -338,6 +367,7 @@
         "stack": 4118,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -366,6 +396,7 @@
         "stack": 6048,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -373,6 +404,7 @@
         "stack": 8416,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -380,6 +412,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -387,6 +420,7 @@
         "stack": 4125,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -394,6 +428,7 @@
         "stack": 4118,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -419,6 +454,7 @@
         "stack": 6048,
         "bet": 63,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -426,6 +462,7 @@
         "stack": 8191,
         "bet": 2,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -433,6 +470,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -440,6 +478,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -447,6 +486,7 @@
         "stack": 4118,
         "bet": 88,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -474,6 +514,7 @@
         "stack": 6048,
         "bet": 63,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -481,6 +522,7 @@
         "stack": 8191,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -488,6 +530,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -495,6 +538,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -502,6 +546,7 @@
         "stack": 4118,
         "bet": 88,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -529,6 +574,7 @@
         "stack": 6048,
         "bet": 63,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -536,6 +582,7 @@
         "stack": 8191,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -543,6 +590,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -550,6 +598,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -557,6 +606,7 @@
         "stack": 3803,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -583,6 +633,7 @@
         "stack": 6048,
         "bet": 90,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -590,6 +641,7 @@
         "stack": 8191,
         "bet": 23,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -597,6 +649,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -604,6 +657,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -611,6 +665,7 @@
         "stack": 3803,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -641,6 +696,7 @@
         "stack": 6048,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -648,6 +704,7 @@
         "stack": 8056,
         "bet": 868,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -655,6 +712,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -662,6 +720,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -669,6 +728,7 @@
         "stack": 3803,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -699,6 +759,7 @@
         "stack": 6048,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -706,6 +767,7 @@
         "stack": 8056,
         "bet": 868,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -713,6 +775,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -720,6 +783,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -727,6 +791,7 @@
         "stack": 3803,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -757,6 +822,7 @@
         "stack": 6048,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -764,6 +830,7 @@
         "stack": 8056,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -771,6 +838,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -778,6 +846,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -785,6 +854,7 @@
         "stack": 2923,
         "bet": 5,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -815,6 +885,7 @@
         "stack": 6048,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -822,6 +893,7 @@
         "stack": 4253,
         "bet": 288,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -829,6 +901,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -836,6 +909,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -843,6 +917,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -874,6 +949,7 @@
         "stack": 6048,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -881,6 +957,7 @@
         "stack": 4253,
         "bet": 88,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -888,6 +965,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -895,6 +973,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -902,6 +981,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       }
     ],
@@ -934,6 +1014,7 @@
         "stack": 6048,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -941,6 +1022,7 @@
         "stack": 4253,
         "bet": 88,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -948,6 +1030,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -955,6 +1038,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -962,6 +1046,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       }
     ],
@@ -988,6 +1073,7 @@
         "stack": 6034,
         "bet": 22,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -995,6 +1081,7 @@
         "stack": 8482,
         "bet": 722286,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1002,6 +1089,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1009,6 +1097,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1016,6 +1105,7 @@
         "stack": 4229,
         "bet": 9,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -1046,6 +1136,7 @@
         "stack": 5989,
         "bet": 45,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1053,6 +1144,7 @@
         "stack": null,
         "bet": 4,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1060,6 +1152,7 @@
         "stack": 8392,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1067,6 +1160,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1074,6 +1168,7 @@
         "stack": 4111,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1081,6 +1176,7 @@
         "stack": 4229,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1109,6 +1205,7 @@
         "stack": 5989,
         "bet": 45,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1116,6 +1213,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1123,6 +1221,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1130,6 +1229,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1137,6 +1237,7 @@
         "stack": 4111,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1144,6 +1245,7 @@
         "stack": 4229,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1172,6 +1274,7 @@
         "stack": 5989,
         "bet": 45,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1179,6 +1282,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1186,6 +1290,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1193,6 +1298,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1200,6 +1306,7 @@
         "stack": 4111,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1207,6 +1314,7 @@
         "stack": 4229,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1235,6 +1343,7 @@
         "stack": 5989,
         "bet": 45,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1242,6 +1351,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1249,6 +1359,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1256,6 +1367,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1263,6 +1375,7 @@
         "stack": 4111,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1270,6 +1383,7 @@
         "stack": 4229,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1295,6 +1409,7 @@
         "stack": 5989,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1302,6 +1417,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1309,6 +1425,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1316,6 +1433,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1323,6 +1441,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1330,6 +1449,7 @@
         "stack": 4139,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1356,6 +1476,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1363,6 +1484,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1370,6 +1492,7 @@
         "stack": 8392,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1377,6 +1500,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1384,6 +1508,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1391,6 +1516,7 @@
         "stack": 4139,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1417,6 +1543,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1424,6 +1551,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1431,6 +1559,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1438,6 +1567,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1445,6 +1575,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1452,6 +1583,7 @@
         "stack": 4139,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1478,6 +1610,7 @@
         "stack": 5944,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1485,6 +1618,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1492,6 +1626,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1499,6 +1634,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1506,6 +1642,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1513,6 +1650,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1543,6 +1681,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1550,6 +1689,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1557,6 +1697,7 @@
         "stack": 8392,
         "bet": 722286,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1564,6 +1705,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1571,6 +1713,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1578,6 +1721,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1608,6 +1752,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1615,6 +1760,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1622,6 +1768,7 @@
         "stack": 8392,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1629,6 +1776,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1636,6 +1784,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1643,6 +1792,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1673,6 +1823,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1680,6 +1831,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1687,6 +1839,7 @@
         "stack": 8392,
         "bet": 722286,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1694,6 +1847,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1701,6 +1855,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1708,6 +1863,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1738,6 +1894,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1745,6 +1902,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1752,6 +1910,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1759,6 +1918,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1766,6 +1926,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1773,6 +1934,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1804,6 +1966,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1811,6 +1974,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1818,6 +1982,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1825,6 +1990,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1832,6 +1998,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1839,6 +2006,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1870,6 +2038,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1877,6 +2046,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1884,6 +2054,7 @@
         "stack": 8392,
         "bet": 722286,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1891,6 +2062,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1898,6 +2070,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1905,6 +2078,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -1937,6 +2111,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -1944,6 +2119,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -1951,6 +2127,7 @@
         "stack": 8392,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -1958,6 +2135,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -1965,6 +2143,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -1972,6 +2151,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -2004,6 +2184,7 @@
         "stack": 5854,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -2011,6 +2192,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -2018,6 +2200,7 @@
         "stack": 8392,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -2025,6 +2208,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2032,6 +2216,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -2039,6 +2224,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -2071,6 +2257,7 @@
         "stack": 5854,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -2078,6 +2265,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -2085,6 +2273,7 @@
         "stack": 8392,
         "bet": 722286,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -2092,6 +2281,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2099,6 +2289,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -2106,6 +2297,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -2138,6 +2330,7 @@
         "stack": 5944,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -2145,6 +2338,7 @@
         "stack": 5000,
         "bet": 4,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -2152,6 +2346,7 @@
         "stack": null,
         "bet": 2288,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       },
       {
@@ -2159,6 +2354,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2166,6 +2362,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -2173,6 +2370,7 @@
         "stack": 4139,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -2199,6 +2397,7 @@
         "stack": 6270,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -2206,6 +2405,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2213,6 +2413,7 @@
         "stack": 8333,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -2220,6 +2421,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       },
       {
@@ -2227,6 +2429,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2234,6 +2437,7 @@
         "stack": 4125,
         "bet": 5,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       }
     ],
@@ -2263,6 +2467,7 @@
         "stack": 6270,
         "bet": 22,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -2270,6 +2475,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2277,6 +2483,7 @@
         "stack": 8333,
         "bet": 45,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2284,6 +2491,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -2291,6 +2499,7 @@
         "stack": 4097,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2298,6 +2507,7 @@
         "stack": 4125,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -2326,6 +2536,7 @@
         "stack": 6270,
         "bet": 22,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -2333,6 +2544,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2340,6 +2552,7 @@
         "stack": 8333,
         "bet": 45,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2347,6 +2560,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -2354,6 +2568,7 @@
         "stack": 4097,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2361,6 +2576,7 @@
         "stack": 4125,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -2389,6 +2605,7 @@
         "stack": 6270,
         "bet": 22,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -2396,6 +2613,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2403,6 +2621,7 @@
         "stack": 8333,
         "bet": 45,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2410,6 +2629,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -2417,6 +2637,7 @@
         "stack": 4097,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2424,6 +2645,7 @@
         "stack": 4125,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -2449,6 +2671,7 @@
         "stack": 6270,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -2456,6 +2679,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2463,6 +2687,7 @@
         "stack": null,
         "bet": 45,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2470,6 +2695,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -2477,6 +2703,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2484,6 +2711,7 @@
         "stack": 4035,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -2510,6 +2738,7 @@
         "stack": 6270,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -2517,6 +2746,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2524,6 +2754,7 @@
         "stack": 8333,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2531,6 +2762,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -2538,6 +2770,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2545,6 +2778,7 @@
         "stack": 4035,
         "bet": 90,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -2571,6 +2805,7 @@
         "stack": 6270,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -2578,6 +2813,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2585,6 +2821,7 @@
         "stack": 8108,
         "bet": 270,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2592,6 +2829,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       },
       {
@@ -2599,6 +2837,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2606,6 +2845,7 @@
         "stack": 4035,
         "bet": 5,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -2640,6 +2880,7 @@
         "stack": 6270,
         "bet": 7,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -2647,6 +2888,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2654,6 +2896,7 @@
         "stack": 8108,
         "bet": 28,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2661,6 +2904,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       },
       {
@@ -2668,6 +2912,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2675,6 +2920,7 @@
         "stack": 3855,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -2708,6 +2954,7 @@
         "stack": 6270,
         "bet": 7,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -2715,6 +2962,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2722,6 +2970,7 @@
         "stack": 8108,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2729,6 +2978,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       },
       {
@@ -2736,6 +2986,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2743,6 +2994,7 @@
         "stack": 3855,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -2772,6 +3024,7 @@
         "stack": 6270,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -2779,6 +3032,7 @@
         "stack": 5000,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2786,6 +3040,7 @@
         "stack": 8108,
         "bet": 5500,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -2793,6 +3048,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       },
       {
@@ -2800,6 +3056,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2807,6 +3064,7 @@
         "stack": 3855,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       }
     ],
@@ -2837,6 +3095,7 @@
         "stack": 6270,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -2844,6 +3103,7 @@
         "stack": 5000,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2851,6 +3111,7 @@
         "stack": 8808,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -2858,6 +3119,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       },
       {
@@ -2865,6 +3127,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2872,6 +3135,7 @@
         "stack": 3855,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       }
     ],
@@ -2902,6 +3166,7 @@
         "stack": 6255,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -2909,6 +3174,7 @@
         "stack": 4985,
         "bet": 4,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -2916,6 +3182,7 @@
         "stack": 8793,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -2923,6 +3190,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -2930,6 +3198,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -2937,6 +3206,7 @@
         "stack": 3840,
         "bet": 9,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       }
     ],
@@ -2969,6 +3239,7 @@
         "stack": 6255,
         "bet": 2,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -2976,6 +3247,7 @@
         "stack": 4985,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -2983,6 +3255,7 @@
         "stack": 8793,
         "bet": 6,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -2990,6 +3263,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -2997,6 +3271,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3004,6 +3279,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3034,6 +3310,7 @@
         "stack": 6255,
         "bet": 13,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3041,6 +3318,7 @@
         "stack": 8793,
         "bet": 2,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -3048,6 +3326,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -3055,6 +3334,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3062,6 +3342,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       }
     ],
@@ -3071,7 +3352,9 @@
     "stack_unit": "chips",
     "stack_unit_source": "evidence",
     "to_call": null,
-    "warnings": []
+    "warnings": [
+      "asiento(s) con cartas repartidas pero sin nameplate legible: ['TOPC']; el recuento de ocupados puede estar mal y con el las posiciones"
+    ]
   },
   {
     "image": "sample_1784910001369.png",
@@ -3092,6 +3375,7 @@
         "stack": 6255,
         "bet": 22,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3099,6 +3383,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3106,6 +3391,7 @@
         "stack": 8793,
         "bet": 722206,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3113,6 +3399,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3120,6 +3407,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3127,6 +3415,7 @@
         "stack": 100,
         "bet": 226,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3157,6 +3446,7 @@
         "stack": 6255,
         "bet": 22,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3164,6 +3454,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3171,6 +3462,7 @@
         "stack": 8793,
         "bet": 722206,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3178,6 +3470,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3185,6 +3478,7 @@
         "stack": 3982,
         "bet": 100,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3192,6 +3486,7 @@
         "stack": 3740,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3226,6 +3521,7 @@
         "stack": 6255,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3233,6 +3529,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3240,6 +3537,7 @@
         "stack": 8793,
         "bet": 722206,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3247,6 +3545,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3254,6 +3553,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3261,6 +3561,7 @@
         "stack": 3740,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3295,6 +3596,7 @@
         "stack": 6255,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3302,6 +3604,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3309,6 +3612,7 @@
         "stack": 8793,
         "bet": 722206,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3316,6 +3620,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3323,6 +3628,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3330,6 +3636,7 @@
         "stack": 3740,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3365,6 +3672,7 @@
         "stack": 6255,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3372,6 +3680,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3379,6 +3688,7 @@
         "stack": 8793,
         "bet": 86866,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3386,6 +3696,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3393,6 +3704,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3400,6 +3712,7 @@
         "stack": 3740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3435,6 +3748,7 @@
         "stack": 6255,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3442,6 +3756,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3449,6 +3764,7 @@
         "stack": 8793,
         "bet": 86866,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3456,6 +3772,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3463,6 +3780,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3470,6 +3788,7 @@
         "stack": 3740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3505,6 +3824,7 @@
         "stack": 6255,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3512,6 +3832,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3519,6 +3840,7 @@
         "stack": 8793,
         "bet": 722206,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3526,6 +3848,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3533,6 +3856,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3540,6 +3864,7 @@
         "stack": 3740,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3575,6 +3900,7 @@
         "stack": 6255,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3582,6 +3908,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3589,6 +3916,7 @@
         "stack": 8793,
         "bet": 86866,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3596,6 +3924,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3603,6 +3932,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3610,6 +3940,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3642,6 +3973,7 @@
         "stack": 6255,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3649,6 +3981,7 @@
         "stack": 4985,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3656,6 +3989,7 @@
         "stack": 8793,
         "bet": 26,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3663,6 +3997,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3670,6 +4005,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -3677,6 +4013,7 @@
         "stack": 3740,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       }
     ],
@@ -3702,6 +4039,7 @@
         "stack": 6240,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "EP1"
       },
       {
@@ -3709,6 +4047,7 @@
         "stack": 4970,
         "bet": 4,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -3716,6 +4055,7 @@
         "stack": 8778,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -3723,6 +4063,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -3730,6 +4071,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3737,6 +4079,7 @@
         "stack": 100,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       }
     ],
@@ -3767,6 +4110,7 @@
         "stack": 6240,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -3774,6 +4118,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -3781,6 +4126,7 @@
         "stack": 8778,
         "bet": 66,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -3788,6 +4134,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -3795,6 +4142,7 @@
         "stack": 3917,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3802,6 +4150,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -3834,6 +4183,7 @@
         "stack": 6240,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -3841,6 +4191,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -3848,6 +4199,7 @@
         "stack": 8778,
         "bet": 66,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -3855,6 +4207,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -3862,6 +4215,7 @@
         "stack": 3917,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3869,6 +4223,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -3899,6 +4254,7 @@
         "stack": 6240,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -3906,6 +4262,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -3913,6 +4270,7 @@
         "stack": 8778,
         "bet": 66,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -3920,6 +4278,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -3927,6 +4286,7 @@
         "stack": 3917,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3934,6 +4294,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -3964,6 +4325,7 @@
         "stack": 6240,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -3971,6 +4333,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -3978,6 +4341,7 @@
         "stack": 8778,
         "bet": 66,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -3985,6 +4349,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -3992,6 +4357,7 @@
         "stack": 3917,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -3999,6 +4365,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4026,6 +4393,7 @@
         "stack": 6040,
         "bet": 200,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -4033,6 +4401,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4040,6 +4409,7 @@
         "stack": 8778,
         "bet": 228,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4047,6 +4417,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4054,6 +4425,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4061,6 +4433,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4094,6 +4467,7 @@
         "stack": 6040,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -4101,6 +4475,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4108,6 +4483,7 @@
         "stack": 8778,
         "bet": 228,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4115,6 +4491,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4122,6 +4499,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4129,6 +4507,7 @@
         "stack": 3865,
         "bet": 5,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4162,6 +4541,7 @@
         "stack": 6040,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -4169,6 +4549,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4176,6 +4557,7 @@
         "stack": 8778,
         "bet": 228,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4183,6 +4565,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4190,6 +4573,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4197,6 +4581,7 @@
         "stack": 3865,
         "bet": 5,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4231,6 +4616,7 @@
         "stack": 6040,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -4238,6 +4624,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4245,6 +4632,7 @@
         "stack": 8778,
         "bet": 722206,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4252,6 +4640,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4259,6 +4648,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4266,6 +4656,7 @@
         "stack": 3865,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4300,6 +4691,7 @@
         "stack": 5770,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -4307,6 +4699,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4314,6 +4707,7 @@
         "stack": 8778,
         "bet": 228,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4321,6 +4715,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4328,6 +4723,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4335,6 +4731,7 @@
         "stack": 3865,
         "bet": 5,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4370,6 +4767,7 @@
         "stack": 5770,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -4377,6 +4775,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4384,6 +4783,7 @@
         "stack": 8778,
         "bet": 228,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4391,6 +4791,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4398,6 +4799,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4405,6 +4807,7 @@
         "stack": 3595,
         "bet": 5,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4440,6 +4843,7 @@
         "stack": 5770,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -4447,6 +4851,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4454,6 +4859,7 @@
         "stack": 8778,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4461,6 +4867,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4468,6 +4875,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4475,6 +4883,7 @@
         "stack": 3595,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4506,6 +4915,7 @@
         "stack": 5770,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "EP1"
       },
       {
@@ -4513,6 +4923,7 @@
         "stack": 4970,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4520,6 +4931,7 @@
         "stack": 8778,
         "bet": 288,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4527,6 +4939,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4534,6 +4947,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4541,6 +4955,7 @@
         "stack": 3595,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       }
     ],
@@ -4573,6 +4988,7 @@
         "stack": 4970,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4580,6 +4996,7 @@
         "stack": 8778,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4587,6 +5004,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4594,6 +5012,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -4601,6 +5020,7 @@
         "stack": 4675,
         "bet": 1080,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       }
     ],
@@ -4631,6 +5051,7 @@
         "stack": 4855,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -4638,6 +5059,7 @@
         "stack": 8763,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -4645,6 +5067,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -4652,6 +5075,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4659,6 +5083,7 @@
         "stack": 4610,
         "bet": 25,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -4687,6 +5112,7 @@
         "stack": 4855,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -4694,6 +5120,7 @@
         "stack": 8763,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -4701,6 +5128,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -4708,6 +5136,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4715,6 +5144,7 @@
         "stack": 4610,
         "bet": 25,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -4743,6 +5173,7 @@
         "stack": 4855,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -4750,6 +5181,7 @@
         "stack": 8763,
         "bet": 722206,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4757,6 +5189,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4764,6 +5197,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4771,6 +5205,7 @@
         "stack": 4610,
         "bet": 25,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -4796,6 +5231,7 @@
         "stack": null,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -4803,6 +5239,7 @@
         "stack": 8763,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4810,6 +5247,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4817,6 +5255,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4824,6 +5263,7 @@
         "stack": 4560,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -4854,6 +5294,7 @@
         "stack": 4855,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -4861,6 +5302,7 @@
         "stack": null,
         "bet": 228,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4868,6 +5310,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4875,6 +5318,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4882,6 +5326,7 @@
         "stack": 4560,
         "bet": 6,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -4912,6 +5357,7 @@
         "stack": 4855,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -4919,6 +5365,7 @@
         "stack": null,
         "bet": 228,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4926,6 +5373,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4933,6 +5381,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4940,6 +5389,7 @@
         "stack": 4560,
         "bet": 9,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -4970,6 +5420,7 @@
         "stack": 4855,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -4977,6 +5428,7 @@
         "stack": null,
         "bet": 2208,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -4984,6 +5436,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -4991,6 +5444,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -4998,6 +5452,7 @@
         "stack": 4560,
         "bet": 9,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -5029,6 +5484,7 @@
         "stack": null,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5036,6 +5492,7 @@
         "stack": 8763,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5043,6 +5500,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5050,6 +5508,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -5057,6 +5516,7 @@
         "stack": 4560,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -5089,6 +5549,7 @@
         "stack": 4855,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5096,6 +5557,7 @@
         "stack": 8763,
         "bet": 2,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5103,6 +5565,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5110,6 +5573,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -5117,6 +5581,7 @@
         "stack": 4560,
         "bet": 5,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       }
     ],
@@ -5149,6 +5614,7 @@
         "stack": 4855,
         "bet": 8,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -5156,6 +5622,7 @@
         "stack": 8763,
         "bet": 228,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5163,6 +5630,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5170,6 +5638,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -5177,6 +5646,7 @@
         "stack": 4560,
         "bet": 100,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       }
     ],
@@ -5205,6 +5675,7 @@
         "stack": 4790,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5212,6 +5683,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -5219,6 +5691,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5226,6 +5699,7 @@
         "stack": 4820,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5236,6 +5710,7 @@
     "stack_unit_source": "evidence",
     "to_call": null,
     "warnings": [
+      "asiento(s) con cartas repartidas pero sin nameplate legible: ['UR']; el recuento de ocupados puede estar mal y con el las posiciones",
       "no se encontraron las ciegas (esquina/chat)"
     ]
   },
@@ -5254,6 +5729,7 @@
         "stack": 4790,
         "bet": 50,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5261,6 +5737,7 @@
         "stack": null,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5268,6 +5745,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5275,6 +5753,7 @@
         "stack": 3887,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5282,6 +5761,7 @@
         "stack": 4820,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5310,6 +5790,7 @@
         "stack": 4790,
         "bet": 50,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5317,6 +5798,7 @@
         "stack": 8648,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5324,6 +5806,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5331,6 +5814,7 @@
         "stack": 3887,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5338,6 +5822,7 @@
         "stack": 4820,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5366,6 +5851,7 @@
         "stack": 4790,
         "bet": 50,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5373,6 +5859,7 @@
         "stack": 8648,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5380,6 +5867,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5387,6 +5875,7 @@
         "stack": 3787,
         "bet": 100,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5394,6 +5883,7 @@
         "stack": 4820,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5422,6 +5912,7 @@
         "stack": 4740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5429,6 +5920,7 @@
         "stack": 8648,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5436,6 +5928,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5443,6 +5936,7 @@
         "stack": 3787,
         "bet": 100,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5450,6 +5944,7 @@
         "stack": 100,
         "bet": 100,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5478,6 +5973,7 @@
         "stack": 4740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5485,6 +5981,7 @@
         "stack": null,
         "bet": 66,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5492,6 +5989,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5499,6 +5997,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5506,6 +6005,7 @@
         "stack": 4720,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5538,6 +6038,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5545,6 +6046,7 @@
         "stack": 8648,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5552,6 +6054,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5559,6 +6062,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5566,6 +6070,7 @@
         "stack": 4720,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5598,6 +6103,7 @@
         "stack": 4740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5605,6 +6111,7 @@
         "stack": null,
         "bet": 66,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5612,6 +6119,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5619,6 +6127,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5626,6 +6135,7 @@
         "stack": 4720,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5658,6 +6168,7 @@
         "stack": 4740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5665,6 +6176,7 @@
         "stack": 8648,
         "bet": 66,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5672,6 +6184,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5679,6 +6192,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5686,6 +6200,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5719,6 +6234,7 @@
         "stack": 4740,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5726,6 +6242,7 @@
         "stack": 8648,
         "bet": 28,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5733,6 +6250,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5740,6 +6258,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5747,6 +6266,7 @@
         "stack": 4720,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5780,6 +6300,7 @@
         "stack": 4740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5787,6 +6308,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5794,6 +6316,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5801,6 +6324,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5808,6 +6332,7 @@
         "stack": 8288,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5841,6 +6366,7 @@
         "stack": 4740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5848,6 +6374,7 @@
         "stack": 8648,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5855,6 +6382,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5862,6 +6390,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5869,6 +6398,7 @@
         "stack": 8288,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5902,6 +6432,7 @@
         "stack": 4740,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5909,6 +6440,7 @@
         "stack": 8648,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5916,6 +6448,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5923,6 +6456,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5930,6 +6464,7 @@
         "stack": 8288,
         "bet": 4,
         "is_hero": false,
+        "in_hand": true,
         "position": "BTN"
       }
     ],
@@ -5963,6 +6498,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -5970,6 +6506,7 @@
         "stack": 8648,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -5977,6 +6514,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -5984,6 +6522,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -5991,6 +6530,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6024,6 +6564,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6031,6 +6572,7 @@
         "stack": 8648,
         "bet": 86,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -6038,6 +6580,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6045,6 +6588,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6052,6 +6596,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6085,6 +6630,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6092,6 +6638,7 @@
         "stack": 8648,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -6099,6 +6646,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6106,6 +6654,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6113,6 +6662,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6146,6 +6696,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6153,6 +6704,7 @@
         "stack": 8648,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -6160,6 +6712,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6167,6 +6720,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6174,6 +6728,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6207,6 +6762,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6214,6 +6770,7 @@
         "stack": 8648,
         "bet": 6,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -6221,6 +6778,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6228,6 +6786,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6235,6 +6794,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6268,6 +6828,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6275,6 +6836,7 @@
         "stack": 8148,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -6282,6 +6844,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6289,6 +6852,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6296,6 +6860,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6330,6 +6895,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6337,6 +6903,7 @@
         "stack": 8148,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -6344,6 +6911,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6351,6 +6919,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6358,6 +6927,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6392,6 +6962,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6399,6 +6970,7 @@
         "stack": 8148,
         "bet": 7,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -6406,6 +6978,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6413,6 +6986,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6420,6 +6994,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6454,6 +7029,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6461,6 +7037,7 @@
         "stack": 4861,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -6468,6 +7045,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6475,6 +7053,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6482,6 +7061,7 @@
         "stack": 4720,
         "bet": 7,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6516,6 +7096,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6523,6 +7104,7 @@
         "stack": 12910,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -6530,6 +7112,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6537,6 +7120,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6544,6 +7128,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6575,6 +7160,7 @@
         "stack": 4740,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6582,6 +7168,7 @@
         "stack": 12910,
         "bet": 8049,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -6589,6 +7176,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6596,6 +7184,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6603,6 +7192,7 @@
         "stack": 4720,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       }
     ],
@@ -6628,19 +7218,22 @@
         "name": null,
         "stack": null,
         "bet": null,
-        "is_hero": false
+        "is_hero": false,
+        "in_hand": false
       },
       {
         "name": null,
         "stack": null,
         "bet": null,
-        "is_hero": false
+        "is_hero": false,
+        "in_hand": false
       },
       {
         "name": null,
         "stack": null,
         "bet": null,
-        "is_hero": true
+        "is_hero": true,
+        "in_hand": false
       }
     ],
     "hero_position": null,
@@ -6669,6 +7262,7 @@
         "stack": 4725,
         "bet": 4,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -6676,6 +7270,7 @@
         "stack": 12695,
         "bet": 86,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -6683,6 +7278,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -6690,6 +7286,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6697,6 +7294,7 @@
         "stack": 4505,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -6727,6 +7325,7 @@
         "stack": 4725,
         "bet": 6,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -6734,6 +7333,7 @@
         "stack": 12695,
         "bet": 8,
         "is_hero": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -6741,6 +7341,7 @@
         "stack": null,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       },
       {
@@ -6748,6 +7349,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "HJ"
       },
       {
@@ -6755,6 +7357,7 @@
         "stack": 4505,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "CO"
       }
     ],
@@ -6785,6 +7388,7 @@
         "stack": 4445,
         "bet": null,
         "is_hero": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -6792,6 +7396,7 @@
         "stack": 11287,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "CO"
       },
       {
@@ -6799,6 +7404,7 @@
         "stack": 12848,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BTN"
       },
       {
@@ -6806,6 +7412,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
+        "in_hand": false,
         "position": "SB"
       },
       {
@@ -6813,6 +7420,7 @@
         "stack": 5000,
         "bet": null,
         "is_hero": false,
+        "in_hand": false,
         "position": "BB"
       }
     ],
@@ -6823,6 +7431,7 @@
     "stack_unit_source": "evidence",
     "to_call": null,
     "warnings": [
+      "asiento(s) con cartas repartidas pero sin nameplate legible: ['UR']; el recuento de ocupados puede estar mal y con el las posiciones",
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
     ]
