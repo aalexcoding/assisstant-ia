@@ -235,6 +235,22 @@ def evaluate_hand(hero_codes, board_codes):
     if hero is None or len(hero) != 2:
         return None
     board = [p for p in (_parse(c) for c in (board_codes or [])) if p]
+
+    # CARTAS IMPOSIBLES. El OCR se equivoca leyendo rango o palo y produce boards
+    # que no pueden existir: medido sobre vision/results_samples_layout2.json, 4 de
+    # los 64 frames con board (6,2%) traen una carta repetida -p.ej. board
+    # ['4s','7d','9d','7h','9d'], donde el 9d sale dos veces porque el real era Qd-.
+    # Sin este guard se evaluaba tan tranquilamente y se mostraba "Doble pareja
+    # (Nueves y Sietes)": una mano formada que el usuario NO tiene. Igual con un
+    # hero de dos cartas identicas ("Pareja de Ases" de ['Ah','Ah']).
+    # Devolver None es el contrato que ya existe para un hero invalido, y la GUI ya
+    # lo trata bien: oculta el panel "Mano actual" en vez de enseñar una mentira.
+    todas = hero + board
+    if len(set(todas)) != len(todas):
+        return None
+    if len(board) > 5:
+        return None
+
     n = len(board)
 
     if n == 0:

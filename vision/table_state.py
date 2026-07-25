@@ -26,6 +26,7 @@ from suit_classifier import classify_suit
 from table_region import find_table_region
 from text_extract import (_clean_name, _is_name_candidate, _is_number_candidate, _is_username_token, _to_int,
                           find_blinds, find_blinds_chat, find_blinds_corner, find_players, find_pot,
+                          find_pot_bb,
                           merge_line_sets, parse_tsv_lines)
 
 # la barra de titulo de la ventana (nombre de mesa, ciegas, torneo) queda
@@ -303,6 +304,19 @@ def _plate_occupied(lines):
     palabras como "david sagunt"), un stack numerico, o un verbo/estado de
     accion ("Igualar"/"Pasar"/"Ausente"/"Poner CP"/"No ir"...). Un asiento
     vacio -sillas granate sobre fondo oscuro- no da ninguno de estos."""
+    # Un stack en BIG BLINDS ("36,6 BB") es evidencia de asiento ocupado igual que
+    # un entero de fichas, pero NINGUNA de las señales de abajo lo ve:
+    # _is_number_candidate("36,6") es falso (exige >=3 digitos o separador de
+    # miles) y "BB" no es ni nombre ni numero. Sin esta comprobacion un asiento con
+    # stack perfectamente legible cuenta como VACIO, y como las posiciones se
+    # asignan por el RECUENTO de ocupados (SEATING_BY_N), perder un asiento
+    # desplaza la posicion de TODOS. Medido en vision/samples_bb/sample_bb_1.png:
+    # el asiento ML lee ['makeao31', '36,6 BB'] y se juzgaba vacio -su nick lo
+    # rechaza la blacklist por subcadena ("make" dentro de "makeao31") y su stack
+    # no encaja en NUMBER_RE-, asi que se contaban 4 asientos en vez de 5 y el hero
+    # pasaba de HJ a CO: el rango equivocado.
+    if seat_map.parse_amount_bb(lines) is not None:
+        return True
     for ln in lines:
         low = ln["text"].lower()
         if "no ir" in low or "noir" in low:
@@ -507,7 +521,11 @@ def analyze_layout(image_path):
     # bote, ciegas, facing. Ciegas: primero el recuadro persistente de la
     # esquina (SB/BB(ante), la fuente mas fiable), luego el aviso del chat
     # (transitorio) como respaldo.
-    state["pot"] = find_pot(parse_tsv_lines(results[pot_idx]))
+    # el bote se lee segun la unidad: en modo BB lleva el sufijo y decimales
+    # ("Bote: 3,75 BB"), que find_pot interpretaria como separador de miles
+    # (x10/x100). Ver find_pot_bb.
+    pot_lines = parse_tsv_lines(results[pot_idx])
+    state["pot"] = find_pot_bb(pot_lines) if unit == "bb" else find_pot(pot_lines)
     chat_lines = parse_tsv_lines(results[chat_idx])
     state["blinds"] = (find_blinds_corner(corner_lines, require_double=False)
                        or find_blinds_chat(chat_lines) or find_blinds(chat_lines))

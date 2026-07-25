@@ -321,8 +321,18 @@ SEAT_BET_ZONES = {
 # pegados del OCR sobre el tapete/fichas ("B50" -> 50).
 _BET_DIGITS_RE = re.compile(r"\d{1,3}(?:[.,]\d{3})+|\d{1,6}")
 
-# modo BB: numero (con coma decimal opcional) seguido del sufijo BB.
-_BB_AMOUNT_RE = re.compile(r"(\d{1,3}(?:,\d{1,2})?)\s*BB", re.IGNORECASE)
+# modo BB: numero seguido del sufijo BB.
+#
+# El separador decimal del cliente en castellano es la COMA, pero el OCR la lee a
+# veces como PUNTO, asi que se aceptan los dos. Y el lookbehind + el \b no son
+# cosmeticos: son lo que evita dos fallos MUDOS que estuvieron vivos y que dan una
+# profundidad plausible pero falsa (el peor fallo posible en esta app):
+#   '57.2 BB'   -> antes 2       (57bb leidos como 2bb -> tabla de 4bb -> ALL IN)
+#   '1234,5 BB' -> antes 234,5   (el tope de 3 digitos truncaba el primero)
+# Un numero con separador de MILES ("1.900 BB", "12.500 BB") NO casa a proposito:
+# en modo BB no existe -es OCR corrupto de un importe en fichas- y aceptarlo
+# volveria a introducir el error de 1000x.
+_BB_AMOUNT_RE = re.compile(r"(?<![\d.,])(\d{1,4}(?:[.,]\d{1,2})?)\s*BB\b", re.IGNORECASE)
 
 
 def parse_bet_amount(lines):
@@ -360,6 +370,22 @@ def has_bb_marker(lines):
     return bool(_BB_AMOUNT_RE.search(" ".join(ln["text"] for ln in lines)))
 
 
+# La apuesta del asiento BB no puede tomarse como prueba de una subida: la BB ya
+# tiene la ciega puesta y, en un torneo con BB-ante (practicamente todos los
+# modernos), tambien el ante, asi que su importe SUPERA la ciega grande sin que
+# nadie haya subido. Se acepta como "solo ciega + ante" hasta este multiplo de la
+# ciega grande (2.0 = ciega + un ante de 1bb, el BB-ante mas grande habitual).
+# Por encima de ahi la BB si ha subido de verdad -> codigo "bb_raised".
+#
+# Sin esto, con BB-ante el flujo era: bet_BB = 1+ante > bb -> ("BB","single") ->
+# se busca threebet_call[stack][hero]["BB"], que NO EXISTE para ningun hero (los
+# vs_position posibles son solo {BTN,CO,EP1,EP2,HJ,MP1,MP2,SB}: la BB habla
+# ULTIMA preflop, asi que nunca es el agresor al que uno defiende) -> abstencion
+# en TODAS las manos. Dejo rastro en el log real de una sesion:
+# "sin rango de defensa para CO vs BB a 14.1bb (threebet_call)".
+BB_POSTED_MAX_MULT = 2.0
+
+
 def detect_raiser(players, bb):
     """Con el importe apostado por asiento ya leido (player["bet"]), decide si
     hay UNA sola subida preflop y quien la hizo. Devuelve (vs_position, code):
@@ -371,6 +397,9 @@ def detect_raiser(players, bb):
         3bet ya presente); no se adivina.
       - "hero_raised": el propio hero por encima de la bb -> None (ya subio y
         enfrenta una resubida, fuera del modelo threebet_call).
+      - "bb_raised": la BB ha subido de verdad (mas que ciega+ante) -> None. La
+        BB habla ultima preflop, asi que no hay rango de defensa contra ella en
+        las tablas; enfrentarla es un spot distinto (el hero ya limpeo).
       - "raiser_no_pos": subida unica pero el raiser sin posicion -> None.
       - "no_bb": sin ciega grande para juzgar -> None.
     Conservador por diseño: ante cualquier duda devuelve None (mejor no
@@ -382,6 +411,12 @@ def detect_raiser(players, bb):
     if any(p.get("is_hero") for p in above):
         return None, "hero_raised"
     opp = [p for p in above if not p.get("is_hero")]
+    # el asiento BB solo cuenta como agresor si se pasa de ciega+ante (ver
+    # BB_POSTED_MAX_MULT); si no, su importe es dinero obligatorio, no una subida
+    bb_seat = [p for p in opp if p.get("position") == "BB"]
+    if bb_seat and any(p["bet"] > bb * BB_POSTED_MAX_MULT for p in bb_seat):
+        return None, "bb_raised"
+    opp = [p for p in opp if p.get("position") != "BB"]
     if not opp:
         return None, "no_raise"
     if len(opp) > 1:

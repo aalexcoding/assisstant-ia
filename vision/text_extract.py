@@ -166,6 +166,41 @@ def find_pot(lines):
     return None
 
 
+# El bote en modo BIG BLINDS ("Bote: 3,75 BB") NO se puede leer con POT_RE +
+# _to_int: esas tratan la , y el . como separador de MILES, asi que el decimal se
+# come y el valor sale multiplicado. Medido:
+#   'Bote: 3,75 BB'  -> 375   (x100)
+#   'Bote: 12,5 BB'  -> 125   (x10)
+#   'Bote: 89 BB'    -> None  (89 < MIN_PLAUSIBLE_POT=100, se descartaba)
+# Verificado end-to-end sobre vision/samples_bb/sample_bb_1.png: el bote real es
+# 3,75 BB y analyze_layout devolvia 375.
+#
+# Se EXIGE la etiqueta Bote/Pot (sobrevive al OCR en 104 de 111 frames del corpus)
+# para no confundir el bote con un stack o una apuesta que caiga en la zona: en
+# modo BB todos los importes comparten el mismo sufijo, asi que la etiqueta es lo
+# unico que distingue el bote.
+POT_BB_RE = re.compile(rf"(?:pot|bote)[:\.]?\s*(\d{{1,4}}(?:[.,]\d{{1,2}})?)\s*BB\b",
+                       re.IGNORECASE)
+# un bote de mas de 2000bb no existe en un torneo (seria mas que todas las fichas
+# en juego a cualquier nivel util); por encima de eso es OCR corrupto.
+MAX_PLAUSIBLE_POT_BB = 2000.0
+
+
+def find_pot_bb(lines):
+    """Modo BB: bote en big blinds (float) o None. Mismo esquema de dos pasadas
+    que find_pot (primero por linea, luego por filas fusionadas, porque el OCR
+    parte "Bote: N BB" en dos lineas visuales a veces). No hay minimo plausible:
+    un bote legitimo en bb suele estar entre 1,5 y 30, asi que el
+    MIN_PLAUSIBLE_POT=100 del modo fichas aqui descartaria casi todos."""
+    for text in [ln["text"] for ln in lines] + _row_texts(lines):
+        m = POT_BB_RE.search(text)
+        if m:
+            value = float(m.group(1).replace(",", "."))
+            if 0 < value <= MAX_PLAUSIBLE_POT_BB:
+                return value
+    return None
+
+
 def _blinds_dict(sb, bb, ante):
     if bb < MIN_PLAUSIBLE_BB:
         return None
