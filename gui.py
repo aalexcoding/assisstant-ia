@@ -565,9 +565,17 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self._update_hand(hand)
 
         if recommendation:
-            action = str(recommendation["action"]).upper()
-            self.rec_label.set_markup(
-                f'<span size="xx-large" weight="bold" foreground="#2ecc71">{GLib.markup_escape_text(action)}</span>')
+            # orden bilingue: ingles grande, castellano debajo mas pequeño. El
+            # ingles ya viene normalizado por la capa de traduccion; el .upper()
+            # solo actua en el respaldo, por si llega una etiqueta sin traducir.
+            esc = GLib.markup_escape_text
+            en = recommendation.get("action_en") or str(recommendation["action"]).upper()
+            es = recommendation.get("action_es")
+            markup = (f'<span size="xx-large" weight="bold" foreground="#2ecc71">'
+                      f'{esc(en)}</span>')
+            if es:
+                markup += f'\n<span size="large" foreground="#bdc3c7">{esc(es)}</span>'
+            self.rec_label.set_markup(markup)
             reasoning = recommendation.get("reasoning") or ""
             self.reasoning_label.set_markup(GLib.markup_escape_text(reasoning))
         else:

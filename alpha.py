@@ -56,7 +56,9 @@ def format_state(state, recommendation):
         name = p["name"] if p["name"] is not None else "(?)"
         lines.append(f"  {name}{pos}: {p['stack']}{marker}")
     if recommendation:
-        lines.append(f"Recomendacion: {recommendation['action']}")
+        en = recommendation.get("action_en") or recommendation["action"]
+        es = recommendation.get("action_es")
+        lines.append(f"Recomendacion: {en}" + (f"  /  {es}" if es else ""))
     if state["warnings"]:
         lines.append("Avisos: " + "; ".join(state["warnings"]))
     return "\n".join(lines)

@@ -77,6 +77,7 @@ import json
 import os
 import time
 
+from actions import CHECK_BB_OPTION, translate_into
 from lookup import RANGES, recommend
 
 _MANUAL_BLINDS_PATH = os.path.join(os.path.dirname(__file__), "..", "blinds.local.json")
@@ -419,7 +420,10 @@ def decide(state):
         # opcion de la BB en un bote limpeado/sin subir. No tenemos digitalizado
         # el rango de "raise over limpers" (solo Open Raise y 3bet/Call), asi que
         # por defecto pasar (ver flop gratis) y avisar de la limitacion.
-        action = "Pasar (opcion de la BB)"
+        # etiqueta sintetica (no sale de ranges.json) para que pase por la misma
+        # capa de traduccion que el resto: "CHECK" grande, "pasar (opcion de la
+        # BB)" debajo.
+        action = CHECK_BB_OPTION
         reasoning = (f"Estas en la BB con opcion a {stack_bb:.1f}bb ({fuente};{nota_cache} "
                      f"nadie ha subido). Por defecto PASAR y ver el flop gratis; no tengo "
                      f"digitalizado tu rango de 'raise over limpers' para decir si subir.")
@@ -445,5 +449,9 @@ def decide(state):
         "facing_used": facing,
         "vs_position": vs_position,
     }
+    # action_en / action_es para el HUD. "action" se conserva con la etiqueta
+    # CRUDA: es la que enlaza con ranges.json y la que registra el log, asi que
+    # el historial de decisiones sigue siendo comparable entre versiones.
+    translate_into(recommendation)
     _log_decision(state, recommendation, None)
     return recommendation
