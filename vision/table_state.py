@@ -112,6 +112,16 @@ def _resolve_card(card_bgr, w, h, rank_texts):
 
 
 def analyze(image_path):
+    """Rama original (mazo blanco, capturas de YouTube): deteccion de cartas por
+    contorno + OCR de texto libre sin coordenadas fijas.
+
+    LEGADO / DIAGNOSTICO, NO APTO PARA EL MOTOR: sus stacks son ENTEROS DE FICHAS
+    (find_players -> _to_int) y no declara "stack_unit", asi que engine.decide()
+    RECHAZA a proposito los GameState que produce -ver el guard de stack_unit-.
+    Sin ese guard, cuando la app pase a BB-only un stack de 3955 fichas se leeria
+    como 3955bb y saldria una recomendacion con conviccion y falsa.
+    Produccion es analyze_layout(). Se conserva porque es la unica rama que lee
+    sin coordenadas fijas, util para diagnosticar capturas nuevas."""
     bgr = cv2.imread(image_path)
     state = {
         "image": os.path.basename(image_path),
@@ -315,7 +325,14 @@ def _plate_occupied(lines):
     # rechaza la blacklist por subcadena ("make" dentro de "makeao31") y su stack
     # no encaja en NUMBER_RE-, asi que se contaban 4 asientos en vez de 5 y el hero
     # pasaba de HJ a CO: el rango equivocado.
-    if seat_map.parse_amount_bb(lines) is not None:
+    # Se usa has_bb_amount y no parse_amount_bb porque aqui la pregunta es "¿hay
+    # un importe en BB en esta zona?", no "¿cuanto?": parse_amount_bb devuelve
+    # None a proposito cuando hay dos importes distintos (ambiguedad), y eso no
+    # debe hacer que un asiento claramente ocupado cuente como vacio. Y tampoco
+    # has_bb_marker, que acepta un "BB" suelto sin numero: como señal de unidad
+    # vale, como señal de ocupacion es ruido de OCR de dos caracteres capaz de
+    # dar por ocupado un asiento vacio y desplazar las posiciones de todos.
+    if seat_map.has_bb_amount(lines):
         return True
     for ln in lines:
         low = ln["text"].lower()
@@ -373,6 +390,7 @@ def analyze_layout(image_path):
         "vs_position": None,
         "stack_unit": None,
         "stack_unit_source": None,
+        "to_call": None,
         "warnings": [],
     }
     if bgr is None:
@@ -529,7 +547,13 @@ def analyze_layout(image_path):
     chat_lines = parse_tsv_lines(results[chat_idx])
     state["blinds"] = (find_blinds_corner(corner_lines, require_double=False)
                        or find_blinds_chat(chat_lines) or find_blinds(chat_lines))
-    state["facing"] = seat_map.parse_facing(" ".join(ln["text"] for ln in parse_tsv_lines(results[action_idx])))
+    action_lines = parse_tsv_lines(results[action_idx])
+    state["facing"] = seat_map.parse_facing(" ".join(ln["text"] for ln in action_lines))
+    # importe que pide el boton "Igualar": evidencia INDEPENDIENTE de que hay una
+    # subida que enfrentar, para poder abstenerse cuando el importe de la mesa no
+    # se lee y el motor recomendaria una apertura enfrentando una subida. Solo en
+    # modo BB (el boton no lleva sufijo en modo fichas). Ver parse_to_call_bb.
+    state["to_call"] = seat_map.parse_to_call_bb(action_lines) if unit == "bb" else None
 
     # vs_position: quien subio, a partir del importe apostado por asiento. Solo
     # se rellena si el hero enfrenta una apuesta (facing="bet") y hay UNA subida
@@ -555,7 +579,14 @@ def analyze_layout(image_path):
 
 
 def analyze_color_deck(image_path):
-    """Igual que analyze(), pero para el mazo de 4 colores (fondo de color
+    """LEGADO / DIAGNOSTICO, NO APTO PARA EL MOTOR: igual que analyze(), sus
+    stacks son enteros de FICHAS y no declara "stack_unit", asi que
+    engine.decide() rechaza sus GameState a proposito (ver el guard de
+    stack_unit). Produccion es analyze_layout(). Se conserva porque tiene la
+    calibracion del mazo de 4 colores contra las 93 capturas de
+    samples_pokerstars/.
+
+    Igual que analyze(), pero para el mazo de 4 colores (fondo de color
     solido + rango blanco) del cliente real de PokerStars: usa
     color_card_detector.py (palo por color de fondo, sin plantilla de
     forma) y color_rank_ocr.py (rango grande, mayoria de varias lecturas)

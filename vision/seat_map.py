@@ -289,6 +289,41 @@ def parse_facing(action_text):
     return None
 
 
+def parse_to_call_bb(lines):
+    """Importe EN BB que pide el boton "Igualar/Pagar", o None si no se lee con
+    confianza. Solo tiene sentido en modo BB (el boton muestra el sufijo).
+
+    Para que sirve: es la unica evidencia independiente de que hay una subida que
+    enfrentar. Si el boton pide mas de 1bb y NINGUN asiento tiene un importe que
+    lo explique (porque el OCR de la mesa fallo), el motor esta a punto de
+    recomendar el rango de APERTURA enfrentando una subida -plausible y falso-.
+    Con esto se puede abstener en su lugar.
+
+    Se busca primero en la linea del verbo, porque sobre samples_layout2/ el
+    importe suele caer en la MISMA linea OCR que el ("_Ú Igualar 90"); pero no
+    siempre (["Igualar", "Subir a", "100", "200"]), asi que si ahi no hay, se
+    toma el MENOR importe de la zona: igualar es siempre menor que subir-a.
+    "Igualar cualquiera" (all-in sin cifra) no lleva importe -> None.
+
+    SIN VALIDAR contra capturas en modo BB: no las hay todavia, asi que no se
+    sabe si el cliente pone el sufijo "BB" en los botones como lo pone en los
+    stacks. Por eso solo se usa para ABSTENERSE, nunca para construir una
+    recomendacion: si devuelve None de mas, no se pierde nada."""
+    verbo = []
+    todos = []
+    for ln in lines:
+        low = ln["text"].lower()
+        vals = [float(m.group(1).replace(",", ".")) for m in _BB_AMOUNT_RE.finditer(ln["text"])]
+        todos.extend(vals)
+        if any(w in low for w in FACING_BET_WORDS):
+            verbo.extend(vals)
+    if verbo:
+        return min(verbo)
+    if todos:
+        return min(todos)
+    return None
+
+
 # --- importe apostado por asiento (para inferir quien subio) ---
 # En preflop, cada jugador que ha metido fichas tiene su importe dibujado
 # delante del asiento, hacia el centro del tapete (la ciega su ciega, un raiser
@@ -351,12 +386,34 @@ def parse_bet_amount(lines):
 def parse_amount_bb(lines):
     """Modo BB: valor (float) que lleva el sufijo BB ("123,4 BB" -> 123.4,
     "3,75 BB" -> 3.75). Ignora las denominaciones impresas en las fichas
-    (enteros sin sufijo) y la marca de bounty. None si no hay ningun "N BB"."""
+    (enteros sin sufijo) y la marca de bounty. None si no hay ningun "N BB".
+
+    A PRUEBA DE AMBIGUEDAD: si en la zona aparecen DOS importes distintos, se
+    devuelve None en vez del primero. Una zona de nameplate puede tragarse el
+    importe del asiento vecino o el "Media: N BB" de la esquina si el encuadre
+    baila, y quedarse con "el que salga antes" significa elegir la profundidad
+    equivocada -y con ella el rango equivocado- sin que nada lo delate. Sin
+    stack el motor se abstiene o tira del cache; con un stack falso recomienda
+    con conviccion. Medido sobre samples_bb/: las tres zonas con importe dan un
+    unico valor, asi que hoy no cuesta cobertura."""
     text = " ".join(ln["text"] for ln in lines)
-    m = _BB_AMOUNT_RE.search(text)
-    if m:
-        return float(m.group(1).replace(",", "."))
+    valores = {float(m.group(1).replace(",", ".")) for m in _BB_AMOUNT_RE.finditer(text)}
+    if len(valores) == 1:
+        return valores.pop()
     return None
+
+
+def has_bb_amount(lines):
+    """True si en la zona hay AL MENOS un importe con sufijo BB, sin importar
+    cuantos ni cual. Es la pregunta que necesita la deteccion de ocupacion
+    ("¿hay alguien sentado?"), distinta de la que responde parse_amount_bb
+    ("¿cuanto tiene?"), que devuelve None a proposito si hay ambiguedad.
+
+    Y distinta de has_bb_marker, que acepta un token "BB" suelto sin numero: eso
+    vale para detectar la UNIDAD (el sufijo basta), pero como señal de ocupacion
+    un "BB" suelto es ruido de OCR de dos caracteres, y un asiento vacio que lo
+    produzca contaria como ocupado y desplazaria las posiciones de todos."""
+    return _BB_AMOUNT_RE.search(" ".join(ln["text"] for ln in lines)) is not None
 
 
 def has_bb_marker(lines):

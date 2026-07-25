@@ -183,6 +183,67 @@ check("0.7 board imposiblemente largo -> None",
 check("0.7 un board valido sigue evaluandose",
       hs.evaluate_hand(["Ah", "Kd"], ["4s", "7d", "9d"])["made_name"] == "Carta alta: As")
 
+# --- Fase A: endurecido previo al paso a BB-only -----------------------------
+
+# A-1b parse_amount_bb a prueba de ambiguedad. Una zona de nameplate puede
+# tragarse el importe del vecino o el "Media: N BB" de la esquina si el encuadre
+# baila; quedarse con "el primero que salga" elige la profundidad equivocada -y
+# con ella el rango- sin que nada lo delate. Sin stack el motor se abstiene o
+# tira del cache; con un stack falso recomienda con conviccion.
+check("A-1b un solo importe se lee normal", parse_amount_bb([L("36,6 BB")]) == 36.6)
+check("A-1b dos importes DISTINTOS -> None (antes: el primero)",
+      parse_amount_bb([L("36,6 BB"), L("Media: 89 BB")]) is None)
+check("A-1b el mismo importe repetido no es ambiguo",
+      parse_amount_bb([L("36,6 BB"), L("36,6 BB")]) == 36.6)
+# pero la OCUPACION no debe sufrir por la ambiguedad: ahi la pregunta es "¿hay un
+# importe en BB?", no "¿cual?"
+check("A-1b la ocupacion sobrevive a la ambiguedad",
+      _plate_occupied([L("36,6 BB"), L("Media: 89 BB")]) is True)
+
+# A-1d importe del boton "Igualar": evidencia INDEPENDIENTE de que hay una subida
+check("A-1d importe en la linea del verbo",
+      seat_map.parse_to_call_bb([L("Igualar 2,5 BB")]) == 2.5)
+check("A-1d importe en otra linea -> el menor (igualar < subir a)",
+      seat_map.parse_to_call_bb([L("Igualar"), L("Subir a"), L("2,5 BB"), L("6 BB")]) == 2.5)
+check("A-1d sin importe -> None", seat_map.parse_to_call_bb([L("Igualar cualquiera")]) is None)
+check("A-1d sin botones -> None", seat_map.parse_to_call_bb([]) is None)
+
+# la red de seguridad: el boton pide mas de 1bb pero ningun asiento lo explica.
+# Seguir por open_raise seria recomendar el rango de APERTURA enfrentando una
+# subida, que es exactamente el fallo que este trabajo existe para eliminar.
+SUBIDA_NO_ATRIBUIDA = {
+    "board": [], "hero_cards": ["Ah", "Kd"], "hero_position": "BTN", "facing": "bet",
+    "stack_unit": "bb", "to_call": 3.0, "warnings": [],
+    "players": [dict(P("BTN", None, hero=True), stack=30.0), dict(P("BB", 1.0), stack=20.0)],
+}
+engine._last_hero_stack.update(value=None, t=0.0, unit=None)
+check("A-1d subida que el boton delata pero la mesa no explica -> abstiene",
+      engine.decide(SUBIDA_NO_ATRIBUIDA) is None)
+check("A-1d y lo dice",
+      any("igualar" in w and "ningun asiento" in w for w in SUBIDA_NO_ATRIBUIDA["warnings"]))
+
+# la SB completando NO debe abstenerse: pide 0,5bb, por debajo de la ciega grande
+SB_COMPLETA = {
+    "board": [], "hero_cards": ["Ah", "Kd"], "hero_position": "SB", "facing": "bet",
+    "stack_unit": "bb", "to_call": 0.5, "warnings": [],
+    "players": [dict(P("SB", 0.5, hero=True), stack=30.0), dict(P("BB", 1.0), stack=20.0)],
+}
+engine._last_hero_stack.update(value=None, t=0.0, unit=None)
+check("A-1d la SB completando sigue recomendando (no es una subida)",
+      engine.decide(SB_COMPLETA) is not None)
+
+# A-3 guard fail-closed: un GameState sin unidad declarada viene de las rutas de
+# diagnostico, cuyos stacks son FICHAS enteras. Interpretarlos como bb daria una
+# recomendacion con conviccion y falsa en cuanto el default pase a "bb".
+LEGACY = {
+    "board": [], "hero_cards": ["Ah", "Kd"], "hero_position": "BTN", "facing": None,
+    "warnings": [], "players": [dict(P("BTN", None, hero=True), stack=3955)],
+}
+engine._last_hero_stack.update(value=None, t=0.0, unit=None)
+check("A-3 GameState sin stack_unit -> abstiene", engine.decide(LEGACY) is None)
+check("A-3 y nombra la causa",
+      any("no declara la unidad" in w for w in LEGACY["warnings"]))
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

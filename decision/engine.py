@@ -310,7 +310,21 @@ def decide(state):
     # Profundidad efectiva en bb. En modo BB el stack leido YA esta en bb (no
     # hacen falta ciegas). En modo fichas se divide por la ciega grande
     # efectiva (blinds.local.json manda sobre la detectada).
-    unit = state.get("stack_unit") or "chips"
+    # La unidad tiene que venir DECLARADA por la vision. El default silencioso que
+    # habia aqui ("chips" si el campo faltaba) era una trampa: analyze() y
+    # analyze_color_deck() son rutas de diagnostico que producen stacks en FICHAS
+    # ENTERAS y no declaran stack_unit, asi que en cuanto el default pase a "bb"
+    # (el paso siguiente, la app va a ser BB-only) un stack de 3955 fichas se leeria
+    # como 3955bb -> tabla de 40bb -> una recomendacion con conviccion y falsa.
+    # Rechazando el estado sin unidad, esa clase de fallo no puede existir en
+    # ninguna de las dos direcciones. Produccion es table_state.analyze_layout().
+    unit = state.get("stack_unit")
+    if unit is None:
+        return abstain("este GameState no declara la unidad de los importes "
+                       "(stack_unit): viene de una ruta de diagnostico "
+                       "(analyze/analyze_color_deck), cuyos stacks estan en fichas "
+                       "enteras y no se pueden interpretar como profundidad. "
+                       "Produccion es table_state.analyze_layout()")
     if unit == "bb":
         stack_val, stack_cacheado = _cached_hero_stack(hero, "bb")
         if stack_val is None:
@@ -375,6 +389,19 @@ def decide(state):
             facing = "threebet_call"
         elif code != "no_raise":
             return abstain(_RAISE_ABSTAIN[code])
+        else:
+            # "no_raise" con facing="bet" es normal y correcto cuando el hero es la
+            # SB y solo completa (el boton pide 0,5bb) o cuando hay limpers. Pero
+            # si el BOTON pide mas de una ciega grande y ningun asiento tiene un
+            # importe que lo explique, hay una subida que no se ha sabido atribuir
+            # -tipicamente porque el OCR del importe de la mesa fallo-. Seguir por
+            # open_raise ahi seria recomendar el rango de APERTURA enfrentando una
+            # subida: plausible y falso, el peor fallo posible en esta app.
+            to_call = state.get("to_call")
+            if isinstance(to_call, (int, float)) and to_call > bb_efectiva:
+                return abstain(f"el boton pide {to_call:g} BB para igualar, o sea que hay una "
+                               f"subida, pero ningun asiento tiene un importe que la explique "
+                               f"(no se leyo la apuesta en la mesa); sin defensa fiable")
 
     if facing == "threebet_call":
         result = recommend(hero_cards, hero_position, stack_bb,
