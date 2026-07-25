@@ -152,21 +152,50 @@ calidad de las apuestas.
 
 ## 2 · No bloqueado
 
-### 2.1 Latencia (el mayor salto de experiencia)
+### 2.0 · Zonas de apuesta descalibradas (BLOQUEA la defensa preflop)
 
-Hoy ~3,4 s por frame. Medido: **añadir un solo init de tesseract costó +0,55 s**,
-así que inicializar el motor es una fracción grande del total y se paga en cada
-frame.
+**Prioridad alta.** Medido sobre la sesión del 25-07 (207 frames): `facing="bet"`
+se detecta en 51 frames pero `vs_position` solo se resuelve en **6**, y hay 23
+abstenciones de *"el botón pide N BB para igualar pero ningún asiento explica la
+subida"*. Consecuencia: **las 54 recomendaciones fueron `open_raise`, ninguna
+defensa `threebet_call`**.
 
-| cambio | ganancia | esfuerzo |
+La causa es que `SEAT_BET_ZONES` se midió con la calibración antigua (1126×808) y
+no ha sobrevivido al recuadro nuevo (1315×908). Lo que lee hoy el OCR en esas
+zonas:
+
+```
+TOPC -> ['OB']
+UL   -> ['ee@eee', 'ene «©', '1BB ©', '8 @@@ ee * # =', ...]
+ML   -> ['DE ise']
+MR   -> ['¢ 6 @', '2 @ @', '-_*2e @ #8', ...]
+```
+
+Es el mismo tipo de problema que tuvo el botón del dealer, pero de **posición**
+en vez de tamaño, y se arregla igual: búsqueda ciega de los importes sobre los
+frames grabados, agrupar por asiento, y redefinir las zonas con las medidas
+reales (como se hizo con `CARD_BACK_ZONES`).
+
+Nota: la red de seguridad de `to_call` funciona — en esos 23 frames se **calla**
+en vez de recomendar el rango de apertura enfrentando una subida. El fallo es de
+cobertura, no de corrección.
+
+### 2.1 Latencia — ✅ HECHO (commit 67b2ab7)
+
+El ciclo bajó de **3,88 s a 1,59 s (2,4×)**:
+
+- **lote de OCR en paralelo** (6 procesos): 3,85 s → 1,45 s. Se dejan 10 núcleos
+  libres a propósito; de 6 a 12 procesos solo se ganan 0,18 s más y saturar la
+  máquina agrava el lag que se quería quitar.
+- **fuera el doble OCR del chat**: −571 ms. El `GameState` ya expone
+  `chat_lines`.
+
+Lo que queda de esta sección:
+
+| cambio | ganancia estimada | esfuerzo |
 |---|---|---|
-| worker OCR **persistente** (proceso vivo, APIs ya cargadas) | quita el init de todos los frames | 2-3 h |
-| paralelizar los ~106 jobs en `min(8, nproc-2)` procesos | 2× medido con 6 jobs, más con 106 | 2 h |
 | **Fase 2**: hash de las zonas de cartas, saltar si no cambian | los frames entre manos pasan a ~0 | 3-4 h |
-| exponer `chat_lines` en el GameState (quitar el doble OCR) | −0,3 s y un subproceso | 30 min |
-
-Los cuatro son compatibles. Juntos: de 3,4 s a sub-segundo en los frames que
-importan, y el intervalo de 0,25 s deja de ser decorativo.
+| worker OCR **persistente** (proceso vivo, APIs ya cargadas) | quita el init de tesseract de cada frame (~0,55 s por proceso) | 2-3 h |
 
 ### 2.2 Historial de acciones de la mano
 
