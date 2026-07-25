@@ -94,7 +94,17 @@ POT_ZONE = (0.34, 0.11, 0.66, 0.38)
 # cubre las 4 lineas de mensajes visibles del chat: el aviso "Los limites
 # suben: Ciegas .../..." va subiendo por el log segun llegan mensajes nuevos,
 # asi que hay que abarcar todas las filas para pillarlo este donde este.
-CHAT_ZONE = (-0.155, 1.29, 0.47, 1.62)
+#
+# x0 = -0.20 y no -0.155: con -0.155 la zona empezaba ~36px a la DERECHA del
+# borde del panel de chat y se comia los 3 primeros caracteres de cada linea.
+# Medido sobre samples_layout2/: "Repartidor:" se leia "artidor:" en 30/30 de las
+# capturas probadas, y peor, las lineas envueltas perdian el principio de la mano
+# ganadora ("doble pareja, damas y sietes" -> "le pareja, damas y sietes",
+# "pareja de treses" -> "eja de treses"), que es justo el texto que muestra el
+# panel "Mano anterior". Con -0.20 se lee completo en 30/30. Ensanchar por la
+# DERECHA (x1 de 0.47 a 0.62) no cambiaba nada: el texto se salia por la
+# izquierda, no por la derecha.
+CHAT_ZONE = (-0.20, 1.29, 0.47, 1.62)
 ACTION_ZONE = (0.73, 1.40, 1.18, 1.62)
 
 # ancla de boton: media-zona (fraccion del nucleo) alrededor del punto ancla

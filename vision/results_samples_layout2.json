@@ -3700,11 +3700,7 @@
     ],
     "board": [],
     "pot": 240,
-    "blinds": {
-      "sb": 50,
-      "bb": 100,
-      "ante": 15
-    },
+    "blinds": null,
     "players": [
       {
         "name": null,
@@ -3754,7 +3750,9 @@
     "vs_position": null,
     "stack_unit": "chips",
     "stack_unit_source": "evidence",
-    "warnings": []
+    "warnings": [
+      "no se encontraron las ciegas (esquina/chat)"
+    ]
   },
   {
     "image": "sample_1784910029521.png",

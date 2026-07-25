@@ -599,6 +599,19 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         if not state.get("hero_position"):
             return ("No se detecta tu posicion (el boton de dealer no se ve o esta tapado). "
                     "Sin posicion no se puede elegir el rango.")
+        # el caso mas comun de abstencion con todo lo demas listo: modo FICHAS sin
+        # ciegas legibles. Las ciegas solo salen en pantalla de forma fiable en el
+        # recuadro de la esquina o al subir de nivel en el chat, asi que se le da
+        # al usuario la salida que NO depende de leerlas: si el cliente muestra
+        # los importes en BB, la profundidad ya viene en bb y no hacen falta.
+        if state.get("stack_unit") == "chips" and not state.get("blinds"):
+            aviso = ("Faltan las ciegas para pasar tu stack a bb. Dos salidas: pon las ciegas "
+                     "a mano en el panel de abajo, o -mejor- configura PokerStars para mostrar "
+                     "los importes en BIG BLINDS y entonces no hacen falta.")
+            if state.get("stack_unit_source") == "assumed":
+                aviso += (" (Ojo: tampoco se pudo confirmar en que unidad estan los importes; "
+                          "se asumio fichas.)")
+            return aviso
         warnings = state.get("warnings") or []
         return warnings[-1] if warnings else "Sin recomendacion en este spot."
 
@@ -622,7 +635,14 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
     def _render_prev_hand(self, result):
         esc = GLib.markup_escape_text
         winner = result.get("winner")
-        if winner:
+        if winner and result.get("split"):
+            reparto = " y ".join(esc(w) for w in (result.get("winners") or [winner]))
+            line = f"Anterior mano: <b>Bote dividido</b> entre {reparto}"
+            if result.get("winning_hand"):
+                line += f" — Mano: {esc(result['winning_hand'])}"
+            if result.get("amount"):
+                line += f"  (bote {esc(result['amount'])})"
+        elif winner:
             line = f"Anterior mano: Gano <b>{esc(winner)}</b>"
             if result.get("winning_hand"):
                 line += f" — Mano: {esc(result['winning_hand'])}"
@@ -632,9 +652,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             line = "Anterior mano: <i>resultado no legible</i>"
         self.prev_main_label.set_markup(line)
 
+        ganadores = result.get("winners") or ([winner] if winner else [])
         opps = [f"{esc(s['player'])} ({esc(s['hand'])})"
                 for s in result.get("showdown", [])
-                if not hr._names_match(s.get("player", ""), winner or "")]
+                if not any(hr._names_match(s.get("player", ""), g) for g in ganadores)]
         self.prev_showdown_label.set_markup(
             "mano a mano con: " + ", ".join(opps) if opps else "")
 
@@ -643,6 +664,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             body = ("Ganaste esta mano con: " + esc(outcome["hero_hand"])
                     if outcome["hero_hand"] else "Ganaste esta mano")
             self.prev_hero_label.set_markup(f'<span foreground="#2ecc71" weight="bold">{body}</span>')
+        elif outcome["status"] == "split":
+            body = ("Empataste el bote con: " + esc(outcome["hero_hand"])
+                    if outcome["hero_hand"] else "Empataste el bote")
+            self.prev_hero_label.set_markup(f'<span foreground="#3498db" weight="bold">{body}</span>')
         elif outcome["status"] == "lost":
             body = ("Perdiste con: " + esc(outcome["hero_hand"])
                     if outcome["hero_hand"] else "Perdiste esta mano")

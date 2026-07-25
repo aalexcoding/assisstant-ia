@@ -19,7 +19,7 @@ estado detectado (tus cartas, board, bote, jugadores con posición y stack), una
 (oculta entre manos, cuando no hay cartas del hero), la recomendación de `engine.decide` en
 grande (o el motivo si no la hay), una sección "Mano anterior" que resume la última mano
 terminada leyendo el resultado del panel de chat (`vision/hand_result.py`: ganador, importe,
-mano ganadora, jugadores de showdown y si el hero ganó/perdió), un campo de ciegas que escribe
+mano ganadora, jugadores de showdown y si el hero ganó/perdió/**empató** el bote), un campo de ciegas que escribe
 `blinds.local.json` en el mismo formato que `./set-blinds` (intercambiables), y botones para
 iniciar/parar el análisis y relanzar la calibración del recuadro. El selector de intervalo baja
 hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
@@ -64,8 +64,17 @@ hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
   `table_state.analyze_color_deck()`. `run_samples_pokerstars.py` corre esta rama
   contra `vision/samples_pokerstars/` y vuelca `vision/results_pokerstars.json`.
   `hand_result.py` parsea el resultado de la última mano terminada de las líneas
-  del chat (`parse_hand_result`: nº de mano, ganador, importe, mano ganadora y
-  showdown; tolerante al ruido del OCR, no inventa) y OCR-ea la zona del chat por
+  del chat (`parse_hand_result`: nº de mano, ganador(es), importe, mano ganadora y
+  showdown; tolerante al ruido del OCR, no inventa). Cubre los **botes divididos**
+  ("X empata por el bote", una línea por jugador con el mismo nº de mano →
+  `split=True` y `winners` con todos), los **nicks cuyo guión bajo el OCR lee como
+  espacio** ("david_sagunt" → "david sagunt": se admite un espacio interno y
+  `_norm_name` normaliza para que ambas formas casen) y las **manos con coma**
+  ("doble pareja, damas y sietes"). La frase de mano se busca sólo dentro del
+  mismo mensaje del chat (hasta el siguiente "Repartidor:"/"Mano n.") en vez de
+  en una ventana fija de caracteres, y las líneas se reordenan por posición
+  visual antes de unirlas porque el modo `SPARSE_TEXT` de tesseract no las
+  devuelve en orden de lectura y OCR-ea la zona del chat por
   su cuenta (`read_chat_lines`, reutilizando `seat_map` + `OcrBatch`, ya que
   `analyze_layout` lee el chat pero no lo expone en el GameState); `hero_outcome`
   decide si el hero ganó/perdió con la evidencia del chat. `test_hand_result.py`
