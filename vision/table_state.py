@@ -515,6 +515,18 @@ def analyze_layout(image_path):
         else:
             state["warnings"].append(f"{n} asientos ocupados: fuera del rango con posiciones definidas")
 
+    # Las cartas se resuelven AQUI, ANTES de construir la lista de jugadores,
+    # porque el in_hand del hero depende de ellas. Estaban despues, asi que al
+    # construir los jugadores state["hero_cards"] todavia era [] y el hero salia
+    # SIEMPRE con in_hand=False: 883 de 883 registros en las sesiones grabadas,
+    # incluidos los 484 frames en que si tenia cartas.
+    state["hero_cards"], hero_unresolved = _resolve_zone_cards(bgr, hero_px, results, hero_jobs)
+    state["board"], board_unresolved = _resolve_zone_cards(bgr, board_px, results, board_jobs)
+    if hero_unresolved:
+        state["warnings"].append(f"{hero_unresolved} carta(s) del hero detectada(s) pero sin rango legible")
+    if board_unresolved:
+        state["warnings"].append(f"{board_unresolved} carta(s) de board detectada(s) pero sin rango legible")
+
     # quien sigue en la mano (dorso de carta visible). El hero se resuelve por sus
     # propias cartas, que van boca arriba. Es lo que necesita la equity postflop
     # para saber contra cuantos rivales simula.
@@ -546,14 +558,6 @@ def analyze_layout(image_path):
             f"las posiciones")
     if seat_map.HERO_SEAT in positions:
         state["hero_position"] = positions[seat_map.HERO_SEAT]
-
-    # cartas
-    state["hero_cards"], hero_unresolved = _resolve_zone_cards(bgr, hero_px, results, hero_jobs)
-    state["board"], board_unresolved = _resolve_zone_cards(bgr, board_px, results, board_jobs)
-    if hero_unresolved:
-        state["warnings"].append(f"{hero_unresolved} carta(s) del hero detectada(s) pero sin rango legible")
-    if board_unresolved:
-        state["warnings"].append(f"{board_unresolved} carta(s) de board detectada(s) pero sin rango legible")
 
     # bote, ciegas, facing. Ciegas: primero el recuadro persistente de la
     # esquina (SB/BB(ante), la fuente mas fiable), luego el aviso del chat

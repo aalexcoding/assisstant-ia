@@ -666,7 +666,7 @@
         "stack": 4125,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -774,7 +774,7 @@
         "stack": 4125,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -882,7 +882,7 @@
         "stack": 4125,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -2698,7 +2698,7 @@
         "stack": 4111,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -2823,7 +2823,7 @@
         "stack": 4111,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -2948,7 +2948,7 @@
         "stack": 4111,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -3073,7 +3073,7 @@
         "stack": 4111,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -5633,7 +5633,7 @@
         "stack": 4097,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -5758,7 +5758,7 @@
         "stack": 4097,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -5874,7 +5874,7 @@
         "stack": 4097,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "HJ"
       },
       {
@@ -7309,7 +7309,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -7419,7 +7419,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -7548,7 +7548,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -7675,7 +7675,7 @@
         "stack": 3982,
         "bet": 100,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -7806,7 +7806,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -7946,7 +7946,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -8087,7 +8087,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -8219,7 +8219,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -8342,7 +8342,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -8474,7 +8474,7 @@
         "stack": 3982,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BB"
       },
       {
@@ -8924,7 +8924,7 @@
         "stack": 3917,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -9062,7 +9062,7 @@
         "stack": 3917,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -9189,7 +9189,7 @@
         "stack": 3917,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -9316,7 +9316,7 @@
         "stack": 3917,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "SB"
       },
       {
@@ -10747,7 +10747,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -10864,7 +10864,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -10981,7 +10981,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "BTN"
       },
       {
@@ -12040,7 +12040,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -12149,7 +12149,7 @@
         "stack": 3887,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -12257,7 +12257,7 @@
         "stack": 3887,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -12383,7 +12383,7 @@
         "stack": 3787,
         "bet": 100,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -12500,7 +12500,7 @@
         "stack": 3787,
         "bet": 100,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -12617,7 +12617,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -12729,7 +12729,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -12841,7 +12841,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -12962,7 +12962,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -13084,7 +13084,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -13206,7 +13206,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -13328,7 +13328,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -13450,7 +13450,7 @@
         "stack": 3787,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -13572,7 +13572,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -13685,7 +13685,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -13807,7 +13807,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -13929,7 +13929,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -14060,7 +14060,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -14200,7 +14200,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -14341,7 +14341,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -14482,7 +14482,7 @@
         "stack": 3287,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -14623,7 +14623,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
@@ -14746,7 +14746,7 @@
         "stack": null,
         "bet": null,
         "is_hero": true,
-        "in_hand": false,
+        "in_hand": true,
         "position": "CO"
       },
       {
