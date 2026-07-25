@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Estado a 2026-07-25. El plan completo del que sale esto está en
+Estado a 2026-07-25 (tras 4 sesiones de testing grabadas, ~700 frames). El plan completo del que sale esto está en
 [`prompt.md`](../prompt.md) (objetivo y fases originales) y en el README
 (qué hace cada módulo hoy).
 
@@ -11,86 +11,67 @@ Estado a 2026-07-25. El plan completo del que sale esto está en
 | 0 · Calibración | ✅ |
 | 1 · Captura Wayland | ✅ |
 | 2 · Detección de cambio de board | ❌ no existe |
-| 3 · Visión | 🟡 funciona; sigue midiéndose contra 141 capturas |
+| 3 · Visión | 🟡 va bien salvo los importes apostados (ver §2.0) |
 | 4.1 · Preflop determinista | ✅ la pieza más sólida |
 | 4.2 · Transcripción | ✅ 127 vídeos, 5162 chunks |
-| 4.3 · Postflop | 🟡 equity por Monte Carlo lista y validada, **sin cablear** |
+| 4.3 · Postflop | ✅ equity por Monte Carlo, validada y cableada al HUD |
 | 4.4 · RAG (estudio post-mano) | 🟡 índice construido, sin cablear |
 | 5 · HUD | 🟡 panel de control, no el HUD anclado del spec |
 | 6 · Flatpak | ❌ |
-| 7 · Validación | 🟡 8 scripts de test; sin corpus etiquetado |
+| 7 · Validación | 🟡 10 scripts de test + modo testing; sin corpus etiquetado |
 
 ---
 
-## 1 · BLOQUEADO: hacen falta capturas en modo BB
+## 1 · Lo que dependía de las capturas en BB (ya desbloqueado)
 
-Tres trabajos dependen de lo mismo y no se pueden hacer sin ellas.
+Había tres trabajos esperando capturas en modo BB. **Ya hay cuatro sesiones
+grabadas** (~700 frames) con el modo testing, así que el bloqueo se levantó.
 
-### Cómo grabarlas
+### Las dos incógnitas quedaron resueltas
 
-Con el cliente de PokerStars configurado para mostrar los importes en **big
-blinds** (Configuración → Mesa):
+**¿El cliente muestra los importes en big blinds de forma detectable?** Sí:
+`stack_unit = "bb"` por evidencia en el 100% de los frames de las cuatro
+sesiones, sin una sola ambigüedad.
 
-```bash
-.venv/bin/python capture/record_samples.py --out-dir vision/samples_bb --interval 2
-```
+**¿Pone PokerStars el sufijo `BB` en los importes de los botones?** Sí:
+`to_call` se lee con valores reales (0.5, 1.0, 2.0, 3.26, 3.35, 4.0, 5.0, 7.0).
+La red de seguridad contra la subida no atribuida funciona y no hay que aflojar
+ningún parseo.
 
-Verificado que funciona: el filtro de tapete acepta tu mesa con holgura (fracción
-de verde 0,41 frente a un umbral de 0,08). Con ~40 frames basta, cubriendo:
+Queda abierta una tercera, que apareció al mirar los datos: **cómo dibuja el
+cliente los importes apostados sobre la mesa**, porque en 81 de 101 frames con
+`to_call > 1` no se encuentran ni haciendo OCR del tapete entero (ver §2.0b). Si
+§2.0 sale bien, deja de importar.
 
-- preflop con cartas del hero en 3 posiciones distintas
-- un bote sin abrir
-- **un bote donde enfrentes una subida** ← el más importante, ver la incógnita abajo
-- la SB completando
-- la opción de la BB
-- un frame entre manos
-- un asiento vacío y uno con nick ilegible
+### Cómo grabar más sesiones
 
-Alternativa mejor ahora que existe el modo testing: activar
-**"Grabar sesión de testing"** en la GUI y jugar. Guarda el frame *y* todo lo que
-la app calculó de él, que es más útil que la captura sola.
+Activar **"Grabar sesión de testing"** en la GUI antes de darle a iniciar, y
+jugar. Guarda el frame *y* todo lo que la app calculó de él, emparejados por
+nombre. Es mejor que `record_samples.py`, que solo guarda la imagen.
 
-### La incógnita que resuelven
+Conviene que cubran: preflop con cartas en varias posiciones, un bote sin abrir,
+**botes donde enfrentes una subida**, la SB completando, la opción de la BB, y
+frames entre manos.
 
-**¿Pone PokerStars el sufijo `BB` en los importes apostados sobre la mesa**, como
-lo pone en los stacks? De eso depende que la defensa `threebet_call` siga
-funcionando o se abstenga siempre.
+### 1.1 Cablear la equity al HUD — ✅ HECHO (commit 319582e)
 
-Si resulta que **no** lo lleva: no se afloja el parseo. La salida honesta es que
-todo bote subido se abstenga por la red de seguridad de `to_call`, y se documente
-como hueco pendiente de recalibrar las zonas de apuesta. Aceptar un "entero
-desnudo" reintroduciría exactamente la clase de fallo que se eliminó en la Fase 0
-(leer la denominación impresa en una ficha como si fuera una apuesta).
+Panel "Equity estimada" entre "Mano actual" y "Recomendación".
+`engine.postflop_equity()` va separado de `decide()`, que sigue sin dar acción
+postflop. Se abstiene cuando no sabe quién sigue en la mano o cuando nadie tiene
+cartas, porque el modo de fallo de los dorsos es contar de MENOS y eso infla la
+equity.
 
-### 1.1 Cablear la equity al motor y a la GUI
-
-Todo lo de debajo ya está hecho y validado; falta la última capa.
-
-- `decision/engine.py`: nuevo `postflop_equity(state)` — **separado** de
-  `decide()`, que debe seguir sin devolver acción postflop. Cuenta los rivales
-  como los jugadores no-hero con `in_hand`; se abstiene si el campo no está
-  (GameState viejo) en vez de adivinar. Solo calcula si `state["facing"]` no es
-  `None` — eso es además la guarda de showdown (ver limitación abajo).
-- `gui.py`: panel "Equity estimada" entre "Mano actual" y "Recomendación":
-
-  ```
-  Ganar 14%  ·  Empatar 3%  ·  Perder 83%      (±1 pp, 10.000 simulaciones)
-  Rivales activos: 2 (BTN, BB) — rangos de tu tabla: BTN 47%, BB 91%
-  Con rivales de mano aleatoria seria 28%: 14 puntos vienen de que tienen rango.
-  ```
-
-  Nunca más dígitos de los que soporta `std_error_pp`. **La orden grande sigue
-  vacía en postflop**: no se inventa una acción a partir de una probabilidad.
-- Editar la nota de "Mano actual" para que cruce referencia con la nueva: las dos
-  cifras van a quedar a centímetros y confundirlas es el error más probable.
-- Reescribir el motivo postflop de `_no_reco_reason` (hoy dice que el postflop
-  "es la parte del RAG, todavía pendiente", que ya no es cierto).
+Nota sobre una decisión que se apartó del plan: **no** se exige que
+`state["facing"]` esté leído. Los botones solo se leen en ~20% de los frames, así
+que exigirlo dejaría el panel casi siempre vacío; en su lugar se añade un aviso
+de que quizá no sea el turno del hero.
 
 ### 1.2 Cutover BB-only (Fase A, pasos 4-5)
 
-Es el único cambio que altera el comportamiento, y hoy no hay con qué
-comprobarlo: las 111 capturas son 100% modo fichas y tras el cutover producirán
-111 abstenciones por diseño.
+Ya no está bloqueado: hay cuatro sesiones en modo BB para validarlo. Sigue
+siendo el único cambio que altera el comportamiento, así que conviene hacerlo con
+el corpus de fichas delante — las 111 capturas antiguas producirán 111
+abstenciones por diseño, y eso ES la aserción de seguridad.
 
 - `analyze_layout`: quitar el fork de unidad; `stack_unit = "bb"` literal.
   Se comenta **con su razón** todo lo que documenta medición (el bloque
@@ -113,7 +94,7 @@ deben dar **0 recomendaciones y 111 abstenciones**.
 
 ### 1.3 Fase E: respaldo probabilístico del preflop
 
-Depende del cutover. El diseño completo (con las mediciones que justifican cada
+Depende del cutover y, para los spots de defensa, de §2.0. El diseño completo (con las mediciones que justifican cada
 constante) está en el plan; resumen:
 
 Todo lo que responde sale de una de tres operaciones sobre las 331 celdas
@@ -152,7 +133,75 @@ calidad de las apuestas.
 
 ## 2 · No bloqueado
 
-### 2.0 · Zonas de apuesta descalibradas (BLOQUEA la defensa preflop)
+### 2.0 · ⭐ Deducir lo apostado de la BAJADA DE STACK entre frames
+
+**La mejor idea que ha salido, y sustituye a los dos apartados de abajo** (leer
+las apuestas de la mesa y el historial de la mano). En vez de localizar las
+fichas apostadas —que es lo que está fallando— se compara el stack de cada
+jugador entre frames: si baja de X a Y, ha puesto X−Y.
+
+**Por qué es mejor que leer la mesa**: los stacks *sí* se leen (73%), las
+apuestas no. Y no depende de dónde dibuje el cliente las fichas, así que
+sobrevive a recalibrar el recuadro — la clase de fallo que ya ha mordido dos
+veces (el área del botón en píxeles, las zonas de apuesta).
+
+#### Medido sobre la sesión del 25-07 (364 frames)
+
+```
+stacks leidos:                              73%   (59-83% segun posicion)
+pares consecutivos con lectura en ambos:    68%
+cambios de stack detectados:               177
+deltas mas frecuentes:  1.0 (x25) · 0.5 (x8) · 4.0 · 5.0 · 4.5 · 3.5
+```
+
+Los dos deltas más frecuentes son **1.0 y 0.5: la ciega grande y la pequeña**.
+Eso confirma que la señal es real y no ruido.
+
+Contrastando el valor derivado contra la apuesta leída en la mesa:
+
+| | |
+|---|---|
+| coincide | 52 |
+| discrepa | 29 |
+| derivado 0 (aún sin ver el stack previo) | 114 |
+
+**Y en las discrepancias suele acertar el derivado**, no el leído:
+
+| posición | leído en la mesa | derivado | quién acierta |
+|---|---|---|---|
+| SB | 1.0 | **0.5** | el derivado: la SB pone media ciega |
+| HJ | 1.0 | **1.2** | el derivado: es ciega + ante |
+| CO | **2,52** | 3.9 | el leído es basura de OCR |
+
+O sea que además de rellenar el hueco, **corrige lecturas que hoy son erróneas**.
+
+#### La limitación, y por qué encogió
+
+Los 114 "derivado 0" son manos donde aún no se había visto el stack del jugador
+*antes* de que actuara. La mediana de esa sesión eran **5 frames por mano**,
+porque se grabó a 3,8 s de ciclo. Con el ciclo ya en 1,2 s salen ~3× más frames
+por mano, así que la mejora de rendimiento (§2.1) es lo que hace viable esto.
+
+#### Qué hace falta
+
+1. **Exponer el ASIENTO en el `GameState`.** Hoy solo hay `position`, y las
+   posiciones **rotan entre manos**; el asiento (`UL`, `MR`…) es la clave
+   estable. Un campo más.
+2. **Rastreador de mano**: segmentar por frontera (el board deja de extender al
+   anterior, o cambia el nº de mano del chat) y llevar `max_stack_visto` por
+   asiento. `comprometido = max_visto − stack_actual`. Usar el máximo visto y no
+   el delta frame a frame lo hace tolerante a las lecturas que faltan.
+3. **Casos a cubrir**: stack que *sube* (ganó el bote), el nameplate que muestra
+   el verbo en vez del número justo al actuar, y manos que empiezan a media
+   captura.
+4. **Usar las dos señales**: el derivado como principal y el leído de la mesa
+   como corroboración. Coinciden → confianza alta; discrepan → gana el derivado
+   y se anota.
+
+Resuelve a la vez el hueco de las apuestas **y** el historial de la mano (§2.2),
+y con eso desbloquea la Fase E.
+
+### 2.0b · Zonas de apuesta: lo que se investigó y NO se cerró
 
 **Prioridad alta.** Medido sobre la sesión del 25-07 (207 frames): `facing="bet"`
 se detecta en 51 frames pero `vs_position` solo se resuelve en **6**, y hay 23
@@ -160,9 +209,7 @@ abstenciones de *"el botón pide N BB para igualar pero ningún asiento explica 
 subida"*. Consecuencia: **las 54 recomendaciones fueron `open_raise`, ninguna
 defensa `threebet_call`**.
 
-La causa es que `SEAT_BET_ZONES` se midió con la calibración antigua (1126×808) y
-no ha sobrevivido al recuadro nuevo (1315×908). Lo que lee hoy el OCR en esas
-zonas:
+Lo que lee hoy el OCR en esas zonas es mayormente ruido:
 
 ```
 TOPC -> ['OB']
@@ -171,14 +218,49 @@ ML   -> ['DE ise']
 MR   -> ['¢ 6 @', '2 @ @', '-_*2e @ #8', ...]
 ```
 
-Es el mismo tipo de problema que tuvo el botón del dealer, pero de **posición**
-en vez de tamaño, y se arregla igual: búsqueda ciega de los importes sobre los
-frames grabados, agrupar por asiento, y redefinir las zonas con las medidas
-reales (como se hizo con `CARD_BACK_ZONES`).
+**La hipótesis obvia —zonas descalibradas— NO se sostiene**, y conviene dejarlo
+escrito para que nadie la repita:
 
-Nota: la red de seguridad de `to_call` funciona — en esos 23 frames se **calla**
-en vez de recomendar el rango de apertura enfrentando una subida. El fallo es de
-cobertura, no de corrección.
+- Una pasada de OCR sobre **el tapete entero** tampoco encuentra el importe que
+  pide el botón: 0 de 22 frames. No es un problema de recorte.
+- Hipótesis "aritmética" (`to_call` = apuesta del rival − lo que el hero ya
+  tenía puesto): **0 casos de 101**.
+- Hipótesis "hero cubierto" (`to_call` = stack del hero, porque no puede pagar
+  más): explica el frame que se inspeccionó a ojo, pero **solo 1 caso de 101**.
+
+Balance sobre 101 frames con `to_call > 1`: 19 se explican por la apuesta de un
+rival, 1 por stack cubierto, y **81 siguen sin explicación**. Falta entender cómo
+dibuja el cliente las apuestas en esos casos, y eso no se saca deduciendo desde
+los números: hace falta **etiquetar a mano ~15 frames con subida** (abrir la
+imagen, anotar qué apostó cada asiento y dónde está escrito) y medir contra esa
+verdad, igual que se hizo con `CARD_BACK_ZONES`.
+
+**Si §2.0 sale bien, esto puede dejar de importar**: el comprometido derivado del
+stack no necesita leer la mesa. Mantener esta sección solo como corroboración.
+
+#### Detección por elementos (la idea de "vectorizar")
+
+Se probó detectar las **cápsulas oscuras** del tapete como objetos, en vez de
+OCR-ear rectángulos fijos. Es viable en principio (~6 cápsulas por frame, que
+son los asientos) pero con umbrales de color a ojo **no discrimina**: de 147
+cápsulas detectadas, 101 eran ruido y solo 9 apuestas, con valores que resultaron
+ser stacks.
+
+Lección: el eje no es "zonas fijas vs. detección de objetos" sino **búsqueda
+global vs. búsqueda acotada**. Lo que funciona muy bien son los objetos
+detectados *dentro de una zona* (dorsos de carta: separación 13,6× sobre 705
+observaciones; botón del dealer: 100% en dos resoluciones). La búsqueda global
+por blobs ya se intentó y se abandonó (ver el docstring de `seat_map.py`). Si se
+retoma, tiene que ser zona-como-ancla + elemento dentro, y con una medición tan
+seria como la de los dorsos.
+
+#### La red de seguridad de `to_call` se abstiene de más
+
+Su premisa es que `to_call` debe coincidir con la apuesta de algún asiento, y ya
+se sabe que eso es **falso al menos cuando el hero va cubierto** (solo puede
+pagar lo que le queda). Está callándose en 81 frames y no se sabe cuántos son
+correctos. Sigue siendo la dirección segura —callar antes que recomendar el rango
+de apertura enfrentando una subida— pero merece medirse y afinarse.
 
 ### 2.1 Latencia — ✅ HECHO (commit 67b2ab7)
 
@@ -197,13 +279,15 @@ Lo que queda de esta sección:
 | **Fase 2**: hash de las zonas de cartas, saltar si no cambian | los frames entre manos pasan a ~0 | 3-4 h |
 | worker OCR **persistente** (proceso vivo, APIs ya cargadas) | quita el init de tesseract de cada frame (~0,55 s por proceso) | 2-3 h |
 
-### 2.2 Historial de acciones de la mano
+### 2.2 Historial de acciones de la mano → lo cubre §2.0
 
-~1-2 días. Confirmado que **el chat no narra las acciones** (solo resultados,
-showdown, turnos y subidas de nivel), así que hay que acumular estado entre
-frames — pero el importe apostado por asiento ya se lee. Es requisito para
-distinguir open / 3bet / squeeze / resubida con certeza, y para cualquier cosa
-postflop más fina.
+Confirmado que **el chat no narra las acciones** (solo resultados, showdown,
+turnos y subidas de nivel), así que hay que acumular estado entre frames.
+
+**El rastreador de §2.0 ES esta pieza**: llevar `max_stack_visto` por asiento a
+lo largo de una mano da el *comprometido acumulado por jugador*, que es
+exactamente lo que hace falta para distinguir open / 3bet / squeeze / resubida
+con certeza. Las dos cosas se hacen de una vez.
 
 ### 2.3 Corpus etiquetado
 
