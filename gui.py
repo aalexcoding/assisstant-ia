@@ -146,22 +146,10 @@ class AnalysisWorker(threading.Thread):
         return crop, None
 
     def _equity_de(self, state):
-        """Equity postflop del frame, o None. Solo se GRABA (modo testing); no se
-        muestra todavia en el HUD, porque antes hay que contrastarla contra
-        capturas reales. Un fallo aqui no puede tumbar el analisis."""
-        if not state.get("board"):
-            return None
-        rivales = sum(1 for p in state.get("players", [])
-                      if p.get("in_hand") and not p.get("is_hero"))
-        if rivales < 1:
-            return None
-        posiciones = [p.get("position") for p in state.get("players", [])
-                      if p.get("in_hand") and not p.get("is_hero")]
+        """Equity postflop del frame, o None. Una sola implementacion, la del
+        motor; un fallo aqui no puede tumbar el analisis."""
         try:
-            return equity.estimate_equity(
-                state.get("hero_cards"), state.get("board"),
-                state.get("hero_position"), rivales,
-                opponent_positions=posiciones, stack_bb=None, seed=0)
+            return engine.postflop_equity(state)
         except Exception:  # noqa: BLE001
             return None
 
@@ -182,10 +170,12 @@ class AnalysisWorker(threading.Thread):
         GLib.idle_add(self.win.on_result, state, recommendation, hand)
         GLib.idle_add(self.win.on_hand_result, result)
 
+        eq = self._equity_de(state)
+        GLib.idle_add(self.win.on_equity, eq)
+
         # modo testing: la dupla frame + todo lo calculado, para revisarlo luego
         sesion = self.sesion
         if sesion is not None:
-            eq = self._equity_de(state)
             n = sesion.guardar(
                 crop,
                 {"duracion_analisis_s": round(time.perf_counter() - t0, 3),
@@ -272,6 +262,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
         root.append(self._build_state_frame())
         root.append(self._build_hand_frame())
+        root.append(self._build_equity_frame())
         root.append(self._build_recommendation_frame())
         root.append(self._build_prev_hand_frame())
         root.append(self._build_blinds_frame())
@@ -322,7 +313,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         note = self._markup_label(
             '<span size="small" foreground="#95a5a6"><i>Probabilidad de COMPLETAR el '
             'proyecto (calculo exacto; entre corchetes la regla del 2 y 4), '
-            'no de ganar la mano.</i></span>')
+            'NO de ganar la mano: esa es la de abajo, en "Equity estimada". Se puede '
+            'ligar el color y perder contra uno mayor, o no ligarlo y ganar igual.</i></span>')
         note.set_wrap(True)
         note.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
 
@@ -333,6 +325,79 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.hand_frame = frame
         frame.set_visible(False)
         return frame
+
+    def _build_equity_frame(self):
+        frame = Gtk.Frame(label="Equity estimada")
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        for lado in ("top", "bottom", "start", "end"):
+            getattr(box, f"set_margin_{lado}")(8)
+
+        self.eq_main_label = Gtk.Label()
+        self.eq_main_label.set_use_markup(True)
+        self.eq_main_label.set_halign(Gtk.Align.START)
+        self.eq_main_label.set_xalign(0.0)
+
+        self.eq_rivals_label = self._markup_label("")
+        self.eq_effect_label = self._markup_label("")
+        eq_note = self._markup_label(
+            '<span size="small" foreground="#95a5a6"><i>Equity "de all-in": supone que se '
+            'ven todas las cartas sin mas apuestas. NO es una recomendacion, no mira el bote. '
+            'Supone que cada rival tiene el rango con el que ENTRO al bote — ya han pasado el '
+            'flop, asi que su rango real es mas fuerte y este numero es un TECHO. La '
+            'probabilidad de COMPLETAR un proyecto esta arriba, en "Mano actual": es otra cosa.'
+            '</i></span>')
+
+        for w in (self.eq_rivals_label, self.eq_effect_label, eq_note):
+            w.set_wrap(True)
+            w.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+
+        box.append(self.eq_main_label)
+        box.append(self.eq_rivals_label)
+        box.append(self.eq_effect_label)
+        box.append(eq_note)
+        frame.set_child(box)
+        self.equity_frame = frame
+        frame.set_visible(False)
+        return frame
+
+    def on_equity(self, eq):
+        """Pinta la equity. Nunca mas digitos de los que soporta std_error_pp: el
+        error de una Monte Carlo de 10.000 iteraciones ronda 0,4 pp, asi que dar
+        decimales seria fingir una precision que no hay."""
+        if not eq:
+            self.equity_frame.set_visible(False)
+            return False
+        self.equity_frame.set_visible(True)
+        esc = GLib.markup_escape_text
+        w, t, l = (100 * eq["win_probability"], 100 * eq["tie_probability"],
+                   100 * eq["loss_probability"])
+        # el separador de miles se cambia SOLO en el numero, no en toda la cadena:
+        # un replace global convertia tambien la coma de "pp, " en un punto
+        sims = f'{eq["iterations_valid"]:,}'.replace(",", ".")
+        self.eq_main_label.set_markup(
+            f'<span size="large" weight="bold" foreground="#2ecc71">Ganar {w:.0f}%</span>'
+            f'  <span size="large">·  Empatar {t:.0f}%  ·  Perder {l:.0f}%</span>\n'
+            f'<span size="small" foreground="#95a5a6">±{eq["std_error_pp"]:.1f} pp, '
+            f'{sims} simulaciones — {esc(eq["street"])}</span>')
+
+        pos = eq["positional_adjustment"]
+        metas = pos.get("opponent_ranges") or []
+        detalle = ", ".join(
+            f'{m.get("position") or "?"} {100 * (m.get("pct_of_all") or 0):.0f}%' for m in metas)
+        self.eq_rivals_label.set_markup(
+            f'Rivales activos: <b>{pos["opponents"]}</b>'
+            + (f' — rangos de tu tabla: {esc(detalle)}' if detalle else ""))
+
+        efecto = pos.get("range_effect_pp")
+        vs_rnd = pos.get("win_probability_vs_random")
+        if efecto is not None and vs_rnd is not None:
+            self.eq_effect_label.set_markup(
+                f'<span size="small">Con rivales de mano cualquiera seria '
+                f'{100 * vs_rnd:.0f}%: <b>{abs(efecto):.0f} puntos</b> de la diferencia '
+                f'vienen de que tienen un rango.</span>')
+        else:
+            self.eq_effect_label.set_markup("")
+        return False
 
     def _build_recommendation_frame(self):
         frame = Gtk.Frame(label="Recomendacion")
@@ -698,8 +763,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             return ("No se detecta una mesa de poker (¿estas en el lobby o fuera de una mano?). "
                     "La app solo recomienda con una mesa activa en pantalla.")
         if state.get("board"):
-            return ("Postflop (hay cartas comunitarias en la mesa). El motor solo recomienda en "
-                    "PREFLOP; el consejo postflop es la parte del RAG, todavia pendiente.")
+            return ("Postflop: no hay rango postflop digitalizado, asi que no se recomienda "
+                    "una ACCION. Lo que si hay es la equity estimada de arriba — pero es una "
+                    "probabilidad, no una decision: un 20% puede ser un call correcto con el "
+                    "precio adecuado y un 60% un fold con malas implied odds.")
         if len(cards) != 2:
             return ("No se ven tus 2 cartas (entre manos, aun sin repartir, o no estas en esta mano). "
                     "La recomendacion aparece cuando tienes tus cartas boca arriba en preflop.")

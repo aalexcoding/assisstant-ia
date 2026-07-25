@@ -3,9 +3,10 @@ Fase 4 (primera pieza): motor de decision. Toma el GameState que produce
 vision/table_state.py (analyze()/analyze_color_deck()) y, si hay datos
 suficientes, devuelve una recomendacion consultando decision/preflop/lookup.py.
 
-Solo cubre preflop (board vacio): si ya hay flop/turn/river no hay nada que
-recomendar con este motor, eso es la Fase 4.3 (RAG postflop), que todavia
-no existe.
+decide() solo recomienda ACCION en preflop: no hay rango postflop digitalizado,
+asi que con board no devuelve accion. Lo que si hay postflop es equity estimada
+por simulacion, en postflop_equity(), deliberadamente separado: es una
+probabilidad, no una decision.
 
 Defensa contra una subida ajena (facing="threebet_call"): si el GameState
 trae facing="bet" (hay un boton "Igualar/Pagar", asi que hay una apuesta que
@@ -76,6 +77,8 @@ es mucho mejor que no recomendar. Se anota en el reasoning cuando se usa.
 import json
 import os
 import time
+
+import equity
 
 from actions import CHECK_BB_OPTION, translate_into
 from lookup import RANGES, recommend
@@ -285,6 +288,67 @@ _RAISE_ABSTAIN = {
                      "sin defensa fiable",
     "no_bb": "no se pudo determinar la ciega grande para juzgar la subida",
 }
+
+
+def postflop_equity(state, iterations=None):
+    """Equity postflop del hero por simulacion, o None si no se puede calcular
+    honestamente (el motivo va a state["warnings"]).
+
+    DELIBERADAMENTE SEPARADO de decide(): esto devuelve una PROBABILIDAD, no una
+    decision. decide() sigue sin recomendar nada postflop y el HUD sigue con la
+    orden en blanco, porque un 14% puede ser un call correcto con el precio
+    adecuado y un 60% puede ser un fold con reverse implied odds. Convertir la
+    cifra en una accion exigiria modelar bote, apuestas por venir e ICM, que no
+    esta hecho; hacerlo a ojo seria justo el tipo de respuesta segura y
+    equivocada que este proyecto evita.
+
+    El numero de rivales sale de player["in_hand"] (dorsos de carta). Si el campo
+    no esta -GameState de una version anterior o de las rutas de diagnostico- se
+    abstiene en vez de suponer, porque suponer de menos infla la equity."""
+    warnings = state.setdefault("warnings", [])
+
+    def abstain(motivo):
+        warnings.append(motivo)
+        return None
+
+    board = state.get("board") or []
+    if len(board) not in (3, 4, 5):
+        return None                      # preflop o board ilegible: sin ruido
+    if len(state.get("hero_cards") or []) != 2:
+        return abstain("equity: no se ven tus 2 cartas")
+
+    jugadores = state.get("players") or []
+    if not any("in_hand" in p for p in jugadores):
+        return abstain("equity: este GameState no dice quien sigue en la mano "
+                       "(sin deteccion de dorsos); no se supone, porque suponer "
+                       "menos rivales de los que hay INFLA la equity")
+
+    rivales = [p for p in jugadores if p.get("in_hand") and not p.get("is_hero")]
+    if not rivales:
+        # o la mano termino, o es un showdown con las cartas ya giradas: en los
+        # dos casos afirmar "ganas seguro" seria falso
+        return abstain("equity: no se detecta ningun rival con cartas; la mano "
+                       "pudo terminar o estar en showdown (cartas giradas)")
+
+    stack_bb = None
+    hero = _hero_player(state)
+    if state.get("stack_unit") == "bb":
+        stack_bb, _cacheado = _cached_hero_stack(hero, "bb")
+
+    resultado = equity.estimate_equity(
+        state.get("hero_cards"), board, state.get("hero_position"), len(rivales),
+        opponent_positions=[p.get("position") for p in rivales],
+        stack_bb=stack_bb,
+        iterations=iterations or equity.DEFAULT_ITERATIONS,
+        warnings=warnings)
+    if resultado is None:
+        return None
+    # si no se leyeron los botones puede no ser el turno del hero; el numero sigue
+    # siendo correcto, pero conviene decir que quiza no haya decision que tomar
+    if state.get("facing") is None:
+        resultado.setdefault("warnings", []).append(
+            "no se leyeron los botones de accion: puede que no sea tu turno")
+    return resultado
 
 
 def decide(state):

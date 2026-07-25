@@ -244,6 +244,44 @@ check("A-3 GameState sin stack_unit -> abstiene", engine.decide(LEGACY) is None)
 check("A-3 y nombra la causa",
       any("no declara la unidad" in w for w in LEGACY["warnings"]))
 
+# --- postflop_equity: separado de decide(), y abstenerse antes que inflar ------
+# El riesgo real de este camino es contar MENOS rivales de los que hay (en
+# showdown las cartas se giran y los dorsos desaparecen), porque eso INFLA la
+# equity del hero, que es la direccion peligrosa. De ahi que se abstenga en vez
+# de suponer siempre que falta la señal.
+def _post(**kw):
+    d = {"board": ["Ah", "Kd", "2c"], "hero_cards": ["Qs", "Jh"], "hero_position": "BTN",
+         "facing": "bet", "stack_unit": "bb", "warnings": [],
+         "players": [{"is_hero": True, "in_hand": True, "position": "BTN", "stack": 30.0},
+                     {"is_hero": False, "in_hand": True, "position": "BB", "stack": 25.0}]}
+    d.update(kw)
+    return d
+
+
+check("equity: caso normal devuelve probabilidades",
+      (engine.postflop_equity(_post()) or {}).get("win_probability") is not None)
+check("equity: en preflop devuelve None SIN ensuciar warnings",
+      engine.postflop_equity(_post(board=[], warnings=[])) is None)
+
+s = _post(hero_cards=[])
+check("equity: sin las cartas del hero -> None", engine.postflop_equity(s) is None)
+
+s = _post(players=[{"is_hero": True}, {"is_hero": False}])
+check("equity: GameState sin in_hand -> None (no se supone el nº de rivales)",
+      engine.postflop_equity(s) is None)
+check("equity: y explica que suponer de menos INFLA la equity",
+      any("INFLA" in w for w in s["warnings"]))
+
+s = _post(players=[{"is_hero": True, "in_hand": True}, {"is_hero": False, "in_hand": False}])
+check("equity: nadie con cartas (showdown o mano acabada) -> None",
+      engine.postflop_equity(s) is None)
+check("equity: y nombra el showdown como causa posible",
+      any("showdown" in w for w in s["warnings"]))
+
+# decide() NO debe recomendar accion postflop: la equity es una probabilidad, no
+# una decision, y convertirla en accion exigiria modelar bote e implied odds
+check("decide() sigue sin dar accion postflop", engine.decide(_post()) is None)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
