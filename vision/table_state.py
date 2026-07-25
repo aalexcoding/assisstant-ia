@@ -239,6 +239,64 @@ SEAT_STATUS_WORDS = {
 }
 
 
+# --- unidad de los importes (fichas o big blinds), con LATCH de sesion ---
+# El cliente muestra stacks/apuestas/bote en FICHAS (enteros con separador de
+# miles, "5.892") o en BIG BLINDS ("123,4 BB", coma decimal + sufijo BB) segun
+# la config del usuario, que NO cambia a mitad de mano.
+#
+# El problema de detectarlo frame a frame: el sufijo "BB" no siempre se OCR-ea
+# (entre manos los nameplates se leen mal, y el "Media: N BB" de la esquina
+# puede fallar), y asumir "chips" por defecto es una ADIVINANZA silenciosa. Si
+# la mesa estaba en modo BB, el motor divide una profundidad YA expresada en bb
+# por la ciega grande y sale una profundidad absurda: una recomendacion
+# plausible pero equivocada, que es el peor modo de fallo posible en esta app
+# (mucho peor que abstenerse). Medido sobre una sesion real de 34 min, la
+# unidad detectada oscilaba dentro de la misma sesion (bbx30, chipsx17, bbx24,
+# chipsx37) aunque la config del cliente no habia cambiado.
+#
+# Solucion: se late la unidad en cuanto hay EVIDENCIA y en los frames sin
+# evidencia se reutiliza la latida en vez de volver a adivinar. La evidencia
+# siempre manda sobre el latch, asi que si el usuario cambia la config a mitad
+# de sesion se re-late solo en el primer frame legible. Sin evidencia NI latch
+# se asume "chips" (como antes) pero se AVISA, para que ni el HUD ni el log
+# presenten como firme algo que no se pudo determinar.
+_UNIT_LATCH = {"value": None}
+
+
+def reset_unit_latch():
+    """Olvida la unidad latida. Para tests y para arrancar sesion limpia."""
+    _UNIT_LATCH["value"] = None
+
+
+def _chips_style_stack(seat_lines):
+    """True si algun nameplate muestra un entero de estilo fichas ("5.892",
+    "12500"). En modo BB los stacks salen como "44,5 BB", que NO encaja con
+    _is_number_candidate (exige >=3 digitos o separador de miles), asi que un
+    entero suelto en un nameplate es evidencia de modo fichas."""
+    for lines in seat_lines.values():
+        for ln in lines:
+            if _is_number_candidate(ln["text"].strip()):
+                return True
+    return False
+
+
+def _detect_stack_unit(corner_lines, seat_lines, warnings):
+    """Devuelve (unit, source) con source en {"evidence", "latch", "assumed"}.
+    Ver el comentario de _UNIT_LATCH para el porque del latch."""
+    if (seat_map.has_bb_marker(corner_lines)
+            or any(seat_map.has_bb_marker(ls) for ls in seat_lines.values())):
+        _UNIT_LATCH["value"] = "bb"
+        return "bb", "evidence"
+    if _chips_style_stack(seat_lines):
+        _UNIT_LATCH["value"] = "chips"
+        return "chips", "evidence"
+    if _UNIT_LATCH["value"] is not None:
+        return _UNIT_LATCH["value"], "latch"
+    warnings.append("no se pudo determinar si los importes estan en fichas o en BB "
+                    "(sin sufijo 'BB' ni stack numerico legible); se asume fichas")
+    return "chips", "assumed"
+
+
 def _plate_occupied(lines):
     """True si la zona del nameplate contiene texto propio de un asiento
     ocupado: un nombre (por palabra suelta, para pillar nombres de dos
@@ -300,6 +358,7 @@ def analyze_layout(image_path):
         "facing": None,
         "vs_position": None,
         "stack_unit": None,
+        "stack_unit_source": None,
         "warnings": [],
     }
     if bgr is None:
@@ -342,10 +401,15 @@ def analyze_layout(image_path):
         bet_tsv[name] = batch.add_tsv_job(bgr[bx[1]:bx[3], bx[0]:bx[2]], scale=3)
     px = seat_map.zone_to_px(ref, seat_map.POT_ZONE, bgr.shape)
     pot_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=3)
+    # chat y botones de accion en ESPANOL: son las dos unicas zonas con prosa
+    # castellana ("Los limites suben: Ciegas 50/100 Ante 15", "Igualar"/"Pasar")
+    # y no contienen nicks, asi que el modelo espanol solo aporta aqui. Los
+    # nameplates se quedan en ingles a proposito: ahi el espanol destroza los
+    # nicks. Ver el docstring de ocr_worker.py para las mediciones.
     px = seat_map.zone_to_px(ref, seat_map.CHAT_ZONE, bgr.shape)
-    chat_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2)
+    chat_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2, lang="spa")
     px = seat_map.zone_to_px(ref, seat_map.ACTION_ZONE, bgr.shape)
-    action_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2)
+    action_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2, lang="spa")
     # recuadro de ciegas de la esquina superior derecha (fraccion del frame)
     fh, fw = bgr.shape[0], bgr.shape[1]
     cz = CORNER_BLINDS_ZONE
@@ -378,16 +442,14 @@ def analyze_layout(image_path):
     # de reentrada; esos pocos frames quedan con un hero fantasma (limitacion
     # conocida) a cambio de no perder el hero en los frames entre manos, en que
     # no tiene cartas y el OCR de su nameplate suele fallar.
-    # unidad de los importes: el cliente muestra stacks/apuestas/bote en FICHAS
-    # (enteros con separador de miles) o en BIG BLINDS ("123,4 BB", coma decimal
-    # + sufijo BB). Se detecta por la presencia del sufijo BB en la esquina
-    # ("Media: N BB") o en los nameplates. En modo BB el valor leido ya es la
+    # unidad de los importes (fichas o big blinds), con latch de sesion: ver
+    # _UNIT_LATCH / _detect_stack_unit. En modo BB el valor leido YA es la
     # profundidad/apuesta en bb (no hace falta dividir por la ciega).
     seat_lines = {name: parse_tsv_lines(results[seat_tsv[name]]) for name in seat_map.SEATS}
     corner_lines = parse_tsv_lines(results[corner_idx])
-    unit = "bb" if (seat_map.has_bb_marker(corner_lines)
-                    or any(seat_map.has_bb_marker(ls) for ls in seat_lines.values())) else "chips"
+    unit, unit_source = _detect_stack_unit(corner_lines, seat_lines, state["warnings"])
     state["stack_unit"] = unit
+    state["stack_unit_source"] = unit_source
 
     occupied = {}
     for name in seat_map.SEATS:

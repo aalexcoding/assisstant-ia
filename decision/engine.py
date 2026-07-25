@@ -47,7 +47,17 @@ cambia cada varios minutos, asi que se puede fijar a mano. Si existe
 blinds.local.json en la raiz del repo (lo escribe el comando ./set-blinds
 mientras la app corre), su valor MANDA sobre lo que detecte la vision. El
 stack del hero sigue siendo automatico (cambia cada mano; meterlo a mano
-seria insufrible).
+seria insufrible). Como el fichero no caduca solo y en torneo los niveles
+suben cada pocos minutos, se mide su antiguedad por el mtime y pasados
+_MANUAL_BLINDS_STALE_S se AVISA (sin descartarlas: son lo unico que hay),
+tanto en warnings como en el propio reasoning que ve el usuario.
+
+Extrapolacion de profundidad: lookup._nearest_stack_key redondea a la clave de
+stack mas cercana sin limite, asi que a 100bb (principio de torneo) devuelve el
+rango de 40bb -el maximo digitalizado- como si fuera el del spot. Cuando la
+profundidad real queda a mas de _STACK_KEY_FAR_BB de la clave usada se avisa de
+que la accion es una extrapolacion (ver _stack_key_note); se sigue recomendando
+porque es la mejor referencia disponible, pero no se presenta como exacta.
 
 Cache del stack del hero: cuando es el turno del hero, su nameplate deja
 de mostrar el numero de fichas y muestra la accion ("Igualar X", "All-in",
@@ -70,6 +80,19 @@ _DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.j
 
 _HERO_STACK_TTL_S = 90.0
 _last_hero_stack = {"value": None, "t": 0.0, "unit": None}
+
+# a partir de esta edad, unas ciegas manuales se consideran sospechosas de estar
+# desfasadas: los niveles de torneo duran tipicamente entre 3 y 15 min, asi que
+# 10 min sin actualizar es motivo suficiente para avisar (no para descartarlas).
+_MANUAL_BLINDS_STALE_S = 600.0
+
+# margen (en bb) entre la profundidad real y la clave de stack mas cercana de la
+# tabla de rangos a partir del cual se avisa. Las claves de open_raise van
+# 4/6/8/10/12.5/15/20/25/30/35/40, asi que dentro de la tabla el salto maximo a
+# la clave vecina es 2.5bb; pasarse de ahi significa que la profundidad cae
+# FUERA del rango cubierto (tipicamente >40bb, principio de torneo) y que el
+# rango devuelto es una extrapolacion, no el rango del usuario para ese spot.
+_STACK_KEY_FAR_BB = 2.6
 
 
 def _cached_hero_stack(hero, unit):
@@ -111,6 +134,24 @@ def _detect_raiser(players, bb):
     return pos, "single"
 
 
+def _stack_key_note(result, stack_bb, warnings):
+    """Si la profundidad real cae lejos de la clave de stack que se uso, avisa y
+    devuelve una nota para el reasoning. lookup._nearest_stack_key redondea a la
+    clave mas cercana SIN limite: con 100bb (principio de torneo) devuelve el
+    rango de 40bb como si fuera el del spot. Dentro de la tabla el salto maximo a
+    la clave vecina es 2.5bb, asi que pasarse de _STACK_KEY_FAR_BB significa que
+    la profundidad esta fuera de lo digitalizado y el rango es una extrapolacion.
+    Se sigue recomendando (es la mejor referencia disponible) pero dicho."""
+    key = result.get("stack_key")
+    if key is None or abs(stack_bb - key) < _STACK_KEY_FAR_BB:
+        return ""
+    warnings.append(f"profundidad {stack_bb:.1f}bb fuera de la tabla de rangos (la mas "
+                    f"cercana es {key:g}bb): la accion sale del rango de {key:g}bb, "
+                    f"no de tu rango para {stack_bb:.1f}bb")
+    return (f" [OJO: extrapolado del rango de {key:g}bb; la tabla no cubre "
+            f"{stack_bb:.1f}bb]")
+
+
 def _log_decision(state, recommendation, abstain_reason):
     """Anota una linea JSONL por cada decision (recomendacion o abstencion con
     motivo). Semilla para 'aprender el estilo' mas adelante; por ahora es solo
@@ -140,16 +181,28 @@ def _log_decision(state, recommendation, abstain_reason):
 
 
 def _manual_blinds():
-    """Lee blinds.local.json (si existe y es valido). None si no hay o esta mal."""
+    """Lee blinds.local.json (si existe y es valido). Devuelve (blinds, edad_s),
+    con blinds None si no hay o esta mal.
+
+    La EDAD importa: en torneo el nivel de ciegas sube cada pocos minutos, pero
+    el fichero manual manda sobre lo detectado y no caduca solo. Unas ciegas
+    manuales viejas dan una profundidad en bb equivocada -y por tanto el rango
+    equivocado- sin que nada lo delate. Se mide por el mtime del fichero en vez
+    de guardar un timestamp dentro, asi ./set-blinds y el panel de la GUI siguen
+    escribiendo el mismo formato de siempre sin cambiar nada."""
     try:
         with open(_MANUAL_BLINDS_PATH) as f:
             data = json.load(f)
         bb = data.get("bb")
         if isinstance(bb, (int, float)) and bb > 0:
-            return {"sb": data.get("sb"), "bb": bb, "ante": data.get("ante")}
+            try:
+                age = max(0.0, time.time() - os.path.getmtime(_MANUAL_BLINDS_PATH))
+            except OSError:
+                age = None
+            return {"sb": data.get("sb"), "bb": bb, "ante": data.get("ante")}, age
     except (FileNotFoundError, ValueError, TypeError):
         pass
-    return None
+    return None, None
 
 
 def _hero_player(state):
@@ -205,7 +258,7 @@ def decide(state):
         blinds = None
         fuente = "stacks en BB"  # sin ciegas necesarias
     else:
-        manual = _manual_blinds()
+        manual, manual_age_s = _manual_blinds()
         blinds = manual or state.get("blinds")
         if not blinds or not blinds.get("bb"):
             return abstain("no hay ciegas (ni manuales via ./set-blinds ni detectadas); "
@@ -217,6 +270,14 @@ def decide(state):
         stack_bb = stack_val / blinds["bb"]
         bb_efectiva = blinds["bb"]
         fuente = "ciegas manuales" if manual else "ciegas del chat"
+        # ciegas manuales viejas: se siguen usando (son lo unico que hay) pero se
+        # avisa, porque si el nivel ha subido la profundidad en bb esta inflada.
+        if manual and manual_age_s is not None and manual_age_s > _MANUAL_BLINDS_STALE_S:
+            mins = int(manual_age_s // 60)
+            warnings.append(f"las ciegas manuales se fijaron hace {mins} min; si el nivel ya "
+                            f"subio, la profundidad en bb (y con ella el rango) esta mal. "
+                            f"Actualizalas con ./set-blinds o en el panel de ciegas")
+            fuente = f"ciegas manuales de hace {mins} min, comprueba el nivel"
 
     nota_cache = " stack cacheado de un frame anterior;" if stack_cacheado else ""
 
@@ -242,7 +303,8 @@ def decide(state):
         action = result["action"]
         reasoning = (f"Defensa (3bet/call) de {hero_position} a {stack_bb:.1f}bb efectivos "
                      f"contra la subida de {vs_position} ({fuente};{nota_cache} "
-                     f"subida inferida del importe apostado en la mesa)")
+                     f"subida inferida del importe apostado en la mesa)"
+                     + _stack_key_note(result, stack_bb, warnings))
     elif hero_position == "BB":
         # La BB nunca ABRE el bote. Si aqui no hay subida que enfrentar, es la
         # opcion de la BB en un bote limpeado/sin subir. No tenemos digitalizado
@@ -259,7 +321,8 @@ def decide(state):
                            f"(open_raise); revisa que la posicion/stack esten en las tablas")
         action = result["action"]
         reasoning = (f"Rango de apertura de {hero_position} a {stack_bb:.1f}bb efectivos "
-                     f"({fuente};{nota_cache} sin subida que enfrentar, el hero abre el bote)")
+                     f"({fuente};{nota_cache} sin subida que enfrentar, el hero abre el bote)"
+                     + _stack_key_note(result, stack_bb, warnings))
 
     recommendation = {
         "action": action,

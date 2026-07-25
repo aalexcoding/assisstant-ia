@@ -60,5 +60,11 @@ def recommend(hero_cards, hero_position, stack_bb, facing="open_raise", vs_posit
 
     for action, hands in pos_table.items():
         if hand in hands:
-            return {"action": action, "hands_bucket": hands}
+            # stack_key: la profundidad de la TABLA que se acabo usando. Se expone
+            # porque _nearest_stack_key redondea a la clave mas cercana sin limite
+            # -con 100bb devuelve el rango de 40bb como si fuera exacto-, y quien
+            # llama necesita poder distinguir "esta es tu tabla" de "esto es una
+            # extrapolacion fuera de lo digitalizado" para poder avisar.
+            return {"action": action, "hands_bucket": hands,
+                    "stack_key": float(stack_key)}
     return None

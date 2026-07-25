@@ -114,6 +114,45 @@ class AnalysisWorker(threading.Thread):
     def _log(self, msg):
         GLib.idle_add(self.win.on_status, msg)
 
+    def _crop_region(self, frame):
+        """Recorta el frame al recuadro calibrado. Devuelve (crop, error).
+
+        Valida que el recuadro CABE en el frame capturado: si la calibracion es
+        de otra resolucion o de otro monitor, numpy no falla -devuelve un recorte
+        vacio o truncado- y era cv2.imwrite el que lanzaba, ya dentro del hilo de
+        analisis, matandolo sin mas rastro que un "Parado." en la UI. Asi el
+        usuario ve el motivo real y que la solucion es recalibrar."""
+        try:
+            x, y, w, h = load_region()
+        except (FileNotFoundError, ValueError, KeyError):
+            return None, "No se pudo leer el recuadro de calibracion. Pulsa 'Recalibrar recuadro'."
+        fh, fw = frame.shape[:2]
+        if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > fw or y + h > fh:
+            return None, (f"El recuadro calibrado (x={x} y={y} {w}x{h}) no cabe en la pantalla "
+                          f"capturada ({fw}x{fh}): ¿cambio la resolucion o el monitor? "
+                          f"Pulsa 'Recalibrar recuadro'.")
+        crop = frame[y:y + h, x:x + w]
+        if crop.size == 0:
+            return None, (f"El recuadro calibrado quedo vacio ({w}x{h}). "
+                          f"Pulsa 'Recalibrar recuadro'.")
+        return crop, None
+
+    def _analyze_and_publish(self, crop):
+        """Un ciclo de analisis completo sobre un recorte ya validado."""
+        cv2.imwrite(TMP_FRAME_PATH, crop)
+        state = ts.analyze_layout(TMP_FRAME_PATH)
+        recommendation = engine.decide(state)
+        hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
+        # resumen de la mano anterior: OCR aparte de la zona del chat
+        # (analyze_layout la lee para las ciegas pero no la expone). Un
+        # fallo aqui no debe tumbar el analisis principal.
+        try:
+            result = hr.read_hand_result(TMP_FRAME_PATH)
+        except Exception:  # noqa: BLE001
+            result = None
+        GLib.idle_add(self.win.on_result, state, recommendation, hand)
+        GLib.idle_add(self.win.on_hand_result, result)
+
     def run(self):
         try:
             load_region()
@@ -131,30 +170,24 @@ class AnalysisWorker(threading.Thread):
             return
 
         GLib.idle_add(self.win.on_status, "Stream activo.")
+        # sesion nueva: la unidad de los importes (fichas/BB) se vuelve a latir
+        # desde cero, no se hereda de un analisis anterior de este mismo proceso.
+        ts.reset_unit_latch()
         try:
             while not self._stop.is_set():
                 frame = stream.read(timeout_s=5.0)
                 if frame is not None:
-                    try:
-                        x, y, w, h = load_region()
-                    except (FileNotFoundError, ValueError, KeyError):
-                        GLib.idle_add(self.win.on_status, "No se pudo leer el recuadro de calibracion.")
-                        self._stop.wait(self.interval)
-                        continue
-                    crop = frame[y:y + h, x:x + w]
-                    cv2.imwrite(TMP_FRAME_PATH, crop)
-                    state = ts.analyze_layout(TMP_FRAME_PATH)
-                    recommendation = engine.decide(state)
-                    hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
-                    # resumen de la mano anterior: OCR aparte de la zona del chat
-                    # (analyze_layout la lee para las ciegas pero no la expone). Un
-                    # fallo aqui no debe tumbar el analisis principal.
-                    try:
-                        result = hr.read_hand_result(TMP_FRAME_PATH)
-                    except Exception:  # noqa: BLE001
-                        result = None
-                    GLib.idle_add(self.win.on_result, state, recommendation, hand)
-                    GLib.idle_add(self.win.on_hand_result, result)
+                    crop, err = self._crop_region(frame)
+                    if err:
+                        GLib.idle_add(self.win.on_error, err)
+                    else:
+                        try:
+                            self._analyze_and_publish(crop)
+                        except Exception as e:  # noqa: BLE001
+                            # el fallo de UN frame (OCR caido, timeout, imagen
+                            # corrupta) no debe matar el hilo y dejar la UI muda:
+                            # se reporta y se sigue con el siguiente frame.
+                            GLib.idle_add(self.win.on_error, f"Fallo analizando el frame: {e}")
                 self._stop.wait(self.interval)
         finally:
             try:

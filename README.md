@@ -45,7 +45,18 @@ hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
   jugador+stack por regex sobre lineas OCR, sin posiciones fijas). El OCR usa
   `tesserocr` aislado en `ocr_worker.py` (mismo motivo que
   `decision/preflop/ocr_worker.py`: evitar corrupcion de memoria al mezclarlo
-  con opencv en el mismo proceso), invocado desde `ocr_client.py`. `run_samples.py`
+  con opencv en el mismo proceso), invocado desde `ocr_client.py`. El **idioma
+  del OCR se elige por tipo de job**: el texto libre de la UI (nameplates, chat,
+  bote, botones, ciegas) se lee con el modelo **espanol** porque el cliente esta
+  en castellano — con el modelo ingles los acentos se corrompen
+  ("Informaci6n" por "Información") y eso degrada el emparejado de
+  `SEAT_STATUS_WORDS`, el parseo del chat y el de ciegas —, mientras el OCR de
+  **rango de carta** sigue en ingles (whitelist de digitos+AKQJ, ya ajustado, y
+  sin una sola palabra en castellano que ganar). Requiere espanol e ingles en el
+  MISMO directorio de tessdata (lo exige tesseract): `sudo dnf install
+  tesseract-langpack-spa`, o `vision/tessdata/{spa,eng}.traineddata` local (no
+  versionado). Sin espanol disponible cae a ingles para todo, el comportamiento
+  anterior. `run_samples.py`
   corre el pipeline contra `vision/samples/` y vuelca `vision/results.json`. Esto es
   para el mazo blanco (capturas de YouTube); el mazo real de PokerStars (4 colores,
   fondo de color + texto blanco) tiene su propia rama: `color_card_detector.py`
@@ -76,10 +87,17 @@ hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
   preflop y hay cartas+posición+stack_bb (stack del hero / `blinds["bb"]`), llama a
   `decision/preflop/lookup.py` y devuelve `{action, reasoning, hero_cards, hero_position,
   stack_bb}`. Si falta cualquier dato (sin board vacío, sin ciegas, sin posición...)
-  devuelve `None` y anota el motivo en `warnings`. Limitación conocida: el `GameState`
-  no registra el historial de apuestas de la mano, así que no se puede saber si el hero
-  abre el bote o responde a una subida ajena; por ahora se asume siempre
-  `facing="open_raise"` (único caso con cobertura completa de stacks en `ranges.json`).
+  devuelve `None` y anota el motivo en `warnings`. Cuando sí recomienda pero sobre datos
+  de fiabilidad reducida, lo **dice** en vez de callarlo: (a) si las ciegas manuales de
+  `blinds.local.json` llevan más de 10 min sin actualizar (antigüedad por el `mtime` del
+  fichero) avisa de que, si el nivel ya subió, la profundidad en bb —y con ella el
+  rango— está mal; (b) si la profundidad real cae a más de 2.6bb de la clave de stack
+  que usó `lookup` (p.ej. 100bb al principio de un torneo, que cae en el rango de 40bb,
+  el máximo digitalizado) marca la acción como extrapolada. Ambos avisos van a
+  `warnings` y al `reasoning` que ve el usuario. Limitación conocida: el `GameState`
+  no registra el historial de apuestas de la mano, así que el juicio de si el hero abre
+  o responde a una subida se hace con lo que hay dibujado en ese frame (importes
+  apostados por asiento), no con el historial real de la calle.
   `alpha.py` ya lo integra: imprime `Recomendacion: <accion>` bajo el resto del estado
   cuando hay recomendación.
 - `decision/hand_strength.py` — evaluación de mano para el HUD (no es motor de decisión).

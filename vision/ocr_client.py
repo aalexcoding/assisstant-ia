@@ -38,7 +38,12 @@ class OcrBatch:
     def job_count(self):
         return len(self._jobs)
 
-    def add_tsv_job(self, bgr_full_frame, scale=1):
+    def add_tsv_job(self, bgr_full_frame, scale=1, lang=None):
+        """Encola un OCR de texto libre. lang=None usa el idioma por defecto del
+        worker (ingles); lang="spa" pide el modelo espanol para las zonas que
+        contienen PROSA en castellano (ver LANG_SPANISH_PROSE en ocr_worker.py:
+        el espanol ayuda con los acentos pero perjudica a los nicks de jugador,
+        que son ASCII y el modelo tiende a "corregir" hacia palabras con tilde)."""
         if bgr_full_frame is None or bgr_full_frame.size == 0:
             idx = len(self._jobs)
             self._jobs.append(None)
@@ -50,7 +55,10 @@ class OcrBatch:
         path = self._new_path()
         cv2.imwrite(path, enhanced)
         idx = len(self._jobs)
-        self._jobs.append({"mode": "tsv", "path": path, "scale": scale})
+        job = {"mode": "tsv", "path": path, "scale": scale}
+        if lang:
+            job["lang"] = lang
+        self._jobs.append(job)
         return idx
 
     def add_text_job(self, bgr_crop, whitelist="", psm="SINGLE_LINE", scale=3, pad=20):
@@ -74,16 +82,31 @@ class OcrBatch:
         return idx
 
     def run(self):
-        real_jobs = [j for j in self._jobs if j is not None]
-        payload = json.dumps({"jobs": real_jobs})
-        proc = subprocess.run([sys.executable, WORKER_PATH], input=payload,
-                               capture_output=True, text=True, timeout=120)
-        if proc.returncode != 0:
-            raise RuntimeError(f"ocr_worker fallo: {proc.stderr}")
-        real_results = json.loads(proc.stdout)["results"]
-        results = []
-        real_iter = iter(real_results)
-        for j in self._jobs:
-            results.append(next(real_iter) if j is not None else "")
-        shutil.rmtree(self._tmpdir, ignore_errors=True)
-        return results
+        """Resuelve todos los jobs en una invocacion del subproceso y devuelve
+        una lista alineada con el orden de encolado (los jobs vacios -recorte de
+        tamaño 0- devuelven "").
+
+        El directorio temporal se borra en un finally: si el worker falla o se
+        pasa del timeout, el tmpdir se limpia igual. Sin el finally cada fallo
+        de OCR dejaba un /tmp/vision_ocr_* huerfano con sus PNGs dentro, y en un
+        lazo de analisis en vivo eso se acumula durante toda la sesion."""
+        try:
+            real_jobs = [j for j in self._jobs if j is not None]
+            # sin ningun job real no hace falta arrancar el subproceso (inicializar
+            # tesseract cuesta mas que el propio OCR de un recorte pequeño)
+            if not real_jobs:
+                return ["" for _ in self._jobs]
+
+            payload = json.dumps({"jobs": real_jobs})
+            proc = subprocess.run([sys.executable, WORKER_PATH], input=payload,
+                                   capture_output=True, text=True, timeout=120)
+            if proc.returncode != 0:
+                raise RuntimeError(f"ocr_worker fallo: {proc.stderr}")
+            real_results = json.loads(proc.stdout)["results"]
+            results = []
+            real_iter = iter(real_results)
+            for j in self._jobs:
+                results.append(next(real_iter) if j is not None else "")
+            return results
+        finally:
+            shutil.rmtree(self._tmpdir, ignore_errors=True)

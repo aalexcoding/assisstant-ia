@@ -213,7 +213,10 @@ def read_chat_lines(image_path):
     if crop.size == 0:
         return []
     batch = OcrBatch()
-    idx = batch.add_tsv_job(crop, scale=2)
+    # castellano: el chat es prosa ("gana el bote (2.040) con pareja de nueves"),
+    # y con el modelo ingles los acentos se corrompen. Mismo lang que usa
+    # table_state.analyze_layout para esta misma zona.
+    idx = batch.add_tsv_job(crop, scale=2, lang="spa")
     results = batch.run()
     return [ln["text"] for ln in parse_tsv_lines(results[idx])]
 

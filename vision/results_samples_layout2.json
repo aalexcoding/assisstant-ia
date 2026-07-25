@@ -15,36 +15,44 @@
       {
         "name": null,
         "stack": 3955,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8430,
+        "bet": 868,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "rubydog77",
         "stack": 4177,
+        "bet": 2,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -66,36 +74,44 @@
       {
         "name": null,
         "stack": 3955,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8430,
+        "bet": 868,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "rubydog77",
         "stack": 4177,
+        "bet": 2,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -117,36 +133,44 @@
       {
         "name": "Pasar",
         "stack": 3955,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "rubydog77",
         "stack": 4177,
+        "bet": 2,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -168,36 +192,44 @@
       {
         "name": null,
         "stack": 6152,
+        "bet": 2197,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8430,
+        "bet": 868,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "rubydog77",
         "stack": 4177,
+        "bet": 2,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -216,36 +248,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 90,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8416,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 4125,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": 4118,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -263,36 +303,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 90,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8416,
+        "bet": 66,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_delg",
         "stack": 4125,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4118,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -310,36 +358,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 90,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8416,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_delg",
         "stack": 4125,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4118,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -354,36 +410,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 63,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Subir",
         "stack": 8191,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4118,
+        "bet": 88,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
@@ -400,36 +464,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 63,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8191,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4118,
+        "bet": 88,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
@@ -446,36 +518,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 63,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8191,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "Subir",
         "stack": 3803,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -491,36 +571,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 90,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8191,
+        "bet": 23,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 3803,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -540,36 +628,44 @@
       {
         "name": "Force",
         "stack": 6048,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8056,
+        "bet": 868,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 3803,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -589,36 +685,44 @@
       {
         "name": "Force",
         "stack": 6048,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8056,
+        "bet": 868,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 3803,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -638,36 +742,44 @@
       {
         "name": "Force",
         "stack": 6048,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "erred",
         "stack": 8056,
+        "bet": 8,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "Apostar",
         "stack": 2923,
+        "bet": 5,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -687,36 +799,44 @@
       {
         "name": "Force",
         "stack": 6048,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 4253,
+        "bet": 288,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "Igualar",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -737,36 +857,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 8,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 4253,
+        "bet": 88,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -788,36 +916,44 @@
       {
         "name": null,
         "stack": 6048,
+        "bet": 8,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 4253,
+        "bet": 88,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -833,36 +969,44 @@
       {
         "name": null,
         "stack": 6034,
+        "bet": 22,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8482,
+        "bet": 722286,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 4229,
+        "bet": 9,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
@@ -882,42 +1026,51 @@
       {
         "name": null,
         "stack": 5989,
+        "bet": 45,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8392,
+        "bet": 90,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 4111,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4229,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -935,42 +1088,51 @@
       {
         "name": null,
         "stack": 5989,
+        "bet": 45,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 4111,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4229,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -988,42 +1150,51 @@
       {
         "name": null,
         "stack": 5989,
+        "bet": 45,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 4111,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4229,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -1041,42 +1212,51 @@
       {
         "name": null,
         "stack": 5989,
+        "bet": 45,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 4111,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4229,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -1091,42 +1271,51 @@
       {
         "name": null,
         "stack": 5989,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "Igualar",
         "stack": 4139,
+        "bet": 90,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1142,42 +1331,51 @@
       {
         "name": "Igualar",
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": 90,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": 90,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1193,42 +1391,51 @@
       {
         "name": null,
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": 90,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1244,42 +1451,51 @@
       {
         "name": null,
         "stack": 5944,
+        "bet": 8,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1299,42 +1515,51 @@
       {
         "name": "Pasar",
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": 722286,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1354,42 +1579,51 @@
       {
         "name": null,
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8392,
+        "bet": 7,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1409,42 +1643,51 @@
       {
         "name": null,
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": 722286,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1464,42 +1707,51 @@
       {
         "name": null,
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1520,42 +1772,51 @@
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "Pasar",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1576,42 +1837,51 @@
       {
         "name": "Pasar",
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": 722286,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1633,42 +1903,51 @@
       {
         "name": null,
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "Pasar",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1690,42 +1969,51 @@
       {
         "name": "Apostar",
         "stack": 5854,
+        "bet": 90,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": 7,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1747,42 +2035,51 @@
       {
         "name": null,
         "stack": 5854,
+        "bet": 90,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8392,
+        "bet": 722286,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1804,42 +2101,51 @@
       {
         "name": null,
         "stack": 5944,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 5000,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": 2288,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 4139,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1855,42 +2161,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8333,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 4125,
+        "bet": 5,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -1909,42 +2224,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": 22,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8333,
+        "bet": 45,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_delg",
         "stack": 4097,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 4125,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -1962,42 +2286,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": 22,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8333,
+        "bet": 45,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_delg",
         "stack": 4097,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 4125,
+        "bet": 4,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -2015,42 +2348,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": 22,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8333,
+        "bet": 45,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_delg",
         "stack": 4097,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 4125,
+        "bet": 4,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -2065,42 +2407,51 @@
       {
         "name": "sagunt",
         "stack": 6270,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Amsterdam974",
         "stack": null,
+        "bet": 45,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "Igualar",
         "stack": 4035,
+        "bet": 90,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -2116,42 +2467,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": 8,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8333,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 4035,
+        "bet": 90,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -2167,42 +2527,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": 8,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8108,
+        "bet": 270,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 4035,
+        "bet": 5,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -2226,42 +2595,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": 7,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8108,
+        "bet": 28,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "Igualar",
         "stack": 3855,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -2284,42 +2662,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": 7,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8108,
+        "bet": 7,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 3855,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -2338,42 +2725,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "mimizenxmp",
         "stack": 5000,
+        "bet": 6,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8108,
+        "bet": 5500,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_delg",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 3855,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -2393,42 +2789,51 @@
       {
         "name": null,
         "stack": 6270,
+        "bet": 8,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": 5000,
+        "bet": 6,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8808,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "alex_delc",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 3855,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot"
@@ -2448,42 +2853,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 8,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 4985,
+        "bet": 4,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 3840,
+        "bet": 9,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -2505,42 +2919,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 4985,
+        "bet": 4,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 6,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "alex_delg",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "Seeeee",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -2560,36 +2983,44 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 13,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 2,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "alex_delg",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "rubydog77",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "HJ"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -2609,42 +3040,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 22,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 722206,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "Seeeee",
         "stack": 100,
+        "bet": 226,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -2664,42 +3104,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 22,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 722206,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": 3982,
+        "bet": 100,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "rubydog77",
         "stack": 3740,
+        "bet": 7,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -2723,42 +3172,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 722206,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "alex_delg",
         "stack": 3982,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "rubydog77",
         "stack": 3740,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -2782,42 +3240,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 722206,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": 3982,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "rubydog77",
         "stack": 3740,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -2842,42 +3309,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 86866,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "alex_delg",
         "stack": 3982,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "rubydog77",
         "stack": 3740,
+        "bet": 4,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -2902,42 +3378,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 86866,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "alex_delg",
         "stack": 3982,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "rubydog77",
         "stack": 3740,
+        "bet": 4,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -2962,42 +3447,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 722206,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "alex_delg",
         "stack": 3982,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "rubydog77",
         "stack": 3740,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -3022,42 +3516,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 86866,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 3982,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "Apostar",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": "bet",
+    "vs_position": "BTN",
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -3079,42 +3582,51 @@
       {
         "name": null,
         "stack": 6255,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "mimizenxmp",
         "stack": 4985,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 8793,
+        "bet": 26,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BB"
       },
       {
         "name": "rubydog77",
         "stack": 3740,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       }
     ],
     "hero_position": "BB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -3129,42 +3641,51 @@
       {
         "name": null,
         "stack": 6240,
+        "bet": 8,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": null,
         "stack": 4970,
+        "bet": 4,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 100,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
@@ -3188,42 +3709,51 @@
       {
         "name": null,
         "stack": 6240,
+        "bet": 8,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 66,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delg",
         "stack": 3917,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Seeees",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -3243,42 +3773,51 @@
       {
         "name": null,
         "stack": 6240,
+        "bet": 8,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 66,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delg",
         "stack": 3917,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Seeees",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -3298,42 +3837,51 @@
       {
         "name": null,
         "stack": 6240,
+        "bet": 8,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 66,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delg",
         "stack": 3917,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Seeees",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -3353,42 +3901,51 @@
       {
         "name": null,
         "stack": 6240,
+        "bet": 8,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 66,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delg",
         "stack": 3917,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Seeees",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": []
   },
   {
@@ -3405,42 +3962,51 @@
       {
         "name": null,
         "stack": 6040,
+        "bet": 200,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 228,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "rubydog77",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -3463,42 +4029,51 @@
       {
         "name": null,
         "stack": 6040,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 228,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Igualar",
         "stack": 3865,
+        "bet": 5,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -3521,42 +4096,51 @@
       {
         "name": "sagunt",
         "stack": 6040,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 228,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": 3865,
+        "bet": 5,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -3580,42 +4164,51 @@
       {
         "name": null,
         "stack": 6040,
+        "bet": 7,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 722206,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": 3865,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -3639,42 +4232,51 @@
       {
         "name": "Aposta",
         "stack": 5770,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 228,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "rubydog77",
         "stack": 3865,
+        "bet": 5,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -3699,42 +4301,51 @@
       {
         "name": null,
         "stack": 5770,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 228,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Igualar",
         "stack": 3595,
+        "bet": 5,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -3759,42 +4370,51 @@
       {
         "name": null,
         "stack": 5770,
+        "bet": 7,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 8,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": 3595,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero"
     ]
@@ -3815,42 +4435,51 @@
       {
         "name": "Pasar",
         "stack": 5770,
+        "bet": null,
         "is_hero": false,
         "position": "EP1"
       },
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 288,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": "rubydog77",
         "stack": 3595,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -3872,36 +4501,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4970,
+        "bet": 6,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": 8778,
+        "bet": 6,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 4675,
+        "bet": 1080,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontro texto de pot",
@@ -3921,36 +4558,44 @@
       {
         "name": null,
         "stack": 4855,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8763,
+        "bet": 7,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": 4610,
+        "bet": 25,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -3968,36 +4613,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4855,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8763,
+        "bet": 7,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_delg",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4610,
+        "bet": 25,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4015,36 +4668,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4855,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8763,
+        "bet": 722206,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4610,
+        "bet": 25,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4059,36 +4720,44 @@
       {
         "name": "mimizenxmp",
         "stack": null,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8763,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "Igualar",
         "stack": 4560,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -4108,36 +4777,44 @@
       {
         "name": "Pasar",
         "stack": 4855,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": 228,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4560,
+        "bet": 6,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -4157,36 +4834,44 @@
       {
         "name": null,
         "stack": 4855,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": 228,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4560,
+        "bet": 9,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -4206,36 +4891,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4855,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Amsterdam974",
         "stack": null,
+        "bet": 2208,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "alex_dela",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "Pasar",
         "stack": 4560,
+        "bet": 9,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -4256,36 +4949,44 @@
       {
         "name": "mimizenxmp",
         "stack": null,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8763,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4560,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -4307,36 +5008,44 @@
       {
         "name": "Pasar",
         "stack": 4855,
+        "bet": 4,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8763,
+        "bet": 2,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": "rubydog77",
         "stack": 4560,
+        "bet": 5,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -4358,36 +5067,44 @@
       {
         "name": null,
         "stack": 4855,
+        "bet": 8,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": 8763,
+        "bet": 228,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": 4560,
+        "bet": 100,
         "is_hero": false,
         "position": "SB"
       }
     ],
     "hero_position": "BTN",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -4405,30 +5122,37 @@
       {
         "name": null,
         "stack": 4790,
+        "bet": 4,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 4820,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4446,36 +5170,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4790,
+        "bet": 50,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3887,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4820,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4493,36 +5225,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4790,
+        "bet": 50,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3887,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4820,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4540,36 +5280,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4790,
+        "bet": 50,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Igualar",
         "stack": 3787,
+        "bet": 100,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "eeeee",
         "stack": 4820,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4587,36 +5335,44 @@
       {
         "name": "Igualar",
         "stack": 4740,
+        "bet": 4,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": 100,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3787,
+        "bet": 100,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "Seeeese",
         "stack": 100,
+        "bet": 100,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4634,36 +5390,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": 4,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": null,
+        "bet": 66,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3787,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4685,36 +5449,44 @@
       {
         "name": "Pasar",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": 7,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3787,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4736,36 +5508,44 @@
       {
         "name": null,
         "stack": 4740,
+        "bet": 4,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": null,
+        "bet": 66,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3787,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4787,36 +5567,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": 4,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": 66,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Pasar",
         "stack": 3787,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4839,36 +5627,44 @@
       {
         "name": null,
         "stack": 4740,
+        "bet": 8,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": 28,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3787,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4891,36 +5687,44 @@
       {
         "name": null,
         "stack": 4740,
+        "bet": 4,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Pasar",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3787,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 8288,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4943,36 +5747,44 @@
       {
         "name": null,
         "stack": 4740,
+        "bet": 4,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3787,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 8288,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -4995,36 +5807,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": 4,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3787,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 8288,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5047,36 +5867,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3287,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": null,
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5099,36 +5927,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": 86,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3287,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5151,36 +5987,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8648,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3287,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5203,36 +6047,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3287,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5255,36 +6107,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8648,
+        "bet": 6,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3287,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5307,36 +6167,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Igualar",
         "stack": 8148,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3287,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5360,36 +6228,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Amsterdam974",
         "stack": 8148,
+        "bet": 7,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3287,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5413,36 +6289,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 8148,
+        "bet": 7,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": 3287,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5466,36 +6350,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 4861,
+        "bet": 8,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Igualar",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": 7,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5519,36 +6411,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 12910,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "alex_delg",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se encontraron las ciegas (esquina/chat)"
     ]
@@ -5569,36 +6469,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4740,
+        "bet": null,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Amsterdam974",
         "stack": 12910,
+        "bet": 8049,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "CO"
       },
       {
         "name": "rubydog77",
         "stack": 4720,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       }
     ],
     "hero_position": "CO",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -5614,21 +6522,27 @@
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": false
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": false
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true
       }
     ],
     "hero_position": null,
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "latch",
     "warnings": [
       "no se detecto el ovalo del tapete por contraste; se usa la posicion tipica dentro del recuadro (fallback)",
       "no se detecto el boton del dealer; sin posiciones",
@@ -5647,36 +6561,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4725,
+        "bet": 4,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": null,
         "stack": 12695,
+        "bet": 86,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Ausente",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 4505,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -5696,36 +6618,44 @@
       {
         "name": "mimizenxmp",
         "stack": 4725,
+        "bet": 6,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "Amsterdam974",
         "stack": 12695,
+        "bet": 8,
         "is_hero": false,
         "position": "SB"
       },
       {
         "name": "Parfisal58",
         "stack": null,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       },
       {
         "name": null,
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "HJ"
       },
       {
         "name": "rubydog77",
         "stack": 4505,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       }
     ],
     "hero_position": "HJ",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
@@ -5745,36 +6675,44 @@
       {
         "name": null,
         "stack": 4445,
+        "bet": null,
         "is_hero": false,
         "position": "HJ"
       },
       {
         "name": "Maximino2009",
         "stack": 11287,
+        "bet": null,
         "is_hero": false,
         "position": "CO"
       },
       {
         "name": "mheyika940",
         "stack": 12848,
+        "bet": null,
         "is_hero": false,
         "position": "BTN"
       },
       {
         "name": "alex_delc",
         "stack": null,
+        "bet": null,
         "is_hero": true,
         "position": "SB"
       },
       {
         "name": null,
         "stack": 5000,
+        "bet": null,
         "is_hero": false,
         "position": "BB"
       }
     ],
     "hero_position": "SB",
     "facing": null,
+    "vs_position": null,
+    "stack_unit": "chips",
+    "stack_unit_source": "evidence",
     "warnings": [
       "no se detectaron las cartas del hero",
       "no se encontraron las ciegas (esquina/chat)"
