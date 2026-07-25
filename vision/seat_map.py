@@ -210,8 +210,23 @@ def dealing_order(seat_names, ref):
 # ROJO-dominantes (blanco ~0.25-0.28 < rojo ~0.38-0.42), y los blancos puros de
 # la UI no tienen rojo; exigir blanco>rojo y rojo>=0.12 separa el boton de todos
 # ellos sin depender del color del tapete.
-BUTTON_AREA_MIN = 380
-BUTTON_AREA_MAX = 820
+# El area del disco se expresa como FRACCION del area del nucleo del tapete, no
+# en pixeles: es el mismo principio que el resto del modulo -"todo se expresa
+# como fracciones de una referencia que se escala sola con la ventana"- y este
+# umbral era la unica cosa que se habia quedado en pixeles absolutos.
+#
+# Costo caro: con el recuadro recalibrado a 1315x908 (el nucleo pasa de 798x370 a
+# 967x455, factor de AREA 1.47) el disco pasaba a medir ~886 px, por encima del
+# antiguo maximo de 820, y el boton dejaba de detectarse EN TODOS LOS FRAMES. Sin
+# boton no hay posiciones, y sin posiciones el motor no recomienda nada: una
+# sesion entera de 224 frames con cero recomendaciones por un umbral que no
+# escalaba. Medido sobre las dos resoluciones:
+#     area ABSOLUTA   antiguo 627-634   nuevo 882-894   (41% de diferencia)
+#     area FRACCION   antiguo 0.00203-0.00216   nuevo 0.00195-0.00217  (la misma)
+# Los margenes conservan la generosidad de los valores originales (~0.6x y ~1.3x
+# alrededor del disco observado).
+BUTTON_AREA_FRAC_MIN = 0.00125
+BUTTON_AREA_FRAC_MAX = 0.00275
 BUTTON_RED_MIN = 0.12
 BUTTON_WHITE_MARGIN = 0.04  # blanco debe superar al rojo por este margen
 
@@ -233,6 +248,7 @@ def detect_button_seat(bgr, ref):
     obj = cv2.morphologyEx(obj, cv2.MORPH_CLOSE, k, iterations=1)
 
     rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
+    area_nucleo = max(1, rw * rh)   # el area del disco se juzga relativa a esto
     best, best_margin = None, -1
     for name, cfg in SEATS.items():
         fx, fy = cfg["button"]
@@ -250,7 +266,7 @@ def detect_button_seat(bgr, ref):
         contours, _ = cv2.findContours(sub, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for c in contours:
             area = cv2.contourArea(c)
-            if area < BUTTON_AREA_MIN or area > BUTTON_AREA_MAX:
+            if not (BUTTON_AREA_FRAC_MIN <= area / area_nucleo <= BUTTON_AREA_FRAC_MAX):
                 continue
             x, y, w, h_ = cv2.boundingRect(c)
             ar = w / h_ if h_ else 0
