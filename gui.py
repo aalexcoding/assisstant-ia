@@ -539,8 +539,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.reasoning_label.set_markup(GLib.markup_escape_text(reasoning))
         else:
             self.rec_label.set_markup('<span size="xx-large" weight="bold" foreground="#7f8c8d">-</span>')
-            warnings = state.get("warnings") or []
-            reason = warnings[-1] if warnings else "Sin recomendacion."
+            reason = self._no_reco_reason(state)
             self.reasoning_label.set_markup(
                 f'<span foreground="#f39c12"><i>{GLib.markup_escape_text(reason)}</i></span>')
 
@@ -548,6 +547,27 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.warnings_label.set_markup(
             ("Avisos: " + GLib.markup_escape_text("; ".join(warnings))) if warnings else "")
         return False
+
+    @staticmethod
+    def _no_reco_reason(state):
+        """Motivo en lenguaje claro de por que no hay recomendacion, segun la
+        fase detectada -mas util que el ultimo aviso tecnico."""
+        cards = state.get("hero_cards") or []
+        players = state.get("players") or []
+        if not players and not cards:
+            return ("No se detecta una mesa de poker (¿estas en el lobby o fuera de una mano?). "
+                    "La app solo recomienda con una mesa activa en pantalla.")
+        if state.get("board"):
+            return ("Postflop (hay cartas comunitarias en la mesa). El motor solo recomienda en "
+                    "PREFLOP; el consejo postflop es la parte del RAG, todavia pendiente.")
+        if len(cards) != 2:
+            return ("No se ven tus 2 cartas (entre manos, aun sin repartir, o no estas en esta mano). "
+                    "La recomendacion aparece cuando tienes tus cartas boca arriba en preflop.")
+        if not state.get("hero_position"):
+            return ("No se detecta tu posicion (el boton de dealer no se ve o esta tapado). "
+                    "Sin posicion no se puede elegir el rango.")
+        warnings = state.get("warnings") or []
+        return warnings[-1] if warnings else "Sin recomendacion en este spot."
 
     @staticmethod
     def _result_sig(result):
