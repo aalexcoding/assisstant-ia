@@ -289,11 +289,60 @@ lo largo de una mano da el *comprometido acumulado por jugador*, que es
 exactamente lo que hace falta para distinguir open / 3bet / squeeze / resubida
 con certeza. Las dos cosas se hacen de una vez.
 
-### 2.3 Corpus etiquetado
+### 2.3 · ⭐ Marcar una situación con una nota mientras se juega
 
-El modo testing ya recoge la materia prima. Falta un `score_samples.py` que
-compare contra etiquetas y diga si un cambio de umbral mejora o rompe. Sin eso no
-se pueden tocar con seguridad los ~15 umbrales de `vision/seat_map.py`.
+**Muy alto valor por lo poco que cuesta.** Un campo de texto en la GUI para
+anotar, en el momento, por qué una recomendación parece rara. La nota se guarda
+junto al frame y a todo lo que se calculó de él, así que después se puede mirar
+la anomalía con el contexto delante en vez de intentar reconstruirla de memoria.
+
+Hoy, cuando algo canta, la única opción es acordarse y buscar el frame a mano
+entre cientos.
+
+#### El detalle que decide si funciona: CUÁNDO se fija el frame
+
+El usuario ve la rareza, y *luego* escribe. Con el ciclo en ~1,2 s, para cuando
+termina la frase han pasado 5-10 frames y el panel ya muestra otro. Si la nota se
+asocia al frame del momento de guardar, **apunta al frame equivocado**.
+
+Solución: **dos pasos**. Un botón "Marcar situación" que fija de inmediato el
+frame que se está mostrando (y lo recuerda), y el campo de texto que se aplica a
+ese frame fijado, se tarde lo que se tarde en escribir. La UI debe dejar claro
+cuál está marcado (p.ej. "marcado el frame 0042 — 23:41:07").
+
+#### Qué guardar
+
+- Añadir `nota` al JSON del frame marcado (releer, añadir campo, reescribir; son
+  ficheros de 2 KB).
+- Y un índice `_notas.jsonl` a nivel de sesión, para localizar de un vistazo
+  todos los momentos marcados sin abrir frame por frame.
+- Guardar también el `n` de los frames marcados en `_sesion.json`.
+
+#### Casos a cubrir
+
+- **Modo testing apagado**: hoy no se guarda nada. La nota debe funcionar igual —
+  crear la carpeta de sesión al vuelo, o volcar a `testing/notas-<fecha>/` el
+  frame marcado más su JSON. Marcar una anomalía es justo cuando más falta hace.
+- **Nada analizado todavía**: no hay frame que marcar; decirlo, no fallar en
+  silencio.
+- El contexto ya está: en modo testing se guardan *todos* los frames, así que los
+  anteriores y posteriores al marcado están ahí para ver qué pasó antes.
+
+#### Por qué vale más de lo que parece
+
+Estas notas son **exactamente las etiquetas que le faltan al proyecto** (ver
+abajo). Cada una es un caso real, elegido por el usuario porque algo no cuadraba,
+con el frame y el estado calculado al lado. Es la forma más barata de construir
+el corpus de anomalías: se genera jugando, sin sesiones de etiquetado aparte.
+
+`testing_session.resumen()` debería listarlas.
+
+### 2.3b Corpus etiquetado
+
+El modo testing ya recoge la materia prima y las notas de §2.3 aportan los casos
+interesantes. Falta un `score_samples.py` que compare contra etiquetas y diga si
+un cambio de umbral mejora o rompe. Sin eso no se pueden tocar con seguridad los
+~15 umbrales de `vision/seat_map.py`.
 
 ### 2.4 Deuda estructural
 
