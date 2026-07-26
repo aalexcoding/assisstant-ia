@@ -150,8 +150,37 @@ hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
   la regla del 2 y 4. **No** es equity contra el rango rival (eso exigiría Monte Carlo): es
   mano actual + probabilidad de ligar, etiquetado así en la UI para no engañar. Pure Python, sin
   dependencias nuevas. `test_hand_strength.py` es un script suelto (sin pytest) con casos a mano.
-- `decision/rag/` — Fase 4.2: transcripción de vídeos (Fase 4.3, embeddings/retrieval,
-  queda pendiente). `video_index.py` localiza y ordena los vídeos de
+- `decision/hand_tracker.py` — estado **entre frames**: cuánto ha comprometido cada jugador,
+  deducido de cómo le baja el stack (`comprometido = stack al empezar − stack actual`), en vez
+  de intentar leer las fichas de la mesa. Lo lleva por mano **y por calle**, porque en el turn lo
+  que un rival puso en el flop ya está en el bote. Es una **cota inferior** —si la mano ya había
+  empezado cuando se le vio, la base ya está rebajada— así que la regla de uso es estricta: el
+  comprometido **nunca crea** una subida, solo **atribuye** una que el botón "Igualar" ya ha
+  demostrado. También repone el nick cuando el cliente lo tapa con el verbo de la acción, y solo
+  dentro de la misma mano (en Zoom el asiento puede cambiar de dueño entre manos).
+- `decision/action_log.py` — **qué** hizo cada uno y **en qué orden**, reconstruido de los verbos
+  que el cliente pone en el nameplate (`Pasar`, `Igualar`, `Subir`). Complementa al rastreador:
+  uno dice cuánto, el otro qué. Es lo único capaz de distinguir al que sube del que paga cuando
+  los dos tienen el mismo importe puesto, que es exactamente el spot del squeeze. La lista se
+  marca **siempre** como incompleta: el cartel dura menos que el periodo de muestreo.
+- `decision/preflop/derive.py` — Fase E: capa **derivada** para spots que las tablas no cubren
+  (la opción de la BB, frente a un limp, squeeze). Todo lo que responde sale de **otra celda real**
+  del usuario; nunca se recalcula una etiqueta, porque el 94% de sus buckets no son contiguos en
+  el orden de fuerza. Cada respuesta viaja con su procedencia (`source`, `confidence`, `donor`) y
+  el HUD la pinta en **ámbar** para que no se confunda con una lectura de tabla.
+- `vision/seat_watch.py` — vigilancia rápida: el lazo de captura va a 0,1 s y de cada frame solo
+  comprueba, con un hash, si alguna cápsula de nameplate ha cambiado (0,8 ms para las seis). Solo
+  entonces se paga un OCR, y solo el de esa cápsula. Existe porque el cartel de acción de un rival
+  dura menos de 1,5 s, o sea menos que el ciclo de análisis completo. Incluye el buffer circular
+  de frames, acotado.
+- `decision/rag/postmano.py` — Fase 4.4: **estudio post-mano**. Al terminar la mano busca en las
+  transcripciones los trozos que hablan de situaciones *parecidas*, con el vídeo y el minuto para
+  poder comprobarlo. **No es consejo sobre esa mano** —es prosa recuperada por parecido— y el
+  panel lo dice. La consulta se construye solo con lo observado (board, textura, mano ganadora,
+  showdown) y hay umbral de similitud, para que una mano rara no acabe con tres referencias
+  irrelevantes presentadas como si vinieran a cuento.
+- `decision/rag/` — Fase 4.2: transcripción de vídeos. El retrieval está construido y
+  cableado al estudio post-mano (ver `postmano.py` arriba). `video_index.py` localiza y ordena los vídeos de
   `TORNEOS/6. EL CURSO ABSOLUTO...` y `TORNEOS/5. CONTENIDO DE TEORÍA POSTFLOP...`
   (las dos carpetas prioritarias). `extract_audio.py` saca el audio a WAV mono 16kHz
   con ffmpeg. `transcribe.py` transcribe con `faster-whisper` (modelo `small`, CPU,
@@ -165,7 +194,8 @@ hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
   fuente); los JSON de `transcripts/` sí, por ser el producto final y pesar poco.
   `run_batch.py` reparte los 126 vídeos prioritarios en N procesos `pipeline.py` en
   paralelo para bajar el tiempo de reloj (cada proceso ya usa varios núcleos, pero no
-  todos). Fase 4.3 (embeddings/retrieval) queda pendiente.
+  todos). `build_index.py` calcula los embeddings de los 5.162 chunks y `query.py` los
+  consulta por similitud coseno; se usan **solo** desde `postmano.py`, después de la mano.
 - `hud/` — Fase 5: panel de salida con la recomendación.
 - `packaging/` — Fase 6: manifest Flatpak (pendiente hasta tener un core funcional).
 - `tests/` — Fase 7: capturas de referencia y tests de regresión.
