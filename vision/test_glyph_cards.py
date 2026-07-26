@@ -167,6 +167,44 @@ check("en el mazo de fondo solido no se aisla nada (el rango ya domina)",
       np.array_equal(color_rank_ocr.rango_grande_mask(carta_k, "solid"),
                      color_rank_ocr.rank_mask(carta_k, "solid")))
 
+print("\n# --- las 2 cartas del hero se dibujan PEGADAS, sin hueco ---")
+def pegadas(palos, alto=73):
+    """Dos cartas sin NADA entre ellas, que es como el cliente dibuja la mano del
+    hero: el corte por perfil de columnas no las puede separar."""
+    img = mesa(len(palos), palos, alto=alto)
+    # se tapa el hueco entre cartas con cara, borrando la costura
+    for i in range(len(palos) - 1):
+        x = 60 + (i + 1) * (ANCHO_CARTA + HUECO) - HUECO
+        img[40:40 + alto, x:x + HUECO] = CARA_VIVA
+    return img
+
+img = pegadas(["heart", "diamond"])
+check("sin decir cuantas hay, un bloque pegado no se puede repartir y no se "
+      "inventa nada", len(glifo.find_card_boxes(img)) == 0)
+cajas = glifo.find_card_boxes(img, esperadas=2)
+check("diciendo que son 2, se reparte el bloque en 2", len(cajas) == 2)
+check("  y cada palo sale en su sitio",
+      [c["suit"] for c in cajas] == ["heart", "diamond"])
+check("  con anchos parecidos (el reparto es a partes iguales)",
+      abs(cajas[0]["w"] - cajas[1]["w"]) <= 2)
+
+img = pegadas(["spade", "club"])
+ruido = img.copy()
+# un resto estrecho con forma valida de carta (una ficha, el disco del boton):
+# colarlo como tercera carta era peor que el bug que esto arregla
+cv2.rectangle(ruido, (5, 45), (5 + 43, 45 + 60), CARA_VIVA, -1)
+cv2.circle(ruido, (26, 75), 9, TINTA["heart"], -1)
+check("un resto estrecho de la misma banda NO se cuela como tercera carta",
+      len(glifo.find_card_boxes(ruido, esperadas=2)) == 2)
+
+separadas = mesa(2, ["club", "spade"], alto=73)
+check("si las 2 cartas YA venian separadas, esperadas=2 no las toca",
+      [c["suit"] for c in glifo.find_card_boxes(separadas, esperadas=2)] == ["club", "spade"])
+check("y una sola carta visible se queda en una: no se parte por completar 2",
+      len(glifo.find_card_boxes(mesa(1, ["heart"], alto=73), esperadas=2)) == 1)
+check("el board no declara cuantas cartas hay, asi que sigue separandose solo",
+      len(glifo.find_card_boxes(mesa(5, ["heart", "spade", "club", "diamond", "heart"]))) == 5)
+
 print("\n# --- el borde de la carta vecina no puede parecer un '1' ---")
 # al cortar por la costura entre cartas pegadas, el borde oscuro entra en el
 # recorte como una barra alta y fina pegada al lateral: la forma exacta de un '1'

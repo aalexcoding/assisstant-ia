@@ -373,7 +373,7 @@ def _fuerza_ocupacion(seat, info, en_mano, button_seat):
     return 1              # solo un verbo de accion, o texto que parecia un nick
 
 
-def _cajas_de_carta(bgr, zona_px):
+def _cajas_de_carta(bgr, zona_px, esperadas=None):
     """Cartas de una zona con CUALQUIERA de los dos mazos de 4 colores.
 
     El usuario cambia el mazo desde las opciones del cliente y la app no se
@@ -386,7 +386,7 @@ def _cajas_de_carta(bgr, zona_px):
     No se mezclan resultados de los dos: un mazo u otro, nunca cartas de ambos.
     Cada caja lleva su `deck` para que color_rank_ocr lea el rango con la
     polaridad que toca."""
-    cajas = glyph_card_detector.find_card_boxes(bgr, zona_px)
+    cajas = glyph_card_detector.find_card_boxes(bgr, zona_px, esperadas)
     if cajas:
         return cajas
     return [dict(b, deck="solid", dimmed=False)
@@ -526,7 +526,9 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None):
     # del ovalo, que caia en el borde inferior de la ventana y cortaba el stack).
     hero_px = seat_map.zone_to_px(ref, seat_map.HERO_CARDS_ZONE, bgr.shape)
     board_px = seat_map.zone_to_px(ref, seat_map.BOARD_ZONE, bgr.shape)
-    hero_boxes = _cajas_de_carta(bgr, hero_px)
+    # la mano del hero son 2 cartas SIEMPRE, y se dibujan pegadas sin hueco:
+    # sin decirlo salen como un bloque unico que el filtro de forma tira entero.
+    hero_boxes = _cajas_de_carta(bgr, hero_px, esperadas=2)
     board_boxes = _cajas_de_carta(bgr, board_px)
     hero_plate_px = seat_map.hero_plate_from_cards(hero_boxes, bgr.shape)
 

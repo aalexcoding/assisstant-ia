@@ -158,12 +158,56 @@ def _palo(hsv_card, cara_card):
     return max(votos, key=votos.get)
 
 
-def find_card_boxes(bgr, region=None):
+def _partir(tramos, alto, esperadas):
+    """Reparte el bloque mas ancho en `esperadas` cartas cuando salieron pegadas.
+
+    POR QUE HACE FALTA. El corte por perfil de columnas necesita que entre dos
+    cartas haya un hueco, y las DOS CARTAS DEL HERO se dibujan sin el: en la
+    sesion del 26-07 a las 23:28 salian como un solo bloque de 174x73 -relacion
+    0,42, que el filtro de forma tira entero- y el hero se quedaba sin cartas en
+    172 de 174 frames. Las del board si tienen hueco y se siguen separando solas,
+    asi que esto NO se aplica cuando no se sabe cuantas cartas hay.
+
+    POR QUE NO SE BUSCA LA COSTURA. El valle central existe pero no distingue:
+    mide el 33-39% de la altura de la banda y los huecos que dejan los propios
+    glifos llegan al 23-34%. Mirar solo las filas de arriba -donde no hay glifo,
+    asi que la unica muesca posible seria la de dos esquinas redondeadas juntas-
+    tampoco vale: en un frame daba 0 muescas y en una carta suelta del board
+    daba 6.
+
+    LO QUE SI ES FIRME es cuantas cartas hay: la mano del hero son DOS, siempre,
+    por las reglas del juego. Con eso el reparto es aritmetica y no adivinanza.
+
+    Se reparte SOLO el tramo mas ancho, y se tiran los demas. Los otros tramos de
+    esa banda son ruido -un trozo de ficha, el disco del boton-, y dejarlos
+    pasar era peor que el bug: en un frame real un resto de 43 px con forma
+    valida de carta se colaba como tercera carta del hero."""
+    if not esperadas or not tramos:
+        return tramos
+    validos = [t for t in tramos if AR_MIN <= alto / (t[1] - t[0]) <= AR_MAX]
+    if len(validos) == esperadas:
+        return validos
+    a, z = max(tramos, key=lambda t: t[1] - t[0])
+    w = z - a
+    if alto / w >= AR_MIN:
+        return tramos                      # no es un bloque pegado: no hay nada que repartir
+    paso = w / esperadas
+    trozos = [(a + int(i * paso), a + int((i + 1) * paso)) for i in range(esperadas)]
+    if all(AR_MIN <= alto / (t[1] - t[0]) <= AR_MAX for t in trozos):
+        return trozos
+    return tramos
+
+
+def find_card_boxes(bgr, region=None, esperadas=None):
     """[{x, y, w, h, suit, dimmed}] en coordenadas absolutas, ordenadas por x.
 
     Mismo contrato que color_card_detector.find_card_boxes mas dos campos:
     `dimmed` (la carta esta apagada, o sea el hero ya no juega esta mano) y
-    `deck`, que le dice a color_rank_ocr con que polaridad leer el rango."""
+    `deck`, que le dice a color_rank_ocr con que polaridad leer el rango.
+
+    `esperadas` es cuantas cartas tiene que haber en la zona cuando se sabe por
+    las reglas del juego (la mano del hero son 2). Solo se usa para repartir un
+    bloque de cartas pegadas sin hueco entre ellas; ver _partir."""
     if region is None:
         rx0, ry0, rx1, ry1 = 0, 0, bgr.shape[1], bgr.shape[0]
     else:
@@ -181,7 +225,7 @@ def find_card_boxes(bgr, region=None):
     if alto < MIN_H:
         return []
     out = []
-    for a, z in _tramos_de_columnas(cara[y0:y1]):
+    for a, z in _partir(_tramos_de_columnas(cara[y0:y1]), alto, esperadas):
         ancho = z - a
         if ancho < MIN_W or not (AR_MIN <= alto / ancho <= AR_MAX):
             continue
