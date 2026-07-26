@@ -34,8 +34,13 @@ import cv2
 import engine
 import hand_result as hr
 import hand_strength as hstr
+import action_log as alog
 import hand_tracker
+from ocr_client import OcrBatch
+from text_extract import parse_tsv_lines
 import portal_capture as pc
+import seat_map
+import seat_watch as sw
 import table_state as ts
 
 import testing_session as ts_session
@@ -48,6 +53,19 @@ from gi.repository import Gio, GLib, Gtk, Pango
 CALIBRATION_PATH = os.path.join(BASE_DIR, "calibration", "config.local.json")
 SELECT_REGION_PATH = os.path.join(BASE_DIR, "calibration", "select_region.py")
 TMP_FRAME_PATH = "/tmp/poker_gui_frame.png"
+
+# Cada cuanto se captura para VIGILAR (no para analizar). Ver seat_watch.py: el
+# cartel de accion de un rival dura menos de 1,5 s, asi que a un periodo parecido
+# al del analisis se pierden acciones.
+VIGILANCIA_PERIODO_S = 0.1
+
+# Tope de seguridad: no se lanza un OCR de vigilancia mas a menudo que esto, pase
+# lo que pase. Hace falta porque HOY un lote de OCR cuesta ~250 ms aunque solo
+# lleve una capsula: el suelo es arrancar el proceso y cargar tesseract, no el
+# trabajo. Sin el tope, un frame en que se muevan varias capsulas encadenaria
+# OCRs y se comeria la maquina, que es justo el sintoma de lag que se arreglo.
+# Cuando el worker de OCR sea persistente este numero puede bajar mucho.
+VIGILANCIA_OCR_MIN_S = 0.4
 
 SUIT_SYMBOLS = {"h": "♥", "d": "♦", "c": "♣", "s": "♠"}
 SUIT_COLORS = {"h": "#e74c3c", "d": "#3498db", "c": "#2ecc71", "s": "#95a5a6"}
@@ -128,6 +146,23 @@ class AnalysisWorker(threading.Thread):
         # (parar y volver a iniciar empieza de cero, que es lo correcto: puede
         # haber pasado cualquier cosa mientras estaba parado).
         self.tracker = hand_tracker.HandTracker()
+        # Historial de acciones de la mano, reconstruido de los verbos que el
+        # cliente pone en el nameplate. Se cuelga de las fronteras que ya detecta
+        # el rastreador para no tener dos criterios distintos de "mano nueva".
+        self.action_log = alog.ActionLog()
+        self._mano_vista = None
+        # Vigilancia rapida: ver seat_watch.py. El cartel de accion de un rival
+        # dura menos de 1,5 s, o sea menos que el ciclo de analisis, asi que sin
+        # esto se pierden acciones. Se mira cada VIGILANCIA_PERIODO_S si alguna
+        # capsula de nameplate ha cambiado (0,8 ms) y solo entonces se paga un
+        # OCR, y solo el de esa capsula.
+        self.watch = sw.SeatWatch()
+        self.buffer = sw.FrameBuffer()
+        self._ref = None            # referencia del tapete del ultimo analisis
+        self.vistas = 0             # capsulas OCR-eadas por el vigilante
+        self.ticks = 0              # capturas rapidas hechas
+        self.saltadas = 0           # veces que el tope de seguridad freno un OCR
+        self._ultimo_ocr = 0.0
         self._stop = threading.Event()
 
     def stop(self):
@@ -159,6 +194,44 @@ class AnalysisWorker(threading.Thread):
                           f"Pulsa 'Recalibrar recuadro'.")
         return crop, None
 
+    def _vigilar(self, crop):
+        """Paso rapido: mira si alguna capsula de nameplate ha cambiado y, solo
+        entonces, la OCR-ea para quedarse con el verbo de la accion.
+
+        Usa la referencia del tapete del ULTIMO ANALISIS COMPLETO en vez de
+        recalcularla: find_reference cuesta 29 ms, que a 10 Hz serian 29% de un
+        nucleo por mirar algo que no se mueve."""
+        ref = self._ref
+        if ref is None:
+            return
+        try:
+            cambiados = self.watch.cambios(crop, ref)
+        except Exception:  # noqa: BLE001
+            return
+        if not cambiados:
+            return
+        ahora = time.monotonic()
+        if ahora - self._ultimo_ocr < VIGILANCIA_OCR_MIN_S:
+            self.saltadas += 1
+            return                     # ver VIGILANCIA_OCR_MIN_S
+        self._ultimo_ocr = ahora
+        try:
+            batch = OcrBatch()
+            idx = {}
+            for seat in cambiados:
+                x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.SEATS[seat]["plate"],
+                                                     crop.shape)
+                idx[seat] = batch.add_tsv_job(crop[y0:y1, x0:x1], scale=3)
+            res = batch.run()
+            self.vistas += len(cambiados)
+            for seat, i in idx.items():
+                lineas = parse_tsv_lines(res[i])
+                _n, _s, accion = ts._seat_plate_name_stack(lineas)
+                if accion:
+                    self.action_log.observar(seat, accion, t=time.time())
+        except Exception:  # noqa: BLE001
+            pass                       # vigilar es una ayuda, nunca tumba el lazo
+
     def _equity_de(self, state):
         """Equity postflop del frame, o None. Una sola implementacion, la del
         motor; un fallo aqui no puede tumbar el analisis."""
@@ -172,6 +245,13 @@ class AnalysisWorker(threading.Thread):
         t0 = time.perf_counter()
         cv2.imwrite(TMP_FRAME_PATH, crop)
         state = ts.analyze_layout(TMP_FRAME_PATH, max_players=self.max_players)
+        # la referencia del tapete se guarda para el lazo rapido, que no puede
+        # permitirse recalcularla (29 ms) diez veces por segundo
+        try:
+            ref = seat_map.find_reference(crop)
+            self._ref = None if ref[4] else ref
+        except Exception:  # noqa: BLE001
+            self._ref = None
         # resumen de la mano anterior. Se parsean las lineas de chat que
         # analyze_layout YA ha OCR-eado: antes esto hacia una segunda pasada de
         # OCR sobre la misma zona, con otro subproceso y otro arranque de
@@ -185,8 +265,16 @@ class AnalysisWorker(threading.Thread):
         # bajada de stack. El numero de mano del chat es la señal de frontera mas
         # fiable que hay, de ahi que el chat se parsee primero.
         try:
-            hand_tracker.aplicar(
-                state, self.tracker.update(state, (result or {}).get("hand_number")))
+            info = self.tracker.update(state, (result or {}).get("hand_number"))
+            hand_tracker.aplicar(state, info)
+            if info["mano"] != self._mano_vista:
+                self._mano_vista = info["mano"]
+                self.action_log.nueva_mano()
+            self.action_log.observar_estado(state, t=time.time())
+            state["acciones"] = self.action_log.acciones()
+            state["vigilancia"] = {"ticks": self.ticks, "capsulas_ocr": self.vistas,
+                                   "saltadas": self.saltadas,
+                                   "periodo_s": VIGILANCIA_PERIODO_S}
         except Exception:  # noqa: BLE001
             pass
         recommendation = engine.decide(state)
@@ -233,29 +321,37 @@ class AnalysisWorker(threading.Thread):
 
         GLib.idle_add(self.win.on_status, "Stream activo.")
         try:
+            # EL LAZO RAPIDO ES EL PRIMARIO. Se captura cada VIGILANCIA_PERIODO_S
+            # y de cada frame solo se comprueba si alguna capsula de nameplate ha
+            # cambiado (0,8 ms); el analisis completo (~1 s) se lanza cuando toca
+            # segun el intervalo elegido. Asi el cartel de accion de un rival, que
+            # dura menos de 1,5 s, no se pierde entre dos analisis.
+            proximo_analisis = 0.0
             while not self._stop.is_set():
-                inicio = time.monotonic()
+                tick = time.monotonic()
                 frame = stream.read(timeout_s=5.0)
                 if frame is not None:
                     crop, err = self._crop_region(frame)
                     if err:
                         GLib.idle_add(self.win.on_error, err)
                     else:
-                        try:
-                            self._analyze_and_publish(crop)
-                        except Exception as e:  # noqa: BLE001
-                            # el fallo de UN frame (OCR caido, timeout, imagen
-                            # corrupta) no debe matar el hilo y dejar la UI muda:
-                            # se reporta y se sigue con el siguiente frame.
-                            GLib.idle_add(self.win.on_error, f"Fallo analizando el frame: {e}")
-                # El intervalo es un PERIODO, no una pausa: se espera solo lo que
-                # falte para completarlo. Antes se esperaba el intervalo ENTERO
-                # despues de analizar, asi que se sumaba al ciclo: con el selector
-                # en 0,5 s el muestreo real de una sesion fue de 1,48 s. Y el
-                # muestreo es justo lo que limita ver QUE hace cada jugador: el
-                # cliente enseña el verbo de la accion ("Pasar", "Subir") menos de
-                # 1,5 s, asi que cada decima de periodo cuenta.
-                resto = self.interval - (time.monotonic() - inicio)
+                        self.ticks += 1
+                        self.buffer.añadir(crop, t=time.time())
+                        self._vigilar(crop)
+                        if time.monotonic() >= proximo_analisis:
+                            proximo_analisis = time.monotonic() + self.interval
+                            try:
+                                self._analyze_and_publish(crop)
+                            except Exception as e:  # noqa: BLE001
+                                # el fallo de UN frame (OCR caido, timeout, imagen
+                                # corrupta) no debe matar el hilo y dejar la UI
+                                # muda: se reporta y se sigue con el siguiente.
+                                GLib.idle_add(self.win.on_error,
+                                              f"Fallo analizando el frame: {e}")
+                # el periodo de VIGILANCIA es un periodo, no una pausa: se espera
+                # solo lo que falte. Si el analisis se ha comido el tick entero,
+                # no se espera nada y se vuelve a capturar de inmediato.
+                resto = VIGILANCIA_PERIODO_S - (time.monotonic() - tick)
                 if resto > 0:
                     self._stop.wait(resto)
         finally:
@@ -325,8 +421,14 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.pot_label = self._markup_label("Bote: <i>-</i>")
         players_title = self._markup_label("<b>Jugadores</b>")
         self.players_label = self._markup_label("<i>sin datos</i>")
+        # lo que se ha VISTO hacer en esta mano. Nunca es la lista completa: el
+        # verbo dura menos que el periodo de muestreo (ver action_log).
+        self.acciones_label = self._markup_label("")
+        self.acciones_label.set_wrap(True)
+        self.acciones_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
 
-        for w in (self.hero_label, self.board_label, self.pot_label, players_title, self.players_label):
+        for w in (self.hero_label, self.board_label, self.pot_label, players_title,
+                  self.players_label, self.acciones_label):
             box.append(w)
         frame.set_child(box)
         return frame
@@ -884,6 +986,18 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.pot_label.set_markup(f"Bote: {GLib.markup_escape_text(str(pot))}" if pot is not None
                                   else "Bote: <i>-</i>")
         self.players_label.set_markup(players_markup(state.get("players")))
+        acc = (state.get("acciones") or {}).get("acciones") or []
+        if acc:
+            _ES = {"check": "pasa", "call": "paga", "bet": "apuesta", "raise": "sube",
+                   "fold": "no va", "allin": "all-in", "post": "pone ciega"}
+            texto = " · ".join(f'{a["position"] or a["seat"]} {_ES.get(a["accion"], a["accion"])}'
+                               for a in acc)
+            self.acciones_label.set_markup(
+                f'<span size="small">Visto en esta mano: '
+                f'{GLib.markup_escape_text(texto)}</span>'
+                f'<span size="small" foreground="#95a5a6">  (puede faltar alguna)</span>')
+        else:
+            self.acciones_label.set_markup("")
         self._update_hand(hand)
 
         if recommendation:
