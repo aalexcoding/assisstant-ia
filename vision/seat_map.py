@@ -125,19 +125,42 @@ ACTION_ZONE = (0.73, 1.40, 1.18, 1.62)
 BUTTON_HALF_W = 0.070
 BUTTON_HALF_H = 0.120
 
-# posiciones por numero de asientos ocupados, empezando en BTN y siguiendo el
-# orden de reparto (horario). Misma convencion que dealer_button.SEATING_BY_N /
-# decision/preflop/zerospoker_layout.CANON9.
-SEATING_BY_N = {
-    2: ["BTN", "BB"],
-    3: ["BTN", "SB", "BB"],
-    4: ["BTN", "SB", "BB", "CO"],
-    5: ["BTN", "SB", "BB", "HJ", "CO"],
-    6: ["BTN", "SB", "BB", "EP1", "HJ", "CO"],
-    7: ["BTN", "SB", "BB", "EP1", "MP1", "HJ", "CO"],
-    8: ["BTN", "SB", "BB", "EP1", "EP2", "MP1", "HJ", "CO"],
-    9: ["BTN", "SB", "BB", "EP1", "EP2", "MP1", "MP2", "HJ", "CO"],
-}
+# Etiquetas de posicion de una mesa de 9, que es como estan digitalizados los
+# rangos del usuario (decision/preflop/zerospoker_layout.CANON9), en orden de
+# habla preflop: el primero abre y la BB cierra.
+CANON9 = ("EP1", "EP2", "MP1", "MP2", "HJ", "CO", "BTN", "SB", "BB")
+
+
+def _posiciones(n):
+    """Etiquetas para una mesa de n jugadores, empezando en el BOTON y siguiendo
+    el orden de reparto (horario), que es lo que espera table_state.
+
+    LA EQUIVALENCIA ES POR CUANTOS JUGADORES QUEDAN DETRAS, no por el nombre del
+    asiento. Es lo que determina la anchura de un rango de apertura: importa
+    cuanta gente puede despertarse despues de ti, no como se llame tu silla.
+
+    El primero en hablar de una mesa de n tiene n-1 jugadores detras, asi que le
+    corresponde la etiqueta de 9-max con esos mismos n-1 detras.
+
+    EL BUG QUE ARREGLA. La tabla estaba escrita a mano y a partir de 6 jugadores
+    asignaba EP1 al primero en hablar, siempre. Pero EP1 de una mesa de 9 tiene
+    OCHO jugadores detras, y el primero de una de 6 solo tiene CINCO: le
+    corresponde MP2. Consecuencia, medida sobre ranges.json a 20bb: se servia un
+    rango del 17,0% de las manos donde tocaba uno del 25,0%, o sea un tercio mas
+    tight de lo debido, y en TODAS las manos abiertas desde esa posicion. Falla
+    en silencio porque las posiciones se emparejan por cadena de texto.
+
+    Las filas de 3, 4, 5 y 9 jugadores ya eran correctas y siguen dando lo mismo;
+    cambian 6, 7 y 8. Y heads-up pasa de BTN a SB, que tambien es lo correcto: en
+    heads-up el boton ES la ciega pequeña, habla primero y tiene un solo rival
+    detras, exactamente como la SB de una mesa de 9 -que ademas es la unica fila
+    con LIMP digitalizado, la forma que pide ese spot-."""
+    habla = [CANON9[len(CANON9) - 1 - (n - 1 - j)] for j in range(n)]
+    corte = max(0, n - 3)          # el boton va tres antes del final (BTN SB BB)
+    return habla[corte:] + habla[:corte]
+
+
+SEATING_BY_N = {n: _posiciones(n) for n in range(2, 10)}
 
 
 def find_reference(bgr):

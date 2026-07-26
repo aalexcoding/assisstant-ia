@@ -260,6 +260,53 @@ check("y devuelve el verbo aparte, que es informacion util", acc == "Igualar")
 n, stk, acc = ts._seat_plate_name_stack(lineas("All-in"))
 check("'All-in' con guion tampoco se cuela como nombre", n is None and acc == "All-in")
 
+# --- ETIQUETAS DE POSICION SEGUN CUANTOS JUGADORES HAY ---------------------
+# La equivalencia es por CUANTOS JUGADORES QUEDAN DETRAS, no por el nombre del
+# asiento: es lo que determina la anchura de un rango de apertura. La tabla
+# estaba escrita a mano y a partir de 6 jugadores le daba EP1 al primero en
+# hablar, pero EP1 de una mesa de 9 tiene OCHO detras y el primero de una de 6
+# solo tiene CINCO. Medido a 20bb: se servia un 17,0% de las manos donde tocaba
+# un 25,0%, en todas las manos abiertas desde esa posicion.
+print("\n# --- etiquetas de posicion por numero de jugadores ---")
+CANON = seat_map.CANON9
+
+
+def orden_de_habla(n):
+    """SEATING_BY_N empieza en el BOTON; preflop se habla empezando tras la BB."""
+    v = seat_map.SEATING_BY_N[n]
+    corte = max(0, n - 3)
+    return v[len(v) - corte:] + v[:len(v) - corte]
+
+
+for n in range(2, 10):
+    habla = orden_de_habla(n)
+    detras = [CANON.index("BB") - CANON.index(p) for p in habla]
+    check(f"con {n} jugadores, los que quedan detras son {list(range(n - 1, -1, -1))}",
+          detras == list(range(n - 1, -1, -1)))
+
+check("con 6 jugadores el primero en hablar es MP2, no EP1 "
+      "(EP1 tiene 8 detras; en una mesa de 6 solo hay 5)",
+      orden_de_habla(6)[0] == "MP2")
+check("con 7, MP1", orden_de_habla(7)[0] == "MP1")
+check("con 8, EP2", orden_de_habla(8)[0] == "EP2")
+check("con 9 si es EP1: es la mesa para la que estan digitalizados los rangos",
+      orden_de_habla(9)[0] == "EP1")
+check("heads-up: el boton ES la ciega pequeña, habla primero y tiene un rival "
+      "detras, igual que la SB de una mesa de 9",
+      orden_de_habla(2) == ["SB", "BB"])
+
+for n in (3, 4, 5, 9):
+    check(f"la fila de {n} jugadores, que ya era correcta, no cambia",
+          orden_de_habla(n)[-3:] == ["BTN", "SB", "BB"])
+check("todas las filas acaban en BTN SB BB",
+      all(orden_de_habla(n)[-3:] == ["BTN", "SB", "BB"] for n in range(3, 10)))
+check("y SEATING_BY_N empieza SIEMPRE por el asiento del boton",
+      all(seat_map.SEATING_BY_N[n][0] == "BTN" for n in range(3, 10)))
+
+import dealer_button  # noqa: E402
+check("dealer_button usa LA MISMA tabla, no una copia que pueda discrepar",
+      dealer_button.SEATING_BY_N is seat_map.SEATING_BY_N)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

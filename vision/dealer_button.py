@@ -105,16 +105,12 @@ GHOST_SEAT_MATCH_FRAC = 0.15
 # primero los mas "de en medio" (MP2, luego EP2, luego MP1), y el ultimo en
 # desaparecer es CO (pegado al BTN). Coincide con el 6-max/9-max estandar
 # (6-max = UTG,HJ,CO,BTN,SB,BB; 9-max = UTG,UTG+1,MP1,MP2,HJ,CO,BTN,SB,BB).
-SEATING_BY_N = {
-    2: ["BTN", "BB"],
-    3: ["BTN", "SB", "BB"],
-    4: ["BTN", "SB", "BB", "CO"],
-    5: ["BTN", "SB", "BB", "HJ", "CO"],
-    6: ["BTN", "SB", "BB", "EP1", "HJ", "CO"],
-    7: ["BTN", "SB", "BB", "EP1", "MP1", "HJ", "CO"],
-    8: ["BTN", "SB", "BB", "EP1", "EP2", "MP1", "HJ", "CO"],
-    9: ["BTN", "SB", "BB", "EP1", "EP2", "MP1", "MP2", "HJ", "CO"],
-}
+# UNA SOLA definicion, la de seat_map. Aqui habia una copia escrita a mano, y dos
+# copias que pueden discrepar de como se llama cada asiento es exactamente la
+# trampa que este proyecto ya ha pisado varias veces: la copia de aqui se quedo
+# con el mapeo viejo (EP1 al primero en hablar en 6-max) mientras la otra se
+# corregia. Ver seat_map._posiciones para la regla y el bug que arregla.
+from seat_map import SEATING_BY_N          # noqa: F401  (se reexporta a proposito)
 
 
 def _red_mask(bgr, region):

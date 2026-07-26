@@ -706,25 +706,39 @@ un cambio de umbral mejora o rompe. Sin eso no se pueden tocar con seguridad los
 
 ## 3 · Investigar aparte
 
-### Deriva 9-max / 6-max en las etiquetas de posición
+### Deriva 9-max / 6-max en las etiquetas de posición — ✅ ARREGLADO
 
-Las etiquetas de `ranges.json` son de mesa de **9 plazas** (`CANON9`), pero la
-visión etiqueta una de **6** por el recuento de asientos ocupados
-(`SEATING_BY_N`). Consecuencia: **a UTG de 6-max se le sirve el rango de UTG de
-9-max** (8 jugadores detrás en vez de 5), que es bastante más tight. El 6-max UTG
-equivale más bien a `MP2`/`MP1`. Falla en silencio porque las posiciones se
-emparejan por cadena de texto.
+Las etiquetas de `ranges.json` son de mesa de **9 plazas**, pero la visión
+etiqueta según el recuento de asientos ocupados. La tabla `SEATING_BY_N` estaba
+escrita a mano y a partir de 6 jugadores le daba `EP1` al primero en hablar
+—siempre—. Pero **EP1 de una mesa de 9 tiene ocho jugadores detrás y el primero
+de una de 6 solo tiene cinco**.
 
-También afecta a heads-up: `SEATING_BY_N[2] = ["BTN", "BB"]`, así que la SB de HU
-recibe el rango de BTN de 9-max en vez del de SB.
+La regla correcta, y ahora `seat_map._posiciones` la deriva en vez de tenerla a
+mano: **la equivalencia es por cuántos jugadores quedan detrás**, que es lo que
+determina la anchura de un rango de apertura. Importa cuánta gente puede
+despertarse después de ti, no cómo se llame tu silla.
 
-Decidir el mapeo correcto requiere criterio de poker y contrastar con las
-capturas originales, por eso va aparte. **La Fase E no depende de que se arregle**
-(su cambio de fila opera sobre el eje `CANON9`, no sobre el número real de
-jugadores), y cuando se corrija ambas componen:
-`fila = idx(hero) + corrección_deriva + L·LIMPER_SEAT_EQUIV`. Conviene dejar la
-resolución de fila en **una sola función** para que el arreglo futuro toque un
-solo sitio.
+| jugadores | primero en hablar, antes | ahora |
+|---|---|---|
+| 6 | `EP1` | **`MP2`** |
+| 7 | `EP1` | **`MP1`** |
+| 8 | `EP1` | **`EP2`** |
+| 2 (heads-up) | `BTN` | **`SB`** |
+
+Las filas de 3, 4, 5 y 9 ya eran correctas y siguen igual.
+
+**Lo que costaba**, medido sobre `ranges.json` a 20bb: abrir desde UTG en 6-max
+servía un rango del **17,0%** de las manos donde tocaba uno del **25,0%** — un
+tercio más tight, en todas las manos abiertas desde esa posición. Y fallaba en
+silencio, porque las posiciones se emparejan por cadena de texto.
+
+El heads-up también mejora: el botón **es** la ciega pequeña, habla primero y
+tiene un solo rival detrás, exactamente como la SB de una mesa de 9 —que además
+es la única fila con `LIMP` digitalizado, la forma que pide ese spot—.
+
+De camino se unificó la tabla: `dealer_button` tenía una **copia escrita a mano**
+que se habría quedado con el mapeo viejo. Ahora importa la de `seat_map`.
 
 ### `NAME_BLACKLIST` con coincidencia de subcadena
 
