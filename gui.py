@@ -1271,7 +1271,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--interval", type=float, default=3.0, help="segundos entre analisis")
+    # 1 s: el ciclo de reconocimiento va por 0,7 s, asi que a 1 s el lazo va
+    # holgado y sin dejar hueco. El 3,0 de antes era de cuando un frame costaba
+    # 3,9 s. Se sigue pudiendo cambiar en la ventana o con --interval.
+    parser.add_argument("--interval", type=float, default=1.0, help="segundos entre analisis")
     parser.add_argument("--self-test", action="store_true",
                         help="construye la ventana y sale (verifica que los widgets se crean)")
     args = parser.parse_args()
