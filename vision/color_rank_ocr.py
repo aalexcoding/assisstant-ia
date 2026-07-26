@@ -33,6 +33,8 @@ Dos mejoras validadas contra 543 recortes reales etiquetados a mano
 from collections import Counter
 
 import cv2
+import hashlib
+
 import numpy as np
 
 from rank_ocr import normalize_rank
@@ -130,6 +132,72 @@ def _rank_only_close_img(card_bgr):
     keep = cv2.morphologyEx(keep, cv2.MORPH_CLOSE, k, iterations=1)
     inverted = 255 - keep
     return cv2.cvtColor(inverted, cv2.COLOR_GRAY2BGR)
+
+
+# --- CACHE DE RANGOS (Fase 2: no volver a OCR-ear una carta ya resuelta) ---
+#
+# El OCR de rango es el 86% del trabajo de un frame: 90 de los 105 jobs, porque
+# cada carta se lee con 18 variantes de recorte/escala/psm para votar. Y una
+# carta del board es LA MISMA IMAGEN durante todos los frames de esa calle, asi
+# que se estaba pagando ese 86% una y otra vez por la misma respuesta.
+#
+# LA CLAVE es (palo, hash del INTERIOR del recorte). El interior -se descarta un
+# CACHE_MARGEN por cada lado- porque el borde del recorte trae tapete y fichas
+# que se ANIMAN: hasheando el recorte entero solo coincide el 52% de las veces,
+# y quitando los margenes el 81%. Medido sobre 728 recortes de una sesion real:
+#
+#     margen   0%   728 recortes, 348 distintos -> 52% de ahorro
+#     margen  15%   728 recortes, 141 distintos -> 81% de ahorro
+#     margen  25%   728 recortes, 131 distintos -> 82% de ahorro
+#
+# Se queda en 15%: de ahi para arriba casi no gana y se empieza a comer el
+# glifo, que es justo lo que tiene que distinguir una carta de otra.
+#
+# POR QUE ES SEGURO: el glifo del rango vive en el centro del recorte, asi que
+# dos rangos distintos dan pixeles distintos ahi. Una colision exigiria el mismo
+# interior Y el mismo palo, o sea la misma carta. El palo no se cachea: lo
+# resuelve color_card_detector por color, que es barato.
+CACHE_MARGEN = 0.15
+CACHE_MAX = 512
+
+_RANK_CACHE = {}
+
+
+def cache_key(card_bgr, suit):
+    """Clave de cache de una carta, o None si el recorte no sirve."""
+    if card_bgr is None or card_bgr.size == 0:
+        return None
+    h, w = card_bgr.shape[:2]
+    dy, dx = int(h * CACHE_MARGEN), int(w * CACHE_MARGEN)
+    interior = card_bgr[dy:h - dy, dx:w - dx]
+    if interior.size == 0:
+        return None
+    return (suit, hashlib.blake2b(interior.tobytes(), digest_size=8).digest())
+
+
+def cached_rank(key):
+    """(hay_entrada, rango). Se cachea TAMBIEN el fallo (rango None): el OCR es
+    determinista, asi que reintentar la misma imagen daria el mismo None y es
+    justo el caso mas caro (las 18 variantes sin acuerdo)."""
+    if key is None or key not in _RANK_CACHE:
+        return False, None
+    return True, _RANK_CACHE[key]
+
+
+def store_rank(key, rank):
+    if key is None:
+        return
+    if len(_RANK_CACHE) >= CACHE_MAX:
+        # se vacia entera en vez de llevar un LRU: son cartas, el conjunto vivo
+        # de una sesion es pequeño, y un dict de 512 entradas ya cubre de sobra
+        # una mano larga. Vaciar cuesta un frame lento cada muchisimos.
+        _RANK_CACHE.clear()
+    _RANK_CACHE[key] = rank
+
+
+def reset_rank_cache():
+    """Para tests y para empezar sesion limpia."""
+    _RANK_CACHE.clear()
 
 
 def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ"):

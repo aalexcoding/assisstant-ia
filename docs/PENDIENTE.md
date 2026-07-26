@@ -400,6 +400,31 @@ pagar lo que le queda). Está callándose en 81 frames y no se sabe cuántos son
 correctos. Sigue siendo la dirección segura —callar antes que recomendar el rango
 de apertura enfrentando una subida— pero merece medirse y afinarse.
 
+### 2.0e · Botón del dealer: medido, NO merece la pena tocarlo
+
+Parecía el segundo problema más gordo: no se detecta en **175 frames (10%)** y es
+la causa del 93% de los frames sin posición. Desglosado por lo que **cuesta**:
+
+| | |
+|---|---|
+| sin mesa de verdad (lobby, estadísticas, entre manos) | 65 |
+| con mesa visible → fallo real del detector | 110 |
+| …de esos, **preflop con cartas → pierde la recomendación** | **1** |
+| …postflop con cartas → degrada la equity (rangos genéricos) | 7 |
+| …sin cartas del hero → no cuesta nada | 103 |
+
+**Un frame en toda una sesión de 49 minutos.** La posición solo importa cuando el
+hero tiene cartas, y en el 94% de los fallos no las tiene. Tocar el detector aquí
+sería optimizar un número (10% → 1%) sin cambiar nada de lo que el usuario ve, y
+con el riesgo de aflojar umbrales que hoy aciertan el 90%.
+
+Se deja escrito para que nadie lo vuelva a priorizar por el porcentaje.
+
+Efecto lateral que sí conviene saber: `find_reference` **no** rechaza una ventana
+brillante que no sea una mesa (la de estadísticas de SharkScope pasa la guarda).
+No hace daño —sin asientos ocupados no hay posiciones ni recomendación— pero es
+el mismo hueco que §2.0c: la referencia se busca por color, no por forma.
+
 ### 2.1 Latencia — ✅ HECHO (commit 67b2ab7)
 
 El ciclo bajó de **3,88 s a 1,59 s (2,4×)**:

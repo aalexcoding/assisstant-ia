@@ -153,6 +153,56 @@ check("y un importe en BB tambien",
 check("lo mas debil es un asiento sin nada de eso",
       f("MR", {}, set(), None) < f("MR", {"name": "pepe"}, set(), None))
 
+# --- CACHE DE RANGOS (Fase 2) ----------------------------------------------
+# El OCR de rango es el 86% del trabajo de un frame (90 de 105 jobs) y una carta
+# del board es la MISMA IMAGEN durante toda la calle. La clave es (palo, hash del
+# interior del recorte): el interior porque el borde trae tapete y fichas que se
+# animan -con el recorte entero solo coincide el 52% de las veces, quitando el
+# 15% de margen el 81%-, y el palo para que una colision exija la misma carta.
+print("\n# --- cache de rangos ---")
+import color_rank_ocr as cro  # noqa: E402
+
+
+def carta(valor_centro, valor_borde=0):
+    """Recorte sintetico de 120x84: un centro que decide el rango y un borde que
+    se anima. El centro cubre HOLGADAMENTE el interior que hashea cache_key
+    (con margen 0,15 son las filas 18-101 y las columnas 12-71), para que el
+    unico cambio del caso "ruido en el borde" quede de verdad fuera."""
+    img = np.full((120, 84, 3), valor_borde, dtype=np.uint8)
+    img[16:104, 10:74] = valor_centro
+    return img
+
+
+cro.reset_rank_cache()
+k1 = cro.cache_key(carta(200), "club")
+check("la misma carta da la misma clave", k1 == cro.cache_key(carta(200), "club"))
+check("otro palo, otra clave", k1 != cro.cache_key(carta(200), "heart"))
+check("otro centro (otro rango), otra clave", k1 != cro.cache_key(carta(150), "club"))
+check("RUIDO SOLO EN EL BORDE no cambia la clave: es justo lo que se anima",
+      k1 == cro.cache_key(carta(200, valor_borde=77), "club"))
+check("un recorte vacio no da clave", cro.cache_key(np.zeros((0, 0, 3), np.uint8), "club") is None)
+
+hay, r = cro.cached_rank(k1)
+check("una clave que no se ha guardado no esta en cache", hay is False)
+cro.store_rank(k1, "K")
+hay, r = cro.cached_rank(k1)
+check("guardar y recuperar", hay is True and r == "K")
+k2 = cro.cache_key(carta(150), "club")
+cro.store_rank(k2, None)
+hay, r = cro.cached_rank(k2)
+check("tambien se cachea el FALLO (rango None): el OCR es determinista, "
+      "reintentarlo daria el mismo None y es el caso mas caro",
+      hay is True and r is None)
+check("guardar None es distinto de no tener entrada",
+      cro.cached_rank(k2)[0] is True and cro.cached_rank(cro.cache_key(carta(99), "spade"))[0] is False)
+
+for i in range(cro.CACHE_MAX + 5):
+    cro.store_rank(("x", bytes([i % 256, i // 256])), "A")
+check("la cache esta acotada, no crece sin limite en una sesion larga",
+      len(cro._RANK_CACHE) <= cro.CACHE_MAX)
+cro.reset_rank_cache()
+check("reset la vacia", not cro._RANK_CACHE)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

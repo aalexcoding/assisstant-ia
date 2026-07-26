@@ -343,15 +343,40 @@ def _fuerza_ocupacion(seat, info, en_mano, button_seat):
     return 1              # solo un verbo de accion, o texto que parecia un nick
 
 
+def _encolar_cartas(batch, bgr, boxes):
+    """Encola el OCR de rango de cada carta, SALTANDOSE las que ya estan en la
+    cache de color_rank_ocr (ver alli el porque y la medicion). Devuelve
+    [(box, start, end, rango_cacheado), ...]; con rango_cacheado != NO_CACHE no
+    se ha encolado nada."""
+    jobs = []
+    for box in boxes:
+        crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
+        key = color_rank_ocr.cache_key(crop, box["suit"])
+        hay, rango = color_rank_ocr.cached_rank(key)
+        if hay:
+            jobs.append((box, None, None, rango))
+        else:
+            start, end = color_rank_ocr.add_rank_jobs(batch, crop)
+            jobs.append((box, start, end, _SIN_CACHE))
+    return jobs
+
+
+_SIN_CACHE = object()
+
+
 def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
     """Resuelve las cartas de una zona (board o hero) usando la deteccion por
-    color de color_card_detector y el OCR de rango de color_rank_ocr, ya
-    encolado en el batch. card_jobs = [(box, start, end), ...]."""
+    color de color_card_detector y el OCR de rango de color_rank_ocr.
+    card_jobs = [(box, start, end, rango_cacheado), ...] de _encolar_cartas."""
     cards = []
     unresolved = 0
-    for box, start, end in card_jobs:
-        crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
-        rank = color_rank_ocr.resolve_rank(batch_results[start:end], crop)
+    for box, start, end, cacheado in card_jobs:
+        if cacheado is not _SIN_CACHE:
+            rank = cacheado
+        else:
+            crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
+            rank = color_rank_ocr.resolve_rank(batch_results[start:end], crop)
+            color_rank_ocr.store_rank(color_rank_ocr.cache_key(crop, box["suit"]), rank)
         code = card_code(rank, box["suit"])
         if code:
             cards.append(code)
@@ -473,16 +498,8 @@ def analyze_layout(image_path, max_players=None):
     action_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2, lang="spa")
 
     # cartas del hero y del board: encolar el OCR de rango (cajas ya detectadas)
-    hero_jobs = []
-    for b in hero_boxes:
-        crop = bgr[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]]
-        s, e = color_rank_ocr.add_rank_jobs(batch, crop)
-        hero_jobs.append((b, s, e))
-    board_jobs = []
-    for b in board_boxes:
-        crop = bgr[b["y"]:b["y"] + b["h"], b["x"]:b["x"] + b["w"]]
-        s, e = color_rank_ocr.add_rank_jobs(batch, crop)
-        board_jobs.append((b, s, e))
+    hero_jobs = _encolar_cartas(batch, bgr, hero_boxes)
+    board_jobs = _encolar_cartas(batch, bgr, board_boxes)
 
     results = batch.run()
 
