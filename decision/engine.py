@@ -452,6 +452,14 @@ def decide(state):
     if len(hero_cards) != 2:
         return abstain("faltan las 2 cartas del hero; no se puede recomendar")
 
+    # El cliente APAGA tus cartas cuando ya no estas en la mano y las deja
+    # visibles para que sigas la jugada. Se siguen leyendo (interesan para el
+    # repaso post-mano), pero recomendar ahi seria recomendar sobre una mano
+    # abandonada. Lo dijo el usuario tal cual: "no tienes que pensar que estoy
+    # en el juego". Ver glyph_card_detector: cara viva V=255, apagada V=77.
+    if state.get("hero_cards_dimmed"):
+        return abstain("tus cartas salen apagadas: ya no estas en esta mano")
+
     hero = _hero_player(state)
     hero_position = state.get("hero_position") or (hero.get("position") if hero else None)
     if hero_position is None:

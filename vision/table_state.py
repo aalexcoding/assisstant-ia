@@ -17,6 +17,7 @@ import cv2
 
 import color_card_detector
 import color_rank_ocr
+import glyph_card_detector
 import dealer_button
 import seat_map
 from card_detector import classify_boxes, find_card_boxes
@@ -372,6 +373,27 @@ def _fuerza_ocupacion(seat, info, en_mano, button_seat):
     return 1              # solo un verbo de accion, o texto que parecia un nick
 
 
+def _cajas_de_carta(bgr, zona_px):
+    """Cartas de una zona con CUALQUIERA de los dos mazos de 4 colores.
+
+    El usuario cambia el mazo desde las opciones del cliente y la app no se
+    entera, asi que no se puede fijar uno: el 26-07-2026 paso del mazo de fondo
+    solido al de cara blanca y se quedo ciega 267 frames seguidos. Se prueba
+    primero el de cara blanca y se cae al de fondo solido; los dos son mascaras
+    de color sobre un recorte pequeño, asi que probar los dos no se nota (el
+    reconocimiento entero de un frame va por 0,68 s y esto son milisegundos).
+
+    No se mezclan resultados de los dos: un mazo u otro, nunca cartas de ambos.
+    Cada caja lleva su `deck` para que color_rank_ocr lea el rango con la
+    polaridad que toca."""
+    cajas = glyph_card_detector.find_card_boxes(bgr, zona_px)
+    if cajas:
+        return cajas
+    return [dict(b, deck="solid", dimmed=False)
+            for b in sorted(color_card_detector.find_card_boxes(bgr, zona_px),
+                            key=lambda b: b["x"])]
+
+
 def _encolar_cartas(batch, bgr, boxes):
     """Encola el OCR de rango de cada carta, SALTANDOSE las que ya estan en la
     cache de color_rank_ocr (ver alli el porque y la medicion). Devuelve
@@ -380,12 +402,13 @@ def _encolar_cartas(batch, bgr, boxes):
     jobs = []
     for box in boxes:
         crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
-        key = color_rank_ocr.cache_key(crop, box["suit"])
+        deck = box.get("deck", "solid")
+        key = color_rank_ocr.cache_key(crop, box["suit"], deck)
         hay, rango = color_rank_ocr.cached_rank(key)
         if hay:
             jobs.append((box, None, None, rango))
         else:
-            start, end = color_rank_ocr.add_rank_jobs(batch, crop)
+            start, end = color_rank_ocr.add_rank_jobs(batch, crop, deck=deck)
             jobs.append((box, start, end, _SIN_CACHE))
     return jobs
 
@@ -404,8 +427,9 @@ def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
             rank = cacheado
         else:
             crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
-            rank = color_rank_ocr.resolve_rank(batch_results[start:end], crop)
-            color_rank_ocr.store_rank(color_rank_ocr.cache_key(crop, box["suit"]), rank)
+            deck = box.get("deck", "solid")
+            rank = color_rank_ocr.resolve_rank(batch_results[start:end], crop, deck)
+            color_rank_ocr.store_rank(color_rank_ocr.cache_key(crop, box["suit"], deck), rank)
         code = card_code(rank, box["suit"])
         if code:
             cards.append(code)
@@ -502,8 +526,8 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None):
     # del ovalo, que caia en el borde inferior de la ventana y cortaba el stack).
     hero_px = seat_map.zone_to_px(ref, seat_map.HERO_CARDS_ZONE, bgr.shape)
     board_px = seat_map.zone_to_px(ref, seat_map.BOARD_ZONE, bgr.shape)
-    hero_boxes = sorted(color_card_detector.find_card_boxes(bgr, hero_px), key=lambda b: b["x"])
-    board_boxes = sorted(color_card_detector.find_card_boxes(bgr, board_px), key=lambda b: b["x"])
+    hero_boxes = _cajas_de_carta(bgr, hero_px)
+    board_boxes = _cajas_de_carta(bgr, board_px)
     hero_plate_px = seat_map.hero_plate_from_cards(hero_boxes, bgr.shape)
 
     # texto por zona (nameplates, bote, chat, botones de accion). El nameplate
@@ -640,6 +664,12 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None):
     # SIEMPRE con in_hand=False: 883 de 883 registros en las sesiones grabadas,
     # incluidos los 484 frames en que si tenia cartas.
     state["hero_cards"], hero_unresolved = _resolve_zone_cards(bgr, hero_px, results, hero_jobs)
+    # cartas apagadas = el hero ya se retiro de esta mano (ver glyph_card_detector).
+    # Se conservan las cartas -sirven para el repaso post-mano- pero el motor no
+    # recomienda sobre ellas y el hero no cuenta como jugador en mano.
+    state["hero_cards_dimmed"] = bool(hero_boxes) and all(b.get("dimmed") for b in hero_boxes)
+    if state["hero_cards_dimmed"]:
+        state["warnings"].append("tus cartas salen apagadas: ya no estas en esta mano")
     state["board"], board_unresolved = _resolve_zone_cards(bgr, board_px, results, board_jobs)
     if hero_unresolved:
         state["warnings"].append(f"{hero_unresolved} carta(s) del hero detectada(s) pero sin rango legible")
@@ -665,7 +695,8 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None):
             "stack": info["stack"],
             "bet": info.get("bet"),
             "is_hero": es_hero,
-            "in_hand": bool(state["hero_cards"]) if es_hero else (name in en_mano),
+            "in_hand": (bool(state["hero_cards"]) and not state["hero_cards_dimmed"])
+                       if es_hero else (name in en_mano),
         }
         if name in positions:
             player["position"] = positions[name]

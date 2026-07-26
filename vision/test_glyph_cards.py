@@ -1,0 +1,182 @@
+"""
+Verificacion del mazo de cara blanca (vision/glyph_card_detector.py) y de que
+convive con el de fondo solido sin romperlo.
+
+Lo que de verdad protege:
+
+  1. Que el palo salga del COLOR DE LA TINTA y no del fondo. Es el cambio
+     entero: el 26-07-2026 el usuario cambio de mazo y la app se quedo ciega
+     267 frames seguidos porque el detector viejo miraba el fondo.
+  2. Que las cartas PEGADAS se separen. Sus caras blancas se funden en un solo
+     contorno, asi que sin corte por columnas un board de 5 sale como 2 cajas.
+  3. Que una carta APAGADA se marque como tal. Apagada significa que el hero ya
+     no esta en la mano; tratarla como viva haria recomendar sobre una mano
+     abandonada, que es peor que no recomendar.
+  4. Que el mazo viejo siga funcionando, incluida la POLARIDAD del OCR de rango:
+     los dos mazos comparten el voto y el '10', y solo cambia de donde sale la
+     tinta.
+
+Las imagenes se generan aqui (colores medidos sobre capturas reales, ver el
+docstring del modulo), asi que el test no depende de tener las capturas.
+Uso: .venv/bin/python vision/test_glyph_cards.py
+"""
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import cv2
+import numpy as np
+
+import color_card_detector as solido
+import color_rank_ocr
+import glyph_card_detector as glifo
+
+checks = []
+
+
+def check(desc, cond):
+    checks.append((desc, cond))
+    print(("OK  " if cond else "FAIL") + " " + desc)
+
+
+# colores BGR de la tinta, convertidos de los HSV medidos en cartas reales
+TINTA = {
+    "heart": (40, 40, 205),      # rojo
+    "diamond": (200, 60, 40),    # azul
+    "club": (40, 120, 40),       # verde
+    "spade": (10, 10, 10),       # negro
+}
+CARA_VIVA = (255, 255, 255)
+CARA_APAGADA = (77, 77, 77)
+TAPETE = (90, 150, 110)          # verde del tapete, S~97: no debe votar trebol
+
+ANCHO_CARTA, ALTO_CARTA = 87, 121
+HUECO = 7
+
+
+def mesa(n_cartas, palos, cara=CARA_VIVA, alto=ALTO_CARTA):
+    """Franja de tapete con n cartas pegadas (hueco de 7px, como el cliente).
+
+    La carta se dibuja con la disposicion REAL, que es la que hace falta aislar:
+    rango pequeño arriba a la izquierda con su pip debajo, rango grande a la
+    derecha, y el pip grande DEBAJO del rango grande y casi igual de alto -que
+    es justo por lo que no se puede separar por tamaño-."""
+    img = np.full((alto + 80, 60 + n_cartas * (ANCHO_CARTA + HUECO) + 60, 3),
+                  TAPETE, dtype=np.uint8)
+    for i in range(n_cartas):
+        x = 60 + i * (ANCHO_CARTA + HUECO)
+        cv2.rectangle(img, (x, 40), (x + ANCHO_CARTA - 1, 40 + alto - 1), cara, -1)
+        t = TINTA[palos[i]]
+        cv2.putText(img, "K", (x + 34, 40 + int(alto * 0.50)),          # rango grande
+                    cv2.FONT_HERSHEY_SIMPLEX, alto / 105.0, t, 4)
+        cv2.putText(img, "K", (x + 5, 40 + int(alto * 0.22)),           # rango pequeño
+                    cv2.FONT_HERSHEY_SIMPLEX, alto / 280.0, t, 2)
+        cv2.circle(img, (x + 13, 40 + int(alto * 0.37)),                # pip pequeño
+                   max(3, alto // 30), t, -1)
+        cv2.circle(img, (x + 52, 40 + int(alto * 0.76)),                # pip grande
+                   max(5, alto // 12), t, -1)
+    return img
+
+
+# --- caso: el palo sale de la tinta, con la cara blanca -----------------------
+print("\n# --- palo por color de tinta ---")
+for palo in ("heart", "diamond", "club", "spade"):
+    cajas = glifo.find_card_boxes(mesa(1, [palo]))
+    check(f"una carta de {palo} sobre cara blanca se lee {palo}",
+          len(cajas) == 1 and cajas[0]["suit"] == palo)
+
+solo_tapete = np.full((ALTO_CARTA, ANCHO_CARTA, 3), TAPETE, dtype=np.uint8)
+hsv_t = cv2.cvtColor(solo_tapete, cv2.COLOR_BGR2HSV)
+votos = glifo.suit_votes(hsv_t, glifo._cara(hsv_t))
+check("el verde del TAPETE no vota trebol (su saturacion no llega a COLOR_S_MIN)",
+      votos["club"] == 0)
+
+# --- caso: cartas pegadas ----------------------------------------------------
+print("\n# --- separar cartas pegadas ---")
+for n in (2, 3, 4, 5):
+    palos = ["heart", "spade", "club", "diamond", "heart"][:n]
+    cajas = glifo.find_card_boxes(mesa(n, palos))
+    check(f"un grupo de {n} cartas pegadas da {n} cajas", len(cajas) == n)
+    check(f"  y sus {n} palos salen en orden de izquierda a derecha",
+          [c["suit"] for c in cajas] == palos)
+
+cajas = glifo.find_card_boxes(mesa(5, ["heart"] * 5))
+check("cinco cartas del MISMO palo tambien se separan (el corte es geometrico, "
+      "no por color)", len(cajas) == 5)
+
+# --- caso: carta a medio tirar ----------------------------------------------
+print("\n# --- ruido ---")
+img = mesa(3, ["heart", "spade", "club"])
+cv2.rectangle(img, (img.shape[1] - 45, 40), (img.shape[1] - 5, 40 + ALTO_CARTA - 1),
+              CARA_VIVA, -1)
+check("un trozo de carta demasiado estrecho (animacion de descarte) se descarta",
+      len(glifo.find_card_boxes(img)) == 3)
+check("tapete solo no produce ninguna carta",
+      glifo.find_card_boxes(np.full((200, 400, 3), TAPETE, dtype=np.uint8)) == [])
+
+# --- caso: apagadas ----------------------------------------------------------
+print("\n# --- carta apagada = el hero ya no juega la mano ---")
+vivas = glifo.find_card_boxes(mesa(2, ["heart", "club"], cara=CARA_VIVA))
+apagadas = glifo.find_card_boxes(mesa(2, ["heart", "club"], cara=CARA_APAGADA))
+check("las cartas vivas se detectan", len(vivas) == 2)
+check("y NO se marcan como apagadas", not any(c["dimmed"] for c in vivas))
+check("las apagadas tambien se detectan (si no, la app se queda ciega el 21% "
+      "de los frames)", len(apagadas) == 2)
+check("y se marcan como apagadas", all(c["dimmed"] for c in apagadas))
+check("con el palo correcto aunque esten apagadas",
+      [c["suit"] for c in apagadas] == ["heart", "club"])
+
+# --- caso: proporcion del hero (el nameplate le tapa la mitad de abajo) ------
+print("\n# --- las cartas del hero salen recortadas por su nameplate ---")
+cortadas = glifo.find_card_boxes(mesa(2, ["spade", "diamond"], alto=73))
+check("dos cartas de 87x73 (alto/ancho 0.84) se detectan igual", len(cortadas) == 2)
+check("  con su palo", [c["suit"] for c in cortadas] == ["spade", "diamond"])
+
+# --- caso: convivencia con el mazo de fondo solido ---------------------------
+print("\n# --- el mazo de fondo solido sigue funcionando ---")
+# carta del mazo viejo: fondo salmon (corazon) con el rango en BLANCO
+vieja = np.full((ALTO_CARTA + 60, ANCHO_CARTA + 60, 3), TAPETE, dtype=np.uint8)
+cv2.rectangle(vieja, (30, 30), (30 + ANCHO_CARTA, 30 + ALTO_CARTA), (80, 90, 245), -1)
+cv2.putText(vieja, "K", (55, 120), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (255, 255, 255), 4)
+cajas_v = solido.find_card_boxes(vieja)
+check("el detector de fondo solido sigue leyendo su mazo", len(cajas_v) == 1)
+check("el detector de tinta NO se inventa cartas del mazo viejo "
+      "(su cara es de color, no clara)", glifo.find_card_boxes(vieja) == [])
+
+carta_glifo = mesa(1, ["spade"])[40:40 + ALTO_CARTA, 60:60 + ANCHO_CARTA]
+m_solid = color_rank_ocr.rank_mask(carta_glifo, "solid")
+m_glyph = color_rank_ocr.rank_mask(carta_glifo, "glyph")
+check("la mascara de rango del mazo nuevo marca la TINTA, no la cara "
+      "(la cara es la mayoria del recorte)", m_glyph.mean() < m_solid.mean())
+check("y deja fuera de la mascara la mayor parte de la carta",
+      0.02 < (m_glyph > 0).mean() < 0.45)
+
+print("\n# --- aislar el rango grande (el pip mide casi lo mismo) ---")
+carta_k = mesa(1, ["club"])[40:40 + ALTO_CARTA, 60:60 + ANCHO_CARTA]
+completa = color_rank_ocr.rank_mask(carta_k, "glyph")
+aislada = color_rank_ocr.rango_grande_mask(carta_k, "glyph")
+check("el rango aislado usa menos tinta que la mascara completa "
+      "(se han ido el pip y el rango pequeño)", (aislada > 0).sum() < (completa > 0).sum())
+ys_a = np.where(aislada > 0)[0]
+ys_c = np.where(completa > 0)[0]
+check("y lo que queda esta en la parte de ARRIBA de la carta, que es donde va "
+      "el rango", ys_a.max() < ys_c.max())
+check("queda algo: aislar no puede dejar la carta en blanco", ys_a.size > 0)
+check("en el mazo de fondo solido no se aisla nada (el rango ya domina)",
+      np.array_equal(color_rank_ocr.rango_grande_mask(carta_k, "solid"),
+                     color_rank_ocr.rank_mask(carta_k, "solid")))
+
+carta_vieja = vieja[30:30 + ALTO_CARTA, 30:30 + ANCHO_CARTA]
+check("con deck='solid' la mascara sigue siendo la de siempre",
+      np.array_equal(color_rank_ocr.rank_mask(carta_vieja, "solid"),
+                     color_rank_ocr._white_mask(carta_vieja)))
+check("el mazo entra en la clave de cache: el mismo recorte no se confunde "
+      "entre polaridades",
+      color_rank_ocr.cache_key(carta_glifo, "spade", "glyph")
+      != color_rank_ocr.cache_key(carta_glifo, "spade", "solid"))
+
+n_fail = sum(1 for _, cond in checks if not cond)
+print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
+if n_fail:
+    raise SystemExit(1)

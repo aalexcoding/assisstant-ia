@@ -774,6 +774,69 @@ lecturas malas sino **fronteras de mano que no se detectaron**, y ahí lo que ha
 que arreglar es la segmentación, no la lectura. Conviene separarlas antes de
 atribuirse una mejora.
 
+### 2.3d · El usuario cambió de mazo y la app se quedó ciega — ✅ ARREGLADO
+
+El 26-07-2026 el usuario cambió el mazo en las opciones de PokerStars y dejó de
+reconocerse **una sola carta** en 267 frames seguidos. No era un fallo de OCR:
+`color_card_detector` resuelve el palo por el color del **fondo** de la carta, y
+el mazo nuevo pinta el fondo **blanco** y colorea el glifo.
+
+| | mazo de fondo sólido | mazo de cara blanca |
+|---|---|---|
+| frames muestreados | 65 | 39 |
+| frames con alguna carta | 52 | **5** |
+| cajas de carta | 221 | **5**, y las 5 eran fichas azules |
+
+**La lección de diseño**: la app depende de ajustes del cliente que el usuario
+cambia sin avisar y que ella no puede consultar. La respuesta no fue migrar al
+mazo nuevo sino **soportar los dos y elegir solo** (`table_state._cajas_de_carta`
+prueba el nuevo y cae al viejo). Cuesta milisegundos sobre un ciclo de 0,68 s y
+evita que un ajuste de menú vuelva a dejarla muda.
+
+Lo que hizo falta, todo medido (`vision/glyph_card_detector.py`):
+
+1. **Palo por color de la tinta.** ♥ H=0, ♦ H=118, ♣ H=65, ♠ negro (S=0, V=1),
+   colores planos porque el cliente los renderiza vectoriales. El único parecido
+   posible es el verde del tapete y no llega: S=97 de mediana frente al mínimo de
+   110 que se exige para votar. **40/40 palos** en 40 cartas etiquetadas.
+2. **Separar cartas pegadas.** Sus caras blancas se funden en un contorno único
+   (un board de 5 salía como 2 cajas), así que se corta por perfil de columnas
+   **dentro de la banda de filas de las cartas** — no dentro del contorno, que se
+   funde también con las fichas de abajo y entonces el umbral se calcula sobre un
+   alto inflado y parte las cartas por la mitad.
+3. **Aislar el rango grande por POSICIÓN, no por tamaño.** La carta trae el rango
+   dos veces y el pip mide casi lo mismo que el rango, así que el filtro de altura
+   que sirve en el mazo viejo aquí no quita nada. Medido sobre las 40 cartas:
+
+   | vista | bien | mal | sin resolver |
+   |---|---|---|---|
+   | máscara completa ×2 + close (lo que había) | 32 | 8 | 0 |
+   | alto ≥ 0,55 del máximo ×2 + close | 27 | 10 | 3 |
+   | solo el rango aislado | 36 | **0** | 4 |
+   | **rango aislado ×2 + máscara completa** | **40** | **0** | **0** |
+
+   Lo que decidió fue la penúltima fila: aislado **no se equivoca nunca**, solo se
+   calla. Por eso vota doble y la máscara completa solo desempata.
+4. **`HERO_CARDS_ZONE` cortaba las cartas**, y a los dos mazos: la extensión real
+   medida es y 0,908–1,065 (viejo) y 0,877–1,159 (nuevo) sobre una zona que
+   acababa en 1,04. Ensancharla es neutral para el viejo (215 frames con las 2
+   cartas antes y después) y sube el nuevo de 0 a 171.
+
+**Un efecto secundario que vale más que el arreglo**: el cliente **apaga** tus
+cartas cuando ya no estás en la mano (cara V=255 → V=77, sin nada en medio). Eso
+da por primera vez una señal fiable de "el hero se ha retirado", que antes no
+existía, y el motor se abstiene ahí en vez de recomendar sobre una mano
+abandonada. Son el 21% de los frames.
+
+Y una medida de calidad que sale gratis, por invariante: el board **nunca** puede
+tener 1 o 2 cartas. Con el mazo viejo pasaba en **24 de 61** frames con board; con
+el nuevo, en **0 de 37**. El detector nuevo no es solo un parche de compatibilidad,
+lee mejor.
+
+**Lo que queda de aquí**: el detector viejo pierde cartas del board en el 39% de
+los frames y eso sigue igual — si el usuario vuelve al mazo de fondo sólido, se
+lleva ese defecto con él. No se ha tocado porque ya no es el mazo en uso.
+
 ### 2.3b Corpus etiquetado
 
 El modo testing ya recoge la materia prima y las notas de §2.3 aportan los casos

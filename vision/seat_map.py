@@ -86,7 +86,18 @@ HERO_SEAT = "HERO"
 HERO_PLATE_FROM_CARDS = (0.13, 0.02, 1.32, 1.60)
 
 # zonas fijas de los elementos de mesa (fracciones del nucleo del tapete)
-HERO_CARDS_ZONE = (0.40, 0.83, 0.62, 1.04)
+#
+# HERO_CARDS_ZONE se ensancho el 26-07-2026 al cambiar de mazo. Extension real
+# de las cartas medida en fracciones del nucleo, sobre los frames con reference
+# bueno de las dos sesiones de ese dia:
+#
+#     mazo de fondo solido   x 0.401..0.600   y 0.908..1.065   (n=97)
+#     mazo de cara blanca    x 0.344..0.601   y 0.877..1.159   (n=93)
+#
+# La zona anterior (0.40, 0.83, 0.62, 1.04) cortaba por abajo a LOS DOS mazos, y
+# por la izquierda al nuevo. Ensancharla es neutral para el viejo -215 frames
+# con las 2 cartas antes y despues, identicos- y sube el nuevo de 0 a 171.
+HERO_CARDS_ZONE = (0.34, 0.86, 0.64, 1.10)
 
 # El borde INFERIOR del board (0.60) no es un margen de cortesia: es un fallo que
 # mordio de verdad. Estaba en 0.54 y las cartas se CORTABAN por abajo, con lo que

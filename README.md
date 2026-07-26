@@ -94,6 +94,18 @@ hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
   (palo por color de fondo, sin plantilla) + `color_rank_ocr.py`, orquestados por
   `table_state.analyze_color_deck()`. `run_samples_pokerstars.py` corre esta rama
   contra `vision/samples_pokerstars/` y vuelca `vision/results_pokerstars.json`.
+  PokerStars ofrece **dos** mazos de 4 colores y el usuario los cambia desde las
+  opciones sin que la app se entere, así que hay un detector por cada uno y
+  `table_state._cajas_de_carta()` elige solo, probando primero el nuevo:
+  `glyph_card_detector.py` cubre el de **cara blanca con la tinta del color del
+  palo** (♠ negro, ♥ rojo, ♣ verde, ♦ azul), donde el palo sale del color del
+  glifo y no del fondo, y las cartas contiguas hay que separarlas por perfil de
+  columnas porque sus caras blancas se funden en un solo contorno. Ese detector
+  además marca `dimmed`: el cliente **apaga** tus cartas cuando ya no estás en la
+  mano (cara V=255 → V=77), y el motor se abstiene ahí en vez de recomendar sobre
+  una mano abandonada. `color_rank_ocr` lee el rango de los dos con el mismo voto
+  y la misma detección del '10'; lo único que cambia es la polaridad de la tinta
+  (`deck="solid"` / `deck="glyph"`).
   `hand_result.py` parsea el resultado de la última mano terminada de las líneas
   del chat (`parse_hand_result`: nº de mano, ganador(es), importe, mano ganadora y
   showdown; tolerante al ruido del OCR, no inventa). Cubre los **botes divididos**

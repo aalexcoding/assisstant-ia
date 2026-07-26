@@ -53,6 +53,20 @@ está fijado, explica la mitad de lo que se vea) y `notas`.
 estadísticas o escritorio. La app corta ahí a propósito. Todos los porcentajes de
 abajo van sobre los frames **con mesa**.
 
+**Si de golpe no hay NINGUNA carta en toda la sesión, mirar el mazo antes que
+nada.** Pasó el 26-07-2026: el usuario cambió el mazo en las opciones del cliente
+y la app se quedó ciega 267 frames seguidos, porque el detector miraba el color
+del *fondo* de la carta y el mazo nuevo lo pinta blanco. Un vistazo al PNG lo
+resuelve en diez segundos; deducirlo del JSON cuesta media hora. Hoy hay un
+detector por mazo y `table_state._cajas_de_carta()` elige solo, así que el
+síntoma no debería repetirse — pero si vuelve a salir cero, es la primera
+hipótesis.
+
+`state["hero_cards_dimmed"]` es un dato, no un fallo: el cliente **apaga** tus
+cartas cuando te retiras y las deja visibles para que sigas la mano. El motor se
+abstiene ahí a propósito ("ya no estás en esta mano"). Fueron el 21% de los
+frames de esa sesión, así que no es un caso raro.
+
 ---
 
 ## 1 · Lo primero: contradicciones
@@ -63,6 +77,7 @@ verdad. Si aparece alguna, es un bug y va primero.
 | comprobación | qué es | historia |
 |---|---|---|
 | `len(set(board)) < len(board)` | board con una carta repetida | Salió con `9♣ Q♣ 4♥` leído `['9c','9c','4h']`: `BOARD_ZONE` cortaba las cartas por abajo y la Q sin cola se lee como 9. Arreglado subiendo el borde de 0,54 a 0,60. Si vuelve, el recorte se come otra vez el glifo |
+| `len(board)` en 1 o 2 | board de longitud imposible | En Hold'em el board es 0, 3, 4 o 5. Con el mazo de fondo sólido salían **24 de 61** frames con board de 1 o 2 (se perdían cartas); con el de cara blanca, **0 de 37**. Si reaparece, el detector está perdiendo cartas del board |
 | `set(board) & set(hero_cards)` | una carta tuya también en el board | Imposible, hay 52 cartas. Lectura de rango o palo equivocada |
 | `vs_position` habla después que `hero_position` | raiser imposible | Orden preflop: EP1 EP2 MP1 MP2 HJ CO BTN SB BB. Eso no es una defensa sino una resubida a la apertura propia. El motor ya lo rechaza; si aparece, la atribución falla por otro sitio |
 | `len(players) > max_players` | más jugadores de los que caben | Solo si el selector Mesa está fijado. Contradicción entre lo dicho y lo visto |
