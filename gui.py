@@ -344,7 +344,6 @@ class AnalysisWorker(threading.Thread):
                         self.buffer.añadir(crop, t=time.time())
                         self._vigilar(crop)
                         if time.monotonic() >= proximo_analisis:
-                            proximo_analisis = time.monotonic() + self.interval
                             try:
                                 self._analyze_and_publish(crop)
                             except Exception as e:  # noqa: BLE001
@@ -353,6 +352,15 @@ class AnalysisWorker(threading.Thread):
                                 # muda: se reporta y se sigue con el siguiente.
                                 GLib.idle_add(self.win.on_error,
                                               f"Fallo analizando el frame: {e}")
+                            # El intervalo se cuenta DESDE QUE TERMINA el analisis,
+                            # no desde que empieza: es el hueco de VIGILANCIA entre
+                            # dos analisis. Contandolo desde el principio, un ciclo
+                            # mas largo que el intervalo se lo comia entero y el
+                            # lazo rapido no llegaba a correr NUNCA. Medido en una
+                            # sesion real con intervalo 0,5 s y ciclo 0,61 s: 367
+                            # capturas rapidas para 270 analisis, o sea 1,36 por
+                            # analisis en vez de las ~5 que tocarian.
+                            proximo_analisis = time.monotonic() + self.interval
                 # el periodo de VIGILANCIA es un periodo, no una pausa: se espera
                 # solo lo que falte. Si el analisis se ha comido el tick entero,
                 # no se espera nada y se vuelve a capturar de inmediato.

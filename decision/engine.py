@@ -259,13 +259,26 @@ _LIMP_MAX_BB = 1.35
 
 
 def _contar_limpers(players):
-    """Cuantos rivales han entrado pagando, o None si no se pudo saber.
+    """Cuantos rivales han ENTRADO PAGANDO voluntariamente. 0 si el bote no esta
+    limpeado, None si no se pudo saber.
 
-    Se mira el importe leido en la mesa y, si no lo hay, el comprometido que
-    deduce el rastreador de la bajada de stack. Devolver None cuando NINGUN rival
-    da ninguna de las dos señales es importante: no es lo mismo "he mirado y no
-    hay limpers" que "no he podido mirar", y con la opcion de la BB siempre hay
-    al menos un rival dentro (si no, la mano ya habria terminado)."""
+    Dos reglas que parecen detalles y no lo son. Medido sobre una sesion real, sin
+    ellas la capa derivada disparaba "subir sobre los limpers" en 45 frames y en
+    LOS 45 el bote estaba en realidad SUBIDO: una recomendacion con pinta de buena
+    para un spot que no era ese.
+
+    1. LA CIEGA GRANDE NO ES UN LIMPER. Su 1bb es obligatorio, no una decision.
+       Contarla como limper corria la fila donante un asiento de mas SIEMPRE, en
+       todas las manos. Se le permite hasta _BB_POSTED_MAX_MULT porque en torneo
+       con BB-ante su importe es ciega + ante (igual que en _detect_raiser).
+    2. SI ALGUIEN HA PUESTO MAS QUE UNA CIEGA, EL BOTE NO ESTA LIMPEADO, esta
+       subido, y "subir sobre los limpers" no es el spot. Se devuelve 0 para que
+       la capa derivada no se dispare y el motor siga por donde iba.
+
+    Se mira el importe leido en la mesa y, si no lo hay, lo que el rastreador
+    deduce de la bajada de stack EN ESTA CALLE. Devolver None cuando ningun rival
+    da ninguna de las dos señales importa: no es lo mismo "he mirado y no hay
+    limpers" que "no he podido mirar"."""
     visto = False
     n = 0
     for p in players:
@@ -273,11 +286,15 @@ def _contar_limpers(players):
             continue
         v = p.get("bet")
         if not isinstance(v, (int, float)):
-            v = p.get("committed")
+            v = p.get("committed_calle")
         if not isinstance(v, (int, float)):
             continue
         visto = True
-        if _LIMP_MIN_BB <= v <= _LIMP_MAX_BB:
+        es_bb = p.get("position") == "BB"
+        tope = BB * _BB_POSTED_MAX_MULT if es_bb else _LIMP_MAX_BB
+        if v > tope:
+            return 0                     # el bote esta SUBIDO, no limpeado
+        if not es_bb and _LIMP_MIN_BB <= v <= _LIMP_MAX_BB:
             n += 1
     return n if visto else None
 

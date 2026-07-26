@@ -300,6 +300,35 @@ _r, _st = _defensa("BB", "SB")
 check("BB vs SB si es posible (la SB habla antes que la BB) y no lo bloquea",
       _r is not None or not any("DESPUES" in w for w in _st["warnings"]))
 
+# --- CONTAR LIMPERS: dos reglas que parecian detalles y no lo son -------------
+# Medido sobre una sesion real, sin ellas la capa derivada disparaba "subir sobre
+# los limpers" en 45 frames y en LOS 45 el bote estaba en realidad SUBIDO.
+def _limpers(*rivales):
+    """rivales = (position, importe puesto)"""
+    return engine._contar_limpers(
+        [dict(P("BTN", None, hero=True), stack=20.0)]
+        + [dict(P(pos, imp), stack=20.0) for pos, imp in rivales])
+
+
+check("un rival con una ciega grande justa es un limper", _limpers(("CO", 1.0)) == 1)
+check("dos limpers son dos", _limpers(("CO", 1.0), ("HJ", 1.0)) == 2)
+check("LA CIEGA GRANDE NO ES UN LIMPER: su 1bb es obligatorio, no una decision. "
+      "Contarla corria la fila donante un asiento de mas SIEMPRE",
+      _limpers(("BB", 1.0)) == 0)
+check("y con un limper de verdad al lado, sigue contando uno solo",
+      _limpers(("BB", 1.0), ("CO", 1.0)) == 1)
+check("la BB con ciega+ante tampoco cuenta ni dispara la alarma de subida",
+      _limpers(("BB", 1.8), ("CO", 1.0)) == 1)
+check("SI ALGUIEN HA PUESTO MAS QUE UNA CIEGA el bote esta SUBIDO, no limpeado: "
+      "devuelve 0 para que la capa derivada no se dispare",
+      _limpers(("CO", 1.0), ("SB", 5.0)) == 0)
+check("y basta uno para invalidarlo", _limpers(("CO", 4.0)) == 0)
+check("la SB completando (1bb) SI es un limper", _limpers(("SB", 1.0)) == 1)
+check("la SB con solo su media ciega no cuenta", _limpers(("SB", 0.5)) == 0)
+check("si ningun rival da importe, no es 0 sino None: no es lo mismo 'he mirado "
+      "y no hay' que 'no he podido mirar'",
+      _limpers(("CO", None), ("HJ", None)) is None)
+
 # --- postflop_equity: separado de decide(), y abstenerse antes que inflar ------
 # El riesgo real de este camino es contar MENOS rivales de los que hay (en
 # showdown las cartas se giran y los dorsos desaparecen), porque eso INFLA la
