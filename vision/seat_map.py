@@ -87,7 +87,21 @@ HERO_PLATE_FROM_CARDS = (0.13, 0.02, 1.32, 1.60)
 
 # zonas fijas de los elementos de mesa (fracciones del nucleo del tapete)
 HERO_CARDS_ZONE = (0.40, 0.83, 0.62, 1.04)
-BOARD_ZONE = (0.26, 0.28, 0.78, 0.54)
+
+# El borde INFERIOR del board (0.60) no es un margen de cortesia: es un fallo que
+# mordio de verdad. Estaba en 0.54 y las cartas se CORTABAN por abajo, con lo que
+# el glifo perdia su parte de abajo y el OCR leia otro rango: medido en una
+# partida real, un board 9c Qc 4h salia como ['9c','9c','4h'] -la Q sin su cola
+# se lee como 9- y la equity se calculaba con una carta FALSA, o se descartaba
+# por duplicada (15 frames en una sesion). Las cajas terminaban exactamente en
+# y+h = borde de la zona, que es la firma de un recorte, no de una deteccion.
+#
+# Calibrado sobre 227 cartas de dos sesiones con encuadres distintos: las cartas
+# acaban entre las fracciones 0.385 y 0.578 del nucleo, con mediana 0.537, y
+# miden 119 px de alto (las que se cortaban median 105). Con 0.60 caben todas con
+# margen. Ampliando incluso hasta 0.68 NO aparecen cartas fantasma -las fichas del
+# bote no pasan el detector-, asi que el margen es gratis.
+BOARD_ZONE = (0.26, 0.28, 0.78, 0.60)
 # el texto "Bote: N" se muestra mas abajo en preflop (sin cartas de board que
 # lo empujen hacia arriba) que en postflop; la zona cubre ambas alturas.
 POT_ZONE = (0.34, 0.11, 0.66, 0.38)

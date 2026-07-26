@@ -217,6 +217,17 @@ class HandTracker:
         self.mano += 1
         self._asientos = {}
         self._meta = {}
+        # Ultimo nombre REAL visto en cada asiento durante ESTA mano. El cliente
+        # sustituye el nick por el verbo de la accion ("Pasar", "Igualar") justo
+        # cuando el jugador actua, o sea que el nombre desaparece en el momento en
+        # que mas falta hace saber quien es. Se guarda el ultimo bueno y se
+        # repone.
+        #
+        # SE OLVIDA EN CADA MANO, y eso no es un descuido: en Zoom el cliente te
+        # cambia de mesa entre manos, asi que el ocupante de un asiento puede ser
+        # otra persona. Dentro de una mano el asiento no cambia de dueño, que es
+        # justo el alcance en el que reponer el nombre es seguro.
+        self._nombres = {}
         self._frames = 0
         self._motivos = frozenset(motivos)
 
@@ -242,10 +253,14 @@ class HandTracker:
                 # tarde, seguro que se perdio algo de lo que ya habia puesto
                 self._meta[seat] = {"desde_el_principio": self._frames == 1}
             a.leer(p.get("stack") if isinstance(p.get("stack"), (int, float)) else None)
+            if p.get("name"):
+                self._nombres[seat] = p["name"]
             self._meta[seat].update(
                 position=p.get("position"),
                 is_hero=bool(p.get("is_hero")),
                 in_hand=p.get("in_hand"),
+                nombre=self._nombres.get(seat),
+                action=p.get("action"),
                 bet_leido=p.get("bet") if isinstance(p.get("bet"), (int, float)) else None)
 
         return self.resumen()
@@ -257,6 +272,8 @@ class HandTracker:
             comprometido = a.comprometido()
             asientos[seat] = {
                 "position": m.get("position"),
+                "nombre": m.get("nombre"),
+                "action": m.get("action"),
                 "is_hero": m.get("is_hero", False),
                 "in_hand": m.get("in_hand"),
                 "stack": a.actual,
@@ -306,6 +323,12 @@ def aplicar(state, info):
         if d is not None:
             p["committed"] = d["comprometido"]
             p["committed_acuerdo"] = d["acuerdo"]
+            # repone el nick cuando el cliente lo ha tapado con el verbo de la
+            # accion. Solo se repone lo que falta: una lectura buena del frame
+            # actual siempre manda.
+            if not p.get("name") and d.get("nombre"):
+                p["name"] = d["nombre"]
+                p["name_repuesto"] = True
     state["mano_seguida"] = info.get("mano")
     return state
 

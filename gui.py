@@ -79,6 +79,9 @@ def players_markup(players):
         return "<i>sin jugadores detectados</i>"
     lines = []
     for p in players:
+        # el nick puede venir REPUESTO por el rastreador: el cliente lo tapa con
+        # el verbo de la accion justo cuando ese jugador actua (ver
+        # table_state.es_verbo_de_accion). Lo que hizo se muestra aparte.
         name = p["name"] if p.get("name") else "(?)"
         pos = f" [{p['position']}]" if p.get("position") else ""
         # con unidad: los importes son big blinds, y verlo evita confundir un
@@ -95,8 +98,12 @@ def players_markup(players):
         if isinstance(com, (int, float)) and com > 0:
             color = "#2ecc71" if p.get("committed_acuerdo") == "coinciden" else "#95a5a6"
             puesto = f'  <span foreground="{color}">(≥{com:g} BB puestos)</span>'
+        accion = ""
+        if p.get("action"):
+            accion = (f'  <span foreground="#f39c12">'
+                      f'{GLib.markup_escape_text(str(p["action"]))}</span>')
         lines.append(f"{GLib.markup_escape_text(str(name))}{GLib.markup_escape_text(pos)}: "
-                     f"{GLib.markup_escape_text(str(stack))}{mark}{puesto}")
+                     f"{GLib.markup_escape_text(str(stack))}{mark}{puesto}{accion}")
     return "\n".join(lines)
 
 

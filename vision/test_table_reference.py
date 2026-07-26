@@ -242,6 +242,24 @@ solo_spa = repartir(pares(3, 0))
 check("solo jobs en espanol: un trozo con los tres",
       len(solo_spa) == 1 and len(solo_spa[0]) == 3)
 
+# --- EL VERBO NO ES UN NOMBRE ----------------------------------------------
+# Cuando un jugador actua, el cliente le sustituye el nick por lo que ha hecho,
+# asi que leerlo como nombre le cambia el nombre justo cuando hace algo. Medido
+# sobre una sesion real: 362 de 6264 nombres leidos (6%) eran un verbo.
+print("\n# --- verbo de accion vs nombre ---")
+for t in ("Pasar", "Igualar", "Apostar", "Subir", "Ausente", "All-in", "all in", "No ir"):
+    check(f"{t!r} se reconoce como verbo, no como nombre", ts.es_verbo_de_accion(t))
+for t in ("BerniBeau", "over590", "makeao31", "44,5 BB", ""):
+    check(f"{t!r} NO es un verbo", ts.es_verbo_de_accion(t) is False)
+
+n, stk, acc = ts._seat_plate_name_stack(lineas("Dav6934", "69,3"))
+check("un nameplate normal da nombre y no accion", n == "Dav6934" and acc is None)
+n, stk, acc = ts._seat_plate_name_stack(lineas("Igualar"))
+check("un nameplate con el verbo NO devuelve nombre", n is None)
+check("y devuelve el verbo aparte, que es informacion util", acc == "Igualar")
+n, stk, acc = ts._seat_plate_name_stack(lineas("All-in"))
+check("'All-in' con guion tampoco se cuela como nombre", n is None and acc == "All-in")
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

@@ -228,16 +228,32 @@ def analyze(image_path):
 
 
 def _seat_plate_name_stack(lines):
-    """De las lineas OCR de la zona de un nameplate, devuelve (name, stack):
-    la primera linea que parece nombre y la primera que parece numero."""
+    """De las lineas OCR de un nameplate, devuelve (name, stack, action).
+
+    EL VERBO NO ES UN NOMBRE. Cuando un jugador actua, el cliente le SUSTITUYE el
+    nick por lo que ha hecho ("Pasar", "Igualar", "Apostar", "Subir"), asi que
+    leerlo como nombre hace que el jugador cambie de nombre justo en el momento
+    en que hace algo -que es cuando mas falta hace saber quien es-. Medido sobre
+    una sesion real: 362 de 6264 nombres leidos (6%) eran un verbo, con "Pasar"
+    (153), "Igualar" (123), "Apostar" (50) y "Subir" (34) a la cabeza.
+
+    Asi que el verbo se devuelve APARTE, como `action`. Ademas de dejar de
+    ensuciar el nombre, es informacion util que hasta ahora se tiraba: dice QUE
+    hizo ese asiento, que es justo lo que falta para reconstruir el historial de
+    la mano (ver docs §2.2)."""
     name = None
     stack = None
+    action = None
     for ln in lines:
-        if name is None and _is_name_candidate(ln["text"]):
-            name = _clean_name(ln["text"])
-        if stack is None and _is_number_candidate(ln["text"].strip()):
-            stack = _to_int(ln["text"].strip())
-    return name, stack
+        texto = ln["text"].strip()
+        if action is None and es_verbo_de_accion(texto):
+            action = texto
+            continue                      # no puede ser tambien el nombre
+        if name is None and _is_name_candidate(texto):
+            name = _clean_name(texto)
+        if stack is None and _is_number_candidate(texto):
+            stack = _to_int(texto)
+    return name, stack, action
 
 
 # verbos/estados que el cliente pone en el nameplate en lugar del nombre cuando
@@ -246,6 +262,7 @@ def _seat_plate_name_stack(lines):
 SEAT_STATUS_WORDS = {
     "igualar", "iguala", "pasar", "pasa", "apostar", "apuesta", "subir", "sube",
     "resubir", "poner", "ausente", "ante", "allin", "paga", "espera", "sentado",
+    "noir",          # "No ir" (fold), que el cliente escribe en dos palabras
 }
 
 
@@ -282,6 +299,15 @@ SEAT_STATUS_WORDS = {
 # proposito (ver su guard).
 
 
+def es_verbo_de_accion(texto):
+    """True si el texto es lo que el cliente pone EN VEZ del nick cuando ese
+    asiento acaba de actuar. Se normaliza quitando puntuacion, guiones y espacios
+    porque el cliente escribe "All-in" y "No ir" con separadores que el OCR ademas
+    cambia a capricho; sin eso, "All-in" se colaba como si fuera un nombre."""
+    limpio = "".join(c for c in texto.lower() if c.isalnum())
+    return bool(limpio) and limpio in SEAT_STATUS_WORDS
+
+
 def _plate_occupied(lines):
     """True si la zona del nameplate contiene texto propio de un asiento
     ocupado: un importe en BB, un nombre (por palabra suelta, para pillar
@@ -316,14 +342,10 @@ def _plate_occupied(lines):
     if seat_map.has_bb_amount(lines):
         return True
     for ln in lines:
-        low = ln["text"].lower()
-        if "no ir" in low or "noir" in low:
+        if es_verbo_de_accion(ln["text"]):
             return True
         for word in ln["text"].split():
-            wl = word.lower().strip(".,;:'\"|")
-            if wl in SEAT_STATUS_WORDS:
-                return True
-            if _is_username_token(word):
+            if es_verbo_de_accion(word) or _is_username_token(word):
                 return True
     return False
 
@@ -522,12 +544,12 @@ def analyze_layout(image_path, max_players=None):
     occupied = {}
     for name in seat_map.SEATS:
         lines = seat_lines[name]
-        n, _stk_chips = _seat_plate_name_stack(lines)
+        n, _stk_chips, accion = _seat_plate_name_stack(lines)
         stk = seat_map.parse_amount_bb(lines)
         occ = True if name == seat_map.HERO_SEAT else _plate_occupied(lines)
         if occ:
             bet_lines = parse_tsv_lines(results[bet_tsv[name]])
-            occupied[name] = {"name": n, "stack": stk,
+            occupied[name] = {"name": n, "stack": stk, "action": accion,
                               "bet": seat_map.parse_amount_bb(bet_lines)}
 
     # quien sigue en la mano (dorso de carta visible). Se resuelve AQUI, antes de
@@ -540,7 +562,7 @@ def analyze_layout(image_path, max_players=None):
     if button_seat is not None and button_seat not in occupied:
         # el dealer es siempre un jugador sentado: si el boton se detecto en ese
         # asiento pero el OCR no leyo su nameplate, esta ocupado igual.
-        occupied[button_seat] = {"name": None, "stack": None, "bet": None}
+        occupied[button_seat] = {"name": None, "stack": None, "bet": None, "action": None}
 
     # TAMAÑO DE MESA. Si el usuario dice cuantos jugadores caben (3-max, 6-max...)
     # y se detectan MAS asientos ocupados, sobra alguno: es una contradiccion
@@ -611,6 +633,9 @@ def analyze_layout(image_path, max_players=None):
             # sale lo que ha apostado (ver decision/hand_tracker.py).
             "seat": name,
             "name": info["name"],
+            # lo que el cliente muestra en vez del nick cuando este asiento acaba
+            # de actuar ("Pasar", "Igualar", "Subir"...). Ver _seat_plate_name_stack.
+            "action": info.get("action"),
             "stack": info["stack"],
             "bet": info.get("bet"),
             "is_hero": es_hero,

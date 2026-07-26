@@ -188,6 +188,44 @@ info = tr.update({"players": [{"stack": 50.0, "is_hero": True}], "board": [], "h
 check("un GameState sin 'seat' (ruta de diagnostico) no rastrea nada ni lanza",
       info["asientos"] == {})
 
+# --- el nombre no se pierde cuando el cliente lo tapa con el verbo ---------
+# El cliente sustituye el nick por la accion ("Pasar", "Igualar") JUSTO cuando el
+# jugador actua, que es cuando mas falta hace saber quien es. Se repone el ultimo
+# nombre bueno de ESA mano.
+print("\n# --- nombre pegajoso dentro de la mano ---")
+
+
+def con_nombre(nombre, accion, cartas=("Ah", "Kd")):
+    return {"board": [], "hero_cards": list(cartas), "to_call": None,
+            "players": [{"seat": "UL", "name": nombre, "action": accion,
+                         "stack": 50.0, "is_hero": False}]}
+
+
+tr = ht.HandTracker()
+s1 = con_nombre("Dav6934", None)
+ht.aplicar(s1, tr.update(s1))
+check("un nombre legible se muestra tal cual",
+      s1["players"][0]["name"] == "Dav6934" and not s1["players"][0].get("name_repuesto"))
+
+s2 = con_nombre(None, "Igualar")
+ht.aplicar(s2, tr.update(s2))
+check("cuando el cliente lo tapa con el verbo, se repone el nombre",
+      s2["players"][0]["name"] == "Dav6934")
+check("y se marca que viene repuesto, no leido",
+      s2["players"][0].get("name_repuesto") is True)
+
+s3 = con_nombre("otroNick", "Pasar")
+ht.aplicar(s3, tr.update(s3))
+check("una lectura buena del frame actual siempre manda sobre la repuesta",
+      s3["players"][0]["name"] == "otroNick")
+
+# EN ZOOM el cliente cambia de mesa entre manos, asi que el ocupante de un
+# asiento puede ser OTRA persona: reponer entre manos seria inventarse quien es.
+s4 = con_nombre(None, "Pasar", cartas=("7c", "2d"))
+ht.aplicar(s4, tr.update(s4))
+check("en una mano NUEVA no se repone (en Zoom el asiento puede ser de otro)",
+      s4["players"][0]["name"] is None)
+
 # --- integracion con el motor ---------------------------------------------
 # La propiedad que hace SEGURO el cambio: el comprometido solo puede convertir
 # una ABSTENCION en recomendacion, nunca cambiar una recomendacion que ya habia.
