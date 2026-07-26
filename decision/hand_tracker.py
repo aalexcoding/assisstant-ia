@@ -13,18 +13,23 @@ donde dibuje el cliente las fichas, asi que sobrevive a recalibrar un recuadro:
 esa clase de fallo ya ha mordido dos veces en este proyecto (el area del boton
 del dealer en pixeles absolutos, las zonas de apuesta).
 
-LO QUE MIDE ESTE MODULO, sobre 403 frames re-analizados de una sesion real, en
-los frames PREFLOP donde el boton pide mas de 1 BB (que son exactamente los que
-hoy hacen abstenerse al motor):
+LO QUE MIDE ESTE MODULO, re-analizando una sesion real entera (1.173 frames) con
+el codigo actual, en los 98 frames PREFLOP donde el boton pide mas de 1 BB (que
+son exactamente los que hoy hacen abstenerse al motor):
 
-    lo explica el importe leido en la mesa      41%
-    lo explica el comprometido derivado         65%
-    lo explica alguno de los dos                84%
-    sin explicar (el motor se abstiene)         16%   <- antes 59%
+    lo explica el importe leido en la mesa      35%
+    lo explica el comprometido derivado         59%
+    lo explica alguno de los dos                81%
+    sin explicar (el motor se abstiene)         19%   <- antes 65%
 
-Y cuando disparan las dos señales apuntan al MISMO asiento 7 de 8 veces, que es
+Y cuando disparan las dos señales apuntan al MISMO asiento 12 de 13 veces, que es
 la corroboracion que hace fiable la atribucion (son fuentes independientes: OCR
 del nameplate vs OCR de la zona de apuesta).
+
+De punta a punta, con el motor entero sobre esa sesion: las defensas
+(threebet_call) pasan de 13 a 33 y las recomendaciones de 278 a 298, y el cambio
+es PURAMENTE ADITIVO -20 nuevas, 0 cambiadas, 0 perdidas-, que es la propiedad
+que lo hace seguro de meter (fijada en test_hand_tracker.py).
 
 EL COMPROMETIDO ES UNA COTA INFERIOR, y de ahi sale todo el cuidado del modulo.
 Si la mano ya habia empezado cuando se vio al asiento por primera vez, la base

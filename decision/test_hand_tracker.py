@@ -191,8 +191,9 @@ check("un GameState sin 'seat' (ruta de diagnostico) no rastrea nada ni lanza",
 # --- integracion con el motor ---------------------------------------------
 # La propiedad que hace SEGURO el cambio: el comprometido solo puede convertir
 # una ABSTENCION en recomendacion, nunca cambiar una recomendacion que ya habia.
-# Medido sobre 663 frames reales: 12 nuevas, 0 cambiadas, 0 perdidas. Aqui se
-# fija con casos sinteticos para que no se pueda romper sin que salte un test.
+# Medido sobre una sesion real entera (1.173 frames): 20 nuevas, 0 cambiadas, 0
+# perdidas. Aqui se fija con casos sinteticos para que no se pueda romper sin que
+# salte un test.
 print("\n# --- el motor solo gana recomendaciones, no las cambia ---")
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "preflop"))
 import engine  # noqa: E402

@@ -139,24 +139,24 @@ calidad de las apuestas.
 tapete —que es lo que está fallando— se compara el stack de cada jugador entre
 frames: si baja de X a Y, ha puesto X−Y.
 
-#### El resultado, medido re-analizando 663 frames de una sesión real
+#### El resultado, re-analizando una sesión entera (1.173 frames) con el código actual
 
-En los frames **preflop donde el botón "Igualar" pide más de 1 BB**, que son
+En los 98 frames **preflop donde el botón "Igualar" pide más de 1 BB**, que son
 exactamente los que hoy hacían abstenerse al motor:
 
 | quién explica la subida | |
 |---|---|
-| el importe leído en la mesa | 41% |
-| el comprometido derivado | **65%** |
-| alguno de los dos | **84%** |
-| nadie (el motor se abstiene) | **16%** — antes 59% |
+| el importe leído en la mesa | 35% |
+| el comprometido derivado | **59%** |
+| alguno de los dos | **81%** |
+| nadie (el motor se abstiene) | **19%** — antes 65% |
 
 Y de punta a punta, con el motor entero: las **defensas (`threebet_call`) pasan
-de 6 a 18**, que era el agujero señalado en §2.0b (*"las 54 recomendaciones
-fueron `open_raise`, ninguna defensa"*). Las recomendaciones totales suben de 191
-a 203 sobre los mismos 663 frames.
+de 13 a 33** (2,5×), que era el agujero señalado en §2.0b (*"las 54
+recomendaciones fueron `open_raise`, ninguna defensa"*). Las recomendaciones
+totales suben de 278 a 298.
 
-**El cambio es puramente aditivo: 12 nuevas, 0 cambiadas, 0 perdidas.** Ninguna
+**El cambio es puramente aditivo: 20 nuevas, 0 cambiadas, 0 perdidas.** Ninguna
 recomendación que ya existía se altera. Está fijado como test.
 
 #### La regla de seguridad, que es lo que hace esto viable
@@ -175,8 +175,8 @@ Así, un comprometido inflado por una frontera que se pasó por alto no puede
 inventarse un raiser: sin botón que pida nada, no se mira. Y se exige además un
 único candidato, igual que ya hacía `detect_raiser`.
 
-Corroboración: cuando disparan las dos señales apuntan al **mismo asiento 7 de 8
-veces** (son fuentes independientes: OCR del nameplate vs OCR de la zona de
+Corroboración: cuando disparan las dos señales apuntan al **mismo asiento 12 de
+13 veces** (son fuentes independientes: OCR del nameplate vs OCR de la zona de
 apuesta). El HUD marca en verde lo comprometido cuando coinciden.
 
 #### Lo que se probó y NO funcionó, para que nadie lo repita
