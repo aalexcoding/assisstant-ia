@@ -1,6 +1,6 @@
 # Por dónde vamos
 
-Punto de retomada a **2026-07-26**, HEAD `c8a8ef0`. El detalle de cada tarea
+Punto de retomada a **2026-07-26**, HEAD `2442ada`. El detalle de cada tarea
 pendiente está en [`PENDIENTE.md`](PENDIENTE.md); esto es el mapa de arriba: qué
 está hecho, qué toca ahora y qué depende de ti.
 
@@ -24,7 +24,7 @@ está hecho, qué toca ahora y qué depende de ti.
 Y dos que conviene: el selector **Mesa** en `3-Max` si juegas eso, y la casilla
 **"Grabar sesión de testing"** antes de darle a iniciar.
 
-La suite completa (484 checks):
+La suite completa (528 checks):
 
 ```bash
 for t in test_testing_session.py test_gui_notas.py \
@@ -32,13 +32,16 @@ for t in test_testing_session.py test_gui_notas.py \
          decision/test_bugfixes_bb.py decision/test_equity.py \
          decision/test_hand_eval.py decision/test_hand_strength.py \
          decision/preflop/test_actions.py decision/preflop/test_derive.py \
-         decision/preflop/test_lookup.py \
+         decision/preflop/test_lookup.py decision/rag/test_postmano.py \
          vision/test_hand_result.py vision/test_in_hand.py \
          vision/test_ocr_pool.py vision/test_seat_watch.py \
          vision/test_table_reference.py; do
-  printf '%-34s ' "$t"; .venv/bin/python "$t" | tail -1
+  printf '%-34s ' "$t"; .venv/bin/python "$t" 2>/dev/null | tail -1
 done
 ```
+
+Y una casilla más que conviene conocer: **HUD**, que deja solo la recomendación,
+la equity y la mano actual, para tenerla al lado de la mesa.
 
 ---
 
@@ -109,6 +112,10 @@ En orden cronológico, con el commit:
 | `1c8ca96` | **Buffer** de captura rápida + **historial de acciones** |
 | `7ee31a2` | **Workers de OCR persistentes** |
 | `c8a8ef0` | **Fase E**: frente a un limp con el hero fuera de las ciegas |
+| `40d1f7f` | Separar lo **comprometido por calle**, no solo por mano |
+| `87464f1` | **Fase E: squeeze**, y el raiser que habla después del hero |
+| `c625293` | Recortes al worker en memoria: fuera el directorio temporal |
+| `2442ada` | **RAG de estudio post-mano** y **modo HUD** |
 
 ### Los números que cambiaron
 
@@ -119,6 +126,7 @@ En orden cronológico, con el commit:
 | preflop decidible con recomendación | 20% | **89%** |
 | defensas (`threebet_call`) en una sesión | 6 | **33** |
 | `CHECK (BB option)` sin mirar las cartas | 36% de las recomendaciones | **0** |
+| defensas contra un raiser imposible | 67 de 134 atribuciones | **0** (guarda estructural) |
 
 ---
 
