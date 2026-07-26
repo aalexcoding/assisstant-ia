@@ -119,10 +119,20 @@ def motivos_de_frontera(previo, actual):
     `previo`. Los dos son vistas de _vista(). Pura a proposito: es lo que permite
     medir cada señal por separado contra las sesiones grabadas.
 
-      "cartas"      las cartas del hero son otras. La mas fuerte que hay: que
-                    salgan las mismas dos en dos manos seguidas es 1 entre 1326.
-                    Precisa pero de poco alcance: el hero se retira mucho y sin
-                    cartas no dice nada (2 cortes en 267 frames).
+      "cartas_aparecen"  el hero pasa de no tener cartas a tener dos: le acaban
+                    de repartir, o sea que empieza una mano. NO se puede
+                    encadenar con la mano anterior porque entre manos las cartas
+                    siempre se recogen. Medido: 35 de 52 cortes reales, CERO
+                    disparos sin respaldo.
+      "cartas"      las cartas del hero son otras de un frame al siguiente.
+                    PARECIA la señal mas fuerte -que salgan las mismas dos en dos
+                    manos seguidas es 1 entre 1326- y medida es de las peores: en
+                    tres sesiones acerto 3 de 52 cortes, y en una de ellas los 4
+                    disparos fueron TODOS falsos. El motivo es que el OCR lee mal
+                    una carta del hero el 2,4% de los frames, y ahi la señal ve
+                    una mano nueva donde solo hay una lectura floja. NO CORTA, y
+                    ademas es redundante: "cartas_aparecen" cubre el mismo caso
+                    sin el ruido.
       "mano_chat"   cambio el numero de mano del chat. Es el numero de la ultima
                     mano TERMINADA, o sea una etiqueta estable de la mano en
                     curso, y se lee en el 70% de los frames (13 cortes en 267).
@@ -131,8 +141,13 @@ def motivos_de_frontera(previo, actual):
       "board"       los dos boards (de longitud legal) comparten menos de
                     BOARD_COMUNES_MIN cartas. NO CORTA: medido, 3 de 3 de sus
                     cortes no tenian respaldo ni del chat ni de las cartas.
-      "board_vacio" habia board y ahora no hay. NO CORTA: se dispara igual cuando
-                    el OCR pierde el board un frame, que pasa a menudo.
+      "board_vacio" habia board (de longitud legal) y ahora no hay ninguna carta.
+                    Se descarto en la primera medicion, sobre 267 frames, por
+                    miedo a que el OCR perdiera el board un frame. Con 3.300
+                    frames de tres sesiones resulta ser de las mejores: 35 de 52
+                    cortes reales y CERO disparos sin respaldo. Se probo exigir 3
+                    frames vacios seguidos y no mejora (67 aciertos frente a 68) y
+                    obliga a mirar al futuro, asi que se deja causal.
       "stack_sube"  algun stack subio mas de lo que absorbe el redondeo. Parecia
                     la señal ideal -en poker solo se ganan fichas al acabar la
                     mano- pero NO CORTA: mirando las 12 subidas dentro de manos
@@ -144,6 +159,8 @@ def motivos_de_frontera(previo, actual):
     motivos = set()
 
     hp, ha = previo["hero_cards"], actual["hero_cards"]
+    if len(hp) == 0 and len(ha) == 2:
+        motivos.add("cartas_aparecen")
     if len(hp) == 2 and len(ha) == 2 and set(hp) != set(ha):
         motivos.add("cartas")
 
@@ -169,7 +186,28 @@ def motivos_de_frontera(previo, actual):
 # Las señales que CORTAN de verdad. Las otras se calculan y se exponen, pero no
 # resetean el seguimiento: ver motivos_de_frontera para la medicion que descarto
 # a cada una.
-MOTIVOS_DE_CORTE = frozenset({"cartas", "mano_chat"})
+#
+# Elegidas midiendo contra el numero de mano del chat sobre 3.300 frames de tres
+# sesiones. Comparando juegos de señales por cuantos cortes REALES detectan:
+#
+#     chat + cartas distintas   (lo de antes)      44/75  = 59%
+#     chat + cartas_aparecen                       58/75  = 77%
+#     chat + cartas_aparecen + board_vacio         68/75  = 91%
+#     ...y añadir "cartas distintas" a eso         68/75  = 91%, +1 falso
+#
+# O sea que "cartas distintas" no aporta un solo corte que las otras no vean, y
+# si aporta ruido. Fuera.
+MOTIVOS_DE_CORTE = frozenset({"mano_chat", "cartas_aparecen", "board_vacio"})
+
+# Frames minimos que tiene que durar una mano antes de poder cortarla otra vez.
+#
+# Las señales de frontera se solapan a proposito -el board se vacia, se reparten
+# cartas y el chat cambia el numero, todo en un par de segundos- asi que UNA
+# frontera real dispara varias veces seguidas. Sin este minimo, cada disparo abre
+# una mano: medido, el rastreador veia 110 manos donde el chat contaba 53. Una
+# mano de verdad no dura dos frames, asi que ignorar los cortes inmediatos no
+# pierde ninguna.
+MIN_FRAMES_POR_MANO = 4
 
 
 class _Asiento:
@@ -260,6 +298,7 @@ class HandTracker:
         # otra persona. Dentro de una mano el asiento no cambia de dueño, que es
         # justo el alcance en el que fijar el nombre es seguro.
         self._nombres = {}
+        self._veces = {}           # en cuantos frames de la mano se vio cada asiento
         self._calle = 0            # cartas de board de la calle en curso
         self._frames = 0
         self._motivos = frozenset(motivos)
@@ -269,7 +308,7 @@ class HandTracker:
         modifica el state (para eso esta aplicar())."""
         actual = _vista(state, hand_number)
         motivos = motivos_de_frontera(self._previo, actual) if self._previo else frozenset()
-        if motivos & MOTIVOS_DE_CORTE:
+        if motivos & MOTIVOS_DE_CORTE and self._frames >= MIN_FRAMES_POR_MANO:
             self._abrir(motivos)
         self._previo = actual
         self._frames += 1
@@ -292,10 +331,12 @@ class HandTracker:
             a = self._asientos.get(seat)
             if a is None:
                 a = self._asientos[seat] = _Asiento()
+                self._veces[seat] = 0
                 # si el asiento aparece en el PRIMER frame de la mano hay al menos
                 # la posibilidad de haberle visto el stack intacto; si aparece mas
                 # tarde, seguro que se perdio algo de lo que ya habia puesto
                 self._meta[seat] = {"desde_el_principio": self._frames == 1}
+            self._veces[seat] = self._veces.get(seat, 0) + 1
             a.leer(p.get("stack") if isinstance(p.get("stack"), (int, float)) else None)
             if p.get("name"):
                 self._nombres.setdefault(seat, {})
@@ -309,6 +350,26 @@ class HandTracker:
                 bet_leido=p.get("bet") if isinstance(p.get("bet"), (int, float)) else None)
 
         return self.resumen()
+
+    def asientos_estables(self):
+        """Asientos que se han visto ocupados en al menos la MITAD de los frames
+        de esta mano. Es lo que hay que usar para contar jugadores, porque las
+        posiciones salen de ese recuento y un asiento que parpadea las desplaza
+        todas.
+
+        Por que la mitad y no la union de todo lo visto: medido sobre 2.811
+        frames, comparando contra el conjunto de asientos MODAL de cada mano, la
+        UNION acierta el 72,5% -acumula cada falso positivo y ya no lo suelta- y
+        la mayoria el 89,2%, frente al 85,7% de la lectura cruda. Y en lo que de
+        verdad importa, la estabilidad de la posicion del hero dentro de la mano,
+        baja los cambios del 3,9% al 1,8%.
+
+        Nadie se levanta a mitad de mano, asi que dentro de una mano el conjunto
+        es constante por las reglas del juego: lo que se mide aqui es ruido de
+        lectura, no gente entrando y saliendo."""
+        if not self._veces:
+            return set()
+        return {s for s, v in self._veces.items() if v * 2 >= self._frames}
 
     def resumen(self):
         asientos = {}

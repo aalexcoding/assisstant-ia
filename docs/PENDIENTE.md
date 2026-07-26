@@ -668,7 +668,59 @@ Estas notas son **exactamente las etiquetas que le faltan al proyecto** (§2.3b)
 cada una es un caso real, elegido porque algo no cuadraba, con el frame y el
 estado calculado al lado, generado jugando y sin sesiones de etiquetado aparte.
 
-### 2.3c · ⭐ Estabilizar la lectura entre frames — medido y priorizado
+### 2.3c · Estabilizar la lectura entre frames — 🟡 los dos primeros hechos
+
+**Hechos: la frontera de mano y el recuento de asientos.** Lo que queda de la
+tabla de abajo: board, `facing`, `in_hand`, cartas del hero y stack.
+
+#### La frontera de mano: 59% → 92% de aciertos
+
+Se eligieron las señales midiendo contra el número de mano del chat sobre 3.300
+frames de tres sesiones:
+
+| juego de señales | cortes reales detectados |
+|---|---|
+| `chat` + cartas distintas (lo que había) | 44/75 = **59%** |
+| `chat` + cartas que aparecen | 58/75 = 77% |
+| `chat` + cartas aparecen + board vacío | **68/75 = 91%** |
+| …y añadir "cartas distintas" a eso | 68/75, **+1 falso** |
+
+Dos conclusiones que contradicen lo que se creía:
+
+- **"Cartas distintas" era de las peores señales**, no la mejor. Acierta 3 de 52,
+  y en una sesión sus 4 disparos fueron **todos falsos**: el OCR lee mal una carta
+  del hero el 2,4% de los frames y ahí ve una mano nueva donde solo hay una
+  lectura floja. Además es redundante — "cartas que aparecen" cubre el caso sin
+  el ruido. **Retirada.**
+- **"El board se vacía" se había descartado por miedo**, sobre 267 frames. Con
+  3.300 resulta ser de las mejores: 35 de 52 y **cero** disparos sin respaldo.
+
+Y un **mínimo de 4 frames por mano**, porque las señales se solapan (el board se
+vacía, se reparten cartas y el chat cambia el número en un par de segundos) y sin
+él una frontera real abría varias manos: el rastreador veía **110 manos donde el
+chat contaba 53**.
+
+#### El recuento de asientos: la posición del hero pasa de 3,9% a 1,8% de cambios
+
+`hand_tracker.asientos_estables()` devuelve los asientos vistos en **al menos la
+mitad** de los frames de la mano, y `analyze_layout` los acepta como parámetro:
+mandan sobre lo que se lea en un frame concreto. Nadie se levanta a mitad de
+mano, así que el conjunto es constante por las reglas del juego y lo que varía es
+ruido.
+
+Medido sobre 2.811 frames contra el conjunto **modal** de cada mano:
+
+| criterio | acierta |
+|---|---|
+| lectura cruda (lo que había) | 85,7% |
+| **unión** de todo lo visto | **72,5%** ← peor: acumula cada falso positivo |
+| **mayoría** | **89,2%** |
+
+La unión era la opción intuitiva y es la mala.
+
+---
+
+### 2.3c-bis · Lo que queda por estabilizar — medido y priorizado
 
 La lección del nombre que bailaba generaliza: **casi todo lo que se lee tiene una
 invariante dentro de una mano**, y cada violación es un error detectable sin

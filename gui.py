@@ -249,7 +249,10 @@ class AnalysisWorker(threading.Thread):
         """Un ciclo de analisis completo sobre un recorte ya validado."""
         t0 = time.perf_counter()
         cv2.imwrite(TMP_FRAME_PATH, crop)
-        state = ts.analyze_layout(TMP_FRAME_PATH, max_players=self.max_players)
+        # los asientos estables de la mano en curso se realimentan al
+        # reconocimiento: ver table_state.analyze_layout
+        state = ts.analyze_layout(TMP_FRAME_PATH, max_players=self.max_players,
+                                  asientos_estables=self.tracker.asientos_estables())
         # la referencia del tapete se guarda para el lazo rapido, que no puede
         # permitirse recalcularla (29 ms) diez veces por segundo
         try:

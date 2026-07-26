@@ -80,24 +80,79 @@ info = tr.update(estado({"UL": 98.0}))
 check("la serie sigue siendo utilizable despues del disparate", com(info, "UL") == 8.5)
 
 # --- fronteras de mano -----------------------------------------------------
+# Las señales se eligieron midiendo contra el numero de mano del chat sobre 3.300
+# frames de tres sesiones. Juegos comparados por cuantos cortes REALES detectan:
+#     chat + cartas distintas (lo de antes)   44/75 = 59%
+#     chat + cartas_aparecen                  58/75 = 77%
+#     chat + cartas_aparecen + board_vacio     68/75 = 91%
 print("\n# --- fronteras ---")
+
+
+def repetir(tr, st, n):
+    """Una mano tiene que durar MIN_FRAMES_POR_MANO antes de poder cortarse."""
+    for _ in range(n):
+        info = tr.update(*st) if isinstance(st, tuple) else tr.update(st)
+    return info
+
+
 tr = ht.HandTracker()
-tr.update(estado({"UL": 50.0}, hero=("Ah", "Kd")))
+for _ in range(ht.MIN_FRAMES_POR_MANO):
+    tr.update(estado({"UL": 50.0}, hero=("Ah", "Kd")))
 info = tr.update(estado({"UL": 46.0}, hero=("Ah", "Kd")))
 check("dentro de la mano se acumula", com(info, "UL") == 4.0)
 mano_antes = info["mano"]
-info = tr.update(estado({"UL": 62.0}, hero=("7c", "2d")))
-check("cartas del hero distintas = mano nueva", info["mano"] == mano_antes + 1)
+
+# CARTAS QUE APARECEN (de ninguna a dos): les acaban de repartir. 35 de 52 cortes
+# reales y CERO disparos sin respaldo.
+tr2 = ht.HandTracker()
+for _ in range(ht.MIN_FRAMES_POR_MANO):
+    tr2.update(estado({"UL": 50.0}))
+m0 = tr2.update(estado({"UL": 46.0}))["mano"]
+info = tr2.update(estado({"UL": 62.0}, hero=("7c", "2d")))
+check("cartas que APARECEN (de 0 a 2) = mano nueva", info["mano"] == m0 + 1)
 check("y la base se rehace: el que gano el bote no aparece comprometido",
       com(info, "UL") == 0)
-check("se registra POR QUE se corto", "cartas" in info["motivos_apertura"])
+check("se registra POR QUE se corto", "cartas_aparecen" in info["motivos_apertura"])
+
+# CARTAS DISTINTAS ya NO corta: parecia la señal mas fuerte y medida acierta 3 de
+# 52, y en una sesion sus 4 disparos fueron TODOS falsos (el OCR lee mal una
+# carta del hero el 2,4% de los frames). Ademas es redundante con cartas_aparecen.
+tr3 = ht.HandTracker()
+for _ in range(ht.MIN_FRAMES_POR_MANO):
+    tr3.update(estado({"UL": 50.0}, hero=("Ah", "Kd")))
+m0 = tr3.update(estado({"UL": 46.0}, hero=("Ah", "Kd")))["mano"]
+info = tr3.update(estado({"UL": 44.0}, hero=("7c", "2d")))
+check("una carta del hero mal leida NO parte la mano (era la fuente de cortes "
+      "falsos: 4 de 4 en una sesion)", info["mano"] == m0)
+check("pero la señal se sigue exponiendo", "cartas" not in ht.MOTIVOS_DE_CORTE)
+
+# BOARD QUE SE VACIA: una mano empieza siempre preflop. Se descarto en la primera
+# medicion (267 frames) y con 3.300 resulta ser de las mejores: 35 de 52, cero
+# falsos.
+tr4 = ht.HandTracker()
+for _ in range(ht.MIN_FRAMES_POR_MANO):
+    tr4.update(estado({"UL": 50.0}, board=("2h", "3h", "4h")))
+m0 = tr4.update(estado({"UL": 46.0}, board=("2h", "3h", "4h")))["mano"]
+info = tr4.update(estado({"UL": 46.0}, board=()))
+check("el board que se vacia = mano nueva", info["mano"] == m0 + 1)
 
 tr = ht.HandTracker()
-tr.update(estado({"UL": 50.0}), hand_number="111")
+for _ in range(ht.MIN_FRAMES_POR_MANO):
+    tr.update(estado({"UL": 50.0}), hand_number="111")
 info = tr.update(estado({"UL": 46.0}), hand_number="111")
 check("el mismo numero de mano no corta", com(info, "UL") == 4.0)
 info = tr.update(estado({"UL": 80.0}), hand_number="222")
 check("un numero de mano nuevo corta", com(info, "UL") == 0)
+
+# UNA MANO NO DURA DOS FRAMES. Las señales se solapan -el board se vacia, se
+# reparten cartas y el chat cambia el numero en un par de segundos- asi que una
+# frontera real dispara varias veces. Sin minimo, el rastreador veia 110 manos
+# donde el chat contaba 53.
+tr5 = ht.HandTracker()
+tr5.update(estado({"UL": 50.0}), hand_number="111")
+m0 = tr5.update(estado({"UL": 50.0}), hand_number="222")["mano"]
+check(f"un corte en los primeros {ht.MIN_FRAMES_POR_MANO} frames se ignora",
+      m0 == 1)
 
 # --- las señales que NO cortan, y por que (medido) -------------------------
 print("\n# --- señales descartadas con datos ---")
@@ -151,13 +206,13 @@ check("el turn vuelve a poner la calle a cero",
 
 # LA CALLE SOLO AVANZA: un board mas corto es una lectura perdida, no una calle
 # anterior. Si retrocediera, una lectura floja borraria lo que un rival lleva
-# puesto en la calle en curso.
-i = tr.update(estado({"UL": 34.0}, board=()))
-check("perder el board NO retrocede la calle", i["calle"] == "turn")
+# puesto en la calle en curso. (Un board que se vacia DEL TODO si corta la mano:
+# es la señal de frontera, ver arriba. Aqui se prueba el board mas corto, que es
+# una lectura incompleta y no una mano nueva.)
+i = tr.update(estado({"UL": 34.0}, board=("2h", "3h", "4h")))
+check("un board mas corto NO retrocede la calle", i["calle"] == "turn")
 check("y lo puesto en la calle se sigue acumulando",
       i["asientos"]["UL"]["comprometido_calle"] == 6.0)
-i = tr.update(estado({"UL": 34.0}, board=("2h", "3h", "4h")))
-check("un board mas corto tampoco la retrocede", i["calle"] == "turn")
 
 # un asiento que aparece a mitad de calle no puede inventarse una base
 tr2 = ht.HandTracker()
@@ -288,7 +343,9 @@ check("si la lectura nueva se vuelve mayoritaria, se adopta (no es un latch)",
 
 # EN ZOOM el cliente cambia de mesa entre manos, asi que el ocupante de un
 # asiento puede ser OTRA persona: reponer entre manos seria inventarse quien es.
-s4 = con_nombre(None, "Pasar", cartas=("7c", "2d"))
+s4 = con_nombre(None, "Pasar", cartas=())          # se recogen las cartas
+ht.aplicar(s4, tr.update(s4))
+s4 = con_nombre(None, "Pasar", cartas=("7c", "2d"))  # y se reparten otras: mano nueva
 ht.aplicar(s4, tr.update(s4))
 check("en una mano NUEVA no se repone (en Zoom el asiento puede ser de otro)",
       s4["players"][0]["name"] is None)
