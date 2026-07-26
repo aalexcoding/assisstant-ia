@@ -17,8 +17,8 @@ de cada tarea. El plan completo del que sale todo está en
 | 4.1 · Preflop determinista | ✅ la pieza más sólida; + capa derivada para la BB (§1.3) |
 | 4.2 · Transcripción | ✅ 127 vídeos, 5162 chunks |
 | 4.3 · Postflop | ✅ equity por Monte Carlo, validada y cableada al HUD |
-| 4.4 · RAG (estudio post-mano) | 🟡 índice construido, sin cablear |
-| 5 · HUD | 🟡 panel de control, no el HUD anclado del spec |
+| 4.4 · RAG (estudio post-mano) | ✅ cableado al panel "Mano anterior" |
+| 5 · HUD | ✅ modo HUD (casilla) que deja solo lo que se mira en mano |
 | 6 · Flatpak | ❌ |
 | 7 · Validación | 🟡 16 scripts de test (484 checks) + modo testing; sin corpus etiquetado |
 
@@ -741,8 +741,14 @@ de subcadena solo a entradas de ≥6 caracteres).
 
 - **RAG en tiempo real.** Recuperar transcripciones de vídeo para justificar una
   acción en una mano en vivo sería presentar prosa recuperada como consejo sobre
-  *ese* board concreto: inverificable. El índice se conserva para **estudio
-  post-mano** (Fase 4.4), donde la latencia no importa y el marco es honesto.
+  *ese* board concreto: inverificable. El índice se usa solo para **estudio
+  post-mano** (`decision/rag/postmano.py`, ✅ hecho): al terminar la mano ofrece
+  vídeos que hablan de situaciones *parecidas*, con el minuto exacto para poder
+  comprobarlo, y el texto dice que no son de esa mano. La consulta se construye
+  **solo con lo observado** —board, textura, mano ganadora, si hubo showdown—;
+  enriquecerla con iniciativa o tipo de rival buscaría una mano que no es la que
+  se jugó. Y hay umbral de similitud: sin él, una mano rara acabaría con tres
+  referencias irrelevantes presentadas como si vinieran a cuento.
 - **Multiplicador posicional sobre la equity.** El número de rivales ya está
   modelado simulándolos, así que multiplicar por un factor extra lo contaría dos
   veces; y la posición no cambia la equity sino su *realización*, para lo que no

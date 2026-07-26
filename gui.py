@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.join(BASE_DIR, "capture"))
 sys.path.insert(0, os.path.join(BASE_DIR, "vision"))
 sys.path.insert(0, os.path.join(BASE_DIR, "decision"))
 sys.path.insert(0, os.path.join(BASE_DIR, "decision", "preflop"))
+sys.path.insert(0, os.path.join(BASE_DIR, "decision", "rag"))
 
 import cv2
 
@@ -36,6 +37,7 @@ import hand_result as hr
 import hand_strength as hstr
 import action_log as alog
 import hand_tracker
+import postmano
 from ocr_client import OcrBatch, cerrar_workers
 from text_extract import parse_tsv_lines
 import portal_capture as pc
@@ -391,6 +393,9 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # el panel en cada frame de la misma mano (evita el parpadeo).
         self._hero_name = None
         self._prev_hand_sig = None
+        # ultimo board visto de la mano en curso, para el estudio post-mano: al
+        # terminar la mano el board ya no esta en pantalla
+        self._ultimo_board = []
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         root.set_margin_top(16)
@@ -399,14 +404,21 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         root.set_margin_end(16)
         self.set_child(root)
 
-        root.append(self._build_state_frame())
-        root.append(self._build_hand_frame())
-        root.append(self._build_equity_frame())
-        root.append(self._build_recommendation_frame())
-        root.append(self._build_prev_hand_frame())
-        root.append(self._build_note_frame())
-        root.append(self._build_controls())
-        root.append(self._build_status_frame())
+        # Los paneles que el modo HUD esconde. La recomendacion, la equity y la
+        # mano actual se quedan: son lo unico que se mira en plena mano.
+        estado = self._build_state_frame()
+        mano = self._build_hand_frame()
+        equity = self._build_equity_frame()
+        reco = self._build_recommendation_frame()
+        anterior = self._build_prev_hand_frame()
+        nota = self._build_note_frame()
+        controles = self._build_controls()
+        avisos = self._build_status_frame()
+
+        for w in (estado, mano, equity, reco, anterior, nota, controles, avisos):
+            root.append(w)
+        self.hud = False
+        self._paneles_secundarios = (estado, anterior, nota, avisos)
 
         self._refresh_region_label()
         self.connect("close-request", self._on_close)
@@ -742,8 +754,41 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.mark_button.set_sensitive(True)
         return False
 
+    def _on_hud(self, boton):
+        """Modo HUD: deja solo lo que se mira en plena mano -la orden, la equity y
+        la mano actual- y esconde lo demas.
+
+        No es una ventana aparte: es la MISMA, con paneles ocultos y siempre
+        encima. Una ventana nueva significaria duplicar el cableado de cada
+        widget y tener dos sitios donde arreglar cada cosa; y en Wayland no se
+        puede posicionar una ventana desde la aplicacion, asi que "anclarla bajo
+        el recuadro" no depende de nosotros de todos modos: la coloca el usuario
+        una vez y se queda encima."""
+        self.hud = boton.get_active()
+        for panel in self._paneles_secundarios:
+            panel.set_visible(not self.hud)
+        self.set_title("Poker Assistant IA" + (" — HUD" if self.hud
+                                               else " - Panel de control"))
+        try:
+            # always-on-top: en X11 lo aplica el gestor de ventanas; en Wayland
+            # muchos compositores lo ignoran, asi que no se puede prometer.
+            surface = self.get_surface()
+            if surface is not None and hasattr(surface, "set_keep_above"):
+                surface.set_keep_above(self.hud)
+        except Exception:  # noqa: BLE001
+            pass
+        if self.hud:
+            self.set_default_size(420, 320)
+
     def _build_controls(self):
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+
+        # Modo HUD: se esconde todo menos lo que se mira en plena mano.
+        self.hud_check = Gtk.CheckButton(label="HUD")
+        self.hud_check.set_tooltip_text(
+            "Deja solo la recomendacion, la equity y la mano actual, y pone la "
+            "ventana encima. Para tenerla al lado de la mesa mientras juegas.")
+        self.hud_check.connect("toggled", self._on_hud)
 
         self.start_button = Gtk.Button(label="Iniciar analisis")
         self.start_button.connect("clicked", self._on_toggle)
@@ -782,6 +827,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             "dijo lo que dijo. Se activa al iniciar el analisis.")
 
         box.append(self.start_button)
+        box.append(self.hud_check)
         box.append(self.calibrate_button)
         box.append(mesa_label)
         box.append(self.mesa_combo)
@@ -988,6 +1034,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         pot = state.get("pot")
         self.pot_label.set_markup(f"Bote: {GLib.markup_escape_text(str(pot))}" if pot is not None
                                   else "Bote: <i>-</i>")
+        if state.get("board"):
+            self._ultimo_board = list(state["board"])
         self.players_label.set_markup(players_markup(state.get("players")))
         acc = (state.get("acciones") or {}).get("acciones") or []
         if acc:
@@ -1138,9 +1186,47 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             # sin evidencia de si el hero jugo la mano: no se afirma nada
             self.prev_hero_label.set_markup("")
 
+        # ESTUDIO POST-MANO (Fase 4.4). Se lanza en un hilo porque la primera
+        # consulta carga el modelo de embeddings y tarda segundos; la mano ya ha
+        # terminado, asi que la latencia no importa.
         self.prev_coach_label.set_markup(
-            '<span size="small" foreground="#95a5a6"><i>Tu juego y como mejorar: '
-            '(analisis del RAG postflop — pendiente)</i></span>')
+            '<span size="small" foreground="#95a5a6"><i>buscando videos sobre '
+            'situaciones parecidas...</i></span>')
+        board = list(self._ultimo_board)
+        ganadora = result.get("winning_hand")
+        showdown = bool(result.get("showdown"))
+        threading.Thread(target=self._buscar_estudio, args=(board, ganadora, showdown),
+                         daemon=True).start()
+        return False
+
+    def _buscar_estudio(self, board, ganadora, showdown):
+        try:
+            r = postmano.estudiar(board=board, mano_ganadora=ganadora,
+                                  hero_en_showdown=showdown)
+        except Exception:  # noqa: BLE001 - estudiar nunca puede tumbar la UI
+            r = None
+        GLib.idle_add(self.on_estudio, r)
+
+    def on_estudio(self, r):
+        """Pinta las referencias de estudio. NO es consejo sobre la mano que se
+        acaba de jugar -es prosa recuperada por parecido semantico- y el texto lo
+        dice: se ofrece el video y el minuto para poder comprobarlo."""
+        refs = (r or {}).get("referencias") or []
+        if not refs:
+            self.prev_coach_label.set_markup(
+                '<span size="small" foreground="#95a5a6"><i>Sin videos que se parezcan '
+                'lo bastante a esta mano.</i></span>')
+            return False
+        esc = GLib.markup_escape_text
+        lineas = ['<span size="small" foreground="#95a5a6">Para repasar, videos que hablan '
+                  'de situaciones <i>parecidas</i> (no de esta mano):</span>']
+        for x in refs:
+            nombre = (x["video"] or "").replace("_", " ")
+            if len(nombre) > 70:
+                nombre = nombre[:70] + "..."
+            lineas.append(f'<span size="small">&#8226; {esc(nombre)} '
+                          f'<b>{esc(postmano.minuto(x["inicio_s"]))}</b></span>')
+        self.prev_coach_label.set_markup("\n".join(lineas))
         return False
 
     def _on_close(self, *_a):

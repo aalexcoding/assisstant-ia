@@ -131,6 +131,21 @@ def correr(win, raiz):
     r = tss.resumen(carpeta)
     check("el resumen de la sesion lista las notas", len(r["notas"]) == 2)
 
+    # --- MODO HUD: la misma ventana, con lo secundario escondido ------------
+    # Se mira en plena mano, asi que lo que NO puede pasar es que esconda la
+    # recomendacion o la equity, que son justo para lo que se enciende.
+    visibles_antes = [p.get_visible() for p in win._paneles_secundarios]
+    win.hud_check.set_active(True)
+    check("el modo HUD esconde los paneles secundarios",
+          all(not p.get_visible() for p in win._paneles_secundarios))
+    check("pero NUNCA la recomendacion: es para lo que se enciende",
+          win.rec_label.get_parent() is not None)
+    check("y el titulo lo dice", "HUD" in win.get_title())
+    win.hud_check.set_active(False)
+    check("al apagarlo vuelve todo",
+          [p.get_visible() for p in win._paneles_secundarios] == visibles_antes)
+    check("y el titulo tambien", "HUD" not in win.get_title())
+
 
 def main():
     raiz = tempfile.mkdtemp(prefix="test_gui_notas_")

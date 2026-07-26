@@ -61,18 +61,16 @@ destapó un bug real y se arregló el mismo día.
 
 ### 2. Lo que se puede hacer sin ti
 
-Por valor:
+Ya no queda casi nada de la lista anterior: se hicieron todas (comprometido por
+calle, squeeze, recortes en memoria, RAG post-mano y modo HUD). Lo que queda:
 
-- **Separar lo comprometido por calle** (`hand_tracker`). Hoy es un total de la
-  mano; separarlo es lo que permite distinguir un squeeze de una resubida con
-  certeza, y es lo que le falta a la Fase E para los spots de defensa.
-- **Fase E: squeeze y ciega vs ciega**. Las dos últimas situaciones derivables
-  de `ranges.json` sin capturas nuevas.
-- **Pasar los recortes al worker de OCR en memoria** en vez de por PNG temporal:
-  escribir los PNG es ahora 0,12 s del ciclo, el segundo coste después del OCR.
-- **RAG post-mano** (Fase 4.4): 5.162 chunks indexados y sin cablear. El hueco en
-  el panel "Mano anterior" ya está preparado.
-- **HUD de verdad**: sin bordes, always-on-top, anclado bajo el recuadro.
+- **Fase E: ciega vs ciega y 4bet**. El 4bet necesita capturas tuyas (ver abajo);
+  el de ciega vs ciega hay que estudiarlo, porque `threebet_call` ya cubre BB vs
+  SB y no está claro que haya hueco real.
+- **Cachear el chat** por hash de la zona: valdría 0,55 s cuando acierta, pero
+  solo es idéntico al frame anterior el 38% de las veces.
+- **Corpus etiquetado** (`score_samples.py`): comparar contra etiquetas para
+  poder tocar los ~15 umbrales de `vision/seat_map.py` con red.
 
 ### 3. La inversión de mayor retorno que queda — **también tuya**
 
