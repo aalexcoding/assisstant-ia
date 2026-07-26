@@ -300,6 +300,26 @@ check("el tapete pelado no da ningun asiento con cartas",
 check("y cada dorso se cuenta en SU asiento",
       seat_map.detect_in_hand_seats(mesa_con_dorso("UR", DORSOS["naranja"]), REF) == {"UR"})
 
+print("\n# --- el mazo nuevo lee el rango con UNA sola vista ---")
+# Una segunda vista mete mas error del que quita, y las dos posibles estan
+# medidas: la mascara completa fabrica dieces fantasma (T al 10,4%) y el rango
+# aislado con cierre morfologico pierde el trazo fino del 8 y lo lee 3 -el 8
+# desaparecio de la baraja, 0% de las lecturas en una sesion entera-.
+class _Batch:
+    def __init__(self): self.n = 0
+    def job_count(self): return self.n
+    def add_text_job(self, *a, **k): self.n += 1
+
+
+carta_g = mesa(1, ["spade"])[40:40 + ALTO_CARTA, 60:60 + ANCHO_CARTA]
+b = _Batch(); color_rank_ocr.add_rank_jobs(b, carta_g, deck="glyph")
+check("el mazo de cara blanca encola UNA vista (una tanda de variantes)",
+      b.n == len(color_rank_ocr.PSM_SCALE_VARIANTS))
+b2 = _Batch(); color_rank_ocr.add_rank_jobs(b2, carta_vieja, deck="solid")
+check("el de fondo solido sigue encolando DOS (ancla + close), que ahi si suman",
+      b2.n == 2 * len(color_rank_ocr.PSM_SCALE_VARIANTS))
+check("y por tanto el mazo nuevo cuesta la mitad de OCR por carta", b.n < b2.n)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

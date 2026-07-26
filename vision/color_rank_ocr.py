@@ -36,11 +36,25 @@ Dos mejoras validadas contra 543 recortes reales etiquetados a mano
    engrosar el glifo -a diferencia de dilatar, que fusionaba los lobulos del 3-.
    El acierto por carta pasa de ~82% a ~88%.
 
-   glyph: al reves. Esta carta trae el rango DOS veces (grande y en la esquina)
-   y el pip mide casi lo mismo que el rango, asi que la mascara completa se lee
-   mal: 32 de 40 cartas etiquetadas. El ancla es el rango aislado por POSICION
-   (_fila_de_arriba), que en esas 40 no se equivoca ni una vez, y la mascara
-   completa solo desempata las que la aislada deja en blanco: 40 de 40.
+   glyph: UNA SOLA VISTA, el rango aislado por POSICION (_fila_de_arriba). Aqui
+   cualquier segunda vista mete mas error del que quita, y se probaron las dos
+   posibles. La mascara de carta completa fabrica DIECES FANTASMA, porque trae
+   los pips y un rombo o un corazon se leen como "0" detras de un rango que
+   parece "1" (T al 10,4% cuando le toca el 7,7%). Y el rango aislado con cierre
+   morfologico REESCALA Y UMBRALIZA, y en esta tipografia el 8 tiene el trazo
+   izquierdo tan fino que se pierde: leia "3" en 8 de sus 9 variantes y arrastraba
+   el voto, con lo que el 8 DESAPARECIO de la baraja -0% de las lecturas en una
+   sesion entera, con el usuario viendo su 8 de picas leido como 3-.
+
+   Medido sobre 132 frames de esa sesion:
+
+       vista aislada x2 + cierre (lo que habia)   8 = 0.0%   3 = 20.4%
+       vista aislada x2 + mascara completa        8 = 5.7%   3 = 14.8%
+       SOLO la vista aislada                      8 = 9.1%   3 = 11.3%
+
+   Y la aislada sola ya tenia medido lo que la hace fiable: sobre 40 cartas
+   etiquetadas acierta 36, falla 0 y deja 4 en blanco. No miente, solo se calla,
+   que es justo el reparto de errores que quiere esta app.
 """
 from collections import Counter
 
@@ -330,17 +344,18 @@ def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ", deck="solid"):
              mismo, asi que la mascara completa se lee mal (32/40). El ancla es
              el rango aislado por posicion, que no se equivoca nunca, y la
              mascara completa solo desempata: 40/40."""
-    if deck == "glyph":
-        ancla = cv2.cvtColor(255 - _recortar(rango_grande_mask(card_bgr, deck)),
-                             cv2.COLOR_GRAY2BGR)
-    else:
-        ancla = white_text_mask(card_bgr, deck)
-    desempate = _rank_only_close_img(card_bgr, deck)
     start = batch.job_count()
-    for psm, scale in PSM_SCALE_VARIANTS:
-        batch.add_text_job(ancla, whitelist=whitelist, psm=psm, scale=scale, pad=20)
-    for psm, scale in PSM_SCALE_VARIANTS:
-        batch.add_text_job(desempate, whitelist=whitelist, psm=psm, scale=scale, pad=20)
+    if deck == "glyph":
+        # UNA SOLA VISTA. Ver el docstring: aqui cualquier segunda vista mete mas
+        # error del que quita, y ademas asi el frame cuesta la mitad de OCR.
+        vistas = [cv2.cvtColor(255 - _recortar(rango_grande_mask(card_bgr, deck)),
+                               cv2.COLOR_GRAY2BGR)]
+    else:
+        vistas = [white_text_mask(card_bgr, deck),
+                  _rank_only_close_img(card_bgr, deck)]
+    for v in vistas:
+        for psm, scale in PSM_SCALE_VARIANTS:
+            batch.add_text_job(v, whitelist=whitelist, psm=psm, scale=scale, pad=20)
     return start, batch.job_count()
 
 
