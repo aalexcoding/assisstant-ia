@@ -88,7 +88,10 @@ class TestingSession:
         # guardar se llama desde el hilo de analisis y anotar desde el hilo de la
         # UI (el usuario pulsa "Marcar situacion" mientras el lazo sigue). Sin el
         # candado, dos self.n += 1 a la vez darian el mismo numero y una dupla
-        # pisaria a la otra.
+        # pisaria a la otra, y dos volcados simultaneos de _sesion.json podrian
+        # entrelazarse y dejarlo corrupto. NO es reentrante a proposito: ningun
+        # metodo lo toma dos veces (los que llaman a _escribir_meta lo hacen
+        # SIEMPRE fuera de su propio with).
         self._lock = threading.Lock()
         self.meta = {
             "inicio": marca,
@@ -99,15 +102,16 @@ class TestingSession:
         self._escribir_meta()
 
     def _escribir_meta(self):
-        self.meta["frames"] = self.n
-        self.meta["errores"] = self.errores
-        self.meta["notas"] = list(self.notas)
-        self.meta["duracion_s"] = round(time.time() - self._t0, 1)
-        try:
-            with open(os.path.join(self.dir, "_sesion.json"), "w") as fh:
-                json.dump(_serializable(self.meta), fh, ensure_ascii=False, indent=2)
-        except OSError:
-            pass
+        with self._lock:
+            self.meta["frames"] = self.n
+            self.meta["errores"] = self.errores
+            self.meta["notas"] = list(self.notas)
+            self.meta["duracion_s"] = round(time.time() - self._t0, 1)
+            try:
+                with open(os.path.join(self.dir, "_sesion.json"), "w") as fh:
+                    json.dump(_serializable(self.meta), fh, ensure_ascii=False, indent=2)
+            except OSError:
+                pass
 
     def guardar(self, crop, datos, write_png):
         """Guarda la dupla PNG + JSON de un frame. `write_png(ruta)` es quien
