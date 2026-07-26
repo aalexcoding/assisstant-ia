@@ -435,12 +435,43 @@ El ciclo bajó de **3,88 s a 1,59 s (2,4×)**:
 - **fuera el doble OCR del chat**: −571 ms. El `GameState` ya expone
   `chat_lines`.
 
+**Fase 2 (caché de rangos) y reparto por idioma — ✅ HECHO.** Perfilando el ciclo
+apareció un reparto de costes que no era el que se suponía:
+
+```
+batch.run (OCR)                     0,937 s   83%
+preparar + escribir los PNG         0,120 s   11%
+find_reference                      0,029 s    3%
+todo lo demas (imread, boton, dorsos, deteccion de cartas)  < 0,04 s
+```
+
+Y dentro del OCR, los rangos de carta son el **86% de los jobs** (90 de 105) pero
+solo el **48% del tiempo**: 15 jobs de no-cartas cuestan 0,834 s frente a 0,759 s
+de los 90 de cartas. El desglose por zona señala a una sola culpable:
+
+| zona | jobs | tiempo |
+|---|---|---|
+| **chat (escala 2, español)** | 1 | **0,551 s** |
+| botones (escala 2, español) | 1 | 0,346 s |
+| nameplates | 6 | 0,380 s |
+| zonas de apuesta | 6 | 0,249 s |
+| chat en **inglés**, para comparar | 1 | 0,291 s |
+
+Esos 0,26 s de diferencia son **cargar el modelo español**, y con el reparto
+intercalado los dos únicos jobs que lo necesitan caían en procesos distintos, así
+que se cargaba **dos veces**. Juntarlos en un trozo propio: 1,202 s → 0,888 s
+(−26%) en el lote, verificado sobre 60 frames con **0 diferencias** en ningún
+campo del `GameState`.
+
+La caché de rangos aporta lo suyo por otro lado (81% de los recortes de carta se
+repiten, con la clave sobre el interior del recorte).
+
 Lo que queda de esta sección:
 
 | cambio | ganancia estimada | esfuerzo |
 |---|---|---|
-| **Fase 2**: hash de las zonas de cartas, saltar si no cambian | los frames entre manos pasan a ~0 | 3-4 h |
-| worker OCR **persistente** (proceso vivo, APIs ya cargadas) | quita el init de tesseract de cada frame (~0,55 s por proceso) | 2-3 h |
+| worker OCR **persistente** (proceso vivo, APIs ya cargadas) | quita el arranque de tesseract de cada frame; el suelo medido de un lote trivial es 0,15 s | 2-3 h |
+| cachear el **chat** por hash de la zona | 0,55 s cuando acierta, pero solo es idéntica al frame anterior el 38% de las veces | 1 h |
 
 ### 2.2 Historial de acciones de la mano → 🟡 media hecha en §2.0
 

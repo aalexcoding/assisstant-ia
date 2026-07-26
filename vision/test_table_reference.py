@@ -203,6 +203,45 @@ check("la cache esta acotada, no crece sin limite en una sesion larga",
 cro.reset_rank_cache()
 check("reset la vacia", not cro._RANK_CACHE)
 
+# --- REPARTO DE JOBS DE OCR POR IDIOMA -------------------------------------
+# Cargar el modelo espanol cuesta ~0,26 s y solo dos jobs del frame lo necesitan
+# (chat y botones). Con el reparto intercalado caian en procesos DISTINTOS y el
+# modelo se cargaba dos veces; juntandolos en un trozo propio, el lote baja de
+# 1,202 s a 0,888 s (-26%). Lo que NO puede cambiar es que cada job reciba su
+# propio resultado, en su propio sitio.
+print("\n# --- reparto de jobs de OCR ---")
+from ocr_client import OcrBatch, MAX_PROCS  # noqa: E402
+
+repartir = OcrBatch.__dict__["_repartir"].__func__
+
+
+def pares(n_spa, n_eng):
+    jobs = [{"lang": "spa", "id": f"s{i}"} for i in range(n_spa)]
+    jobs += [{"id": f"e{i}"} for i in range(n_eng)]
+    return list(enumerate(jobs))
+
+
+real = pares(2, 103)
+trozos = repartir(real)
+check("los jobs en espanol van TODOS en el mismo trozo",
+      sum(1 for t in trozos if any(j.get("lang") == "spa" for _i, j in t)) == 1)
+check("y ese trozo no lleva nada mas",
+      all(j.get("lang") == "spa" for t in trozos
+          for _i, j in t if any(x.get("lang") == "spa" for _y, x in t)))
+check("no se pasa del numero de procesos", len(trozos) <= MAX_PROCS)
+check("no se pierde ni se duplica ningun job",
+      sorted(i for t in trozos for i, _j in t) == list(range(len(real))))
+
+solo_eng = repartir(pares(0, 50))
+check("sin jobs de idioma no se desperdicia un trozo",
+      len(solo_eng) == min(MAX_PROCS, 50)
+      and sorted(i for t in solo_eng for i, _j in t) == list(range(50)))
+uno = repartir(pares(0, 1))
+check("con un solo job, un solo trozo", len(uno) == 1 and len(uno[0]) == 1)
+solo_spa = repartir(pares(3, 0))
+check("solo jobs en espanol: un trozo con los tres",
+      len(solo_spa) == 1 and len(solo_spa[0]) == 3)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

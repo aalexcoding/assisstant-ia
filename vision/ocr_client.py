@@ -111,37 +111,62 @@ class OcrBatch:
         propia ventana GTK, la VM con el cliente de poker- se queda sin aire, que
         es justo el sintoma de lag que se queria arreglar.
 
-        El reparto es INTERCALADO (jobs[i::n]) y no por bloques porque los jobs
-        tienen costes muy distintos: primero van las zonas grandes de texto
-        (nameplates, chat, botones) y luego decenas de recortes minusculos de
-        rango de carta. Por bloques, el primer proceso se comeria todo lo caro.
+        Dentro de cada idioma el reparto es INTERCALADO (jobs[i::n]) y no por
+        bloques porque los jobs tienen costes muy distintos: primero van las zonas
+        grandes de texto (nameplates, chat, botones) y luego decenas de recortes
+        minusculos de rango de carta. Por bloques, el primer proceso se comeria
+        todo lo caro.
+
+        LOS JOBS EN ESPAÑOL VAN TODOS AL MISMO PROCESO, y esto vale mas que
+        cualquier reparto fino. Cargar el modelo espanol cuesta ~0,26 s, y solo
+        dos jobs del frame lo necesitan (chat y botones: son las unicas zonas con
+        prosa castellana). Con el reparto intercalado esos dos caian en procesos
+        DISTINTOS, asi que el modelo se cargaba DOS VECES y ademas alargaba dos de
+        los seis trozos. Juntandolos en un trozo propio se carga una sola vez y
+        los otros procesos se quedan solo con lo barato. Medido sobre un frame
+        real, 3 corridas:
+
+            intercalado (antes)   1,202 s   trozos [18,18,18,17,17,17]
+            espanol aislado       0,888 s   trozos [2,21,21,21,20,20]   -26%
 
         El directorio temporal se borra en un finally: si un worker falla o se
         pasa del timeout, el tmpdir se limpia igual. Sin el finally cada fallo
         dejaba un /tmp/vision_ocr_* huerfano, y en un lazo en vivo se acumulan."""
         try:
-            real_jobs = [j for j in self._jobs if j is not None]
+            real = [(i, j) for i, j in enumerate(self._jobs) if j is not None]
             # sin ningun job real no hace falta arrancar el subproceso (inicializar
             # tesseract cuesta mas que el propio OCR de un recorte pequeño)
-            if not real_jobs:
+            if not real:
                 return ["" for _ in self._jobs]
 
-            n = min(MAX_PROCS, len(real_jobs))
-            if n <= 1:
-                real_results = self._run_chunk(real_jobs)
+            trozos = self._repartir(real)
+            if len(trozos) == 1:
+                partes = [self._run_chunk([j for _i, j in trozos[0]])]
             else:
-                trozos = [real_jobs[i::n] for i in range(n)]
-                with ThreadPoolExecutor(max_workers=n) as ex:
-                    partes = list(ex.map(self._run_chunk, trozos))
-                real_results = [None] * len(real_jobs)
-                for i, parte in enumerate(partes):
-                    for k, r in zip(range(i, len(real_jobs), n), parte):
-                        real_results[k] = r
+                with ThreadPoolExecutor(max_workers=len(trozos)) as ex:
+                    partes = list(ex.map(lambda t: self._run_chunk([j for _i, j in t]), trozos))
 
-            results = []
-            real_iter = iter(real_results)
-            for j in self._jobs:
-                results.append(next(real_iter) if j is not None else "")
-            return results
+            por_indice = {}
+            for trozo, parte in zip(trozos, partes):
+                for (idx, _j), r in zip(trozo, parte):
+                    por_indice[idx] = r
+
+            return [por_indice.get(i, "") if j is not None else ""
+                    for i, j in enumerate(self._jobs)]
         finally:
             shutil.rmtree(self._tmpdir, ignore_errors=True)
+
+    @staticmethod
+    def _repartir(real):
+        """Reparte [(indice, job)] en trozos, uno por proceso. Los jobs que piden
+        un idioma no-por-defecto van todos juntos en su propio trozo: ver run()."""
+        con_idioma = [p for p in real if p[1].get("lang")]
+        sin_idioma = [p for p in real if not p[1].get("lang")]
+        trozos = [con_idioma] if con_idioma else []
+        n = min(MAX_PROCS - len(trozos), len(sin_idioma))
+        if n <= 1:
+            if sin_idioma:
+                trozos.append(sin_idioma)
+        else:
+            trozos.extend(sin_idioma[i::n] for i in range(n))
+        return [t for t in trozos if t]
