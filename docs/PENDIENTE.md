@@ -289,53 +289,40 @@ lo largo de una mano da el *comprometido acumulado por jugador*, que es
 exactamente lo que hace falta para distinguir open / 3bet / squeeze / resubida
 con certeza. Las dos cosas se hacen de una vez.
 
-### 2.3 · ⭐ Marcar una situación con una nota mientras se juega
+### 2.3 · Marcar una situación con una nota mientras se juega — ✅ HECHO
 
-**Muy alto valor por lo poco que cuesta.** Un campo de texto en la GUI para
-anotar, en el momento, por qué una recomendación parece rara. La nota se guarda
-junto al frame y a todo lo que se calculó de él, así que después se puede mirar
-la anomalía con el contexto delante en vez de intentar reconstruirla de memoria.
+Panel **"Marcar una situación para revisarla después"** en la GUI, entre "Mano
+anterior" y las ciegas.
 
-Hoy, cuando algo canta, la única opción es acordarse y buscar el frame a mano
-entre cientos.
+**Va en dos pasos, y ahí está todo el diseño**: el usuario ve la rareza y *luego*
+escribe; con el ciclo en ~1,2 s, para cuando termina la frase ya han pasado
+varios frames. Si la nota se pegara al frame del momento de guardar, apuntaría al
+frame equivocado y la función no serviría de nada. Así que **"Marcar situación"**
+fija de inmediato el frame que se está viendo —y lo guarda en disco en ese
+momento— y el texto se aplica a ése, se tarde lo que se tarde en escribirlo. El
+panel dice cuál está marcado y qué había en él (`Marcado el frame 0042 (23:41:07)
+— Ah Kd · CO · FOLD`).
 
-#### El detalle que decide si funciona: CUÁNDO se fija el frame
+Se guarda en dos sitios: `nota` **dentro** del JSON del frame (la dupla sigue
+siendo autocontenida: se abre el PNG y al lado está todo) y un índice
+`_notas.jsonl` de la sesión para verlas de un vistazo. `_sesion.json` lleva la
+lista de frames marcados y `resumen()` devuelve las notas enteras.
 
-El usuario ve la rareza, y *luego* escribe. Con el ciclo en ~1,2 s, para cuando
-termina la frase han pasado 5-10 frames y el panel ya muestra otro. Si la nota se
-asocia al frame del momento de guardar, **apunta al frame equivocado**.
+Casos cubiertos: **modo testing apagado** → crea `testing/notas-<fecha>/` al
+vuelo y guarda ahí el frame marcado con su PNG y su JSON (marcar una anomalía es
+justo cuando más falta hace tenerla guardada); **nada analizado todavía** → el
+botón está apagado y lo dice; **guardar sin haber marcado** → la nota va al frame
+actual pero se avisa en mayúsculas de que puede no ser el de la anomalía (negarse
+fijaría el mismo frame y encima perdería el texto); **varias notas sobre el mismo
+frame** → se acumulan, no se pisan.
 
-Solución: **dos pasos**. Un botón "Marcar situación" que fija de inmediato el
-frame que se está mostrando (y lo recuerda), y el campo de texto que se aplica a
-ese frame fijado, se tarde lo que se tarde en escribir. La UI debe dejar claro
-cuál está marcado (p.ej. "marcado el frame 0042 — 23:41:07").
+Tests: `test_gui_notas.py` (20) simula el caso que justifica el diseño —marcar en
+el frame 1, dejar pasar cuatro frames, escribir— y exige que la nota acabe en el
+0001 y **no** en el 0005. `test_testing_session.py` sube a 38.
 
-#### Qué guardar
-
-- Añadir `nota` al JSON del frame marcado (releer, añadir campo, reescribir; son
-  ficheros de 2 KB).
-- Y un índice `_notas.jsonl` a nivel de sesión, para localizar de un vistazo
-  todos los momentos marcados sin abrir frame por frame.
-- Guardar también el `n` de los frames marcados en `_sesion.json`.
-
-#### Casos a cubrir
-
-- **Modo testing apagado**: hoy no se guarda nada. La nota debe funcionar igual —
-  crear la carpeta de sesión al vuelo, o volcar a `testing/notas-<fecha>/` el
-  frame marcado más su JSON. Marcar una anomalía es justo cuando más falta hace.
-- **Nada analizado todavía**: no hay frame que marcar; decirlo, no fallar en
-  silencio.
-- El contexto ya está: en modo testing se guardan *todos* los frames, así que los
-  anteriores y posteriores al marcado están ahí para ver qué pasó antes.
-
-#### Por qué vale más de lo que parece
-
-Estas notas son **exactamente las etiquetas que le faltan al proyecto** (ver
-abajo). Cada una es un caso real, elegido por el usuario porque algo no cuadraba,
-con el frame y el estado calculado al lado. Es la forma más barata de construir
-el corpus de anomalías: se genera jugando, sin sesiones de etiquetado aparte.
-
-`testing_session.resumen()` debería listarlas.
+Estas notas son **exactamente las etiquetas que le faltan al proyecto** (§2.3b):
+cada una es un caso real, elegido porque algo no cuadraba, con el frame y el
+estado calculado al lado, generado jugando y sin sesiones de etiquetado aparte.
 
 ### 2.3b Corpus etiquetado
 

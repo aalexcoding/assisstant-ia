@@ -175,17 +175,23 @@ class AnalysisWorker(threading.Thread):
         eq = self._equity_de(state)
         GLib.idle_add(self.win.on_equity, eq)
 
+        datos = {"duracion_analisis_s": round(time.perf_counter() - t0, 3),
+                 "state": state, "recommendation": recommendation,
+                 "hand": hand, "equity": eq, "hand_result": result}
+
         # modo testing: la dupla frame + todo lo calculado, para revisarlo luego
+        n = None
         sesion = self.sesion
         if sesion is not None:
-            n = sesion.guardar(
-                crop,
-                {"duracion_analisis_s": round(time.perf_counter() - t0, 3),
-                 "state": state, "recommendation": recommendation,
-                 "hand": hand, "equity": eq, "hand_result": result},
-                lambda ruta: cv2.imwrite(ruta, crop))
+            n = sesion.guardar(crop, datos, lambda ruta: cv2.imwrite(ruta, crop))
             if n is not None:
                 GLib.idle_add(self.win.on_testing_progress, n, sesion.errores)
+
+        # el ultimo frame queda a mano para "Marcar situacion". Se COPIA: crop es
+        # una vista del buffer del stream, que se reescribe en la lectura
+        # siguiente, asi que sin copia lo que se marcase ya no seria lo que se
+        # vio. Son ~3,6 MB de memcpy, medio milisegundo de un ciclo de 1,2 s.
+        GLib.idle_add(self.win.on_frame_ready, crop.copy(), datos, n, sesion)
 
     def run(self):
         try:
@@ -242,10 +248,13 @@ class AnalysisWorker(threading.Thread):
 class PokerAssistantWindow(Gtk.ApplicationWindow):
     def __init__(self, app, interval):
         super().__init__(application=app, title="Poker Assistant IA - Panel de control")
-        self.set_default_size(520, 640)
+        self.set_default_size(520, 700)
         self.worker = None
         self.running = False
         self.sesion = None          # TestingSession mientras se graba
+        self.sesion_notas = None    # sesion creada al vuelo si se marca sin grabar
+        self._ultimo = None         # ultimo frame analizado, por si se marca
+        self._marcado = None        # el frame que fijo "Marcar situacion"
         self.default_interval = interval
         # estado cross-frame del resumen de mano anterior: nombre del hero
         # cacheado (ultimo no-nulo del asiento is_hero; su nameplate a veces
@@ -267,6 +276,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         root.append(self._build_equity_frame())
         root.append(self._build_recommendation_frame())
         root.append(self._build_prev_hand_frame())
+        root.append(self._build_note_frame())
         root.append(self._build_blinds_frame())
         root.append(self._build_controls())
         root.append(self._build_status_frame())
@@ -445,6 +455,160 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             box.append(w)
         frame.set_child(box)
         return frame
+
+    def _build_note_frame(self):
+        """Marcar una situacion rara y anotarla, para revisarla despues con el
+        frame y todo lo calculado delante.
+
+        Va en DOS PASOS a proposito, y ahi esta todo el diseño: el usuario ve la
+        rareza y LUEGO escribe. Con el ciclo en ~1,2 s, para cuando termina la
+        frase han pasado varios frames y el panel ya muestra otro; una nota
+        asociada al frame del momento de guardar apuntaria al frame equivocado.
+        Asi que "Marcar situacion" fija de inmediato el frame que se esta viendo
+        y el texto se aplica a ese, se tarde lo que se tarde en escribirlo."""
+        frame = Gtk.Frame(label="Marcar una situacion para revisarla despues")
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        for lado in ("top", "bottom", "start", "end"):
+            getattr(box, f"set_margin_{lado}")(8)
+
+        fila = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.mark_button = Gtk.Button(label="Marcar situacion")
+        self.mark_button.set_tooltip_text(
+            "Fija AHORA el frame que estas viendo. Escribe la nota despues sin prisa: "
+            "se guardara junto a ESE frame, no al que se este analizando cuando "
+            "termines de escribir.")
+        self.mark_button.set_sensitive(False)
+        self.mark_button.connect("clicked", self._on_marcar)
+
+        self.nota_entry = Gtk.Entry()
+        self.nota_entry.set_hexpand(True)
+        self.nota_entry.set_placeholder_text("que te ha parecido raro (Enter para guardar)")
+        self.nota_entry.connect("activate", self._on_guardar_nota)
+
+        self.nota_button = Gtk.Button(label="Guardar nota")
+        self.nota_button.connect("clicked", self._on_guardar_nota)
+
+        fila.append(self.mark_button)
+        fila.append(self.nota_entry)
+        fila.append(self.nota_button)
+
+        self.nota_estado = self._markup_label(
+            '<span size="small" foreground="#95a5a6"><i>nada marcado todavia</i></span>')
+        self.nota_estado.set_wrap(True)
+        self.nota_estado.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+
+        box.append(fila)
+        box.append(self.nota_estado)
+        frame.set_child(box)
+        return frame
+
+    def _nota_aviso(self, texto, color="#95a5a6", size="small"):
+        self.nota_estado.set_markup(
+            f'<span size="{size}" foreground="{color}">'
+            f'{GLib.markup_escape_text(texto)}</span>')
+
+    @staticmethod
+    def _resumen_marcado(datos):
+        """Una linea con lo que habia en pantalla en el frame marcado, para que
+        se vea de inmediato que se marco lo que se creia marcar."""
+        st = (datos or {}).get("state") or {}
+        trozos = []
+        if st.get("hero_cards"):
+            trozos.append(" ".join(str(c) for c in st["hero_cards"]))
+        if st.get("board"):
+            trozos.append("board " + " ".join(str(c) for c in st["board"]))
+        if st.get("hero_position"):
+            trozos.append(str(st["hero_position"]))
+        rec = (datos or {}).get("recommendation") or {}
+        accion = rec.get("action_en") or rec.get("action")
+        trozos.append(str(accion) if accion else "sin recomendacion")
+        return " · ".join(trozos)
+
+    def _sesion_para_notas(self):
+        """Donde guardar un frame marcado: devuelve (sesion, error).
+
+        Si se esta grabando, en esa sesion. Si NO, en una carpeta
+        testing/notas-<fecha> que se crea al vuelo la primera vez. Marcar una
+        anomalia es justo cuando mas falta hace tenerla guardada, asi que no
+        puede depender de haberse acordado de activar el modo testing antes."""
+        if self.sesion is not None:
+            return self.sesion, None
+        if self.sesion_notas is None:
+            try:
+                self.sesion_notas = ts_session.TestingSession(
+                    interval=self.interval_spin.get_value(), prefix="notas")
+            except OSError as e:
+                return None, str(e)
+        return self.sesion_notas, None
+
+    def _on_marcar(self, _btn=None):
+        ultimo = self._ultimo
+        if ultimo is None:
+            self._nota_aviso("Aun no se ha analizado ningun frame que marcar: "
+                             "pulsa 'Iniciar analisis'.", "#e67e22")
+            return False
+        sesion, n = ultimo["sesion"], ultimo["n"]
+        if sesion is None or n is None:
+            # sin modo testing -o si el guardado de ese frame fallo- el frame no
+            # esta en disco, asi que se guarda ahora, al marcarlo.
+            sesion, err = self._sesion_para_notas()
+            if sesion is None:
+                self._nota_aviso(f"No se pudo crear la carpeta para la nota: {err}", "#e74c3c")
+                return False
+            crop = ultimo["crop"]
+            n = sesion.guardar(crop, ultimo["datos"], lambda ruta: cv2.imwrite(ruta, crop))
+            if n is None:
+                self._nota_aviso("No se pudo guardar el frame marcado (¿disco lleno?).", "#e74c3c")
+                return False
+        self._marcado = {"sesion": sesion, "n": n, "hora": ultimo["hora"],
+                         "datos": ultimo["datos"]}
+        self._pintar_marcado()
+        self.nota_entry.grab_focus()
+        return True
+
+    def _pintar_marcado(self):
+        m = self._marcado
+        destino = os.path.relpath(os.path.join(m["sesion"].dir, f'{m["n"]:04d}.png'), BASE_DIR)
+        self.nota_estado.set_markup(
+            f'<span foreground="#3498db">Marcado el frame <b>{m["n"]:04d}</b> '
+            f'({GLib.markup_escape_text(m["hora"])}) — '
+            f'{GLib.markup_escape_text(self._resumen_marcado(m["datos"]))}</span>\n'
+            f'<span size="small" foreground="#95a5a6">{GLib.markup_escape_text(destino)} '
+            f'— escribe la nota sin prisa, se guardara en ESE frame.</span>')
+
+    def _on_guardar_nota(self, _w=None):
+        texto = self.nota_entry.get_text().strip()
+        if not texto:
+            self._nota_aviso("Escribe la nota antes de guardarla.", "#e67e22")
+            return False
+        aviso = ""
+        if self._marcado is None:
+            # nadie marco: se marca AHORA y se dice claramente que la nota va al
+            # frame actual, que puede no ser el de la anomalia. Negarse no
+            # ayudaria -marcar ahora fijaria el mismo frame- y perderia el texto.
+            if not self._on_marcar():
+                return False
+            aviso = (" OJO: no habias pulsado 'Marcar situacion', asi que la nota va al frame "
+                     "de AHORA, que puede no ser el de lo que viste.")
+        m = self._marcado
+        ok = m["sesion"].anotar(m["n"], texto)
+        if ok:
+            self.nota_entry.set_text("")
+            destino = os.path.relpath(m["sesion"].dir, BASE_DIR)
+            self._nota_aviso(f'Nota guardada en el frame {m["n"]:04d} de {destino}.{aviso}',
+                             "#2ecc71" if not aviso else "#e67e22")
+            self._marcado = None
+        else:
+            self._nota_aviso(f'No se pudo escribir la nota en el frame {m["n"]:04d}.', "#e74c3c")
+        return False
+
+    def on_frame_ready(self, crop, datos, n, sesion):
+        """Deja a mano el ultimo frame analizado por si el usuario lo marca. Solo
+        el ultimo: marcar es "esto de ahora", no un historial."""
+        self._ultimo = {"crop": crop, "datos": datos, "n": n, "sesion": sesion,
+                        "hora": time.strftime("%H:%M:%S")}
+        self.mark_button.set_sensitive(True)
+        return False
 
     def _build_blinds_frame(self):
         frame = Gtk.Frame(label="Ciegas (manda sobre lo detectado; escribe blinds.local.json)")
@@ -861,6 +1025,9 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         if self.worker:
             self.worker.stop()
             self.worker.join(timeout=6.0)
+        if self.sesion_notas is not None:
+            self.sesion_notas.cerrar()
+            self.sesion_notas = None
         return False
 
 

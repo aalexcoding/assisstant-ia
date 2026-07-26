@@ -107,6 +107,69 @@ try:
     # --- dos sesiones no chocan ------------------------------------------------
     ses2 = tss.TestingSession(root=raiz, now=1)
     check("dos sesiones van a carpetas distintas", ses2.dir != ses.dir)
+
+    # --- notas: marcar una situacion rara mientras se juega ---------------------
+    # Lo que de verdad protege esta seccion: que la nota acabe DENTRO del JSON
+    # del frame (la dupla tiene que seguir siendo autocontenida) y que no pise
+    # nada de lo que ya se habia calculado de ese frame.
+    ses3 = tss.TestingSession(root=raiz, now=2)
+    ses3.guardar(None, {"state": {"hero_cards": ["Ah", "Kd"], "pot": np.float32(3.75)},
+                        "recommendation": {"action": "FOLD"}},
+                 lambda ruta: open(ruta, "wb").write(b"png"))
+    ses3.guardar(None, {"state": {}}, lambda ruta: open(ruta, "wb").write(b"png"))
+
+    ok = ses3.anotar(1, "  aqui recomendo FOLD con AK y no lo entiendo  ")
+    check("anotar devuelve True cuando escribe", ok)
+    with open(os.path.join(ses3.dir, "0001.json")) as fh:
+        d = json.load(fh)
+    check("la nota va DENTRO del JSON del frame, con el texto limpio",
+          d["nota"] == "aqui recomendo FOLD con AK y no lo entiendo")
+    check("y no pisa nada de lo ya calculado de ese frame",
+          d["state"]["hero_cards"] == ["Ah", "Kd"] and d["recommendation"]["action"] == "FOLD"
+          and d["png"] == "0001.png")
+
+    check("hay un indice _notas.jsonl a nivel de sesion",
+          os.path.exists(os.path.join(ses3.dir, "_notas.jsonl")))
+    with open(os.path.join(ses3.dir, "_notas.jsonl")) as fh:
+        idx = [json.loads(l) for l in fh if l.strip()]
+    check("el indice apunta al frame y a su PNG",
+          len(idx) == 1 and idx[0]["n"] == 1 and idx[0]["png"] == "0001.png")
+
+    with open(os.path.join(ses3.dir, "_sesion.json")) as fh:
+        meta3 = json.load(fh)
+    check("_sesion.json guarda que frames se marcaron", meta3["notas"] == [1])
+
+    # dos notas sobre el mismo frame se acumulan: pisar la primera seria perder
+    # justo lo que el usuario se molesto en escribir
+    ses3.anotar(1, "y ademas el bote sale mal")
+    with open(os.path.join(ses3.dir, "0001.json")) as fh:
+        d = json.load(fh)
+    check("una segunda nota sobre el mismo frame se acumula, no lo pisa",
+          d["nota"].splitlines() == ["aqui recomendo FOLD con AK y no lo entiendo",
+                                     "y ademas el bote sale mal"])
+    with open(os.path.join(ses3.dir, "_sesion.json")) as fh:
+        check("y el frame no se duplica en la lista de marcados",
+              json.load(fh)["notas"] == [1])
+
+    check("una nota vacia no se guarda", ses3.anotar(1, "   ") is False)
+    check("ni una nota sin frame", ses3.anotar(None, "algo") is False)
+    check("anotar un frame que no existe devuelve False sin lanzar",
+          ses3.anotar(99, "algo") is False)
+
+    r3 = tss.resumen(ses3.dir)
+    check("el resumen lista las notas enteras, que es lo mas valioso de la sesion",
+          len(r3["notas"]) == 1 and r3["notas"][0]["n"] == 1
+          and "no lo entiendo" in r3["notas"][0]["nota"])
+    check("y no inventa notas donde no las hay",
+          all(f["n"] != 2 for f in r3["notas"]))
+
+    # --- marcar sin modo testing: carpeta aparte creada al vuelo ---------------
+    notas = tss.TestingSession(root=raiz, now=3, prefix="notas")
+    check("la sesion de solo-notas va a notas-<fecha>, no a sesion-<fecha>",
+          os.path.basename(notas.dir).startswith("notas-"))
+    n = notas.guardar(None, {"state": {}}, lambda ruta: open(ruta, "wb").write(b"png"))
+    check("y guarda duplas igual que una sesion normal",
+          n == 1 and notas.anotar(1, "esto canta"))
 finally:
     shutil.rmtree(raiz, ignore_errors=True)
 
