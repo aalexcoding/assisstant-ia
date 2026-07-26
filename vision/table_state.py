@@ -438,7 +438,8 @@ def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
     return cards, unresolved
 
 
-def analyze_layout(image_path, max_players=None, asientos_estables=None):
+def analyze_layout(image_path, max_players=None, asientos_estables=None,
+                   plantilla_boton=None):
     """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
     produccion para el cliente real de PokerStars capturado limpio. Ancla una
     referencia independiente del color (nucleo del tapete por contraste) y lee
@@ -610,7 +611,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None):
     # observaciones) y sirve para desempatar si sobran asientos.
     en_mano = seat_map.detect_in_hand_seats(bgr, ref)
 
-    button_seat = seat_map.detect_button_seat_union(bgr, ref)
+    button_seat = seat_map.detect_button_seat_union(bgr, ref, plantilla_boton)
     if button_seat is not None and button_seat not in occupied:
         # el dealer es siempre un jugador sentado: si el boton se detecto en ese
         # asiento pero el OCR no leyo su nameplate, esta ocupado igual.

@@ -135,6 +135,11 @@ class AnalysisWorker(threading.Thread):
     manda cada resultado a la ventana via GLib.idle_add. No toca widgets."""
 
     def __init__(self, win, interval, sesion=None, max_players=None):
+        # El disco del dealer recortado de ESTA mesa, para encontrarlo cuando el
+        # color y la forma no llegan. Se aprende solo de los frames que si se
+        # resuelven y vive en la sesion: guardarlo en disco se quedaria viejo el
+        # dia que cambie el tema de mesa. Ver seat_map.PlantillaBoton.
+        self.plantilla_boton = seat_map.PlantillaBoton()
         super().__init__(daemon=True)
         self.win = win
         self.interval = interval
@@ -252,7 +257,8 @@ class AnalysisWorker(threading.Thread):
         # los asientos estables de la mano en curso se realimentan al
         # reconocimiento: ver table_state.analyze_layout
         state = ts.analyze_layout(TMP_FRAME_PATH, max_players=self.max_players,
-                                  asientos_estables=self.tracker.asientos_estables())
+                                  asientos_estables=self.tracker.asientos_estables(),
+                                  plantilla_boton=self.plantilla_boton)
         # la referencia del tapete se guarda para el lazo rapido, que no puede
         # permitirse recalcularla (29 ms) diez veces por segundo
         try:

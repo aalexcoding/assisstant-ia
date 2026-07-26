@@ -353,6 +353,44 @@ verde = mesa_con_disco("TOPC", (250, 250, 250))
 check("la union responde cuando responde el de color",
       seat_map.detect_button_seat_union(verde, REF) == "TOPC")
 
+print("\n# --- la plantilla del disco, aprendida de la propia mesa ---")
+# Idea del usuario: guardar el disco UNA VEZ en la sesion y buscarlo tal cual.
+# Es la unica via que no depende de segmentar bien el contorno, que es el fallo
+# mas comun del tema de fieltro liso (su aro dorado lo parte).
+def disco_raro(seat, felt=(60, 110, 70)):
+    """Un disco que ningun umbral de color reconoceria: aro verde lima y
+    estrella morada."""
+    img = np.full((700, 1200, 3), felt, dtype=np.uint8)
+    fx, fy = seat_map.SEATS[seat]["button"]
+    cx, cy = int(REF[0] + fx * REF[2]), int(REF[1] + fy * REF[3])
+    r = int(((seat_map.BOTON_FORMA_AREA_MIN + seat_map.BOTON_FORMA_AREA_MAX) / 2
+             * REF[2] * REF[3] / np.pi) ** 0.5)
+    cv2.circle(img, (cx, cy), r, (60, 230, 180), -1)
+    cv2.circle(img, (cx, cy), max(2, r // 2), (200, 30, 140), -1)
+    return img
+
+
+pl = seat_map.PlantillaBoton()
+check("recien creada no tiene plantilla", not pl.lista)
+check("y sin plantilla no responde", pl.buscar(disco_raro("UL"), REF) is None)
+
+for _ in range(seat_map.PLANTILLA_MIN_DISCOS):
+    pl.aprender(disco_raro("UL"), REF, "UL")
+check(f"tras {seat_map.PLANTILLA_MIN_DISCOS} discos ya tiene plantilla", pl.lista)
+check("y encuentra ese disco en OTRO asiento distinto del que aprendio",
+      pl.buscar(disco_raro("MR"), REF) == "MR")
+check("en una mesa vacia no se inventa un asiento",
+      pl.buscar(np.full((700, 1200, 3), (60, 110, 70), np.uint8), REF) is None)
+check("la union sin plantilla sigue funcionando igual",
+      seat_map.detect_button_seat_union(mesa_con_disco("TOPC", (250, 250, 250)), REF) == "TOPC")
+check("y con plantilla NO cambia una respuesta que las otras vias ya daban",
+      seat_map.detect_button_seat_union(mesa_con_disco("TOPC", (250, 250, 250)), REF, pl) == "TOPC")
+
+pl2 = seat_map.PlantillaBoton()
+antes = len(pl2)
+pl2.aprender(np.full((700, 1200, 3), (60, 110, 70), np.uint8), REF, "UL")
+check("aprender de un frame sin disco no guarda nada", len(pl2) == antes)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

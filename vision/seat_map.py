@@ -456,11 +456,140 @@ def detect_button_seat_por_forma(bgr, ref):
     return orden[0][0]
 
 
-def detect_button_seat_union(bgr, ref):
-    """El boton por las dos vias: primero por color (mas preciso donde funciona)
-    y si no responde, por forma. Nunca se contradicen -0 desacuerdos en 438
-    comparaciones- asi que no hay que arbitrar entre ellas."""
-    return detect_button_seat(bgr, ref) or detect_button_seat_por_forma(bgr, ref)
+def detect_button_seat_union(bgr, ref, plantilla=None):
+    """El boton por las tres vias, en orden de precision: color, forma y
+    plantilla aprendida. Ninguna contradice a otra -0 desacuerdos en 438 y en
+    1.027 comparaciones- asi que encadenarlas solo puede añadir cobertura.
+
+    `plantilla` es un PlantillaBoton que el llamador mantiene entre frames; si no
+    se pasa, se usan solo las dos primeras vias. Ademas se le da de comer cada
+    respuesta segura, que es como aprende."""
+    seat = detect_button_seat(bgr, ref) or detect_button_seat_por_forma(bgr, ref)
+    if plantilla is None:
+        return seat
+    if seat is not None:
+        plantilla.aprender(bgr, ref, seat)
+        return seat
+    return plantilla.buscar(bgr, ref)
+
+
+# --- la plantilla del disco, aprendida de la propia mesa ---
+#
+# Idea del usuario: guardar el disco UNA VEZ en la sesion y luego buscarlo tal
+# cual, en vez de re-analizarlo cada frame. Es la via que mas cobertura añade y
+# la unica que no depende de segmentar bien: una correlacion no necesita que el
+# contorno salga entero, y el fallo mas comun del tema de fieltro liso es
+# justamente que el aro dorado del disco parte el contorno (40 de sus 80 fallos).
+#
+# Se aprende SOLA de los frames que las otras dos vias ya resuelven, asi que no
+# hay nada que calibrar ni que configurar, y se re-aprende en cada sesion: una
+# plantilla guardada en disco se quedaria vieja el dia que cambie el tema, que es
+# justo el fallo del que se viene huyendo.
+#
+# Medido sobre 1.339 frames de tres sesiones con tres temas:
+#
+#                    color   +forma   +plantilla
+#     tema con puntos  94%     95%       95%
+#     tema liso        34%     48%       71%
+#     mesa de 4-max    53%     79%       80%
+#
+# Y sobre 1.027 frames donde las otras vias saben la respuesta, la plantilla
+# acierta 1.027 y falla 0. Ese cero es lo que la hace segura de encadenar.
+#
+# SE PROBO Y SE DESCARTO una via intermedia: aprender solo la FIRMA DE COLOR del
+# disco (histograma de tono) y usarla para elegir entre candidatos con la
+# geometria aflojada. La firma se aprende perfectamente -0.99 de coherencia, y
+# describe bien los dos temas: "claro 64% + rojo 35%" el uno, "dorado 39% + rojo
+# 26% + claro 18%" el otro- pero al aflojar la geometria entran objetos que no
+# son el disco y el parecido de color los elige igual: 14 de 34 respuestas nuevas
+# contradecian al asiento seguro de al lado. Cambiar "no lo se" por un asiento
+# equivocado es el peor cambio posible en esta app.
+PLANTILLA_LADO = 40           # tamaño canonico en que se guarda
+PLANTILLA_RADIO_FRAC = 0.030  # medio lado del recorte, en fracciones del nucleo
+PLANTILLA_MIN_DISCOS = 8      # con menos no se usa: la mediana no vale de nada
+PLANTILLA_MAX_DISCOS = 60
+PLANTILLA_MIN_SCORE = 0.55
+PLANTILLA_MARGEN = 0.10
+
+
+def _hueco_px(bgr, ref, seat):
+    rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
+    fx, fy = SEATS[seat]["button"]
+    cx, cy = rx + fx * rw, ry + fy * rh
+    return (max(0, int(cx - BUTTON_HALF_W * rw)),
+            max(0, int(cy - BUTTON_HALF_H * rh)),
+            min(bgr.shape[1], int(cx + BUTTON_HALF_W * rw)),
+            min(bgr.shape[0], int(cy + BUTTON_HALF_H * rh)))
+
+
+class PlantillaBoton:
+    """El disco del dealer recortado de la propia mesa, para buscarlo por
+    correlacion cuando el color y la forma no lo encuentran.
+
+    Vive fuera de vision/ (lo guarda quien lleva la sesion) porque es estado
+    ENTRE frames, igual que asientos_estables."""
+
+    def __init__(self):
+        self._discos = []
+        self._tpl = None
+
+    def __len__(self):
+        return len(self._discos)
+
+    @property
+    def lista(self):
+        return self._tpl is not None
+
+    def aprender(self, bgr, ref, seat):
+        """Guarda el disco de un frame en que ya se sabe donde esta."""
+        if seat is None or len(self._discos) >= PLANTILLA_MAX_DISCOS:
+            return
+        d = self._recortar(bgr, ref, seat)
+        if d is None:
+            return
+        self._discos.append(d)
+        if len(self._discos) >= PLANTILLA_MIN_DISCOS:
+            # la MEDIANA y no la media: un recorte con una ficha encima no debe
+            # arrastrar la plantilla
+            self._tpl = np.median(np.array(self._discos), axis=0).astype(np.uint8)
+
+    def _recortar(self, bgr, ref, seat):
+        puntos = button_shape_scores(bgr, ref)
+        if puntos.get(seat, 0) <= 0:
+            return None
+        x0, y0, x1, y1 = _hueco_px(bgr, ref, seat)
+        r = int(PLANTILLA_RADIO_FRAC * ref[2])
+        if r < 4:
+            return None
+        cy, cx = (y0 + y1) // 2, (x0 + x1) // 2
+        a, b, c, d = cy - r, cy + r, cx - r, cx + r
+        if a < 0 or c < 0 or b > bgr.shape[0] or d > bgr.shape[1]:
+            return None
+        return cv2.resize(bgr[a:b, c:d], (PLANTILLA_LADO, PLANTILLA_LADO),
+                          interpolation=cv2.INTER_AREA)
+
+    def buscar(self, bgr, ref):
+        """Asiento cuyo hueco se parece mas a la plantilla, o None si ninguno
+        llega al minimo o si dos empatan."""
+        if self._tpl is None:
+            return None
+        esc = (2 * int(PLANTILLA_RADIO_FRAC * ref[2])) / PLANTILLA_LADO
+        if esc <= 0:
+            return None
+        tpl = cv2.resize(self._tpl, None, fx=esc, fy=esc, interpolation=cv2.INTER_AREA)
+        out = []
+        for seat in SEATS:
+            x0, y0, x1, y1 = _hueco_px(bgr, ref, seat)
+            sub = bgr[y0:y1, x0:x1]
+            if sub.shape[0] < tpl.shape[0] or sub.shape[1] < tpl.shape[1]:
+                continue
+            out.append((float(cv2.matchTemplate(sub, tpl, cv2.TM_CCOEFF_NORMED).max()), seat))
+        out.sort(reverse=True)
+        if not out or out[0][0] < PLANTILLA_MIN_SCORE:
+            return None
+        if len(out) > 1 and out[0][0] < out[1][0] + PLANTILLA_MARGEN:
+            return None
+        return out[0][1]
 
 
 # --- quien sigue en la mano: dorsos de carta por asiento ---
