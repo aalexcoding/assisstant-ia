@@ -478,9 +478,29 @@ Acumulado desde el principio del proyecto: **3,88 s → 0,96 s (4,0x)**.
 
 Lo que queda de esta sección:
 
+**Worker de OCR persistente — ✅ HECHO.** Los procesos viven entre lotes
+(`ocr_worker --serve`) y las APIs de tesseract se cargan una vez por sesión en
+vez de una por lote:
+
+| | antes | ahora |
+|---|---|---|
+| lote de 6 jobs | 0,145 s | **0,005 s** |
+| lote de 105 jobs | 0,22 s | **0,074 s** |
+| OCR de una cápsula de nameplate | ~250 ms | **39 ms** |
+| **ciclo completo** | 0,96 s | **0,684 s** |
+
+Un worker que muere se reemplaza y el lote se reintenta **una** vez; a la segunda
+se propaga el fallo, porque reintentar sin límite con un job que mata al worker
+sería un bucle. El pool está acotado a `MAX_PROCS` y se cierra con `atexit` y al
+cerrar la ventana.
+
+**Acumulado del proyecto: 3,88 s → 0,68 s (5,7×).**
+
+Lo que queda de esta sección:
+
 | cambio | ganancia estimada | esfuerzo |
 |---|---|---|
-| worker OCR **persistente** (proceso vivo, APIs ya cargadas) | quita el arranque de tesseract de cada frame; el suelo medido de un lote trivial es 0,15 s | 2-3 h |
+| pasar los recortes al worker **en memoria** en vez de por PNG temporal | escribir los PNG es ahora 0,12 s del ciclo, el segundo coste tras el OCR | 2 h |
 | cachear el **chat** por hash de la zona | 0,55 s cuando acierta, pero solo es idéntica al frame anterior el 38% de las veces | 1 h |
 
 ### 2.2b · Buffer de captura rapida para leer las acciones — evaluado, con datos

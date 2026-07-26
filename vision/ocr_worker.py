@@ -57,6 +57,13 @@ Entrada (stdin): JSON {"jobs": [job, ...]}
   job modo "tsv":  {"mode": "tsv", "path": "<png>", "lang": "spa" (opcional)}
   job modo "text": {"mode": "text", "path": "<png>", "whitelist": "AKQJ0123456789" (opcional), "psm": "SINGLE_LINE"}
 Salida (stdout): JSON {"results": [resultado, ...]} en el mismo orden.
+
+MODO SERVIDOR (--serve): en vez de resolver un lote y salir, el proceso se queda
+vivo leyendo una linea JSON de peticion por stdin y escribiendo una de respuesta
+por stdout. Asi las APIs de tesseract se cargan UNA vez por sesion y no una por
+lote. Importa porque el suelo de un lote es ~0,15 s de arranque + carga del
+modelo, mas que el propio OCR de un recorte pequeño; con el vigilante rapido
+(seat_watch) haciendo lotes de una sola capsula, ese suelo era todo el coste.
 """
 import json
 import os
@@ -121,24 +128,65 @@ def _run_job(api, job):
     return api.GetUTF8Text().strip()
 
 
-def main():
-    payload = json.loads(sys.stdin.read())
-    jobs = payload["jobs"]
+# APIs ya inicializadas, por idioma. En modo servidor el proceso vive entre
+# lotes, asi que la de cada idioma se carga UNA vez en toda la sesion en vez de
+# una vez por lote. Es la razon de ser del modo servidor: arrancar el proceso y
+# cargar tesseract cuesta ~0,15 s, mas que el OCR de un recorte pequeño.
+_APIS = {}
 
-    # se agrupa por idioma para inicializar UNA sola API por idioma (inicializar
-    # tesseract es caro); los resultados se colocan por indice para devolverlos
-    # en el orden original de entrada, que es el que espera OcrBatch.
+
+def _api(lang):
+    api = _APIS.get(lang)
+    if api is None:
+        api = _APIS[lang] = tesserocr.PyTessBaseAPI(path=TESSDATA_PATH, lang=lang)
+    return api
+
+
+def resolver(jobs):
+    """Resuelve una lista de jobs y devuelve los resultados EN EL MISMO ORDEN.
+
+    Se agrupa por idioma para no ir alternando de modelo dentro del lote. Un job
+    que falla devuelve "" en vez de tumbar el lote entero: en modo servidor el
+    proceso sigue vivo para los siguientes, y perder un recorte es mucho menos
+    grave que perder el proceso."""
     by_lang = {}
     for i, job in enumerate(jobs):
         by_lang.setdefault(_job_lang(job), []).append(i)
 
     results = [""] * len(jobs)
     for lang, indices in by_lang.items():
-        with tesserocr.PyTessBaseAPI(path=TESSDATA_PATH, lang=lang) as api:
-            for i in indices:
+        api = _api(lang)
+        for i in indices:
+            try:
                 results[i] = _run_job(api, jobs[i])
+            except Exception:  # noqa: BLE001
+                results[i] = ""
+    return results
 
-    sys.stdout.write(json.dumps({"results": results}))
+
+def _servir():
+    """Modo SERVIDOR: una linea JSON de peticion por stdin, una de respuesta por
+    stdout, hasta que se cierre stdin. Sin esto habria que arrancar un proceso
+    -y cargar tesseract- por cada lote."""
+    for linea in sys.stdin:
+        linea = linea.strip()
+        if not linea:
+            continue
+        try:
+            jobs = json.loads(linea)["jobs"]
+            salida = {"results": resolver(jobs)}
+        except Exception as e:  # noqa: BLE001
+            salida = {"error": str(e)}
+        sys.stdout.write(json.dumps(salida) + "\n")
+        sys.stdout.flush()
+
+
+def main():
+    if "--serve" in sys.argv:
+        _servir()
+        return
+    jobs = json.loads(sys.stdin.read())["jobs"]
+    sys.stdout.write(json.dumps({"results": resolver(jobs)}))
 
 
 if __name__ == "__main__":

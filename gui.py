@@ -36,7 +36,7 @@ import hand_result as hr
 import hand_strength as hstr
 import action_log as alog
 import hand_tracker
-from ocr_client import OcrBatch
+from ocr_client import OcrBatch, cerrar_workers
 from text_extract import parse_tsv_lines
 import portal_capture as pc
 import seat_map
@@ -60,12 +60,15 @@ TMP_FRAME_PATH = "/tmp/poker_gui_frame.png"
 VIGILANCIA_PERIODO_S = 0.1
 
 # Tope de seguridad: no se lanza un OCR de vigilancia mas a menudo que esto, pase
-# lo que pase. Hace falta porque HOY un lote de OCR cuesta ~250 ms aunque solo
-# lleve una capsula: el suelo es arrancar el proceso y cargar tesseract, no el
-# trabajo. Sin el tope, un frame en que se muevan varias capsulas encadenaria
-# OCRs y se comeria la maquina, que es justo el sintoma de lag que se arreglo.
-# Cuando el worker de OCR sea persistente este numero puede bajar mucho.
-VIGILANCIA_OCR_MIN_S = 0.4
+# lo que pase, para que un frame muy movido no encadene OCRs y se coma la maquina
+# (el sintoma de lag que ya se arreglo una vez).
+#
+# Con los workers de OCR PERSISTENTES el coste de mirar una capsula bajo de ~250 ms
+# a 39 ms -el suelo era arrancar el proceso y cargar tesseract, no el trabajo-,
+# asi que el tope puede ser mucho mas bajo que antes: a 0,12 s caben ~8 miradas
+# por segundo, mas que suficiente para no perderse un cartel que dura mas de 0,5 s,
+# y aun asi el vigilante se queda muy por debajo de un nucleo.
+VIGILANCIA_OCR_MIN_S = 0.12
 
 SUIT_SYMBOLS = {"h": "♥", "d": "♦", "c": "♣", "s": "♠"}
 SUIT_COLORS = {"h": "#e74c3c", "d": "#3498db", "c": "#2ecc71", "s": "#95a5a6"}
@@ -1144,6 +1147,12 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         if self.worker:
             self.worker.stop()
             self.worker.join(timeout=6.0)
+        # los workers de OCR viven entre lotes, asi que hay que cerrarlos: si no,
+        # quedan procesos python sueltos al cerrar la ventana
+        try:
+            cerrar_workers()
+        except Exception:  # noqa: BLE001
+            pass
         if self.sesion_notas is not None:
             self.sesion_notas.cerrar()
             self.sesion_notas = None

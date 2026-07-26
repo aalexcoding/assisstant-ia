@@ -7,9 +7,11 @@ subproceso solo abre esos PNG, nunca toca opencv.
 import json
 import os
 import shutil
+import atexit
 import subprocess
 import sys
 import tempfile
+import threading
 
 import cv2
 from concurrent.futures import ThreadPoolExecutor
@@ -88,14 +90,9 @@ class OcrBatch:
         return idx
 
     def _run_chunk(self, jobs):
-        """Resuelve un trozo del lote en un subproceso. Devuelve sus resultados
-        en el mismo orden en que se le pasaron."""
-        proc = subprocess.run([sys.executable, WORKER_PATH],
-                              input=json.dumps({"jobs": jobs}),
-                              capture_output=True, text=True, timeout=120)
-        if proc.returncode != 0:
-            raise RuntimeError(f"ocr_worker fallo: {proc.stderr}")
-        return json.loads(proc.stdout)["results"]
+        """Resuelve un trozo del lote. Devuelve sus resultados en el mismo orden
+        en que se le pasaron. Usa un worker PERSISTENTE del pool (ver _Pool)."""
+        return _POOL.resolver(jobs)
 
     def run(self):
         """Resuelve todos los jobs y devuelve una lista alineada con el orden de
@@ -170,3 +167,117 @@ class OcrBatch:
         else:
             trozos.extend(sin_idioma[i::n] for i in range(n))
         return [t for t in trozos if t]
+
+
+# --- POOL DE WORKERS PERSISTENTES -------------------------------------------
+#
+# Antes se arrancaba un subproceso por trozo y por frame. Medido, el suelo de un
+# lote es ~0,15 s aunque solo lleve UN recorte: eso es arrancar python, importar
+# PIL/tesserocr y cargar el modelo, no el OCR. Con 6 trozos por frame y ~1 frame
+# por segundo se estaba pagando ese arranque 6 veces por segundo, y con el
+# vigilante rapido (seat_watch) haciendo lotes de una sola capsula el arranque
+# ERA todo el coste.
+#
+# Ahora los procesos viven entre lotes (ocr_worker --serve) y las APIs de
+# tesseract se cargan una vez por sesion.
+#
+# Un worker que muere -o que devuelve basura- se reemplaza y el trozo se
+# reintenta UNA vez. Reintentar mas seria arriesgarse a un bucle con un job que
+# mata al worker siempre; a la segunda se propaga el fallo, que OcrBatch.run ya
+# convierte en un frame perdido y no en una sesion caida.
+
+
+class _Worker:
+    def __init__(self):
+        self.proc = subprocess.Popen(
+            [sys.executable, WORKER_PATH, "--serve"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, text=True, bufsize=1)
+
+    def vivo(self):
+        return self.proc.poll() is None
+
+    def resolver(self, jobs):
+        self.proc.stdin.write(json.dumps({"jobs": jobs}) + "\n")
+        self.proc.stdin.flush()
+        linea = self.proc.stdout.readline()
+        if not linea:
+            raise RuntimeError("el worker de OCR se cerro")
+        datos = json.loads(linea)
+        if "error" in datos:
+            raise RuntimeError(f"ocr_worker fallo: {datos['error']}")
+        return datos["results"]
+
+    def matar(self):
+        try:
+            self.proc.stdin.close()
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            self.proc.terminate()
+            self.proc.wait(timeout=2)
+        except Exception:  # noqa: BLE001
+            try:
+                self.proc.kill()
+            except Exception:  # noqa: BLE001
+                pass
+
+
+class _Pool:
+    """Workers persistentes, uno por hilo que los pida. El candado solo protege
+    la lista de libres: el OCR en si corre fuera de el, que es lo que permite que
+    los trozos vayan de verdad en paralelo."""
+
+    def __init__(self):
+        self._libres = []
+        self._lock = threading.Lock()
+
+    def _coger(self):
+        with self._lock:
+            while self._libres:
+                w = self._libres.pop()
+                if w.vivo():
+                    return w
+        return _Worker()
+
+    def _soltar(self, w):
+        with self._lock:
+            if w.vivo() and len(self._libres) < MAX_PROCS:
+                self._libres.append(w)
+                return
+        w.matar()
+
+    def resolver(self, jobs):
+        w = self._coger()
+        try:
+            r = w.resolver(jobs)
+            self._soltar(w)
+            return r
+        except Exception:
+            w.matar()
+            # un reintento con un worker nuevo: el anterior pudo morir por
+            # cualquier cosa (OOM, un PNG corrupto) y no vale la pena perder el
+            # frame por eso
+            w2 = _Worker()
+            try:
+                r = w2.resolver(jobs)
+                self._soltar(w2)
+                return r
+            except Exception:
+                w2.matar()
+                raise
+
+    def cerrar(self):
+        with self._lock:
+            libres, self._libres = self._libres, []
+        for w in libres:
+            w.matar()
+
+
+_POOL = _Pool()
+atexit.register(_POOL.cerrar)
+
+
+def cerrar_workers():
+    """Cierra los workers persistentes. Para tests y para cerrar sesion limpia."""
+    _POOL.cerrar()
