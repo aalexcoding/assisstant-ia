@@ -110,6 +110,8 @@ def _vista(state, hand_number=None):
         "board": _board_legal(state.get("board") or []),
         "hero_cards": list(state.get("hero_cards") or []),
         "hand_number": hand_number,
+        "boton": next((p.get("seat") for p in state.get("players") or []
+                       if p.get("position") == "BTN"), None),
         "stacks": stacks,
     }
 
@@ -133,6 +135,14 @@ def motivos_de_frontera(previo, actual):
                     una mano nueva donde solo hay una lectura floja. NO CORTA, y
                     ademas es redundante: "cartas_aparecen" cubre el mismo caso
                     sin el ruido.
+      "boton"       el boton del dealer esta en otro asiento. Es ESTRUCTURAL y no
+                    estadistico: el boton se mueve exactamente UNA vez por mano,
+                    ni mas ni menos. Medido sobre tres sesiones: 72 de 92 cortes
+                    reales y CERO disparos sin respaldo. Aparecio revisando una
+                    partida EN VIVO: el vigilante marcaba "tu posicion cambia
+                    dentro de la mano", y al mirar el frame se veia que no era la
+                    posicion la que fallaba sino que TODO el mapa habia rotado un
+                    asiento, que es lo que pasa al empezar una mano.
       "mano_chat"   cambio el numero de mano del chat. Es el numero de la ultima
                     mano TERMINADA, o sea una etiqueta estable de la mano en
                     curso, y se lee en el 70% de los frames (13 cortes en 267).
@@ -174,6 +184,9 @@ def motivos_de_frontera(previo, actual):
     if bp and not ba:
         motivos.add("board_vacio")
 
+    if previo["boton"] and actual["boton"] and previo["boton"] != actual["boton"]:
+        motivos.add("boton")
+
     for seat, s in actual["stacks"].items():
         anterior = previo["stacks"].get(seat)
         if anterior is not None and s > anterior + IGUAL_TOL_BB:
@@ -195,9 +208,12 @@ def motivos_de_frontera(previo, actual):
 #     chat + cartas_aparecen + board_vacio         68/75  = 91%
 #     ...y añadir "cartas distintas" a eso         68/75  = 91%, +1 falso
 #
+# Y despues, revisando una partida en vivo, aparecio "boton": 72 de 92 cortes
+# reales y CERO falsos por si sola.
+#
 # O sea que "cartas distintas" no aporta un solo corte que las otras no vean, y
 # si aporta ruido. Fuera.
-MOTIVOS_DE_CORTE = frozenset({"mano_chat", "cartas_aparecen", "board_vacio"})
+MOTIVOS_DE_CORTE = frozenset({"mano_chat", "cartas_aparecen", "board_vacio", "boton"})
 
 # Frames minimos que tiene que durar una mano antes de poder cortarla otra vez.
 #
