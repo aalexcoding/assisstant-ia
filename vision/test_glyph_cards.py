@@ -167,6 +167,27 @@ check("en el mazo de fondo solido no se aisla nada (el rango ya domina)",
       np.array_equal(color_rank_ocr.rango_grande_mask(carta_k, "solid"),
                      color_rank_ocr.rank_mask(carta_k, "solid")))
 
+print("\n# --- el borde de la carta vecina no puede parecer un '1' ---")
+# al cortar por la costura entre cartas pegadas, el borde oscuro entra en el
+# recorte como una barra alta y fina pegada al lateral: la forma exacta de un '1'
+con_borde = mesa(1, ["spade"])[40:40 + ALTO_CARTA, 60:60 + ANCHO_CARTA].copy()
+con_borde[:, 0:3] = (20, 20, 20)
+con_borde[:, -3:] = (20, 20, 20)
+comps = color_rank_ocr._rank_components(
+    color_rank_ocr.rango_grande_mask(con_borde, "glyph"))
+check("las barras del lateral no llegan a contarse como glifo de rango",
+      all(c[0] > 3 and c[0] + c[2] < ANCHO_CARTA - 3 for c in comps))
+check("y por tanto no disparan la deteccion del '10'",
+      not color_rank_ocr.is_ten(con_borde, "glyph"))
+check("el rango de verdad sigue ahi", len(comps) >= 1)
+
+print("\n# --- las dos vistas del mazo nuevo van sin pip ---")
+carta_p = mesa(1, ["diamond"])[40:40 + ALTO_CARTA, 60:60 + ANCHO_CARTA]
+cerrada = color_rank_ocr._rank_only_close_img(carta_p, "glyph")
+check("la vista de desempate tambien parte del rango aislado: un pip leido como "
+      "'0' detras de un rango leido como '1' fabrica dieces fantasma",
+      (cerrada[:, :, 0] < 128).sum() > 0)
+
 carta_vieja = vieja[30:30 + ALTO_CARTA, 30:30 + ANCHO_CARTA]
 check("con deck='solid' la mascara sigue siendo la de siempre",
       np.array_equal(color_rank_ocr.rank_mask(carta_vieja, "solid"),

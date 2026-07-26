@@ -82,6 +82,8 @@ verdad. Si aparece alguna, es un bug y va primero.
 | `vs_position` habla después que `hero_position` | raiser imposible | Orden preflop: EP1 EP2 MP1 MP2 HJ CO BTN SB BB. Eso no es una defensa sino una resubida a la apertura propia. El motor ya lo rechaza; si aparece, la atribución falla por otro sitio |
 | `len(players) > max_players` | más jugadores de los que caben | Solo si el selector Mesa está fijado. Contradicción entre lo dicho y lo visto |
 | `hero_position` que no existe con ese nº de jugadores | p.ej. `CO` en una mesa de 3 | Fue el bug más caro: un entero suelto del tapete contaba como asiento ocupado y desplazaba **todas** las posiciones |
+| un rango que sale muy por encima del 7,7% | 13 rangos son equiprobables | La **T** salió al 10,7% con el mazo de cara blanca: eran dieces inventados por el borde de la carta y por los pips. Referencia tras el arreglo: 6,6% |
+| manos seguidas que comparten botón con la anterior | el botón se mueve **una** vez por mano | Es la única vara para medir la PRECISION de los cortes, no solo cuántos se aciertan. Referencia: **12%**; con `cartas_aparecen` cortando era el 42% |
 
 ---
 

@@ -87,11 +87,44 @@ def _white_mask(card_bgr):
 def _glyph_deck_mask(card_bgr):
     """Tinta del mazo de cara blanca (glyph_card_detector): el rango va en el
     color del palo sobre una cara clara, o sea justo la polaridad contraria a la
-    del mazo de fondo solido. La tinta es todo lo que NO es cara."""
+    del mazo de fondo solido. La tinta es todo lo que NO es cara.
+
+    SE QUITA EL BORDE LATERAL DE LA CARTA. En este mazo las cartas van pegadas y
+    la caja se corta por la costura, asi que el borde oscuro de la carta -y a
+    veces un trozo de la vecina- cae dentro del recorte, y como no es cara,
+    entra en la tinta. Queda una barra alta y fina pegada a x=0 o a x=ancho-1, o
+    sea EXACTAMENTE la forma de un '1', y eso rompe dos cosas a la vez: is_ten
+    dispara sin motivo y la vista que se manda al OCR puede quedarse sin el
+    rango. Medido en el frame 1136 de la sesion de las 19:35, sobre 5 cartas de
+    board: 3 traian barra a la izquierda, 4 a la derecha, y una carta se quedaba
+    con las DOS barras y NINGUN glifo de rango. En esa sesion la T salia el
+    10,7% de las veces cuando le tocaba el 7,7%.
+
+    El rango nunca toca el borde lateral -va centrado-, asi que descartar los
+    componentes que lo tocan no puede comerse un glifo real."""
     hsv = cv2.cvtColor(card_bgr, cv2.COLOR_BGR2HSV)
     s, v = hsv[:, :, 1].astype(int), hsv[:, :, 2].astype(int)
     cara = (s < glyph_card_detector.CARA_S_MAX) & (v > glyph_card_detector.CARA_V_MIN)
-    return (~cara).astype(np.uint8) * 255
+    mask = (~cara).astype(np.uint8) * 255
+    return _sin_borde_lateral(mask)
+
+
+def _sin_borde_lateral(mask):
+    """Quita los componentes que tocan el lateral izquierdo o derecho."""
+    h, w = mask.shape
+    if w < 3:
+        return mask
+    n, lab, stats, _cent = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    fuera = np.zeros(n, dtype=bool)
+    for i in range(1, n):
+        x, _y, bw, _bh, _a = stats[i]
+        if x <= 0 or x + bw >= w:
+            fuera[i] = True
+    if not fuera.any():
+        return mask
+    limpia = mask.copy()
+    limpia[fuera[lab]] = 0
+    return limpia
 
 
 def rank_mask(card_bgr, deck="solid"):
@@ -189,7 +222,7 @@ def _rank_only_close_img(card_bgr, deck="solid"):
     """Rango aislado (sin pip de palo), reescalado a alto fijo y con cierre
     morfologico (reconecta trazos finos partidos). Texto negro sobre blanco,
     listo para add_text_job. Cae a la mascara completa si no hay glifos."""
-    mask = rank_mask(card_bgr, deck)
+    mask = rango_grande_mask(card_bgr, deck)
     h, w = mask.shape
     n, lab, stats, _cent = cv2.connectedComponentsWithStats(mask, connectivity=8)
     comps = [(i, stats[i]) for i in range(1, n) if stats[i][4] >= 0.01 * h * w]
@@ -298,14 +331,11 @@ def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ", deck="solid"):
              el rango aislado por posicion, que no se equivoca nunca, y la
              mascara completa solo desempata: 40/40."""
     if deck == "glyph":
-        # el rango aislado ancla (nunca se equivoca, solo se calla) y la mascara
-        # completa desempata. Ver _fila_de_arriba para la medicion.
         ancla = cv2.cvtColor(255 - _recortar(rango_grande_mask(card_bgr, deck)),
                              cv2.COLOR_GRAY2BGR)
-        desempate = white_text_mask(card_bgr, deck)
     else:
         ancla = white_text_mask(card_bgr, deck)
-        desempate = _rank_only_close_img(card_bgr, deck)
+    desempate = _rank_only_close_img(card_bgr, deck)
     start = batch.job_count()
     for psm, scale in PSM_SCALE_VARIANTS:
         batch.add_text_job(ancla, whitelist=whitelist, psm=psm, scale=scale, pad=20)

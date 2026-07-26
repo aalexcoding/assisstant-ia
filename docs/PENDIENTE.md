@@ -837,6 +837,103 @@ lee mejor.
 los frames y eso sigue igual — si el usuario vuelve al mazo de fondo sólido, se
 lleva ese defecto con él. No se ha tocado porque ya no es el mazo en uso.
 
+#### El '10' fantasma: la primera sesión larga con el mazo nuevo — ✅ ARREGLADO
+
+En la sesión de 3.816 frames la **T salía el 10,7% de las veces** cuando le tocaba
+el 7,7%, y aparecía en 36 de las ~45 confusiones de rango, emparejada con A, J, K,
+8, Q, 6, 2, 7 y 5 indistintamente. Un parecido de glifo no hace eso: eran dieces
+inventados. Dos causas independientes, las dos propias de este mazo:
+
+1. **El borde lateral de la carta.** Las cartas van pegadas y la caja se corta por
+   la costura, así que el borde oscuro entra en la máscara de tinta como una barra
+   alta y fina: la forma exacta de un "1". En el frame 1136, de 5 cartas de board,
+   3 traían barra a la izquierda, 4 a la derecha, y **una se quedaba con las dos
+   barras y ningún glifo de rango**, o sea que al OCR le llegaba una vista sin
+   rango. Se descartan los componentes que tocan el lateral: el rango va centrado
+   y nunca los toca.
+2. **Los pips de la vista de desempate.** Un rombo o un corazón se leen como "0", y
+   con un rango que parece "1" delante sale "10". Medido por vista sobre 92 cartas:
+
+   | vista | T | lecturas nulas |
+   |---|---|---|
+   | ancla (rango aislado) | **7,2%** | 78 |
+   | desempate (carta completa) | **10,4%** | 374 |
+
+   La vista completa era la que fabricaba los dieces *y* la más ruidosa. Se
+   sustituye por una segunda vista que también parte del rango aislado.
+
+| | antes | ahora |
+|---|---|---|
+| T en el rango final | 10,7% | **6,6%** |
+| tus cartas cambian dentro de la mano | 12% | **4%** |
+| el flop cambia dentro de la mano | 22% | **10%** |
+| cartas resueltas | — | 99% |
+
+**Un aviso**: `is_ten` (la detección geométrica del '10' por el ancho del "1") **no
+puede dispararse en este mazo**. Su tipografía lleva serifas y el "1" mide 20×34,
+relación 0,59, muy lejos del 0,12-0,15 del mazo viejo y del umbral de 0,4. No se
+ha tocado el umbral porque sin cartas etiquetadas no hay con qué validarlo, y con
+la T ya en 6,6% el riesgo de inventar dieces supera al de perderlos. Si alguna vez
+hace falta, el candidato medido es "el rango aislado tiene exactamente 2
+componentes", que es lo que distingue al '10' de todos los demás rangos.
+
+### 2.3e · La frontera de mano cortaba el DOBLE de lo que debía — ✅ ARREGLADO
+
+Revisando la sesión del 26-07 a las 19:35 (3.816 frames, 100 minutos) el
+vigilante marcó **57 veces** "tu posición cambia dentro de la mano". No fallaba la
+posición: la mano estaba partida en dos.
+
+**Lo importante es de dónde salió la vara de medir.** Todas las medidas
+anteriores de este módulo contaban los cortes que se *aciertan* y **ninguna
+contaba los que se inventan**, porque no había con qué. El botón la da: se mueve
+exactamente una vez por mano, así que un corte con el botón en el mismo asiento
+antes y después es un corte **falso**. Aplicándola a los 176 cortes de la sesión:
+
+| motivo | con el botón movido | sin moverse (falsos) |
+|---|---|---|
+| `cartas_aparecen` | 4 | **66 (94% falsos)** |
+| `board_vacio` | 32 | 16 (33%) |
+| `board_vacio` + `boton` | 38 | 0 |
+| `boton` | 18 | 0 |
+
+`cartas_aparecen` provocaba **66 de los 82 cortes falsos**. La señal depende de
+*leer* las dos cartas del hero, y basta con perderlas un frame suelto para que al
+siguiente "aparezcan" otra vez y la mano se parta. Se intentó salvarla exigiendo
+que las cartas llevaran varios frames ausentes, y **no se salva con ningún
+umbral**: ni con 6 frames de espera (precisión 71%) llega a la de quitarla (81%),
+y solo recupera 5 cortes buenos a cambio de 17 falsos.
+
+Resultado de sacarla de `MOTIVOS_DE_CORTE`:
+
+| | antes | ahora |
+|---|---|---|
+| manos seguidas en 100 minutos | 176 | **111** |
+| manos que comparten botón con la anterior | 42% | **12%** |
+| cortes buenos / falsos | 92 / 82 | **88 / 16** |
+
+Se pierden 4 cortes reales (el 4%) y se evitan 66 manos partidas.
+
+**Y arrastró consigo otro problema.** El cliente no actualiza la mesa de golpe:
+recoge las cartas y *luego* mueve el botón, así que un corte puede caer 1-2 frames
+antes de que roten las posiciones y esos frames llevan la fila de rango de la mano
+anterior. Con los cortes falsos eso valía 119 frames y **36 recomendaciones
+emitidas con la posición equivocada**. `HandTracker.posiciones_asentadas()` lo
+detecta (el botón sigue donde estaba en la mano anterior) y el motor se abstiene.
+
+Medido antes de arreglar los cortes, el filtro salía a pérdida: evitaba 14
+recomendaciones malas pero dejaba 11 manos de 118 sin ninguna. **Con los cortes
+arreglados el problema se disuelve solo**: el filtro pasa a costar 0
+recomendaciones y a disparar 0 veces, porque casi todos los cortes los da ya el
+propio botón y ahí el movimiento ya ha ocurrido. Se deja puesto porque es gratis y
+el comportamiento del cliente que lo motiva es real, pero conviene saber que en
+esa sesión no llegó a activarse.
+
+**Lo que queda**: la posición del hero todavía cambia dentro de 33 de las 111
+manos. De esas, **24 son frames sueltos** (ruido de lectura, se arreglan con la
+regla de mayoría dentro de la mano que ya funciona para los nombres) y **9 son dos
+manos pegadas** (el 4% de cortes reales que se perdió). Los frames sueltos llegan
+a emitir recomendación con una posición minoritaria.
+
 ### 2.3b Corpus etiquetado
 
 El modo testing ya recoge la materia prima y las notas de §2.3 aportan los casos

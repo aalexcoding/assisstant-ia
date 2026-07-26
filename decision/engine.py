@@ -465,6 +465,15 @@ def decide(state):
     if hero_position is None:
         return abstain("no se detecto la posicion del hero; no se puede recomendar")
 
+    # El cliente recoge las cartas antes de mover el boton, asi que los primeros
+    # frames de una mano traen todavia las posiciones de la anterior y la
+    # posicion es justo lo que elige la fila de rango. Medido sobre 3.816 frames:
+    # 119 frames con la posicion caducada y 36 recomendaciones emitidas con ella.
+    # Ver hand_tracker._abrir.
+    if state.get("posiciones_asentadas") is False:
+        return abstain("el boton todavia no se ha movido: estas posiciones son "
+                       "de la mano anterior")
+
     # LA GUARDA DE UNIDAD. La app es BB-only, pero eso no se puede DAR POR HECHO:
     # analyze() y analyze_color_deck() son rutas de diagnostico que siguen
     # produciendo stacks en FICHAS ENTERAS. Si se asumiera "bb" por defecto, un

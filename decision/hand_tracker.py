@@ -213,7 +213,43 @@ def motivos_de_frontera(previo, actual):
 #
 # O sea que "cartas distintas" no aporta un solo corte que las otras no vean, y
 # si aporta ruido. Fuera.
-MOTIVOS_DE_CORTE = frozenset({"mano_chat", "cartas_aparecen", "board_vacio", "boton"})
+#
+# CARTAS_APARECEN SE CAYO DESPUES, y la leccion es que esas medidas solo contaban
+# los cortes que se ACIERTAN, nunca los que se inventan. Con el boton hay por fin
+# una vara de medir la PRECISION: el boton se mueve exactamente una vez por mano,
+# asi que un corte con el boton en el mismo asiento antes y despues es un corte
+# FALSO, y eso parte una mano en dos. Medido sobre los 176 cortes de una sesion
+# de 3.816 frames (100 minutos):
+#
+#     motivo                    con el boton movido    sin moverse (falsos)
+#     cartas_aparecen                  4                     66   (94% falsos)
+#     board_vacio                     32                     16   (33%)
+#     board_vacio + boton             38                      0
+#     boton                           18                      0
+#
+# cartas_aparecen provoca 66 de los 82 cortes falsos. El motivo es que la señal
+# depende de LEER las dos cartas del hero, y basta con perderlas un frame suelto
+# para que al siguiente "aparezcan" otra vez: una mano se parte en dos, tres o
+# cuatro. Con ella el 42% de las manos compartia boton con la anterior.
+#
+# Quitandola: 88 cortes buenos y 16 falsos, frente a 92 y 82. Se pierden 4 cortes
+# reales (el 4%) y se evitan 66 manos partidas. Se sigue exponiendo la señal, que
+# es informativa; lo que ya no hace es cortar.
+#
+# Se intento SALVARLA exigiendo que las cartas llevaran varios frames ausentes
+# (un reparto de verdad viene de muchos frames sin cartas; un fallo de lectura,
+# de uno), y no se salva con ningun umbral:
+#
+#     frames sin cartas exigidos    buenos  falsos  precision
+#     0 (como estaba)                  92      88      51%
+#     2                                92      62      60%
+#     4                                91      47      66%
+#     6                                92      38      71%
+#     la señal fuera                   87      21      81%
+#
+# Ni siquiera con 6 frames de espera compensa: recupera 5 cortes buenos y mete
+# 17 falsos. Fuera del todo.
+MOTIVOS_DE_CORTE = frozenset({"mano_chat", "board_vacio", "boton"})
 
 # Frames minimos que tiene que durar una mano antes de poder cortarla otra vez.
 #
@@ -292,9 +328,27 @@ class HandTracker:
         self._meta = {}
         self._frames = 0
         self._motivos = frozenset()
+        self._botones = []
         self._abrir(frozenset())
 
     def _abrir(self, motivos):
+        # POSICIONES QUE TODAVIA SON DE LA MANO ANTERIOR. El cliente no actualiza
+        # la mesa de golpe: primero recoge las cartas y luego mueve el boton, asi
+        # que el corte cae 1-2 frames ANTES de que las posiciones roten y esos
+        # frames arrastran la fila de rango de la mano pasada. Medido sobre 3.816
+        # frames (215 manos): pasa en 57 manos (27%), son 119 frames (3,1%) y en
+        # 36 de ellos se llego a EMITIR recomendacion con la posicion caducada,
+        # que es el fallo caro de esta app -una respuesta plausible y falsa-.
+        #
+        # Como se distingue de un corte tardio, donde las posiciones YA son
+        # buenas desde el primer frame y esperar seria perder la mano entera: si
+        # la mano que se cierra vio MOVERSE el boton, el movimiento ya paso y la
+        # nueva arranca asentada; si lo vio quieto, el movimiento esta por llegar
+        # y hay que esperarlo.
+        cambio = len(self._botones) >= 2
+        ultimo = self._botones[-1] if self._botones else None
+        self._boton_previo = None if cambio else ultimo
+        self._botones = []
         self.mano += 1
         self._asientos = {}
         self._meta = {}
@@ -315,6 +369,7 @@ class HandTracker:
         # justo el alcance en el que fijar el nombre es seguro.
         self._nombres = {}
         self._veces = {}           # en cuantos frames de la mano se vio cada asiento
+        self._botones = []         # asientos por los que ha pasado el boton EN ESTA MANO
         self._calle = 0            # cartas de board de la calle en curso
         self._frames = 0
         self._motivos = frozenset(motivos)
@@ -328,6 +383,8 @@ class HandTracker:
             self._abrir(motivos)
         self._previo = actual
         self._frames += 1
+        if actual["boton"] and (not self._botones or self._botones[-1] != actual["boton"]):
+            self._botones.append(actual["boton"])
 
         # CALLE. Se mide por el numero de cartas de board, y SOLO PUEDE AVANZAR:
         # el board no encoge en una mano de verdad, asi que un board mas corto (o
@@ -366,6 +423,14 @@ class HandTracker:
                 bet_leido=p.get("bet") if isinstance(p.get("bet"), (int, float)) else None)
 
         return self.resumen()
+
+    def posiciones_asentadas(self):
+        """False mientras el boton siga donde estaba en la mano anterior, o sea
+        mientras las posiciones que se leen sean todavia las de esa mano. Ver
+        _abrir para la medicion y para por que no se espera siempre."""
+        if self._boton_previo is None or not self._botones:
+            return True
+        return self._botones[-1] != self._boton_previo
 
     def asientos_estables(self):
         """Asientos que se han visto ocupados en al menos la MITAD de los frames
@@ -413,6 +478,7 @@ class HandTracker:
             }
         return {
             "mano": self.mano,
+            "posiciones_asentadas": self.posiciones_asentadas(),
             "frames": self._frames,
             "calle": _NOMBRE_CALLE.get(self._calle, "?"),
             "motivos_apertura": sorted(self._motivos),
@@ -461,6 +527,7 @@ def aplicar(state, info):
                 p["name_repuesto"] = True
     state["mano_seguida"] = info.get("mano")
     state["calle_seguida"] = info.get("calle")
+    state["posiciones_asentadas"] = info.get("posiciones_asentadas", True)
     return state
 
 

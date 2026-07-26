@@ -102,17 +102,52 @@ info = tr.update(estado({"UL": 46.0}, hero=("Ah", "Kd")))
 check("dentro de la mano se acumula", com(info, "UL") == 4.0)
 mano_antes = info["mano"]
 
-# CARTAS QUE APARECEN (de ninguna a dos): les acaban de repartir. 35 de 52 cortes
-# reales y CERO disparos sin respaldo.
+# CARTAS QUE APARECEN ya NO corta. Parecia solida -35 de 52 cortes reales- pero
+# aquella medida solo contaba los cortes que se ACIERTAN, nunca los que se
+# inventan. Con el boton hay por fin vara para medir la PRECISION, y la señal
+# resulta ser 94% falsa: depende de LEER las dos cartas del hero, y basta con
+# perderlas un frame para que al siguiente "aparezcan" y la mano se parta.
 tr2 = ht.HandTracker()
 for _ in range(ht.MIN_FRAMES_POR_MANO):
     tr2.update(estado({"UL": 50.0}))
 m0 = tr2.update(estado({"UL": 46.0}))["mano"]
 info = tr2.update(estado({"UL": 62.0}, hero=("7c", "2d")))
-check("cartas que APARECEN (de 0 a 2) = mano nueva", info["mano"] == m0 + 1)
+check("un frame en el que se pierden las cartas y vuelven NO parte la mano "
+      "(provocaba 66 de los 82 cortes falsos)", info["mano"] == m0)
+check("la señal se sigue exponiendo, que es informativa",
+      "cartas_aparecen" in ht.motivos_de_frontera(
+          ht._vista(estado({"UL": 46.0})),
+          ht._vista(estado({"UL": 62.0}, hero=("7c", "2d")))))
+
+# EL BOTON si corta, y ademas rehace la base
+tr2b = ht.HandTracker()
+for _ in range(ht.MIN_FRAMES_POR_MANO):
+    tr2b.update(estado({"UL": 50.0, "MR": 30.0}, posiciones={"UL": "BTN"}))
+m0 = tr2b.update(estado({"UL": 46.0, "MR": 30.0}, posiciones={"UL": "BTN"}))["mano"]
+info = tr2b.update(estado({"UL": 62.0, "MR": 30.0}, posiciones={"MR": "BTN"}))
+check("el boton en otro asiento = mano nueva", info["mano"] == m0 + 1)
 check("y la base se rehace: el que gano el bote no aparece comprometido",
       com(info, "UL") == 0)
-check("se registra POR QUE se corto", "cartas_aparecen" in info["motivos_apertura"])
+check("se registra POR QUE se corto", "boton" in info["motivos_apertura"])
+
+# POSICIONES QUE TODAVIA SON DE LA MANO ANTERIOR: el cliente recoge las cartas
+# antes de mover el boton, asi que un corte por board_vacio puede caer 1-2 frames
+# antes de que las posiciones roten.
+tr2c = ht.HandTracker()
+for _ in range(ht.MIN_FRAMES_POR_MANO + 1):
+    tr2c.update(estado({"UL": 50.0}, board=("Ah", "Kd", "2c"), posiciones={"UL": "BTN"}))
+info = tr2c.update(estado({"UL": 50.0}, posiciones={"UL": "BTN"}))   # board_vacio
+check("tras cortar con el boton sin mover, las posiciones NO estan asentadas",
+      info["posiciones_asentadas"] is False)
+info = tr2c.update(estado({"UL": 50.0, "MR": 30.0}, posiciones={"MR": "BTN"}))
+check("y se asientan en cuanto el boton se mueve",
+      info["posiciones_asentadas"] is True)
+
+tr2d = ht.HandTracker()
+for _ in range(ht.MIN_FRAMES_POR_MANO + 1):
+    tr2d.update(estado({"UL": 50.0}, posiciones={"UL": "BTN"}))
+check("si el boton nunca se ha visto moverse no se bloquea nada: la primera mano "
+      "no hereda posiciones de nadie", tr2d.resumen()["posiciones_asentadas"] is True)
 
 # CARTAS DISTINTAS ya NO corta: parecia la señal mas fuerte y medida acierta 3 de
 # 52, y en una sesion sus 4 disparos fueron TODOS falsos (el OCR lee mal una
@@ -299,10 +334,14 @@ check("un GameState sin 'seat' (ruta de diagnostico) no rastrea nada ni lanza",
 print("\n# --- nombre pegajoso dentro de la mano ---")
 
 
-def con_nombre(nombre, accion, cartas=("Ah", "Kd")):
+def con_nombre(nombre, accion, cartas=("Ah", "Kd"), boton="UL"):
     return {"board": [], "hero_cards": list(cartas), "to_call": None,
             "players": [{"seat": "UL", "name": nombre, "action": accion,
-                         "stack": 50.0, "is_hero": False}]}
+                         "stack": 50.0, "is_hero": False,
+                         "position": "BTN" if boton == "UL" else None},
+                        {"seat": "MR", "name": "otro", "action": None,
+                         "stack": 30.0, "is_hero": False,
+                         "position": "BTN" if boton == "MR" else None}]}
 
 
 tr = ht.HandTracker()
@@ -345,7 +384,7 @@ check("si la lectura nueva se vuelve mayoritaria, se adopta (no es un latch)",
 # asiento puede ser OTRA persona: reponer entre manos seria inventarse quien es.
 s4 = con_nombre(None, "Pasar", cartas=())          # se recogen las cartas
 ht.aplicar(s4, tr.update(s4))
-s4 = con_nombre(None, "Pasar", cartas=("7c", "2d"))  # y se reparten otras: mano nueva
+s4 = con_nombre(None, "Pasar", cartas=("7c", "2d"), boton="MR")   # el boton rota: mano nueva
 ht.aplicar(s4, tr.update(s4))
 check("en una mano NUEVA no se repone (en Zoom el asiento puede ser de otro)",
       s4["players"][0]["name"] is None)
