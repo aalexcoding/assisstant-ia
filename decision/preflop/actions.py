@@ -49,6 +49,13 @@ _BASE = {
     "CALL":                ("CALL", "pagar"),
     "MARGINAL CALL":       ("MARGINAL CALL", "pagar, justo"),
     "CHECK (BB OPTION)":   ("CHECK", "pasar (opcion de la BB)"),
+    # Fase E: la opcion de la BB derivada de la fila SB (ver preflop/derive.py).
+    # "CHECK" a secas y no "CHECK (BB OPTION)" porque aqui SI se ha mirado la
+    # mano: es una decision, no el marcador de posicion de antes.
+    "CHECK":                       ("CHECK", "pasar"),
+    "RAISE OVER LIMPERS":          ("RAISE OVER LIMPERS", "subir sobre los que han entrado"),
+    "MARGINAL RAISE OVER LIMPERS": ("MARGINAL RAISE OVER LIMPERS",
+                                    "subir sobre los que han entrado, justo"),
 }
 
 

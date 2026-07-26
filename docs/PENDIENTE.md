@@ -12,7 +12,7 @@ Estado a 2026-07-26. El plan completo del que sale esto está en
 | 1 · Captura Wayland | ✅ |
 | 2 · Detección de cambio de board | ❌ no existe |
 | 3 · Visión | 🟡 va bien; los importes apostados los cubre ahora el rastreador (§2.0) |
-| 4.1 · Preflop determinista | ✅ la pieza más sólida |
+| 4.1 · Preflop determinista | ✅ la pieza más sólida; + capa derivada para la BB (§1.3) |
 | 4.2 · Transcripción | ✅ 127 vídeos, 5162 chunks |
 | 4.3 · Postflop | ✅ equity por Monte Carlo, validada y cableada al HUD |
 | 4.4 · RAG (estudio post-mano) | 🟡 índice construido, sin cablear |
@@ -101,9 +101,47 @@ hubiera cambiado. La garantía ahora es que `parse_amount_bb` **exige el sufijo
 abstiene. Por eso el parseo no se puede aflojar a "el mayor entero de la zona" —
 eso leería la denominación impresa en una ficha (25, 100) como un importe.
 
-### 1.3 Fase E: respaldo probabilístico del preflop
+### 1.3 Fase E: respaldo probabilístico del preflop — 🟡 la BB hecha
 
-Depende del cutover y, para los spots de defensa, de §2.0. El diseño completo (con las mediciones que justifican cada
+**Hecho: la opción de la BB** (`decision/preflop/derive.py`). Era la casilla que
+más pesaba: el `CHECK (BB option)` era el **36% de todas las recomendaciones** de
+una sesión real (227 de 624) y respondía siempre lo mismo *sin mirar las cartas
+ni el stack* — con AA y 5bb decía lo mismo que con 72o.
+
+El donante es **su propia fila de la SB** a la misma profundidad, la única de sus
+tablas con la forma del spot (subida arriba, `LIMP` en medio, `fold` mínimo)
+porque es la única posición desde la que digitalizó "entrar sin subir". El mapeo
+no es una elección sino una consecuencia de las reglas:
+
+```
+OPEN RAISE (x BB)   -> RAISE OVER LIMPERS (x BB)     LIMP -> CHECK
+MARGINAL OPEN RAISE -> MARGINAL RAISE OVER LIMPERS   fold -> CHECK
+OPEN RAISE ALL IN   -> ALL IN
+```
+
+Las dos de la derecha son forzadas: **con la opción nunca se retira uno**, porque
+pasar es gratis. Un `fold` del donante significa "no metas más dinero" = `CHECK`.
+Está fijado como test sobre las 169 manos × 11 profundidades: ni una respuesta es
+fold.
+
+**Efecto sobre la sesión**: los 227 `CHECK (BB option)` pasan a 159 respuestas
+derivadas (118 pasar, **41 subir**), 19 se quedan en el `CHECK` de siempre (2+
+limpers, sin donante válido) y **49 pasan a abstención** — eran contradictorios,
+los botones pedían *Igualar* y la app decía "pasa, es tu opción". Esa guarda
+simétrica faltaba y ahora existe.
+
+**Corrección al plan**, medida: desplazar la fila un asiento por limper de más
+(SB → BTN → CO) **no aprieta el rango, lo ensancha**. A partir de 20bb la fila BTN
+sube el 37-56% de los combos frente al 19-29% de la SB, porque en profundo la SB
+mete su rango medio en `LIMP`. Sin un segundo donante válido, con 2+ limpers no se
+deriva.
+
+Anchos de lo que ahora recomienda subir (de 169 manos): 4bb 82,8% · 10bb 56,2% ·
+20bb 30,8% · 40bb 26,0%.
+
+**Lo que falta de la Fase E** (las otras cuatro situaciones): frente a un limp con
+hero ≠ BB, squeeze, ciega vs ciega y 4bet. Depende, para los spots de defensa,
+de §2.0. El diseño completo (con las mediciones que justifican cada
 constante) está en el plan; resumen:
 
 Todo lo que responde sale de una de tres operaciones sobre las 331 celdas

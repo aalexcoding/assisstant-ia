@@ -876,10 +876,20 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             esc = GLib.markup_escape_text
             en = recommendation.get("action_en") or str(recommendation["action"]).upper()
             es = recommendation.get("action_es")
-            markup = (f'<span size="xx-large" weight="bold" foreground="#2ecc71">'
-                      f'{esc(en)}</span>')
+            # Una accion DERIVADA (Fase E) es indistinguible a simple vista de una
+            # que sale de sus tablas -"CHECK" es "CHECK"-, asi que se distingue por
+            # color y con una linea propia que nombra la celda donante. El verde se
+            # reserva para lo que si esta digitalizado.
+            derivada = recommendation.get("source") == "derived"
+            color = "#f39c12" if derivada else "#2ecc71"
+            markup = f'<span size="xx-large" weight="bold" foreground="{color}">{esc(en)}</span>'
             if es:
                 markup += f'\n<span size="large" foreground="#bdc3c7">{esc(es)}</span>'
+            if derivada:
+                markup += (f'\n<span size="small" foreground="#f39c12">inferido de '
+                           f'{esc(str(recommendation.get("donor") or "otra celda tuya"))}'
+                           f' — confianza {esc(str(recommendation.get("confidence") or "?"))}'
+                           f'</span>')
             self.rec_label.set_markup(markup)
             reasoning = recommendation.get("reasoning") or ""
             self.reasoning_label.set_markup(GLib.markup_escape_text(reasoning))

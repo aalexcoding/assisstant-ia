@@ -88,6 +88,7 @@ import equity
 import hand_tracker
 
 from actions import CHECK_BB_OPTION, translate_into
+from derive import bb_option
 from lookup import RANGES, recommend
 
 _DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.jsonl")
@@ -249,6 +250,38 @@ def _log_decision(state, recommendation, abstain_reason):
         pass
 
 
+# Margen para reconocer a un rival que ha ENTRADO PAGANDO (limp, o la SB
+# completando): su importe queda en una ciega grande. Ancho por los dos lados
+# porque en torneo con BB-ante el importe puede pasar algo de 1 y porque el OCR
+# de un importe en BB da una decimal.
+_LIMP_MIN_BB = 0.75
+_LIMP_MAX_BB = 1.35
+
+
+def _contar_limpers(players):
+    """Cuantos rivales han entrado pagando, o None si no se pudo saber.
+
+    Se mira el importe leido en la mesa y, si no lo hay, el comprometido que
+    deduce el rastreador de la bajada de stack. Devolver None cuando NINGUN rival
+    da ninguna de las dos señales es importante: no es lo mismo "he mirado y no
+    hay limpers" que "no he podido mirar", y con la opcion de la BB siempre hay
+    al menos un rival dentro (si no, la mano ya habria terminado)."""
+    visto = False
+    n = 0
+    for p in players:
+        if p.get("is_hero"):
+            continue
+        v = p.get("bet")
+        if not isinstance(v, (int, float)):
+            v = p.get("committed")
+        if not isinstance(v, (int, float)):
+            continue
+        visto = True
+        if _LIMP_MIN_BB <= v <= _LIMP_MAX_BB:
+            n += 1
+    return n if visto else None
+
+
 def _hero_player(state):
     for p in state.get("players", []):
         if p.get("is_hero"):
@@ -399,6 +432,7 @@ def decide(state):
     # el importe del boton "Igualar" (ver la red de seguridad de to_call).
     facing = "open_raise"
     vs_position = None
+    derivada_meta = None          # procedencia si la accion NO sale de una tabla suya
     origen_subida = "subida inferida del importe apostado en la mesa"
     if state.get("facing") == "bet":
         vs_position, code = _detect_raiser(state.get("players", []), BB)
@@ -451,17 +485,42 @@ def decide(state):
                      f"{origen_subida})"
                      + _stack_key_note(result, stack_bb, facing, warnings))
     elif hero_position == "BB":
-        # La BB nunca ABRE el bote. Si aqui no hay subida que enfrentar, es la
-        # opcion de la BB en un bote limpeado/sin subir. No tenemos digitalizado
-        # el rango de "raise over limpers" (solo Open Raise y 3bet/Call), asi que
-        # por defecto pasar (ver flop gratis) y avisar de la limitacion.
-        # etiqueta sintetica (no sale de ranges.json) para que pase por la misma
-        # capa de traduccion que el resto: "CHECK" grande, "pasar (opcion de la
-        # BB)" debajo.
-        action = CHECK_BB_OPTION
-        reasoning = (f"Estas en la BB con opcion a {stack_bb:.1f}bb ({fuente};{nota_cache} "
-                     f"nadie ha subido). Por defecto PASAR y ver el flop gratis; no tengo "
-                     f"digitalizado tu rango de 'raise over limpers' para decir si subir.")
+        # LA OPCION DE LA BB. La BB nunca ABRE el bote, asi que si aqui no hay
+        # subida que enfrentar es un bote limpeado y su decision es subir o pasar.
+        #
+        # Contradiccion primero: si los BOTONES piden igualar, no hay opcion que
+        # valga -pasar no es gratis- y decir "pasa, es tu opcion" seria decirle al
+        # usuario justo lo contrario de lo que tiene delante. Es la simetrica de
+        # la guarda de facing="check" sin ser BB. Medido sobre una sesion real:
+        # 49 de las 227 "CHECK (BB option)" (el 22%) se daban con los botones
+        # pidiendo igualar.
+        if state.get("facing") == "bet":
+            return abstain("los botones piden IGUALAR, asi que no es la opcion de la BB "
+                           "(pasar no es gratis) pero tampoco se ha podido atribuir la "
+                           "subida a ningun asiento; sin recomendacion fiable")
+
+        limpers = _contar_limpers(state.get("players", []))
+        derivada = bb_option(hero_cards, stack_bb, limpers)
+        if derivada is None:
+            # sin donante valido (2+ limpers, o etiqueta que no se sabe traducir):
+            # se queda el CHECK de siempre, que es la salida segura -pasar es
+            # gratis- pero se dice que es un defecto, no una lectura de la mano.
+            action = CHECK_BB_OPTION
+            cuantos = (f"hay {limpers} rivales dentro" if isinstance(limpers, int)
+                       else "no se pudo contar cuantos rivales han entrado")
+            reasoning = (f"Estas en la BB con opcion a {stack_bb:.1f}bb ({fuente};{nota_cache} "
+                         f"nadie ha subido, {cuantos}). Por defecto PASAR y ver el flop "
+                         f"gratis: no tengo un rango tuyo para este spot con tantos rivales.")
+        else:
+            action = derivada["action"]
+            reasoning = (f"Opcion de la BB a {stack_bb:.1f}bb ({fuente};{nota_cache} nadie ha "
+                         f"subido). INFERIDO de {derivada['donor']}, que en tu tabla dice "
+                         f"'{derivada['donor_action']}': no es tu rango digitalizado para "
+                         f"este spot, es el mas parecido que tienes. Con la opcion nunca se "
+                         f"retira uno, porque pasar es gratis.")
+            for sup in derivada["assumptions"]:
+                reasoning += f" OJO: {sup}."
+            derivada_meta = derivada
     else:
         result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
         if result is None:
@@ -483,6 +542,16 @@ def decide(state):
         "facing_used": facing,
         "vs_position": vs_position,
     }
+    # Procedencia. Una etiqueta derivada como "CHECK" es indistinguible a simple
+    # vista de una que sale de sus tablas, asi que cuando NO sale de ellas se dice
+    # explicitamente, con la celda donante y la confianza. El HUD lo pinta aparte.
+    if derivada_meta is not None:
+        recommendation["source"] = derivada_meta["source"]
+        recommendation["confidence"] = derivada_meta["confidence"]
+        recommendation["donor"] = derivada_meta["donor"]
+        recommendation["assumptions"] = derivada_meta["assumptions"]
+    else:
+        recommendation["source"] = "chart"
     # action_en / action_es para el HUD. "action" se conserva con la etiqueta
     # CRUDA: es la que enlaza con ranges.json y la que registra el log, asi que
     # el historial de decisiones sigue siendo comparable entre versiones.
