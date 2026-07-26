@@ -79,6 +79,7 @@ import os
 import time
 
 import equity
+import hand_tracker
 
 from actions import CHECK_BB_OPTION, translate_into
 from lookup import RANGES, recommend
@@ -448,6 +449,7 @@ def decide(state):
     # el importe del boton "Igualar" (ver la red de seguridad de to_call).
     facing = "open_raise"
     vs_position = None
+    origen_subida = "subida inferida del importe apostado en la mesa"
     if state.get("facing") == "bet":
         vs_position, code = _detect_raiser(state.get("players", []), bb_efectiva)
         if vs_position is not None:
@@ -464,9 +466,28 @@ def decide(state):
             # subida: plausible y falso, el peor fallo posible en esta app.
             to_call = state.get("to_call")
             if isinstance(to_call, (int, float)) and to_call > bb_efectiva:
-                return abstain(f"el boton pide {to_call:g} BB para igualar, o sea que hay una "
-                               f"subida, pero ningun asiento tiene un importe que la explique "
-                               f"(no se leyo la apuesta en la mesa); sin defensa fiable")
+                # El importe dibujado en la mesa no explica la subida -es el caso
+                # mayoritario: 59% de los frames preflop con to_call>1-, pero la
+                # BAJADA DE STACK del rival entre frames si puede. Ver
+                # hand_tracker: sube la explicacion del 41% al 84%.
+                #
+                # ATRIBUYE, NO INVENTA, y el orden de este if es justo la garantia:
+                # solo se llega aqui porque to_call -evidencia independiente, el
+                # propio cliente pidiendo un importe- ya ha demostrado que hay una
+                # subida. Un comprometido inflado (por una frontera de mano que se
+                # paso por alto) no puede crear un raiser de la nada.
+                pos_derivada, detalle = hand_tracker.atribuir_subida(
+                    state.get("players", []), to_call)
+                if pos_derivada is not None:
+                    vs_position = pos_derivada
+                    facing = "threebet_call"
+                    origen_subida = (f"subida atribuida a {pos_derivada} por su bajada de "
+                                     f"stack entre frames (la mesa no mostraba el importe)")
+                else:
+                    return abstain(
+                        f"el boton pide {to_call:g} BB para igualar, o sea que hay una subida, "
+                        f"pero ningun asiento la explica: ni el importe dibujado en la mesa ni "
+                        f"la bajada de stack entre frames ({detalle}); sin defensa fiable")
 
     if facing == "threebet_call":
         result = recommend(hero_cards, hero_position, stack_bb,
@@ -477,7 +498,7 @@ def decide(state):
         action = result["action"]
         reasoning = (f"Defensa (3bet/call) de {hero_position} a {stack_bb:.1f}bb efectivos "
                      f"contra la subida de {vs_position} ({fuente};{nota_cache} "
-                     f"subida inferida del importe apostado en la mesa)"
+                     f"{origen_subida})"
                      + _stack_key_note(result, stack_bb, facing, warnings))
     elif hero_position == "BB":
         # La BB nunca ABRE el bote. Si aqui no hay subida que enfrentar, es la

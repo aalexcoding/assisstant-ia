@@ -11,7 +11,7 @@ Estado a 2026-07-25 (tras 4 sesiones de testing grabadas, ~700 frames). El plan 
 | 0 · Calibración | ✅ |
 | 1 · Captura Wayland | ✅ |
 | 2 · Detección de cambio de board | ❌ no existe |
-| 3 · Visión | 🟡 va bien salvo los importes apostados (ver §2.0) |
+| 3 · Visión | 🟡 va bien; los importes apostados los cubre ahora el rastreador (§2.0) |
 | 4.1 · Preflop determinista | ✅ la pieza más sólida |
 | 4.2 · Transcripción | ✅ 127 vídeos, 5162 chunks |
 | 4.3 · Postflop | ✅ equity por Monte Carlo, validada y cableada al HUD |
@@ -133,77 +133,92 @@ calidad de las apuestas.
 
 ## 2 · No bloqueado
 
-### 2.0 · ⭐ Deducir lo apostado de la BAJADA DE STACK entre frames
+### 2.0 · Deducir lo apostado de la BAJADA DE STACK entre frames — ✅ HECHO
 
-**La mejor idea que ha salido, y sustituye a los dos apartados de abajo** (leer
-las apuestas de la mesa y el historial de la mano). En vez de localizar las
-fichas apostadas —que es lo que está fallando— se compara el stack de cada
-jugador entre frames: si baja de X a Y, ha puesto X−Y.
+`decision/hand_tracker.py`. En vez de localizar las fichas apostadas sobre el
+tapete —que es lo que está fallando— se compara el stack de cada jugador entre
+frames: si baja de X a Y, ha puesto X−Y.
 
-**Por qué es mejor que leer la mesa**: los stacks *sí* se leen (73%), las
-apuestas no. Y no depende de dónde dibuje el cliente las fichas, así que
-sobrevive a recalibrar el recuadro — la clase de fallo que ya ha mordido dos
-veces (el área del botón en píxeles, las zonas de apuesta).
+#### El resultado, medido re-analizando 663 frames de una sesión real
 
-#### Medido sobre la sesión del 25-07 (364 frames)
+En los frames **preflop donde el botón "Igualar" pide más de 1 BB**, que son
+exactamente los que hoy hacían abstenerse al motor:
 
-```
-stacks leidos:                              73%   (59-83% segun posicion)
-pares consecutivos con lectura en ambos:    68%
-cambios de stack detectados:               177
-deltas mas frecuentes:  1.0 (x25) · 0.5 (x8) · 4.0 · 5.0 · 4.5 · 3.5
-```
-
-Los dos deltas más frecuentes son **1.0 y 0.5: la ciega grande y la pequeña**.
-Eso confirma que la señal es real y no ruido.
-
-Contrastando el valor derivado contra la apuesta leída en la mesa:
-
-| | |
+| quién explica la subida | |
 |---|---|
-| coincide | 52 |
-| discrepa | 29 |
-| derivado 0 (aún sin ver el stack previo) | 114 |
+| el importe leído en la mesa | 41% |
+| el comprometido derivado | **65%** |
+| alguno de los dos | **84%** |
+| nadie (el motor se abstiene) | **16%** — antes 59% |
 
-**Y en las discrepancias suele acertar el derivado**, no el leído:
+Y de punta a punta, con el motor entero: las **defensas (`threebet_call`) pasan
+de 6 a 18**, que era el agujero señalado en §2.0b (*"las 54 recomendaciones
+fueron `open_raise`, ninguna defensa"*). Las recomendaciones totales suben de 191
+a 203 sobre los mismos 663 frames.
 
-| posición | leído en la mesa | derivado | quién acierta |
-|---|---|---|---|
-| SB | 1.0 | **0.5** | el derivado: la SB pone media ciega |
-| HJ | 1.0 | **1.2** | el derivado: es ciega + ante |
-| CO | **2,52** | 3.9 | el leído es basura de OCR |
+**El cambio es puramente aditivo: 12 nuevas, 0 cambiadas, 0 perdidas.** Ninguna
+recomendación que ya existía se altera. Está fijado como test.
 
-O sea que además de rellenar el hueco, **corrige lecturas que hoy son erróneas**.
+#### La regla de seguridad, que es lo que hace esto viable
 
-#### La limitación, y por qué encogió
+El comprometido es una **cota inferior**: si la mano ya había empezado cuando se
+vio al asiento por primera vez, la base ya está rebajada. Medido: en la mitad de
+las manos la SB sale con 0 comprometido en vez de 0,5, porque la frontera de mano
+se detecta unos frames tarde y para entonces las ciegas ya están puestas.
 
-Los 114 "derivado 0" son manos donde aún no se había visto el stack del jugador
-*antes* de que actuara. La mediana de esa sesión eran **5 frames por mano**,
-porque se grabó a 3,8 s de ciclo. Con el ciclo ya en 1,2 s salen ~3× más frames
-por mano, así que la mejora de rendimiento (§2.1) es lo que hace viable esto.
+Quedarse corto es la dirección peligrosa. De ahí la asimetría:
 
-#### Qué hace falta
+> el comprometido **nunca crea** una subida, solo **atribuye** una que el botón
+> "Igualar" ya ha demostrado que existe.
 
-1. **Exponer el ASIENTO en el `GameState`.** Hoy solo hay `position`, y las
-   posiciones **rotan entre manos**; el asiento (`UL`, `MR`…) es la clave
-   estable. Un campo más.
-2. **Rastreador de mano**: segmentar por frontera (el board deja de extender al
-   anterior, o cambia el nº de mano del chat) y llevar `max_stack_visto` por
-   asiento. `comprometido = max_visto − stack_actual`. Usar el máximo visto y no
-   el delta frame a frame lo hace tolerante a las lecturas que faltan.
-3. **Casos a cubrir**: stack que *sube* (ganó el bote), el nameplate que muestra
-   el verbo en vez del número justo al actuar, y manos que empiezan a media
-   captura.
-4. **Usar las dos señales**: el derivado como principal y el leído de la mesa
-   como corroboración. Coinciden → confianza alta; discrepan → gana el derivado
-   y se anota.
+Así, un comprometido inflado por una frontera que se pasó por alto no puede
+inventarse un raiser: sin botón que pida nada, no se mira. Y se exige además un
+único candidato, igual que ya hacía `detect_raiser`.
 
-Resuelve a la vez el hueco de las apuestas **y** el historial de la mano (§2.2),
-y con eso desbloquea la Fase E.
+Corroboración: cuando disparan las dos señales apuntan al **mismo asiento 7 de 8
+veces** (son fuentes independientes: OCR del nameplate vs OCR de la zona de
+apuesta). El HUD marca en verde lo comprometido cuando coinciden.
+
+#### Lo que se probó y NO funcionó, para que nadie lo repita
+
+- **Exigir que un valor se confirme 2 o 3 veces** antes de aceptarlo parecía lo
+  prudente y medido era peor **en todo**: la cobertura bajaba del 91% al 79% y al
+  68%, y el acuerdo con el bote leído del 37% al 15% y al 8%. El preflop se
+  resuelve en pocos frames y esperar confirmación se lo pierde entero.
+- **Cortar la mano cuando sube un stack** parecía la señal ideal (en poker solo se
+  ganan fichas al acabar la mano). Mirando las 12 subidas dentro de manos ya
+  etiquetadas por el chat, **son errores gordos de OCR**: `106.5 → 1065.0` (el
+  punto decimal perdido), `30.3 → 130.3` (un "1" fantasma). No cortan; se exponen
+  como `lecturas_descartadas` para desconfiar de ese asiento.
+- **Cortar por el board**: 3 de sus 3 cortes no tenían respaldo ni del chat ni de
+  las cartas del hero. Además un board de longitud ilegal (`7cAc`, 2 cartas, 9 de
+  403 frames) partía una mano en dos. No corta, y las longitudes ilegales se
+  ignoran.
+- **Filtro de mediana** sobre la serie de stacks: apenas ayuda (12 subidas → 11).
+  Los errores no son picos aislados, son lecturas malas que persisten frames.
+
+Las señales que **sí** cortan: las **cartas del hero** (precisa pero de poco
+alcance —el hero se retira mucho— 2 cortes en 267 frames) y el **número de mano
+del chat** (legible en el 70% de los frames, 13 cortes en 267). Llega con unos
+frames de retraso, que es justo por lo que las ciegas suelen quedar fuera.
+
+#### Lo que queda abierto
+
+- La frontera llega tarde, así que las **ciegas casi nunca entran en la base**.
+  Validado contra las reglas del poker: la SB sale como 0,5±0,3 solo en el 19% de
+  las manos. No importa para atribuir subidas (la subida ocurre después de las
+  ciegas) pero impide usar el comprometido como cuenta absoluta del bote.
+- La suma de lo comprometido cuadra con el bote leído dentro del 25% en el 37% de
+  los frames. Sirve como aviso, no como cuenta.
 
 ### 2.0b · Zonas de apuesta: lo que se investigó y NO se cerró
 
-**Prioridad alta.** Medido sobre la sesión del 25-07 (207 frames): `facing="bet"`
+**Prioridad ya baja: §2.0 lo tapa en gran parte** (las defensas pasaron de 6 a 18
+y las abstenciones por subida no atribuida del 59% al 16%). Se conserva escrito
+para que nadie repita las hipótesis descartadas, y porque el importe leído en la
+mesa sigue siendo la **corroboración** del derivado.
+
+Medido sobre la sesión del 25-07 (207 frames): `facing="bet"`
 se detecta en 51 frames pero `vs_position` solo se resuelve en **6**, y hay 23
 abstenciones de *"el botón pide N BB para igualar pero ningún asiento explica la
 subida"*. Consecuencia: **las 54 recomendaciones fueron `open_raise`, ninguna
@@ -279,15 +294,17 @@ Lo que queda de esta sección:
 | **Fase 2**: hash de las zonas de cartas, saltar si no cambian | los frames entre manos pasan a ~0 | 3-4 h |
 | worker OCR **persistente** (proceso vivo, APIs ya cargadas) | quita el init de tesseract de cada frame (~0,55 s por proceso) | 2-3 h |
 
-### 2.2 Historial de acciones de la mano → lo cubre §2.0
+### 2.2 Historial de acciones de la mano → 🟡 media hecha en §2.0
 
 Confirmado que **el chat no narra las acciones** (solo resultados, showdown,
 turnos y subidas de nivel), así que hay que acumular estado entre frames.
 
-**El rastreador de §2.0 ES esta pieza**: llevar `max_stack_visto` por asiento a
-lo largo de una mano da el *comprometido acumulado por jugador*, que es
-exactamente lo que hace falta para distinguir open / 3bet / squeeze / resubida
-con certeza. Las dos cosas se hacen de una vez.
+`hand_tracker` ya lleva el **comprometido acumulado por jugador**, que es la
+mitad de esta pieza. Lo que falta para distinguir open / 3bet / squeeze /
+resubida con certeza es el **orden y la calle** de las aportaciones: hoy el
+comprometido es un total de la mano, sin separar por calle ni saber quién puso
+primero. Con el board ya expuesto en cada frame, segmentar el comprometido por
+calle es un paso corto sobre lo que ya hay.
 
 ### 2.3 · Marcar una situación con una nota mientras se juega — ✅ HECHO
 

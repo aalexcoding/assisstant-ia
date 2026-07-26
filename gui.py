@@ -33,6 +33,7 @@ import engine
 import equity
 import hand_result as hr
 import hand_strength as hstr
+import hand_tracker
 import portal_capture as pc
 import table_state as ts
 
@@ -97,8 +98,18 @@ def players_markup(players):
         pos = f" [{p['position']}]" if p.get("position") else ""
         stack = p["stack"] if p.get("stack") is not None else "?"
         mark = "  <b>(TU)</b>" if p.get("is_hero") else ""
+        # lo que lleva puesto en la mano, deducido de como le ha bajado el stack
+        # entre frames (ver decision/hand_tracker.py). Es una COTA INFERIOR, de
+        # ahi el "≥": si la mano ya habia empezado cuando se le vio por primera
+        # vez, se pierde lo que puso antes. Se marca en verde cuando el importe
+        # dibujado en la mesa dice lo mismo, que es la corroboracion.
+        puesto = ""
+        com = p.get("committed")
+        if isinstance(com, (int, float)) and com > 0:
+            color = "#2ecc71" if p.get("committed_acuerdo") == "coinciden" else "#95a5a6"
+            puesto = f'  <span foreground="{color}">(≥{com:g} BB puestos)</span>'
         lines.append(f"{GLib.markup_escape_text(str(name))}{GLib.markup_escape_text(pos)}: "
-                     f"{GLib.markup_escape_text(str(stack))}{mark}")
+                     f"{GLib.markup_escape_text(str(stack))}{mark}{puesto}")
     return "\n".join(lines)
 
 
@@ -114,6 +125,11 @@ class AnalysisWorker(threading.Thread):
         # se toca despues: la grabacion se decide al iniciar el analisis, no a
         # mitad, para que una sesion grabada sea de principio a fin.
         self.sesion = sesion
+        # Estado ENTRE frames: cuanto lleva puesto cada asiento en la mano en
+        # curso, deducido de como le baja el stack. Se crea uno por ejecucion
+        # (parar y volver a iniciar empieza de cero, que es lo correcto: puede
+        # haber pasado cualquier cosa mientras estaba parado).
+        self.tracker = hand_tracker.HandTracker()
         self._stop = threading.Event()
 
     def stop(self):
@@ -158,8 +174,6 @@ class AnalysisWorker(threading.Thread):
         t0 = time.perf_counter()
         cv2.imwrite(TMP_FRAME_PATH, crop)
         state = ts.analyze_layout(TMP_FRAME_PATH)
-        recommendation = engine.decide(state)
-        hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
         # resumen de la mano anterior. Se parsean las lineas de chat que
         # analyze_layout YA ha OCR-eado: antes esto hacia una segunda pasada de
         # OCR sobre la misma zona, con otro subproceso y otro arranque de
@@ -169,6 +183,16 @@ class AnalysisWorker(threading.Thread):
             result = hr.parse_hand_result(state.get("chat_lines"))
         except Exception:  # noqa: BLE001
             result = None
+        # ANTES de decidir: cuanto lleva puesto cada asiento, deducido de su
+        # bajada de stack. El numero de mano del chat es la señal de frontera mas
+        # fiable que hay, de ahi que el chat se parsee primero.
+        try:
+            hand_tracker.aplicar(
+                state, self.tracker.update(state, (result or {}).get("hand_number")))
+        except Exception:  # noqa: BLE001
+            pass
+        recommendation = engine.decide(state)
+        hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
         GLib.idle_add(self.win.on_result, state, recommendation, hand)
         GLib.idle_add(self.win.on_hand_result, result)
 

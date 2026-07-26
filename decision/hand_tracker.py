@@ -1,0 +1,341 @@
+"""
+Rastreador de mano: reconstruye lo que cada jugador ha COMPROMETIDO en el bote
+comparando su STACK entre frames, en vez de intentar leer las fichas apostadas
+sobre el tapete.
+
+    comprometido[asiento] = stack_al_empezar_la_mano - stack_actual
+
+POR QUE. Leer el importe apostado en la mesa es lo que esta fallando: de 101
+frames con el boton "Igualar" pidiendo mas de 1 BB, 81 no tenian NINGUN asiento
+cuyo importe lo explicara, y una pasada de OCR sobre el tapete entero tampoco
+encuentra la cifra (0 de 22). Los stacks, en cambio, si se leen. Y no depende de
+donde dibuje el cliente las fichas, asi que sobrevive a recalibrar un recuadro:
+esa clase de fallo ya ha mordido dos veces en este proyecto (el area del boton
+del dealer en pixeles absolutos, las zonas de apuesta).
+
+LO QUE MIDE ESTE MODULO, sobre 403 frames re-analizados de una sesion real, en
+los frames PREFLOP donde el boton pide mas de 1 BB (que son exactamente los que
+hoy hacen abstenerse al motor):
+
+    lo explica el importe leido en la mesa      41%
+    lo explica el comprometido derivado         65%
+    lo explica alguno de los dos                84%
+    sin explicar (el motor se abstiene)         16%   <- antes 59%
+
+Y cuando disparan las dos señales apuntan al MISMO asiento 7 de 8 veces, que es
+la corroboracion que hace fiable la atribucion (son fuentes independientes: OCR
+del nameplate vs OCR de la zona de apuesta).
+
+EL COMPROMETIDO ES UNA COTA INFERIOR, y de ahi sale todo el cuidado del modulo.
+Si la mano ya habia empezado cuando se vio al asiento por primera vez, la base
+YA esta rebajada por lo que puso, asi que se devuelve de menos. Medido: en la
+mitad de las manos la SB sale con 0 comprometido en vez de 0,5, porque la
+frontera de mano se detecta unos frames tarde y para entonces las ciegas ya
+estan puestas.
+
+Quedarse corto es la direccion PELIGROSA: no ver una subida lleva a recomendar el
+rango de APERTURA enfrentando una subida, el peor fallo posible en esta app. Por
+eso la regla de uso es estricta y esta en el motor:
+
+    el comprometido NUNCA crea una subida, solo ATRIBUYE una que el boton
+    "Igualar" ya ha demostrado que existe.
+
+Asi, un comprometido inflado (por una frontera de mano que se paso por alto) no
+puede inventarse un raiser: si el boton no pide nada, no se mira. Y si lo pide,
+se exige ademas un unico candidato, igual que ya hace detect_raiser.
+
+FRONTERAS DE MANO. La base hay que olvidarla al empezar mano nueva, o el
+comprometido se dispara en cuanto alguien gana un bote. Se cortan por dos
+señales, elegidas midiendo (ver motivos_de_frontera); el board y las subidas de
+stack se descartaron con datos.
+
+Vive en decision/ y no en vision/ porque no mira pixeles: consume GameStates ya
+resueltos y lo que produce -cuanto ha metido cada jugador- es una entrada de la
+DECISION. vision/ es puro por frame a proposito; el estado entre frames vive aqui.
+
+Necesita player["seat"], que expone table_state.analyze_layout(): es la unica
+clave estable de un jugador entre frames (la posicion rota en cada mano, y el
+nombre lo lee el OCR y el cliente lo sustituye por el verbo de la accion JUSTO
+cuando el jugador actua, que es el peor momento para perderle la pista).
+"""
+
+# Margen para considerar que dos lecturas de stack son "el mismo numero". El OCR
+# de un importe en BB da una decimal, asi que basta con absorber el redondeo.
+IGUAL_TOL_BB = 0.05
+
+# Cartas que dos boards tienen que compartir para ser el mismo board. Solo se
+# usa para exponer la señal; NO corta (ver MOTIVOS_DE_CORTE).
+BOARD_COMUNES_MIN = 2
+
+# Longitudes legales de un board. Una lectura de 1, 2 o 6 cartas es basura de
+# OCR y no puede juzgar nada: medido, 9 de 403 frames traen un board ilegal, y
+# uno de ellos ("7cAc" en medio de un QcQs8sKsTc) partia la mano en dos.
+BOARD_LONGITUDES = (3, 4, 5)
+
+
+def _board_legal(cartas):
+    return list(cartas) if len(cartas) in BOARD_LONGITUDES else None
+
+
+def _vista(state, hand_number=None):
+    """Lo unico que hace falta de un GameState para juzgar fronteras.
+
+    hand_number llega por parametro y no del state porque lo produce
+    vision/hand_result.parse_hand_result() a partir de state["chat_lines"], y
+    este modulo no importa vision/ (que arrastra cv2). El llamador ya lo tiene:
+    la GUI parsea el chat en cada frame para el panel "Mano anterior"."""
+    stacks = {}
+    for p in state.get("players") or []:
+        seat = p.get("seat")
+        if seat and isinstance(p.get("stack"), (int, float)):
+            stacks[seat] = float(p["stack"])
+    return {
+        "board": _board_legal(state.get("board") or []),
+        "hero_cards": list(state.get("hero_cards") or []),
+        "hand_number": hand_number,
+        "stacks": stacks,
+    }
+
+
+def motivos_de_frontera(previo, actual):
+    """Conjunto de señales que dicen que `actual` es de una mano DISTINTA de
+    `previo`. Los dos son vistas de _vista(). Pura a proposito: es lo que permite
+    medir cada señal por separado contra las sesiones grabadas.
+
+      "cartas"      las cartas del hero son otras. La mas fuerte que hay: que
+                    salgan las mismas dos en dos manos seguidas es 1 entre 1326.
+                    Precisa pero de poco alcance: el hero se retira mucho y sin
+                    cartas no dice nada (2 cortes en 267 frames).
+      "mano_chat"   cambio el numero de mano del chat. Es el numero de la ultima
+                    mano TERMINADA, o sea una etiqueta estable de la mano en
+                    curso, y se lee en el 70% de los frames (13 cortes en 267).
+                    Llega con unos frames de retraso, que es justo por lo que las
+                    ciegas suelen quedar fuera de la base.
+      "board"       los dos boards (de longitud legal) comparten menos de
+                    BOARD_COMUNES_MIN cartas. NO CORTA: medido, 3 de 3 de sus
+                    cortes no tenian respaldo ni del chat ni de las cartas.
+      "board_vacio" habia board y ahora no hay. NO CORTA: se dispara igual cuando
+                    el OCR pierde el board un frame, que pasa a menudo.
+      "stack_sube"  algun stack subio mas de lo que absorbe el redondeo. Parecia
+                    la señal ideal -en poker solo se ganan fichas al acabar la
+                    mano- pero NO CORTA: mirando las 12 subidas dentro de manos
+                    ya etiquetadas por el chat, son errores gordos de OCR
+                    (106.5 -> 1065.0, o sea el punto decimal perdido; 30.3 ->
+                    130.3, un "1" fantasma), no manos nuevas. Se expone porque
+                    delata un asiento cuya lectura no es de fiar.
+    """
+    motivos = set()
+
+    hp, ha = previo["hero_cards"], actual["hero_cards"]
+    if len(hp) == 2 and len(ha) == 2 and set(hp) != set(ha):
+        motivos.add("cartas")
+
+    if previo["hand_number"] and actual["hand_number"] and \
+            previo["hand_number"] != actual["hand_number"]:
+        motivos.add("mano_chat")
+
+    bp, ba = previo["board"], actual["board"]
+    if bp and ba and len(set(bp) & set(ba)) < min(BOARD_COMUNES_MIN, len(bp), len(ba)):
+        motivos.add("board")
+    if bp and not ba:
+        motivos.add("board_vacio")
+
+    for seat, s in actual["stacks"].items():
+        anterior = previo["stacks"].get(seat)
+        if anterior is not None and s > anterior + IGUAL_TOL_BB:
+            motivos.add("stack_sube")
+            break
+
+    return motivos
+
+
+# Las señales que CORTAN de verdad. Las otras se calculan y se exponen, pero no
+# resetean el seguimiento: ver motivos_de_frontera para la medicion que descarto
+# a cada una.
+MOTIVOS_DE_CORTE = frozenset({"cartas", "mano_chat"})
+
+
+class _Asiento:
+    """Seguimiento de un asiento dentro de UNA mano.
+
+    La base es la PRIMERA lectura de la mano y no se sube nunca: dentro de una
+    mano el stack solo puede bajar, asi que una lectura mayor es imposible y se
+    descarta por ruido. Se probo exigir que un valor se confirmara 2 o 3 veces
+    antes de aceptarlo -parecia lo prudente- y MEDIDO era peor en todo: la
+    cobertura bajaba del 91% al 79% y al 68%, y el acuerdo con el bote leido del
+    37% al 15% y al 8%. El motivo es que el preflop se resuelve en pocos frames y
+    esperar confirmacion se lo pierde entero."""
+
+    def __init__(self):
+        self.base = None
+        self.actual = None
+        self.observaciones = 0
+        self.descartadas = 0      # lecturas por encima de la base: OCR sospechoso
+
+    def leer(self, valor):
+        if valor is None:
+            return
+        valor = float(valor)
+        self.observaciones += 1
+        if self.base is None:
+            self.base = self.actual = valor
+        elif valor <= self.base + IGUAL_TOL_BB:
+            self.actual = valor
+        else:
+            self.descartadas += 1
+
+    def comprometido(self):
+        if self.base is None or self.actual is None:
+            return None
+        return round(max(0.0, self.base - self.actual), 2)
+
+
+class HandTracker:
+    """Estado entre frames. Un objeto por sesion de analisis.
+
+        tr = HandTracker()
+        for state in frames:
+            info = tr.update(state, hand_number)
+            hand_tracker.aplicar(state, info)
+    """
+
+    def __init__(self):
+        self.mano = 0
+        self._previo = None
+        self._asientos = {}
+        self._meta = {}
+        self._frames = 0
+        self._motivos = frozenset()
+        self._abrir(frozenset())
+
+    def _abrir(self, motivos):
+        self.mano += 1
+        self._asientos = {}
+        self._meta = {}
+        self._frames = 0
+        self._motivos = frozenset(motivos)
+
+    def update(self, state, hand_number=None):
+        """Incorpora un GameState y devuelve el resumen de la mano en curso. No
+        modifica el state (para eso esta aplicar())."""
+        actual = _vista(state, hand_number)
+        motivos = motivos_de_frontera(self._previo, actual) if self._previo else frozenset()
+        if motivos & MOTIVOS_DE_CORTE:
+            self._abrir(motivos)
+        self._previo = actual
+        self._frames += 1
+
+        for p in state.get("players") or []:
+            seat = p.get("seat")
+            if not seat:
+                continue
+            a = self._asientos.get(seat)
+            if a is None:
+                a = self._asientos[seat] = _Asiento()
+                # si el asiento aparece en el PRIMER frame de la mano hay al menos
+                # la posibilidad de haberle visto el stack intacto; si aparece mas
+                # tarde, seguro que se perdio algo de lo que ya habia puesto
+                self._meta[seat] = {"desde_el_principio": self._frames == 1}
+            a.leer(p.get("stack") if isinstance(p.get("stack"), (int, float)) else None)
+            self._meta[seat].update(
+                position=p.get("position"),
+                is_hero=bool(p.get("is_hero")),
+                in_hand=p.get("in_hand"),
+                bet_leido=p.get("bet") if isinstance(p.get("bet"), (int, float)) else None)
+
+        return self.resumen()
+
+    def resumen(self):
+        asientos = {}
+        for seat, a in self._asientos.items():
+            m = self._meta[seat]
+            comprometido = a.comprometido()
+            asientos[seat] = {
+                "position": m.get("position"),
+                "is_hero": m.get("is_hero", False),
+                "in_hand": m.get("in_hand"),
+                "stack": a.actual,
+                "stack_inicial": a.base,
+                "comprometido": comprometido,
+                "observaciones": a.observaciones,
+                "lecturas_descartadas": a.descartadas,
+                "desde_el_principio": m.get("desde_el_principio", False),
+                "bet_leido": m.get("bet_leido"),
+                "acuerdo": acuerdo(comprometido, m.get("bet_leido")),
+            }
+        return {
+            "mano": self.mano,
+            "frames": self._frames,
+            "motivos_apertura": sorted(self._motivos),
+            "asientos": asientos,
+        }
+
+
+# tolerancia para decir que el comprometido derivado y el importe leido en la
+# mesa son el mismo numero
+ACUERDO_TOL_BB = 0.15
+
+
+def acuerdo(derivado, leido):
+    """Como se llevan las dos señales para un asiento. Sirve para dos cosas: dar
+    confianza cuando coinciden, y dejar rastro cuando no (el derivado manda -en
+    las discrepancias suele acertar el- pero una discrepancia merece anotarse)."""
+    if derivado is None and leido is None:
+        return "ninguno"
+    if leido is None:
+        return "solo_derivado"
+    if derivado is None:
+        return "solo_leido"
+    if abs(derivado - leido) <= ACUERDO_TOL_BB:
+        return "coinciden"
+    return "discrepan"
+
+
+def aplicar(state, info):
+    """Cuelga el comprometido de cada jugador del GameState, junto a su "bet"
+    leido de la mesa, para que el motor pueda usar las dos señales. Devuelve el
+    state (modificado in situ)."""
+    asientos = info.get("asientos") or {}
+    for p in state.get("players") or []:
+        d = asientos.get(p.get("seat"))
+        if d is not None:
+            p["committed"] = d["comprometido"]
+            p["committed_acuerdo"] = d["acuerdo"]
+    state["mano_seguida"] = info.get("mano")
+    return state
+
+
+# Margen al comparar el comprometido de un asiento con lo que pide el boton
+# "Igualar". El comprometido es una COTA INFERIOR (la base puede estar ya
+# rebajada), asi que se permite quedarse algo corto; pasarse no hace falta
+# permitirlo porque el que subio siempre tiene puesto al menos lo que te piden.
+TO_CALL_MARGEN_BB = 0.3
+
+
+def atribuir_subida(players, to_call):
+    """Quien subio, segun el comprometido derivado, cuando el boton "Igualar"
+    pide `to_call`. Devuelve (position, seat) o (None, motivo).
+
+    NO decide si hay subida: eso ya lo dice `to_call`, que es evidencia
+    independiente (el propio cliente pidiendo un importe). Aqui solo se atribuye
+    a un asiento. Esa asimetria es la que hace seguro usar un numero que puede
+    venir inflado si se paso por alto una frontera de mano: sin boton que pida
+    nada, no se mira.
+
+    Conservador igual que engine._detect_raiser: si hay mas de un candidato o el
+    candidato no tiene posicion, no se adivina."""
+    if not isinstance(to_call, (int, float)) or to_call <= 0:
+        return None, "sin_to_call"
+    umbral = to_call - TO_CALL_MARGEN_BB
+    cands = [p for p in players
+             if not p.get("is_hero")
+             and isinstance(p.get("committed"), (int, float))
+             and p["committed"] >= umbral]
+    if not cands:
+        return None, "nadie_lo_explica"
+    if len(cands) > 1:
+        return None, "varios_candidatos"
+    pos = cands[0].get("position")
+    if pos is None:
+        return None, "candidato_sin_posicion"
+    return pos, cands[0].get("seat")

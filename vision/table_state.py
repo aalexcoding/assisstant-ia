@@ -536,6 +536,14 @@ def analyze_layout(image_path):
         info = occupied[name]
         es_hero = name == seat_map.HERO_SEAT
         player = {
+            # El ASIENTO ("UL", "MR"...) es la unica clave ESTABLE de un jugador
+            # entre frames: la posicion rota en cada mano, el nombre lo lee el OCR
+            # (y el cliente lo sustituye por el verbo de la accion justo cuando el
+            # jugador actua, que es el peor momento para perderle la pista) y el
+            # stack es justo lo que se quiere seguir. Sin esto no se puede
+            # comparar el stack de un jugador entre dos frames, que es de lo que
+            # sale lo que ha apostado (ver decision/hand_tracker.py).
+            "seat": name,
             "name": info["name"],
             "stack": info["stack"],
             "bet": info.get("bet"),
