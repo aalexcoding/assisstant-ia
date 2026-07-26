@@ -514,9 +514,11 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         state["warnings"].append(
             "no se encuentra la mesa: no se detecto el ovalo del tapete. Sin esa "
             "referencia TODAS las zonas quedan desplazadas, asi que no se analiza el "
-            "frame en vez de dar lecturas de sitios equivocados. Dos causas tipicas: "
-            "el tapete es de un tema OSCURO o gris (hace falta uno con color, p.ej. "
-            "el verde) o el recuadro de captura no encuadra la mesa (recalibra)")
+            "frame en vez de dar lecturas de sitios equivocados. Causas tipicas: el "
+            "tapete es de un tema OSCURO o gris (hace falta uno con color, p.ej. el "
+            "verde); el FONDO de alrededor de la mesa es claro y se confunde con el "
+            "tapete (hace falta un tema de fondo oscuro); hay otra ventana tapando la "
+            "mesa; o el recuadro de captura no la encuadra (recalibra)")
         return state
 
     batch = OcrBatch()

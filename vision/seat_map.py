@@ -193,10 +193,44 @@ def find_reference(bgr):
         if area > best_area:
             best_area = area
             best = (int(x), int(y), int(bw), int(bh))
-    if best is not None:
+    if best is not None and _nucleo_plausible(best, h_img, w_img):
         return best[0], best[1], best[2], best[3], False
     fx, fy, fw, fh = FELT_CORE_IN_FRAME
     return int(fx * w_img), int(fy * h_img), int(fw * w_img), int(fh * h_img), True
+
+
+# El nucleo del tapete es un OVALO ANCHO que nunca llega al borde del frame: el
+# cliente siempre tiene barra arriba y panel de chat abajo. Estas dos condiciones
+# son lo unico que hace falta para saber que la deteccion se ha ido, y hacen
+# falta porque la premisa del metodo -"el fondo es casi negro"- se rompe con los
+# temas de FONDO CLARO: uno de fondo olivo (H=44, S=80) deja pasar el 42% del
+# frame y el "mayor blob" acaba siendo fondo y tapete pegados.
+#
+# Costo caro: con ese tema el nucleo salia (192, 0, 980, 629) -y=0, o sea tocando
+# el borde de arriba- y TODAS las zonas quedaban desplazadas. Se seguian leyendo
+# cartas por casualidad, pero los dorsos caian fuera de sus zonas, asi que no se
+# detectaba ningun rival en la mano y la equity no se calculaba nunca. El usuario
+# lo vio como "no me salen las probabilidades de ganar".
+#
+# Medido sobre 687 frames de tres sesiones:
+#
+#     tema de fondo oscuro (2 sesiones)   proporcion 2.12-2.36   toca el borde  0%
+#     tema de fondo claro                 proporcion 1.24-2.12   toca el borde 80%
+#
+# 2.0 cae en el hueco entre las dos poblaciones. Cuando salta, analyze_layout
+# corta el frame con su aviso, que es lo correcto: mejor no decir nada que leer
+# el sitio equivocado.
+NUCLEO_AR_MIN = 2.0
+NUCLEO_MARGEN_BORDE = 3
+
+
+def _nucleo_plausible(caja, h_img, w_img):
+    x, y, w, h = caja
+    if h <= 0 or w / h < NUCLEO_AR_MIN:
+        return False
+    if y <= NUCLEO_MARGEN_BORDE or y + h >= h_img - NUCLEO_MARGEN_BORDE:
+        return False
+    return True
 
 
 def zone_to_px(ref, zone, shape):

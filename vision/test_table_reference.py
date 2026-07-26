@@ -41,10 +41,16 @@ def check(desc, cond):
 
 def frame(color_tapete):
     """Un frame 1200x800 con un ovalo grande del color dado sobre fondo casi
-    negro, que es la forma del cliente real."""
+    negro, que es la forma del cliente real.
+
+    La PROPORCION importa: el nucleo del tapete real mide entre 2.12 y 2.36 de
+    ancho/alto (medido sobre 687 frames de tres sesiones) y find_reference
+    rechaza lo que baje de 2.0, porque por debajo de eso lo que ha detectado no
+    es el ovalo. El molde tiene que parecerse al cliente, no quedarse justo en
+    el limite."""
     img = np.full((800, 1200, 3), 12, dtype=np.uint8)
     if color_tapete is not None:
-        cv2.ellipse(img, (600, 400), (460, 230), 0, 0, 360, color_tapete, -1)
+        cv2.ellipse(img, (600, 400), (480, 215), 0, 0, 360, color_tapete, -1)
     return img
 
 
@@ -306,6 +312,35 @@ check("y SEATING_BY_N empieza SIEMPRE por el asiento del boton",
 import dealer_button  # noqa: E402
 check("dealer_button usa LA MISMA tabla, no una copia que pueda discrepar",
       dealer_button.SEATING_BY_N is seat_map.SEATING_BY_N)
+
+# --- un FONDO CLARO se confunde con el tapete y hay que detectarlo ----------
+print("\n# --- fondo claro alrededor de la mesa ---")
+# Premisa rota: find_reference separa el ovalo del fondo "casi negro". Con un
+# tema de fondo olivo (H=44, S=80) pasa el 42% del frame y el mayor blob acaba
+# siendo fondo y tapete pegados: nucleo (192, 0, 980, 629), o sea tocando el
+# borde de arriba. Todas las zonas quedan desplazadas y -lo que lo destapo- los
+# dorsos caen fuera, asi que no se detecta ningun rival y la equity no se calcula
+# nunca.
+claro = np.full((800, 1200, 3), (60, 110, 90), dtype=np.uint8)   # fondo olivo
+cv2.ellipse(claro, (600, 400), (480, 215), 0, 0, 360, (40, 140, 60), -1)
+ref_claro = seat_map.find_reference(claro)
+check("con el fondo claro pegado al tapete NO se da una referencia real",
+      ref_claro[4] is True)
+st = analizar(claro)
+check("y analyze_layout corta el frame en vez de leer sitios equivocados",
+      any("no se encuentra la mesa" in w for w in st["warnings"]))
+check("el aviso nombra el fondo claro, que es lo que el usuario puede cambiar",
+      any("FONDO" in w and "claro" in w for w in st["warnings"]))
+
+alto = np.full((800, 1200, 3), 12, dtype=np.uint8)
+cv2.ellipse(alto, (600, 400), (300, 380), 0, 0, 360, (40, 120, 40), -1)
+check("un blob demasiado alto para ser el ovalo tampoco vale",
+      seat_map.find_reference(alto)[4] is True)
+
+pegado = np.full((800, 1200, 3), 12, dtype=np.uint8)
+cv2.ellipse(pegado, (600, 300), (480, 310), 0, 0, 360, (40, 120, 40), -1)
+check("ni uno que llega al borde de arriba del frame",
+      seat_map.find_reference(pegado)[4] is True)
 
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
