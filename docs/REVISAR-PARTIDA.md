@@ -10,6 +10,38 @@ nombre.
 
 ---
 
+## Revisar MIENTRAS se juega
+
+`vigilar_sesion.py` lee la carpeta que la GUI va escribiendo y saca **una línea
+por hallazgo, con la ruta del PNG al lado**, para poder abrir la imagen y
+comprobarlo con los ojos. Ese emparejamiento es el punto: un aviso sin su frame
+no se puede verificar.
+
+```bash
+.venv/bin/python vigilar_sesion.py                        # en vivo, la última sesión
+.venv/bin/python vigilar_sesion.py --repasar testing/...  # repasar una ya grabada
+```
+
+Solo **lee** ficheros, así que no toca la captura ni compite por el stream del
+portal.
+
+Es **selectivo a propósito**: una anomalía dura decenas de frames, así que avisa
+una vez por racha. Medido sobre una sesión de 270 frames: 26 avisos, la mayoría
+al principio (cada motivo de abstención nuevo salta una sola vez).
+
+Dos tipos de línea:
+
+- **`[BUG]`** — contradicción demostrable. Siempre hay que mirarla.
+- **`[REVISAR]`** — correcto pero conviene verlo con la imagen: una recomendación
+  **derivada** (la capa de la Fase E, que no sale de tus tablas) o un motivo de
+  abstención que no había aparecido antes en esa sesión.
+
+Cuando el usuario está jugando, esto se arranca con **Monitor** para que cada
+línea llegue como notificación; entonces se abre el PNG del frame y se juzga con
+la imagen delante, en vez de esperar al final.
+
+---
+
 ## 0 · Contexto antes de mirar nada
 
 De `_sesion.json`: `commit` (con qué versión se grabó — si es viejo, la mitad de
