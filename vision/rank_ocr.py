@@ -30,13 +30,42 @@ def rank_crop_variants(card_bgr, w, h):
     return crops
 
 
-def normalize_rank(raw_text):
-    text = raw_text.strip().upper()
-    text = text.replace("O", "0")
-    if text == "10" or text == "1O" or text == "I0":
+def _rank_exacto(text):
+    if text in ("10", "1O", "I0"):
         return "10"
-    if text in VALID_RANKS:
-        return text
+    return text if text in VALID_RANKS else None
+
+
+def normalize_rank(raw_text):
+    """Texto de OCR -> rango ("2".."9", "10", "J", "Q", "K", "A") o None.
+
+    LECTURAS DE VARIAS LINEAS. Tesseract devuelve dos lineas cuando ademas del
+    rango grande lee el PIP DEL PALO de la esquina del recorte, y el trebol se
+    parece bastante a un "4". Antes cualquier texto multilinea se descartaba
+    entero, o sea que se tiraba la lectura buena junto con el artefacto.
+
+    El orden no es casual y por eso se puede resolver: el pip esta ARRIBA del
+    rango dentro del recorte, y tesseract emite de arriba abajo, asi que el rango
+    real es la ULTIMA linea valida. Medido sobre 46 cartas que se quedaban sin
+    resolver en una sesion real: los patrones multilinea eran '4|2' (x60), '4|8'
+    (x6) y '4|Q' (x1) -siempre el mismo artefacto delante-, la ultima linea
+    rescataba 27 de las 46, y en CERO casos las distintas lecturas de una misma
+    carta discrepaban sobre cual era.
+
+    Esto alimenta el voto por mayoria de color_rank_ocr.resolve_rank, no lo
+    sortea: una linea rescatada tiene que ganar la votacion igual que cualquier
+    otra lectura, y el empate sigue devolviendo None. Perder una carta de board
+    deja la equity sin calcular; inventarla daria una equity FALSA, que es peor.
+    """
+    text = raw_text.strip().upper().replace("O", "0")
+    directo = _rank_exacto(text)
+    if directo is not None:
+        return directo
+    if "\n" in text:
+        for linea in reversed(text.split("\n")):
+            r = _rank_exacto(linea.strip())
+            if r is not None:
+                return r
     return None
 
 

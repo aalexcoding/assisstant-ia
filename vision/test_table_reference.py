@@ -98,6 +98,27 @@ st = ts.analyze_layout("/no/existe/ninguna.png")
 check("una ruta que no existe da su propio aviso, no el de la mesa",
       any("no se pudo leer la imagen" in w for w in st["warnings"]))
 
+# --- lecturas de OCR con VARIAS LINEAS -------------------------------------
+# El pip del palo de la esquina del recorte se cuela en el OCR (el trebol se
+# parece a un "4") y tesseract devuelve dos lineas. Antes se descartaba el texto
+# entero y la carta se perdia: el usuario lo cazo jugando ("hay un 2 trebol" en
+# un board que la app leia con solo 2 cartas). Como el pip esta ARRIBA del rango
+# y tesseract emite de arriba abajo, el rango real es la ultima linea valida.
+print("\n# --- OCR de rango con varias lineas ---")
+from rank_ocr import normalize_rank  # noqa: E402
+
+check("una lectura limpia sigue igual", normalize_rank("K") == "K")
+check("el 10 sigue teniendo su caso especial",
+      normalize_rank("10") == "10" and normalize_rank("1O") == "10")
+check("'4|2' (pip de trebol + rango) da 2, que era el caso real",
+      normalize_rank("4\n2") == "2")
+check("'4|8' y '4|Q' tambien", normalize_rank("4\n8") == "8" and normalize_rank("4\nQ") == "Q")
+check("un 4 de verdad sigue siendo un 4", normalize_rank("4") == "4")
+check("si la ultima linea es basura se coge la anterior valida",
+      normalize_rank("4\nX") == "4")
+check("y si no hay ninguna linea valida, None (no se inventa carta)",
+      normalize_rank("X\nZ") is None and normalize_rank("") is None)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
