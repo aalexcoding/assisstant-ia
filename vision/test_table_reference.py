@@ -342,6 +342,47 @@ cv2.ellipse(pegado, (600, 300), (480, 310), 0, 0, 360, (40, 120, 40), -1)
 check("ni uno que llega al borde de arriba del frame",
       seat_map.find_reference(pegado)[4] is True)
 
+# --- la referencia se FIJA una vez y se reutiliza ---------------------------
+print("\n# --- referencia fijada por sesion ---")
+# El tapete no se mueve mientras juegas. Fijarlo rescata entero el tema de fondo
+# claro, donde el ovalo solo se detecta bien en el 14% de los frames: analizados
+# 19 -> 132 de 132, y la equity 0 -> 27.
+rf = seat_map.ReferenciaFijada()
+verde2 = frame((40, 120, 40))
+check("mientras no hay suficientes lecturas no hay nada fijado", rf.fijada is None)
+for _ in range(seat_map.REF_MIN_PARA_FIJAR):
+    rf.de(verde2)
+check(f"tras {seat_map.REF_MIN_PARA_FIJAR} lecturas buenas queda fijada", rf.fijada is not None)
+
+roto = np.full((800, 1200, 3), (60, 110, 90), dtype=np.uint8)   # fondo claro
+cv2.ellipse(roto, (600, 400), (480, 215), 0, 0, 360, (40, 140, 60), -1)
+check("un frame donde el ovalo NO se detecta ya no corta: se usa la fijada",
+      rf.de(roto)[4] is False)
+check("y la que se devuelve es la fijada, no una inventada",
+      tuple(rf.de(roto)[:4]) == rf.fijada)
+
+antes = rf.fijada
+movido = np.full((800, 1200, 3), 12, dtype=np.uint8)
+cv2.ellipse(movido, (600, 300), (350, 155), 0, 0, 360, (40, 120, 40), -1)
+for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR - 1):
+    rf.de(movido)
+check("unas pocas lecturas discrepantes NO mueven la fijada (son ruido)",
+      rf.fijada == antes)
+rf.de(movido)
+check("pero si son sostenidas se vuelve a fijar: la ventana se ha movido",
+      rf.fijada != antes)
+
+rf2 = seat_map.ReferenciaFijada()
+for _ in range(seat_map.REF_MIN_PARA_FIJAR):
+    rf2.de(verde2)
+base = rf2.fijada
+casi = np.full((800, 1200, 3), 12, dtype=np.uint8)
+cv2.ellipse(casi, (600, 400), (475, 213), 0, 0, 360, (40, 120, 40), -1)   # ~1% menor
+for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR * 2):
+    rf2.de(casi)
+check("una variacion dentro de la tolerancia no re-fija nada: es el ruido "
+      "normal de la deteccion (0-4,5% medido)", rf2.fijada == base)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

@@ -385,6 +385,86 @@ def detect_button_seat(bgr, ref):
     return best
 
 
+# --- la referencia se FIJA una vez por sesion ---
+#
+# Idea del usuario: lo que no cambia entre frames se calcula una vez y se da por
+# bueno. El tapete no se mueve mientras juegas, asi que recalcular su ovalo en
+# cada frame no solo cuesta 29 ms: expone la app a que un frame concreto lo
+# detecte mal y TODAS las zonas se corran ese frame.
+#
+# Y rescata entero el tema de FONDO CLARO. Ahi el ovalo solo se detecta bien en
+# el 14% de los frames -en el resto el fondo se le pega y la guarda de forma lo
+# rechaza-, pero esas pocas buenas COINCIDEN entre si, asi que basta con fijarla
+# una vez. Medido sobre la sesion que lo destapo, 132 frames:
+#
+#                        por frame   fijada
+#     frames analizados      19       132
+#     con tus 2 cartas        3        75
+#     con rivales en mano    15       114
+#     CON EQUITY              0        27
+#
+# La tolerancia sale de los datos y coincide con la intuicion del usuario de
+# dejar un 1-4% de margen: las referencias buenas de una sesion se desvian de la
+# fijada un 0-3,8% de mediana y un 1,1-4,5% en el percentil 90. Se deja en 6%
+# para no ir justo.
+#
+# NO es un latch: si la ventana se mueve o se redimensiona, las lecturas nuevas
+# discrepan de forma sostenida y se vuelve a fijar. Se exigen varias seguidas
+# porque una sola discrepante es ruido -en una sesion llegan al 13,6%- y
+# re-fijar con ella seria peor que no fijar nada.
+REF_MIN_PARA_FIJAR = 10
+REF_TOLERANCIA = 0.06
+REF_SEGUIDAS_PARA_REFIJAR = 15
+
+
+def _desvio_relativo(a, b):
+    """Cuanto se separan dos nucleos, en fraccion del fijado."""
+    if b[2] <= 0 or b[3] <= 0:
+        return 1.0
+    return max(abs(a[0] - b[0]) / b[2], abs(a[1] - b[1]) / b[3],
+               abs(a[2] - b[2]) / b[2], abs(a[3] - b[3]) / b[3])
+
+
+class ReferenciaFijada:
+    """El nucleo del tapete, calculado al principio y reutilizado.
+
+    Vive fuera de vision/ (lo guarda quien lleva la sesion) porque es estado
+    entre frames, igual que PlantillaBoton."""
+
+    def __init__(self):
+        self._muestras = []
+        self._fija = None
+        self._discrepantes = []
+
+    @property
+    def fijada(self):
+        return self._fija
+
+    def de(self, bgr):
+        """Referencia a usar para este frame. Mientras no haya suficientes
+        lecturas buenas devuelve la del frame; despues, la fijada."""
+        cruda = find_reference(bgr)
+        if self._fija is None:
+            if not cruda[4]:
+                self._muestras.append(tuple(int(x) for x in cruda[:4]))
+                if len(self._muestras) >= REF_MIN_PARA_FIJAR:
+                    a = np.array(self._muestras)
+                    self._fija = tuple(int(x) for x in np.median(a, axis=0))
+            return cruda
+        if not cruda[4]:
+            c = tuple(int(x) for x in cruda[:4])
+            if _desvio_relativo(c, self._fija) > REF_TOLERANCIA:
+                self._discrepantes.append(c)
+                if len(self._discrepantes) >= REF_SEGUIDAS_PARA_REFIJAR:
+                    a = np.array(self._discrepantes)
+                    self._fija = tuple(int(x) for x in np.median(a, axis=0))
+                    self._muestras = list(self._discrepantes)
+                    self._discrepantes = []
+            else:
+                self._discrepantes = []
+        return self._fija + (False,)
+
+
 # --- el boton SIN MIRAR COLOR: gana el hueco donde hay algo ---
 #
 # La idea es del usuario y es mejor que cualquier calibracion de color: en el

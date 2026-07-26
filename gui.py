@@ -140,6 +140,9 @@ class AnalysisWorker(threading.Thread):
         # resuelven y vive en la sesion: guardarlo en disco se quedaria viejo el
         # dia que cambie el tema de mesa. Ver seat_map.PlantillaBoton.
         self.plantilla_boton = seat_map.PlantillaBoton()
+        # El ovalo del tapete no se mueve mientras juegas: se fija con las
+        # primeras lecturas buenas y se reutiliza. Ver seat_map.ReferenciaFijada.
+        self.referencia = seat_map.ReferenciaFijada()
         super().__init__(daemon=True)
         self.win = win
         self.interval = interval
@@ -258,7 +261,8 @@ class AnalysisWorker(threading.Thread):
         # reconocimiento: ver table_state.analyze_layout
         state = ts.analyze_layout(TMP_FRAME_PATH, max_players=self.max_players,
                                   asientos_estables=self.tracker.asientos_estables(),
-                                  plantilla_boton=self.plantilla_boton)
+                                  plantilla_boton=self.plantilla_boton,
+                                  referencia=self.referencia)
         # la referencia del tapete se guarda para el lazo rapido, que no puede
         # permitirse recalcularla (29 ms) diez veces por segundo
         try:

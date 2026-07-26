@@ -439,7 +439,7 @@ def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
 
 
 def analyze_layout(image_path, max_players=None, asientos_estables=None,
-                   plantilla_boton=None):
+                   plantilla_boton=None, referencia=None):
     """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
     produccion para el cliente real de PokerStars capturado limpio. Ancla una
     referencia independiente del color (nucleo del tapete por contraste) y lee
@@ -509,7 +509,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # saturados y con brillo (S>=45, V>=60), asi que un tapete verde (S=200,
     # V=115) se detecta en el 98% de los frames y uno gris oscuro (S=0, V=34) en
     # el 0%. Por eso el aviso nombra las dos cosas que el usuario puede arreglar.
-    ref = seat_map.find_reference(bgr)
+    ref = referencia.de(bgr) if referencia is not None else seat_map.find_reference(bgr)
     if ref[4]:
         state["warnings"].append(
             "no se encuentra la mesa: no se detecto el ovalo del tapete. Sin esa "
