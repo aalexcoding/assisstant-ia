@@ -1,6 +1,8 @@
 # Trabajo pendiente
 
-Estado a 2026-07-26. El plan completo del que sale esto está en
+Estado a 2026-07-26. Para el mapa de arriba —qué está hecho, qué toca ahora y qué
+depende de ti— empieza por [`DONDE-VAMOS.md`](DONDE-VAMOS.md); esto es el detalle
+de cada tarea. El plan completo del que sale todo está en
 [`prompt.md`](../prompt.md) (objetivo y fases originales) y en el README
 (qué hace cada módulo hoy).
 
@@ -10,7 +12,7 @@ Estado a 2026-07-26. El plan completo del que sale esto está en
 |---|---|
 | 0 · Calibración | ✅ |
 | 1 · Captura Wayland | ✅ |
-| 2 · Detección de cambio de board | ❌ no existe |
+| 2 · Detección de cambio de board | ✅ caché de rangos + vigilancia a 0,1 s (§2.1, §2.2b) |
 | 3 · Visión | 🟡 va bien; los importes apostados los cubre ahora el rastreador (§2.0) |
 | 4.1 · Preflop determinista | ✅ la pieza más sólida; + capa derivada para la BB (§1.3) |
 | 4.2 · Transcripción | ✅ 127 vídeos, 5162 chunks |
@@ -18,7 +20,7 @@ Estado a 2026-07-26. El plan completo del que sale esto está en
 | 4.4 · RAG (estudio post-mano) | 🟡 índice construido, sin cablear |
 | 5 · HUD | 🟡 panel de control, no el HUD anclado del spec |
 | 6 · Flatpak | ❌ |
-| 7 · Validación | 🟡 10 scripts de test + modo testing; sin corpus etiquetado |
+| 7 · Validación | 🟡 16 scripts de test (484 checks) + modo testing; sin corpus etiquetado |
 
 ---
 
