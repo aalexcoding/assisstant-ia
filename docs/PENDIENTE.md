@@ -523,9 +523,22 @@ cerrar la ventana.
 
 Lo que queda de esta sección:
 
+**Recortes en memoria — ✅ HECHO, pero NO por velocidad.** Los recortes viajan
+dentro del JSON en base64 en vez de por un PNG temporal. Medido con 105 recortes:
+escribirlos a disco son **54 ms** y codificarlos en memoria **39 ms**, o sea 15 ms
+de 690 — indistinguible. El 0,12 s que se le atribuía en el perfil era casi todo
+el preprocesado (CLAHE, escalado), no el fichero.
+
+Lo que sí gana: **desaparece el directorio temporal entero**. Antes cada job
+escribía un PNG a un `tmpdir` que había que limpiar en un `finally`, y cuando ese
+`finally` no estaba, cada fallo dejaba un `/tmp/vision_ocr_*` huérfano que en un
+lazo en vivo se acumulaba. Verificado: **0 directorios temporales** en una corrida
+de 60 frames.
+
+Lo que queda de esta sección:
+
 | cambio | ganancia estimada | esfuerzo |
 |---|---|---|
-| pasar los recortes al worker **en memoria** en vez de por PNG temporal | escribir los PNG es ahora 0,12 s del ciclo, el segundo coste tras el OCR | 2 h |
 | cachear el **chat** por hash de la zona | 0,55 s cuando acierta, pero solo es idéntica al frame anterior el 38% de las veces | 1 h |
 
 ### 2.2b · Buffer de captura rapida para leer las acciones — evaluado, con datos

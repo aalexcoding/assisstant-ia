@@ -6,11 +6,10 @@ subproceso solo abre esos PNG, nunca toca opencv.
 """
 import json
 import os
-import shutil
 import atexit
+import base64
 import subprocess
 import sys
-import tempfile
 import threading
 
 import cv2
@@ -24,6 +23,20 @@ WORKER_PATH = os.path.join(os.path.dirname(__file__), "ocr_worker.py")
 MAX_PROCS = max(1, min(6, (os.cpu_count() or 2) - 2))
 
 
+def _png_b64(img):
+    """Codifica un recorte a PNG en base64, para mandarlo al worker DENTRO del
+    JSON en vez de por un fichero temporal.
+
+    Escribir los PNG al disco era 0,12 s del ciclo -el segundo coste despues del
+    propio OCR-, porque son ~105 ficheros por frame. PNG y no crudo para no
+    multiplicar por 3 el tamaño del mensaje: los recortes ya van en escala de
+    grises y comprimen mucho."""
+    ok, buf = cv2.imencode(".png", img)
+    if not ok:
+        raise RuntimeError("no se pudo codificar el recorte a PNG")
+    return base64.b64encode(buf.tobytes()).decode("ascii")
+
+
 def _clahe_enhance(bgr):
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
@@ -35,13 +48,7 @@ class OcrBatch:
     llamador) y los resuelve en una unica invocacion del subproceso."""
 
     def __init__(self):
-        self._tmpdir = tempfile.mkdtemp(prefix="vision_ocr_")
         self._jobs = []
-        self._counter = 0
-
-    def _new_path(self, suffix=".png"):
-        self._counter += 1
-        return os.path.join(self._tmpdir, f"{self._counter}{suffix}")
 
     def job_count(self):
         return len(self._jobs)
@@ -60,10 +67,8 @@ class OcrBatch:
         if scale != 1:
             enhanced = cv2.resize(enhanced, (enhanced.shape[1] * scale, enhanced.shape[0] * scale),
                                    interpolation=cv2.INTER_LANCZOS4)
-        path = self._new_path()
-        cv2.imwrite(path, enhanced)
         idx = len(self._jobs)
-        job = {"mode": "tsv", "path": path, "scale": scale}
+        job = {"mode": "tsv", "png_b64": _png_b64(enhanced), "scale": scale}
         if lang:
             job["lang"] = lang
         self._jobs.append(job)
@@ -83,10 +88,9 @@ class OcrBatch:
         # le hace fallar por completo aunque el contraste sea bueno.
         if pad:
             gray = cv2.copyMakeBorder(gray, pad, pad, pad, pad, cv2.BORDER_CONSTANT, value=255)
-        path = self._new_path()
-        cv2.imwrite(path, gray)
         idx = len(self._jobs)
-        self._jobs.append({"mode": "text", "path": path, "whitelist": whitelist, "psm": psm})
+        self._jobs.append({"mode": "text", "png_b64": _png_b64(gray),
+                           "whitelist": whitelist, "psm": psm})
         return idx
 
     def _run_chunk(self, jobs):
@@ -126,32 +130,31 @@ class OcrBatch:
             intercalado (antes)   1,202 s   trozos [18,18,18,17,17,17]
             espanol aislado       0,888 s   trozos [2,21,21,21,20,20]   -26%
 
-        El directorio temporal se borra en un finally: si un worker falla o se
-        pasa del timeout, el tmpdir se limpia igual. Sin el finally cada fallo
-        dejaba un /tmp/vision_ocr_* huerfano, y en un lazo en vivo se acumulan."""
-        try:
-            real = [(i, j) for i, j in enumerate(self._jobs) if j is not None]
-            # sin ningun job real no hace falta arrancar el subproceso (inicializar
-            # tesseract cuesta mas que el propio OCR de un recorte pequeño)
-            if not real:
-                return ["" for _ in self._jobs]
+        SIN FICHEROS TEMPORALES: los recortes viajan dentro del JSON (ver
+        _png_b64). Antes cada job escribia un PNG a un tmpdir que habia que
+        limpiar en un finally, y cuando ese finally no estaba cada fallo dejaba un
+        /tmp/vision_ocr_* huerfano que en un lazo en vivo se acumulaba. En
+        velocidad da igual -codificar 105 recortes en memoria son 39 ms frente a
+        54 ms de escribirlos-, pero quita esa clase de fallo entera."""
+        real = [(i, j) for i, j in enumerate(self._jobs) if j is not None]
+        # sin ningun job real no hace falta molestar a un worker
+        if not real:
+            return ["" for _ in self._jobs]
 
-            trozos = self._repartir(real)
-            if len(trozos) == 1:
-                partes = [self._run_chunk([j for _i, j in trozos[0]])]
-            else:
-                with ThreadPoolExecutor(max_workers=len(trozos)) as ex:
-                    partes = list(ex.map(lambda t: self._run_chunk([j for _i, j in t]), trozos))
+        trozos = self._repartir(real)
+        if len(trozos) == 1:
+            partes = [self._run_chunk([j for _i, j in trozos[0]])]
+        else:
+            with ThreadPoolExecutor(max_workers=len(trozos)) as ex:
+                partes = list(ex.map(lambda t: self._run_chunk([j for _i, j in t]), trozos))
 
-            por_indice = {}
-            for trozo, parte in zip(trozos, partes):
-                for (idx, _j), r in zip(trozo, parte):
-                    por_indice[idx] = r
+        por_indice = {}
+        for trozo, parte in zip(trozos, partes):
+            for (idx, _j), r in zip(trozo, parte):
+                por_indice[idx] = r
 
-            return [por_indice.get(i, "") if j is not None else ""
-                    for i, j in enumerate(self._jobs)]
-        finally:
-            shutil.rmtree(self._tmpdir, ignore_errors=True)
+        return [por_indice.get(i, "") if j is not None else ""
+                for i, j in enumerate(self._jobs)]
 
     @staticmethod
     def _repartir(real):

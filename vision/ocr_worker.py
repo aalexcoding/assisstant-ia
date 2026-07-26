@@ -54,8 +54,9 @@ tesseract exige que todos los idiomas de una misma llamada vivan en el MISMO
 directorio de tessdata, de ahi que se prefiera un directorio que tenga los dos.
 
 Entrada (stdin): JSON {"jobs": [job, ...]}
-  job modo "tsv":  {"mode": "tsv", "path": "<png>", "lang": "spa" (opcional)}
-  job modo "text": {"mode": "text", "path": "<png>", "whitelist": "AKQJ0123456789" (opcional), "psm": "SINGLE_LINE"}
+  job modo "tsv":  {"mode": "tsv", "png_b64": "<png en base64>", "lang": "spa" (opcional)}
+  job modo "text": {"mode": "text", "png_b64": "<png en base64>", "whitelist": "AKQJ0123456789" (opcional), "psm": "SINGLE_LINE"}
+  (se acepta tambien "path": "<fichero png>" en vez de "png_b64", para diagnostico)
 Salida (stdout): JSON {"results": [resultado, ...]} en el mismo orden.
 
 MODO SERVIDOR (--serve): en vez de resolver un lote y salir, el proceso se queda
@@ -65,6 +66,8 @@ lote. Importa porque el suelo de un lote es ~0,15 s de arranque + carga del
 modelo, mas que el propio OCR de un recorte pequeño; con el vigilante rapido
 (seat_watch) haciendo lotes de una sola capsula, ese suelo era todo el coste.
 """
+import base64
+import io
 import json
 import os
 import sys
@@ -115,8 +118,22 @@ def _job_lang(job):
     return DEFAULT_LANG
 
 
+def _abrir(job):
+    """Imagen del job. Puede venir por RUTA (un PNG temporal, como siempre) o
+    EN MEMORIA -"png_b64": el PNG codificado en base64 dentro del propio JSON-.
+
+    En memoria porque escribir los PNG al disco era 0,12 s del ciclo, el segundo
+    coste despues del OCR: ~105 recortes por frame, cada uno un fichero. Se
+    codifica en PNG y no en crudo para no multiplicar por 3 el tamaño del JSON
+    (los recortes ya vienen en escala de grises)."""
+    b64 = job.get("png_b64")
+    if b64 is not None:
+        return Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB")
+    return Image.open(job["path"]).convert("RGB")
+
+
 def _run_job(api, job):
-    im = Image.open(job["path"]).convert("RGB")
+    im = _abrir(job)
     api.SetImage(im)
     if job["mode"] == "tsv":
         api.SetPageSegMode(tesserocr.PSM.SPARSE_TEXT)
