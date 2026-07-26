@@ -263,10 +263,28 @@ check("cuando el cliente lo tapa con el verbo, se repone el nombre",
 check("y se marca que viene repuesto, no leido",
       s2["players"][0].get("name_repuesto") is True)
 
-s3 = con_nombre("otroNick", "Pasar")
+# SE FIJA POR MAYORIA, no por "el ultimo bueno". El problema real no era solo el
+# verbo: el OCR lee el mismo nick de formas distintas casi cada frame. Medido en
+# una sesion real, un asiento dio OCHO variantes en una mano ("juanpalla",
+# "Juanpalia", "juanpaila", "jJuanpalia"...) con 40 cambios, y en el HUD eso se
+# ve como un nombre que no para de bailar. Con la mayoria: 59 -> 12 cambios en la
+# sesion entera, un 80% menos.
+for _ in range(8):
+    s = con_nombre("Dav6934", None)
+    ht.aplicar(s, tr.update(s))
+s3 = con_nombre("Dav693A", None)          # una variante suelta del OCR
 ht.aplicar(s3, tr.update(s3))
-check("una lectura buena del frame actual siempre manda sobre la repuesta",
-      s3["players"][0]["name"] == "otroNick")
+check("una lectura suelta NO tumba al nombre visto muchas veces",
+      s3["players"][0]["name"] == "Dav6934")
+check("y se marca que lo mostrado no es lo leido en este frame",
+      s3["players"][0].get("name_repuesto") is True)
+
+# pero si la variante nueva pasa a ser la mayoritaria, se adopta: no es un latch
+for _ in range(20):
+    s4 = con_nombre("Dav693A", None)
+    ht.aplicar(s4, tr.update(s4))
+check("si la lectura nueva se vuelve mayoritaria, se adopta (no es un latch)",
+      s4["players"][0]["name"] == "Dav693A")
 
 # EN ZOOM el cliente cambia de mesa entre manos, asi que el ocupante de un
 # asiento puede ser OTRA persona: reponer entre manos seria inventarse quien es.

@@ -246,9 +246,16 @@ def _seat_plate_name_stack(lines):
     action = None
     for ln in lines:
         texto = ln["text"].strip()
-        if action is None and es_verbo_de_accion(texto):
-            action = texto
-            continue                      # no puede ser tambien el nombre
+        # el verbo puede venir SOLO ("All-in") o ACOMPAÑADO ("All-in 12,3 BB"),
+        # segun lo que el OCR pegue en la misma linea. Se mira la linea entera y
+        # tambien palabra a palabra: comprobando solo la linea, un "All-in 12,3
+        # BB" se colaba como si fuera el nick del jugador.
+        verbo = texto if es_verbo_de_accion(texto) else next(
+            (w for w in texto.split() if es_verbo_de_accion(w)), None)
+        if verbo is not None:
+            if action is None:
+                action = verbo
+            continue                      # esta linea no es el nombre
         if name is None and _is_name_candidate(texto):
             name = _clean_name(texto)
         if stack is None and _is_number_candidate(texto):
