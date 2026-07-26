@@ -234,6 +234,7 @@ class AnalysisWorker(threading.Thread):
         GLib.idle_add(self.win.on_status, "Stream activo.")
         try:
             while not self._stop.is_set():
+                inicio = time.monotonic()
                 frame = stream.read(timeout_s=5.0)
                 if frame is not None:
                     crop, err = self._crop_region(frame)
@@ -247,7 +248,16 @@ class AnalysisWorker(threading.Thread):
                             # corrupta) no debe matar el hilo y dejar la UI muda:
                             # se reporta y se sigue con el siguiente frame.
                             GLib.idle_add(self.win.on_error, f"Fallo analizando el frame: {e}")
-                self._stop.wait(self.interval)
+                # El intervalo es un PERIODO, no una pausa: se espera solo lo que
+                # falte para completarlo. Antes se esperaba el intervalo ENTERO
+                # despues de analizar, asi que se sumaba al ciclo: con el selector
+                # en 0,5 s el muestreo real de una sesion fue de 1,48 s. Y el
+                # muestreo es justo lo que limita ver QUE hace cada jugador: el
+                # cliente enseña el verbo de la accion ("Pasar", "Subir") menos de
+                # 1,5 s, asi que cada decima de periodo cuenta.
+                resto = self.interval - (time.monotonic() - inicio)
+                if resto > 0:
+                    self._stop.wait(resto)
         finally:
             try:
                 stream.close()

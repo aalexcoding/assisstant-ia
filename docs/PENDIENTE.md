@@ -483,6 +483,44 @@ Lo que queda de esta sección:
 | worker OCR **persistente** (proceso vivo, APIs ya cargadas) | quita el arranque de tesseract de cada frame; el suelo medido de un lote trivial es 0,15 s | 2-3 h |
 | cachear el **chat** por hash de la zona | 0,55 s cuando acierta, pero solo es idéntica al frame anterior el 38% de las veces | 1 h |
 
+### 2.2b · Buffer de captura rapida para leer las acciones — evaluado, con datos
+
+Idea del usuario: capturar cada 0,1 s a un buffer circular de 10 frames, usar el
+**verbo que el cliente pone en el nameplate** (`Pasar`, `Igualar`, `Subir`) para
+saber quien hace qué, quedarse solo con el frame que cierra la jugada y descartar
+el resto para no acumular memoria.
+
+**La base ya está hecha**: el verbo se expone como `player["action"]` y ya no
+contamina el nombre (commit `ec9729e`).
+
+**Lo que cuesta, medido:**
+
+| | |
+|---|---|
+| hashear los 6 nameplates (detectar que algo cambió, sin OCR) | **0,8 ms/frame** |
+| buffer de 10 frames en memoria | **38 MB** |
+| OCR de los 6 nameplates de un frame "interesante" | 0,38 s |
+
+O sea que capturar a 10 Hz y filtrar por hash es perfectamente viable; solo se
+OCR-ea el frame en que un nameplate cambia.
+
+**Pero la ganancia es menor de lo que parece, y conviene saberlo antes de
+construir nada.** Medido sobre la sesión del 26-07 (53 manos, muestreo real
+1,48 s): se captan **300 apariciones distintas de un verbo, 5,7 por mano**, y una
+mano de 3-max tiene típicamente 4-8 acciones. O sea que ya se está viendo la
+mayor parte de lo que pasa; el buffer añadiría fiabilidad y **orden preciso**, no
+un salto de cobertura.
+
+**Antes de construirlo hay un arreglo gratis**, ya hecho: el selector de
+intervalo era una PAUSA que se sumaba al ciclo, no un periodo. Con 0,5 s
+configurado el muestreo real era 1,48 s; ahora se espera solo lo que falte, así
+que baja a ~1,0 s — un 32% más de resolución temporal sin tocar la arquitectura.
+
+**Qué haría falta para decidir:** grabar una sesión corta con el periodo al mínimo
+y contar cuántas acciones se pierden de verdad. Sin ese número, montar un hilo de
+captura a 10 Hz es optimizar a ciegas. El coste sí está acotado (los tres números
+de arriba), así que la decisión es solo de prioridad.
+
 ### 2.2 Historial de acciones de la mano → 🟡 media hecha en §2.0
 
 Confirmado que **el chat no narra las acciones** (solo resultados, showdown,
