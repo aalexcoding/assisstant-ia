@@ -88,7 +88,7 @@ import equity
 import hand_tracker
 
 from actions import CHECK_BB_OPTION, translate_into
-from derive import bb_option
+from derive import bb_option, vs_limp
 from lookup import RANGES, recommend
 
 _DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.jsonl")
@@ -522,14 +522,34 @@ def decide(state):
                 reasoning += f" OJO: {sup}."
             derivada_meta = derivada
     else:
-        result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
-        if result is None:
-            return abstain(f"sin rango de apertura para {hero_position} a {stack_bb:.1f}bb "
-                           f"(open_raise); revisa que la posicion/stack esten en las tablas")
-        action = result["action"]
-        reasoning = (f"Rango de apertura de {hero_position} a {stack_bb:.1f}bb efectivos "
-                     f"({fuente};{nota_cache} sin subida que enfrentar, el hero abre el bote)"
-                     + _stack_key_note(result, stack_bb, facing, warnings))
+        # FRENTE A LIMPERS el bote ya no esta sin abrir: hay gente dentro, asi que
+        # el rango de APERTURA se queda suelto. Si se puede contar cuantos han
+        # entrado, se usa la celda real que corresponde a apretar por cada uno
+        # (ver derive.vs_limp). Se exige un recuento POSITIVO: con limpers=None no
+        # se sabe si hay alguien dentro, y ahi lo correcto es el rango de apertura
+        # de siempre, que es lo que se venia haciendo.
+        limpers = _contar_limpers(state.get("players", []))
+        derivada = (vs_limp(hero_cards, hero_position, stack_bb, limpers)
+                    if isinstance(limpers, int) and limpers >= 1 else None)
+        if derivada is not None:
+            action = derivada["action"]
+            plural = "" if derivada["limpers"] == 1 else "s"
+            reasoning = (f"{derivada['limpers']} rival{plural} ha{'n' if plural else ''} "
+                         f"entrado pagando, asi que el bote no esta sin abrir. INFERIDO de "
+                         f"{derivada['donor']}, que en tu tabla dice "
+                         f"'{derivada['donor_action']}': con limpers delante hay que apretar, "
+                         f"y en tus tablas cada asiento hacia EP aprieta un 20%. "
+                         f"{stack_bb:.1f}bb efectivos ({fuente};{nota_cache})")
+            derivada_meta = derivada
+        else:
+            result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
+            if result is None:
+                return abstain(f"sin rango de apertura para {hero_position} a {stack_bb:.1f}bb "
+                               f"(open_raise); revisa que la posicion/stack esten en las tablas")
+            action = result["action"]
+            reasoning = (f"Rango de apertura de {hero_position} a {stack_bb:.1f}bb efectivos "
+                         f"({fuente};{nota_cache} sin subida que enfrentar, el hero abre el bote)"
+                         + _stack_key_note(result, stack_bb, facing, warnings))
 
     recommendation = {
         "action": action,

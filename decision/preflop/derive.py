@@ -1,5 +1,13 @@
 """
-Fase E, primera pieza: LA OPCION DE LA BB.
+Fase E: capa DERIVADA del preflop. Responde spots que las tablas del usuario no
+cubren, y todo lo que responde sale de UNA CELDA REAL suya.
+
+Dos situaciones cubiertas hasta ahora:
+
+    bb_option()   la opcion de la BB en un bote limpeado
+    vs_limp()     limpers delante, con el hero FUERA de las ciegas
+
+--- LA OPCION DE LA BB ---
 
 Hasta ahora, cuando el hero estaba en la BB y nadie habia subido, el motor
 respondia siempre lo mismo -"pasa y ve el flop gratis"- SIN MIRAR LAS CARTAS NI
@@ -50,8 +58,25 @@ Requiere lookup.py en el mismo directorio (lo pone el caller en sys.path).
 """
 from lookup import recommend
 
-# La posicion cuya fila se usa como donante, y por que ella (ver el docstring).
+# La posicion cuya fila se usa como donante para la OPCION DE LA BB, y por que
+# ella (ver el docstring).
 DONANTE_POSICION = "SB"
+
+# Orden de las posiciones de mas TIGHT a mas suelta, tal y como sale de sus
+# propias tablas. Es el eje sobre el que se hace el CAMBIO DE FILA: enfrentar
+# limpers pide apretar, y apretar es moverse hacia EP.
+#
+# Medido sobre ranges.json, ratio de anchura (no-fold) entre asientos adyacentes:
+# n=77, media 0.802, sd 0.114. O sea que cada asiento hacia EP aprieta ~20%, y es
+# MONOTONO en las once profundidades.
+#
+# La SB queda FUERA a proposito, como donante y como hero. Su fila es la unica
+# construida sobre LIMP -78-90% de no-fold frente al 15-56% del resto- porque es
+# la unica posicion desde la que el usuario digitalizo "entrar sin subir". Meterla
+# en este eje romperia la monotonia: mover de SB a BTN no aprieta, ENSANCHA lo que
+# se sube. Para la BB su forma es justo la que hace falta (bb_option); para este
+# spot, no.
+ORDEN_TIGHT_A_SUELTA = ("EP1", "EP2", "MP1", "MP2", "HJ", "CO", "BTN")
 
 # Cuantos limpers admite esta derivacion. Con 2 o mas no hay donante valido.
 MAX_LIMPERS = 1
@@ -76,6 +101,74 @@ def _traducir(etiqueta_donante):
     # etiqueta que no estaba en los datos cuando se escribio esto: no se
     # traduce a ciegas, se renuncia. Mejor el CHECK de siempre que una accion
     # inventada.
+    return None
+
+
+_DIRECTO_VS_LIMP = {
+    # aqui SI se puede foldear: el hero no esta en la BB, asi que entrar cuesta
+    # dinero. Es la diferencia clave con la opcion de la BB.
+    "fold": "fold",
+    "LIMP": "LIMP",
+    "OPEN RAISE ALL IN": "ALL IN",
+    "MARGINAL OPEN RAISE": "MARGINAL RAISE OVER LIMPERS",
+}
+
+
+def vs_limp(hero_cards, hero_position, stack_bb, limpers=1):
+    """Que hacer con limpers delante, estando el hero FUERA de las ciegas.
+
+    El donante es OTRA CELDA REAL suya: su rango de apertura desde la posicion
+    que esta `limpers` asientos mas temprana. La idea es que cada limper ya
+    metido equivale, a efectos de cuanta gente queda por hablar y de cuanto hay
+    que apretar, a estar un asiento antes. Se copia esa celda tal cual; no se
+    recalcula ninguna etiqueta.
+
+    Devuelve None -y el motor se queda con lo de siempre- cuando no hay donante
+    valido: si el hero esta en las ciegas (la SB tiene otra forma de fila, ver
+    ORDEN_TIGHT_A_SUELTA; la BB tiene su propia funcion), si al desplazar se cae
+    por debajo de EP1 (ya no hay nada mas tight que copiar) o si `limpers` no es
+    un numero util."""
+    if not isinstance(limpers, int) or limpers < 1:
+        return None
+    if hero_position not in ORDEN_TIGHT_A_SUELTA:
+        return None
+    i = ORDEN_TIGHT_A_SUELTA.index(hero_position) - limpers
+    if i < 0:
+        return None                       # no hay fila mas tight que copiar
+    donante_pos = ORDEN_TIGHT_A_SUELTA[i]
+
+    donante = recommend(hero_cards, donante_pos, stack_bb, facing="open_raise")
+    if donante is None:
+        return None
+    accion = _traducir_vs_limp(donante["action"])
+    if accion is None:
+        return None
+
+    key = donante["stack_key"]
+    plural = "" if limpers == 1 else "s"
+    return {
+        "action": accion,
+        "source": "derived",
+        # media-alta: es una celda real suya y el desplazamiento esta medido
+        # (0.802 de ratio, sd 0.114). Con mas de un limper se encadena el
+        # desplazamiento y la incertidumbre se acumula.
+        "confidence": "media-alta" if limpers == 1 else "media",
+        "donor": f"tu rango de apertura de {donante_pos} a {key:g}bb",
+        "donor_action": donante["action"],
+        "stack_key": key,
+        "limpers": limpers,
+        "assumptions": [f"se trata {limpers} limper{plural} como estar {limpers} "
+                        f"asiento{plural} mas temprano ({hero_position} -> {donante_pos}); "
+                        f"cada asiento aprieta el rango un 20% en tus tablas"],
+    }
+
+
+def _traducir_vs_limp(etiqueta_donante):
+    directo = _DIRECTO_VS_LIMP.get(etiqueta_donante)
+    if directo is not None:
+        return directo
+    if etiqueta_donante.upper().startswith("OPEN RAISE"):
+        return "RAISE OVER LIMPERS" + etiqueta_donante[len("OPEN RAISE"):]
     return None
 
 

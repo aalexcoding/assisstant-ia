@@ -139,9 +139,32 @@ deriva.
 Anchos de lo que ahora recomienda subir (de 169 manos): 4bb 82,8% · 10bb 56,2% ·
 20bb 30,8% · 40bb 26,0%.
 
-**Lo que falta de la Fase E** (las otras cuatro situaciones): frente a un limp con
-hero ≠ BB, squeeze, ciega vs ciega y 4bet. Depende, para los spots de defensa,
-de §2.0. El diseño completo (con las mediciones que justifican cada
+#### Frente a un limp, con el hero fuera de las ciegas — ✅ HECHO
+
+`derive.vs_limp()`. El donante es **otra celda real suya**: su rango de apertura
+desde la posición que está `limpers` asientos más temprana. Un limper ya metido
+equivale, a efectos de cuánta gente queda y de cuánto hay que apretar, a estar un
+asiento antes.
+
+Medido sobre `ranges.json`, ratio de anchura entre asientos adyacentes: **n=77,
+media 0,802, sd 0,114**. Cada asiento hacia EP aprieta el rango ~20%, y es
+monótono en las once profundidades.
+
+**La SB queda fuera del eje**, como donante y como hero: su fila es la única
+construida sobre `LIMP` (78-90% de no-fold frente al 15-56% del resto), así que
+meterla rompería la monotonía — mover de SB a BTN no aprieta, *ensancha*. Para la
+BB su forma es justo la que hace falta; para este spot, no.
+
+Diferencia clave con la opción de la BB: **aquí sí se puede foldear**, porque el
+hero no está en la BB y entrar cuesta dinero.
+
+El motor solo lo usa con un recuento **positivo** de limpers. Con `None` no se
+sabe si hay alguien dentro, y ahí lo correcto sigue siendo el rango de apertura.
+
+**Lo que falta de la Fase E**: squeeze, ciega vs ciega y 4bet. El 4bet sigue
+necesitando que se digitalicen 20-30 capturas de un gráfico propio: sus 398
+imágenes no contienen el eje "responder a agresión" y ninguna estadística lo saca
+de ahí. El diseño completo (con las mediciones que justifican cada
 constante) está en el plan; resumen:
 
 Todo lo que responde sale de una de tres operaciones sobre las 331 celdas
@@ -536,22 +559,50 @@ intervalo era una PAUSA que se sumaba al ciclo, no un periodo. Con 0,5 s
 configurado el muestreo real era 1,48 s; ahora se espera solo lo que falte, así
 que baja a ~1,0 s — un 32% más de resolución temporal sin tocar la arquitectura.
 
-**Qué haría falta para decidir:** grabar una sesión corta con el periodo al mínimo
-y contar cuántas acciones se pierden de verdad. Sin ese número, montar un hilo de
-captura a 10 Hz es optimizar a ciegas. El coste sí está acotado (los tres números
-de arriba), así que la decisión es solo de prioridad.
+**✅ HECHO** (`vision/seat_watch.py`). El lazo de captura pasa a ser el primario:
+se captura cada **0,1 s** y de cada frame solo se comprueba si alguna cápsula ha
+cambiado; el análisis completo se lanza cuando toca.
 
-### 2.2 Historial de acciones de la mano → 🟡 media hecha en §2.0
+Dos decisiones que salieron de medir:
 
-Confirmado que **el chat no narra las acciones** (solo resultados, showdown,
-turnos y subidas de nivel), así que hay que acumular estado entre frames.
+- **Se hashea solo la banda del nombre** (el 45% de arriba), no la cápsula
+  entera: abajo va el stack, que cambia cada vez que se mueven fichas y disparaba
+  un OCR sin que nadie hubiera actuado. Medido: cápsula entera 3,6 cambios/frame,
+  banda del nombre 1,9-2,2.
+- **Tope de seguridad** `VIGILANCIA_OCR_MIN_S`. Con los workers persistentes el
+  coste de mirar una cápsula bajó de ~250 ms a **39 ms**, así que el tope está en
+  0,12 s: ~8 miradas por segundo, de sobra para un cartel que dura más de 0,5 s.
 
-`hand_tracker` ya lleva el **comprometido acumulado por jugador**, que es la
-mitad de esta pieza. Lo que falta para distinguir open / 3bet / squeeze /
-resubida con certeza es el **orden y la calle** de las aportaciones: hoy el
-comprometido es un total de la mano, sin separar por calle ni saber quién puso
-primero. Con el board ya expuesto en cada frame, segmentar el comprometido por
-calle es un paso corto sobre lo que ya hay.
+**Queda por medir en vivo**: cuántas acciones se captan ahora frente a las 5,7
+por mano de antes. Hace falta una sesión grabada con el código nuevo.
+
+### 2.2 Historial de acciones de la mano — ✅ HECHO
+
+`decision/action_log.py`. El chat **no** narra las acciones (solo resultados,
+showdown, turnos y subidas de nivel), pero el cliente sí: cuando un jugador actúa
+le **sustituye el nick por lo que ha hecho** (`Pasar`, `Igualar`, `Subir`). Esa
+información se estaba tirando —peor, se leía como si fuera el nombre—.
+
+Las dos piezas son complementarias:
+
+```
+hand_tracker   CUANTO ha puesto cada uno    (bajada de stack)
+action_log     QUE hizo y EN QUE ORDEN      (verbo del nameplate)
+```
+
+El comprometido no distingue "pagar 4bb" de "subir a 4bb", y el orden no se
+deduce de un total.
+
+Lo delicado es la **deduplicación**: el mismo verbo está en pantalla varios
+frames y contarlo dos veces convertiría una subida en dos. Se compara con lo
+último visto *en ese asiento*, así que `Subir, Subir, (nick), Subir` son dos
+subidas: volver a ver el nick cierra el evento.
+
+`acciones()` marca **siempre `completo=False`**: el cartel dura menos que el
+periodo de muestreo, así que faltan acciones por construcción.
+
+Lo que queda: **separar el comprometido por calle**, que es lo que permitiría
+distinguir un squeeze de una resubida con certeza.
 
 ### 2.3 · Marcar una situación con una nota mientras se juega — ✅ HECHO
 

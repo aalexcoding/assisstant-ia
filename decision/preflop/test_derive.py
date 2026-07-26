@@ -152,6 +152,67 @@ for k in PROFUNDIDADES:
             if (derive.bb_option(cartas(m), float(k), 1) or {}).get("action", "") != "CHECK")
     print(f"      {k:>5}bb  {100 * n / len(MANOS):5.1f}%")
 
+# --- FRENTE A UN LIMP, con el hero fuera de las ciegas ---------------------
+# El donante es otra celda REAL suya: su rango de apertura desde la posicion que
+# esta `limpers` asientos mas temprana. Medido sobre ranges.json, cada asiento
+# hacia EP aprieta el rango un 20% (ratio 0.802, sd 0.114, n=77) y es monotono en
+# las once profundidades.
+print("\n# --- frente a un limp (hero fuera de las ciegas) ---")
+
+r = derive.vs_limp(["Ah", "Ad"], "CO", 20.0, limpers=1)
+check("con 1 limper el donante es el asiento inmediatamente mas tight",
+      r is not None and "HJ" in r["donor"])
+check("y se marca como derivado", r["source"] == "derived")
+check("con confianza media-alta: es una celda real y el salto esta medido",
+      r["confidence"] == "media-alta")
+
+# AQUI SI SE PUEDE FOLDEAR, y es la diferencia clave con la opcion de la BB:
+# el hero no esta en la BB, asi que entrar cuesta dinero.
+basura = derive.vs_limp(["7c", "2d"], "CO", 20.0, limpers=1)
+check("fuera de la BB, una mano mala SI se retira (entrar cuesta dinero)",
+      basura["action"] == "fold")
+check("y una buena sube sobre los limpers",
+      r["action"].startswith("RAISE OVER LIMPERS"))
+
+dos = derive.vs_limp(["9c", "8c"], "BTN", 20.0, limpers=2)
+check("con 2 limpers se retrocede 2 asientos (BTN -> HJ)",
+      dos is not None and "HJ" in dos["donor"])
+check("y baja la confianza, porque el desplazamiento se encadena",
+      dos["confidence"] == "media")
+check("se dice el supuesto que se ha hecho",
+      any("asiento" in a for a in dos["assumptions"]))
+
+# --- las guardas -----------------------------------------------------------
+print("\n# --- guardas de vs_limp ---")
+check("en EP1 no hay fila mas tight que copiar -> None",
+      derive.vs_limp(["Ah", "Ad"], "EP1", 20.0, 1) is None)
+check("con 2 limpers desde EP2 tampoco (se cae por debajo de EP1)",
+      derive.vs_limp(["Ah", "Ad"], "EP2", 20.0, 2) is None)
+check("la SB queda fuera: su fila esta construida sobre LIMP y romperia la "
+      "monotonia del eje (mover de SB a BTN no aprieta, ensancha)",
+      derive.vs_limp(["Ah", "Ad"], "SB", 20.0, 1) is None)
+check("la BB tambien: tiene su propia funcion",
+      derive.vs_limp(["Ah", "Ad"], "BB", 20.0, 1) is None)
+check("sin limpers no hay nada que derivar",
+      derive.vs_limp(["Ah", "Ad"], "CO", 20.0, 0) is None)
+check("ni con un numero raro de limpers",
+      derive.vs_limp(["Ah", "Ad"], "CO", 20.0, None) is None)
+check("sin cartas o sin stack tampoco",
+      derive.vs_limp(["Ah"], "CO", 20.0, 1) is None
+      and derive.vs_limp(["Ah", "Ad"], "CO", None, 1) is None)
+
+# no se inventa ninguna etiqueta, y todas tienen castellano
+acc_limp = set()
+for k in PROFUNDIDADES:
+    for pos in ("EP2", "MP1", "MP2", "HJ", "CO", "BTN"):
+        for mano in MANOS:
+            x = derive.vs_limp(cartas(mano), pos, float(k), 1)
+            if x:
+                acc_limp.add(x["action"])
+check("toda accion de vs_limp tiene castellano para el HUD",
+      not [a for a in acc_limp if translate_action(a)[1] is None])
+print(f"    acciones que produce: {sorted(acc_limp)}")
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
