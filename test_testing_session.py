@@ -185,6 +185,17 @@ try:
     check("una sesion sin esos datos no revienta ni inventa un numero",
           r_vacio["manos"] == 0 and r_vacio["acciones_por_mano"] is None)
 
+    # "no se midio" NO es "no se vio nada": una sesion grabada antes de que
+    # existiera el historial tiene manos pero no acciones, y contarla como 0
+    # haria creer que hay una regresion donde no la hay.
+    ses5 = tss.TestingSession(root=raiz, now=5)
+    for _ in range(3):
+        ses5.guardar(None, {"state": {"mano_seguida": 1, "warnings": []}},
+                     lambda ruta: open(ruta, "wb").write(b"png"))
+    r5 = tss.resumen(ses5.dir)
+    check("una sesion vieja cuenta sus manos pero NO inventa 0 acciones",
+          r5["manos"] == 1 and r5["acciones_por_mano"] is None)
+
     # --- marcar sin modo testing: carpeta aparte creada al vuelo ---------------
     notas = tss.TestingSession(root=raiz, now=3, prefix="notas")
     check("la sesion de solo-notas va a notas-<fecha>, no a sesion-<fecha>",

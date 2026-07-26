@@ -901,6 +901,11 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                     except (FileNotFoundError, ValueError, KeyError):
                         pass
                     self.sesion = ts_session.TestingSession(interval=intervalo, region=region)
+                    # el tamaño de mesa fijado va en los metadatos: al revisar la
+                    # sesion despues, saber si estaba en auto o en 3-Max explica
+                    # la mitad de lo que se vea (ver revisar_sesion.py)
+                    self.sesion.meta["max_players"] = self._max_players()
+                    self.sesion.meta["vigilancia_periodo_s"] = VIGILANCIA_PERIODO_S
                     self.testing_label.set_markup(
                         f'<span foreground="#3498db">Grabando en '
                         f'{GLib.markup_escape_text(os.path.relpath(self.sesion.dir, BASE_DIR))}'

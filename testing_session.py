@@ -231,10 +231,15 @@ def resumen(directorio):
         mano = st.get("mano_seguida")
         if mano is not None:
             manos.add(mano)
-            acc = (st.get("acciones") or {}).get("acciones") or []
-            # se queda el maximo por mano: el historial CRECE dentro de la mano,
-            # asi que el ultimo frame de cada una es el que la resume
-            acciones_max[mano] = max(acciones_max.get(mano, 0), len(acc))
+            # solo si el frame TRAE el historial. Una sesion grabada antes de que
+            # existiera no tiene la clave, y contarla como 0 acciones diria "no se
+            # vio nada" cuando lo cierto es "no se midio": son cosas distintas y
+            # confundirlas haria creer que hay una regresion donde no la hay.
+            if "acciones" in st:
+                acc = (st.get("acciones") or {}).get("acciones") or []
+                # se queda el maximo por mano: el historial CRECE dentro de la
+                # mano, asi que el ultimo frame de cada una es el que la resume
+                acciones_max[mano] = max(acciones_max.get(mano, 0), len(acc))
         if st.get("vigilancia"):
             vigilancia = st["vigilancia"]
     return {

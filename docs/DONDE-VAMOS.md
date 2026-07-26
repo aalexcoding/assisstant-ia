@@ -1,8 +1,9 @@
 # Por dónde vamos
 
 Punto de retomada a **2026-07-26**, HEAD `2442ada`. El detalle de cada tarea
-pendiente está en [`PENDIENTE.md`](PENDIENTE.md); esto es el mapa de arriba: qué
-está hecho, qué toca ahora y qué depende de ti.
+pendiente está en [`PENDIENTE.md`](PENDIENTE.md) y el protocolo para revisar una
+partida grabada en [`REVISAR-PARTIDA.md`](REVISAR-PARTIDA.md); esto es el mapa de
+arriba: qué está hecho, qué toca ahora y qué depende de ti.
 
 ---
 
@@ -61,13 +62,9 @@ Es lo único que bloquea. Graba **una sesión** con el código actual y se mide:
   una mano de 3-max teniendo típicamente 4-8 acciones). Si sube claramente, el
   buffer cumple; si no, hay que mirar por qué.
 
-  Ya no hay que derivarlo a mano: `testing_session.resumen()` lo da hecho.
-
-  ```python
-  import testing_session as t
-  r = t.resumen("testing/sesion-<fecha>")
-  print(r["manos"], r["acciones_por_mano"], r["ciclo_medio_s"], r["vigilancia"])
-  ```
+  El protocolo completo de revisión —qué mirar, en qué orden, con las referencias
+  y su procedencia— está en [`REVISAR-PARTIDA.md`](REVISAR-PARTIDA.md). Basta con
+  decir **"prueba hecha, revisa"**.
 - que el **ciclo de 0,68 s** se sostiene en producción con el vigilante corriendo.
 - que las nuevas recomendaciones derivadas (`RAISE OVER LIMPERS`, la opción de la
   BB) salen cuando deben y con el color ámbar que las marca como inferidas.
