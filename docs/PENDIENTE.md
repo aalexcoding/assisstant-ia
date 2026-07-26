@@ -668,6 +668,46 @@ Estas notas son **exactamente las etiquetas que le faltan al proyecto** (§2.3b)
 cada una es un caso real, elegido porque algo no cuadraba, con el frame y el
 estado calculado al lado, generado jugando y sin sesiones de etiquetado aparte.
 
+### 2.3c · ⭐ Estabilizar la lectura entre frames — medido y priorizado
+
+La lección del nombre que bailaba generaliza: **casi todo lo que se lee tiene una
+invariante dentro de una mano**, y cada violación es un error detectable sin
+etiquetar nada. Medido sobre ~3.000 frames de tres sesiones:
+
+| invariante dentro de la mano | rompe | de | % |
+|---|---|---|---|
+| **nº de asientos ocupados** (nadie se levanta a mitad de mano) | 287 | 2.756 | **10,4%** |
+| **board** (solo crece, y lo visto no se pierde) | 130 | 1.324 | **9,8%** |
+| botones (`facing`) | 46 | 676 | 6,8% |
+| quién sigue en la mano (se retiran, no vuelven) | 180 | 2.756 | 6,5% |
+| posición del hero | 126 | 2.639 | 4,8% |
+| cartas del hero (constantes en la mano) | 44 | 1.805 | 2,4% |
+| stack de un jugador (solo baja) | 235 | 11.265 | 2,1% |
+
+**Ordenado por COSTE, no por frecuencia** (la lección del botón del dealer):
+
+1. **Nº de asientos.** El más frecuente *y* el más caro: las posiciones salen del
+   recuento, así que un asiento que parpadea desplaza **todas** y con ellas la
+   fila de rango. Explica además buena parte del 4,8% de la posición del hero.
+2. **Board.** Corrompe la equity. El patrón medido no es "otro board" sino
+   **cartas que se pierden** (`5h 2h 6h Kd 8s` → `6h Kd 8s` → vuelve).
+3. **Cartas del hero.** Solo el 2,4%, pero cuando falla cambia la recomendación
+   entera. Barato de arreglar: mayoría dentro de la mano, igual que el nombre.
+4. **Quién sigue en la mano.** Es el nº de rivales de la equity. Un rival que
+   "resucita" la infla o la desinfla.
+5. **Stack.** El rastreador ya rechaza las subidas internamente, pero lo que se
+   muestra —y lo que elige la fila de rango para el hero— es la lectura cruda.
+
+**El arreglo es el mismo para todas y ya está probado**: el rastreador guarda
+estado por mano, así que puede imponer la invariante (mayoría para lo constante,
+monotonía para lo que solo crece o solo baja). Con el nombre eso bajó el parpadeo
+un 80%.
+
+**Un aviso para no engañarse midiendo esto**: parte de las violaciones no son
+lecturas malas sino **fronteras de mano que no se detectaron**, y ahí lo que hay
+que arreglar es la segmentación, no la lectura. Conviene separarlas antes de
+atribuirse una mejora.
+
 ### 2.3b Corpus etiquetado
 
 El modo testing ya recoge la materia prima y las notas de §2.3 aportan los casos
