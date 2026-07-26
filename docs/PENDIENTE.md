@@ -425,9 +425,9 @@ brillante que no sea una mesa (la de estadísticas de SharkScope pasa la guarda)
 No hace daño —sin asientos ocupados no hay posiciones ni recomendación— pero es
 el mismo hueco que §2.0c: la referencia se busca por color, no por forma.
 
-### 2.1 Latencia — ✅ HECHO (commit 67b2ab7)
+### 2.1 Latencia — ✅ HECHO (commits 67b2ab7, 17fe44c, 977d939)
 
-El ciclo bajó de **3,88 s a 1,59 s (2,4×)**:
+El ciclo bajó de **3,88 s a 0,96 s (4,0×)**. Primero de 3,88 a 1,59:
 
 - **lote de OCR en paralelo** (6 procesos): 3,85 s → 1,45 s. Se dejan 10 núcleos
   libres a propósito; de 6 a 12 procesos solo se ganan 0,18 s más y saturar la
@@ -465,6 +465,16 @@ campo del `GameState`.
 
 La caché de rangos aporta lo suyo por otro lado (81% de los recortes de carta se
 repiten, con la clave sobre el interior del recorte).
+
+**Las dos juntas, sobre los mismos 60 frames consecutivos:**
+
+```
+ANTES (intercalado, sin cache)   1,40 s/frame
+AHORA (por idioma + cache)       0,96 s/frame     -31%
+frames con resultado distinto:   0
+```
+
+Acumulado desde el principio del proyecto: **3,88 s → 0,96 s (4,0x)**.
 
 Lo que queda de esta sección:
 
