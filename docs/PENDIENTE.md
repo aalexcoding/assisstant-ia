@@ -718,6 +718,20 @@ Medido sobre 2.811 frames contra el conjunto **modal** de cada mano:
 
 La unión era la opción intuitiva y es la mala.
 
+**Confirmado de punta a punta** sobre 270 frames reales, ejecutando el pipeline
+completo dos veces (con y sin realimentación):
+
+| | sin realimentar | con realimentar |
+|---|---|---|
+| cambios de nº de asientos dentro de la mano | 9 | **0** |
+| cambios de posición del hero | 1 | 1 |
+| manos detectadas | 5 | 5 (el chat dice 4) |
+
+El recuento de asientos, que era el objetivo, queda **en cero**. El número de
+posición sale 1 en los dos porque esa sesión son 3,5 minutos y hay poco que
+medir; el dato fiable de la posición es el de las 2.568 transiciones (3,9% →
+1,8%).
+
 ---
 
 ### 2.3c-bis · Lo que queda por estabilizar — medido y priorizado
