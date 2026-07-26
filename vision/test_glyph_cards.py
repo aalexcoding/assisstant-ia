@@ -235,6 +235,45 @@ check("el mazo entra en la clave de cache: el mismo recorte no se confunde "
       color_rank_ocr.cache_key(carta_glifo, "spade", "glyph")
       != color_rank_ocr.cache_key(carta_glifo, "spade", "solid"))
 
+print("\n# --- el disco del dealer, sea del color que sea ---")
+# El tema de mesa decide si el disco es claro con la pica roja pequeña o crema
+# con la pica roja grande. Exigir que gane el claro dejaba la app sin boton -y
+# por tanto sin posiciones y sin recomendaciones- en 44 frames seguidos.
+import seat_map
+
+REF = (100, 100, 900, 400, False)
+
+
+def mesa_con_boton(seat, fondo, pica):
+    img = np.full((700, 1200, 3), (60, 110, 70), dtype=np.uint8)   # tapete
+    fx, fy = seat_map.SEATS[seat]["button"]
+    cx = int(REF[0] + fx * REF[2])
+    cy = int(REF[1] + fy * REF[3])
+    r = int((seat_map.BUTTON_AREA_FRAC_MIN + seat_map.BUTTON_AREA_FRAC_MAX) / 2
+            * REF[2] * REF[3] / np.pi) ** 0.5
+    cv2.circle(img, (cx, cy), int(r), fondo, -1)
+    cv2.circle(img, (cx, cy), max(2, int(r * pica)), (40, 40, 235), -1)   # pica roja
+    return img
+
+
+claro = mesa_con_boton("UL", (245, 245, 245), 0.52)     # disco blanco, pica pequeña
+crema = mesa_con_boton("UL", (205, 235, 245), 0.80)     # disco crema, pica grande
+check("el disco CLARO con pica roja se encuentra",
+      seat_map.detect_button_seat(claro, REF) == "UL")
+check("el disco CREMA con la pica roja dominando tambien",
+      seat_map.detect_button_seat(crema, REF) == "UL")
+check("y se encuentra en el asiento donde esta, no en otro",
+      seat_map.detect_button_seat(mesa_con_boton("MR", (245, 245, 245), 0.52), REF) == "MR")
+
+solo_rojo = mesa_con_boton("UL", (40, 40, 235), 0.0)    # una ficha de apuesta
+check("una ficha de UN SOLO color no es el boton (falta el claro)",
+      seat_map.detect_button_seat(solo_rojo, REF) is None)
+solo_claro = mesa_con_boton("UL", (245, 245, 245), 0.0)
+check("un disco claro sin pica tampoco (falta el rojo)",
+      seat_map.detect_button_seat(solo_claro, REF) is None)
+check("y el tapete pelado no inventa boton",
+      seat_map.detect_button_seat(np.full((700, 1200, 3), (60, 110, 70), np.uint8), REF) is None)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

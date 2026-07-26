@@ -275,8 +275,22 @@ def dealing_order(seat_names, ref):
 # alrededor del disco observado).
 BUTTON_AREA_FRAC_MIN = 0.00125
 BUTTON_AREA_FRAC_MAX = 0.00275
+# El disco lleva SIEMPRE los dos colores -un fondo claro y una pica roja-, pero
+# NO siempre en la misma proporcion: el tema de mesa decide cual domina. Medido
+# sobre los dos temas vistos:
+#
+#     tema con trama de puntos   disco BLANCO con pica roja pequeña   blanco 0.50  rojo 0.15
+#     tema de fieltro liso       disco CREMA con pica roja grande     blanco 0.23  rojo 0.61
+#
+# La regla de antes exigia que el blanco superase al rojo, asi que en el segundo
+# tema NO encontraba el boton en NINGUN frame, y sin boton no hay posiciones y sin
+# posiciones el motor no recomienda: 44 frames seguidos con las cartas bien
+# leidas y cero recomendaciones. Lo que de verdad separa al boton de una ficha o
+# de un icono de la interfaz es que estan los DOS colores a la vez en un blob
+# compacto, no cual de ellos gana, asi que se exige un minimo de cada uno y se
+# elige por el mas equilibrado (el que mas tiene del color que le falta).
 BUTTON_RED_MIN = 0.12
-BUTTON_WHITE_MARGIN = 0.04  # blanco debe superar al rojo por este margen
+BUTTON_WHITE_MIN = 0.12
 
 
 def detect_button_seat(bgr, ref):
@@ -284,9 +298,10 @@ def detect_button_seat(bgr, ref):
     Enfoque por ancla-por-asiento: dentro de la zona-ancla de cada asiento
     busca el disco del boton (blanco+pica roja) como un blob compacto circular,
     aislado sobre el tapete (no toca los bordes de la zona -eso descarta dorsos
-    de carta, avatares y fichas pegados a estructuras mayores-), blanco-dominante
-    y con rojo al centro (descarta fichas de apuesta y marcas de recompensa, que
-    son rojo-dominantes)."""
+    de carta, avatares y fichas pegados a estructuras mayores-) y con los DOS
+    colores presentes, en cualquier proporcion: el tema de mesa decide si domina
+    el claro o el rojo (ver BUTTON_RED_MIN). Exigir los dos es lo que descarta
+    fichas de apuesta y marcas de recompensa, que son de un solo color."""
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     h, s, v = hsv[:, :, 0].astype(np.int32), hsv[:, :, 1].astype(np.int32), hsv[:, :, 2].astype(np.int32)
     white = (s < 80) & (v > 175)
@@ -326,9 +341,9 @@ def detect_button_seat(bgr, ref):
                 continue
             wf = wsub[y:y + h_, x:x + w].mean()
             rf = rsub[y:y + h_, x:x + w].mean()
-            if rf < BUTTON_RED_MIN or wf < rf + BUTTON_WHITE_MARGIN:
+            if rf < BUTTON_RED_MIN or wf < BUTTON_WHITE_MIN:
                 continue
-            margin = wf - rf
+            margin = min(wf, rf)
             if margin > best_margin:
                 best_margin = margin
                 best = name
