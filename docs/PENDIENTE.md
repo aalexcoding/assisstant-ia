@@ -603,8 +603,22 @@ subidas: volver a ver el nick cierra el evento.
 `acciones()` marca **siempre `completo=False`**: el cartel dura menos que el
 periodo de muestreo, así que faltan acciones por construcción.
 
-Lo que queda: **separar el comprometido por calle**, que es lo que permitiría
-distinguir un squeeze de una resubida con certeza.
+**Comprometido por calle — ✅ HECHO.** El total de la mano no dice si hay una
+apuesta que igualar *ahora*: en el turn, lo que un rival puso en el flop ya está
+en el bote. `hand_tracker` expone ahora `comprometido_calle` junto al de la mano,
+y el `GameState` lleva `calle_seguida`.
+
+La calle se mide por el número de cartas de board y **solo puede avanzar**: el
+board no encoge en una mano real, así que un board más corto —o ausente— es una
+lectura perdida, no una calle anterior. Ignorarlo evita que una lectura floja
+reinicie la cuenta y borre lo que un rival lleva puesto en la calle en curso.
+
+**Preflop los dos números coinciden**, así que nada de lo que ya funcionaba
+cambia; el valor está en postflop y en poder distinguir un squeeze de una
+resubida.
+
+Lo que queda de esta pieza: **usarlo**. El motor todavía razona con el total de la
+mano porque solo decide preflop, donde son lo mismo.
 
 ### 2.3 · Marcar una situación con una nota mientras se juega — ✅ HECHO
 

@@ -78,6 +78,9 @@ BOARD_COMUNES_MIN = 2
 BOARD_LONGITUDES = (3, 4, 5)
 
 
+_NOMBRE_CALLE = {0: "preflop", 3: "flop", 4: "turn", 5: "river"}
+
+
 def _board_legal(cartas):
     return list(cartas) if len(cartas) in BOARD_LONGITUDES else None
 
@@ -174,6 +177,7 @@ class _Asiento:
     def __init__(self):
         self.base = None
         self.actual = None
+        self.base_calle = None    # stack al empezar la CALLE en curso
         self.observaciones = 0
         self.descartadas = 0      # lecturas por encima de la base: OCR sospechoso
 
@@ -183,16 +187,30 @@ class _Asiento:
         valor = float(valor)
         self.observaciones += 1
         if self.base is None:
-            self.base = self.actual = valor
+            self.base = self.actual = self.base_calle = valor
         elif valor <= self.base + IGUAL_TOL_BB:
             self.actual = valor
+            if self.base_calle is None:
+                self.base_calle = valor
         else:
             self.descartadas += 1
+
+    def abrir_calle(self):
+        """Empieza una calle nueva: lo puesto hasta ahora ya esta recogido en el
+        bote, asi que la cuenta de la calle arranca de cero desde el stack de
+        este momento. Si el asiento aun no se ha leido en esta mano, se deja a
+        None y la primera lectura de la calle hara de base."""
+        self.base_calle = self.actual
 
     def comprometido(self):
         if self.base is None or self.actual is None:
             return None
         return round(max(0.0, self.base - self.actual), 2)
+
+    def comprometido_calle(self):
+        if self.base_calle is None or self.actual is None:
+            return None
+        return round(max(0.0, self.base_calle - self.actual), 2)
 
 
 class HandTracker:
@@ -228,6 +246,7 @@ class HandTracker:
         # otra persona. Dentro de una mano el asiento no cambia de dueño, que es
         # justo el alcance en el que reponer el nombre es seguro.
         self._nombres = {}
+        self._calle = 0            # cartas de board de la calle en curso
         self._frames = 0
         self._motivos = frozenset(motivos)
 
@@ -240,6 +259,17 @@ class HandTracker:
             self._abrir(motivos)
         self._previo = actual
         self._frames += 1
+
+        # CALLE. Se mide por el numero de cartas de board, y SOLO PUEDE AVANZAR:
+        # el board no encoge en una mano de verdad, asi que un board mas corto (o
+        # ausente) es una lectura perdida, no una calle anterior. Ignorarlo es lo
+        # que evita que una lectura floja reinicie la cuenta de la calle y borre
+        # lo que un rival lleva puesto en ella.
+        board = actual["board"]
+        if board is not None and len(board) > self._calle:
+            self._calle = len(board)
+            for a in self._asientos.values():
+                a.abrir_calle()
 
         for p in state.get("players") or []:
             seat = p.get("seat")
@@ -271,6 +301,10 @@ class HandTracker:
             m = self._meta[seat]
             comprometido = a.comprometido()
             asientos[seat] = {
+                # lo puesto en LA CALLE en curso, que es lo que decide si hay una
+                # apuesta que igualar AHORA. Preflop coincide con el de la mano,
+                # asi que no cambia nada de lo que ya funcionaba.
+                "comprometido_calle": a.comprometido_calle(),
                 "position": m.get("position"),
                 "nombre": m.get("nombre"),
                 "action": m.get("action"),
@@ -288,6 +322,7 @@ class HandTracker:
         return {
             "mano": self.mano,
             "frames": self._frames,
+            "calle": _NOMBRE_CALLE.get(self._calle, "?"),
             "motivos_apertura": sorted(self._motivos),
             "asientos": asientos,
         }
@@ -322,6 +357,7 @@ def aplicar(state, info):
         d = asientos.get(p.get("seat"))
         if d is not None:
             p["committed"] = d["comprometido"]
+            p["committed_calle"] = d["comprometido_calle"]
             p["committed_acuerdo"] = d["acuerdo"]
             # repone el nick cuando el cliente lo ha tapado con el verbo de la
             # accion. Solo se repone lo que falta: una lectura buena del frame
@@ -330,6 +366,7 @@ def aplicar(state, info):
                 p["name"] = d["nombre"]
                 p["name_repuesto"] = True
     state["mano_seguida"] = info.get("mano")
+    state["calle_seguida"] = info.get("calle")
     return state
 
 

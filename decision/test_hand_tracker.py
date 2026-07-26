@@ -119,6 +119,54 @@ check("pero no esta entre las que cortan", "board" not in ht.MOTIVOS_DE_CORTE)
 check("ni la subida de stack, que medida resulto ser error de OCR",
       "stack_sube" not in ht.MOTIVOS_DE_CORTE)
 
+# --- COMPROMETIDO POR CALLE -------------------------------------------------
+# El total de la mano no dice si hay una apuesta que igualar AHORA: en el turn,
+# lo que un rival puso en el flop ya esta en el bote. Separarlo por calle es lo
+# que permite distinguir un squeeze de una resubida.
+print("\n# --- comprometido por calle ---")
+tr = ht.HandTracker()
+i = tr.update(estado({"UL": 50.0}))
+check("preflop la calle es 'preflop'", i["calle"] == "preflop")
+i = tr.update(estado({"UL": 46.0}))
+a = i["asientos"]["UL"]
+check("PREFLOP el comprometido de la calle es el MISMO que el de la mano, asi "
+      "que nada de lo que ya funcionaba cambia",
+      a["comprometido"] == a["comprometido_calle"] == 4.0)
+
+i = tr.update(estado({"UL": 46.0}, board=("2h", "3h", "4h")))
+check("al salir el flop cambia la calle", i["calle"] == "flop")
+check("y la cuenta de la calle arranca de cero: lo del preflop ya esta en el bote",
+      i["asientos"]["UL"]["comprometido_calle"] == 0.0)
+check("pero el total de la mano se conserva",
+      i["asientos"]["UL"]["comprometido"] == 4.0)
+
+i = tr.update(estado({"UL": 40.0}, board=("2h", "3h", "4h")))
+a = i["asientos"]["UL"]
+check("una apuesta en el flop cuenta en la calle", a["comprometido_calle"] == 6.0)
+check("y suma al total de la mano", a["comprometido"] == 10.0)
+
+i = tr.update(estado({"UL": 40.0}, board=("2h", "3h", "4h", "9s")))
+check("el turn vuelve a poner la calle a cero",
+      i["calle"] == "turn" and i["asientos"]["UL"]["comprometido_calle"] == 0.0)
+
+# LA CALLE SOLO AVANZA: un board mas corto es una lectura perdida, no una calle
+# anterior. Si retrocediera, una lectura floja borraria lo que un rival lleva
+# puesto en la calle en curso.
+i = tr.update(estado({"UL": 34.0}, board=()))
+check("perder el board NO retrocede la calle", i["calle"] == "turn")
+check("y lo puesto en la calle se sigue acumulando",
+      i["asientos"]["UL"]["comprometido_calle"] == 6.0)
+i = tr.update(estado({"UL": 34.0}, board=("2h", "3h", "4h")))
+check("un board mas corto tampoco la retrocede", i["calle"] == "turn")
+
+# un asiento que aparece a mitad de calle no puede inventarse una base
+tr2 = ht.HandTracker()
+tr2.update(estado({"UL": 50.0}, board=("2h", "3h", "4h")))
+i = tr2.update(estado({"UL": 50.0, "MR": 30.0}, board=("2h", "3h", "4h")))
+check("un asiento visto por primera vez a mitad de calle empieza en cero, no en "
+      "un numero inventado",
+      i["asientos"]["MR"]["comprometido_calle"] == 0.0)
+
 # --- corroboracion con el importe leido en la mesa -------------------------
 print("\n# --- acuerdo entre las dos señales ---")
 check("coinciden dentro de la tolerancia", ht.acuerdo(3.75, 3.8) == "coinciden")
@@ -179,6 +227,7 @@ st2 = estado({"UL": 46.0, "HERO": 30.0}, posiciones={"UL": "CO", "HERO": "BTN"})
 ht.aplicar(st2, tr.update(st2))
 ul = next(p for p in st2["players"] if p["seat"] == "UL")
 check("aplicar() cuelga committed de cada jugador", ul["committed"] == 4.0)
+check("y tambien lo de la calle", ul["committed_calle"] == 4.0)
 check("y el acuerdo con la mesa", ul["committed_acuerdo"] == "solo_derivado")
 check("y deja el numero de mano seguida en el estado", st2["mano_seguida"] == 1)
 
