@@ -373,10 +373,32 @@ def analyze_layout(image_path):
         state["warnings"].append("no se pudo leer la imagen")
         return state
 
+    # SIN REFERENCIA NO SE ANALIZA NADA. Todas las zonas (nameplates, cartas,
+    # bote, botones, chat) son fracciones del nucleo del tapete, asi que si el
+    # ovalo no se detecta y se cae al fallback, TODAS quedan desplazadas y lo que
+    # salga son lecturas de sitios equivocados: el peor tipo de salida, porque
+    # parece un resultado.
+    #
+    # Antes se seguia adelante con el fallback. Medido sobre 999 frames de una
+    # sesion real: de los 21 que cayeron en fallback, CERO dieron cartas del hero,
+    # cero el boton del dealer, cero posicion, cero stack y cero recomendaciones
+    # (frente a 52%/95%/95%/48%/26% en los 978 con ovalo detectado). O sea que el
+    # fallback no aporta ni un frame util, y cortar aqui ademas ahorra ~1,1 s de
+    # OCR por frame.
+    #
+    # La causa tipica es el TEMA DEL TAPETE: find_reference busca pixeles
+    # saturados y con brillo (S>=45, V>=60), asi que un tapete verde (S=200,
+    # V=115) se detecta en el 98% de los frames y uno gris oscuro (S=0, V=34) en
+    # el 0%. Por eso el aviso nombra las dos cosas que el usuario puede arreglar.
     ref = seat_map.find_reference(bgr)
     if ref[4]:
-        state["warnings"].append("no se detecto el ovalo del tapete por contraste; "
-                                 "se usa la posicion tipica dentro del recuadro (fallback)")
+        state["warnings"].append(
+            "no se encuentra la mesa: no se detecto el ovalo del tapete. Sin esa "
+            "referencia TODAS las zonas quedan desplazadas, asi que no se analiza el "
+            "frame en vez de dar lecturas de sitios equivocados. Dos causas tipicas: "
+            "el tapete es de un tema OSCURO o gris (hace falta uno con color, p.ej. "
+            "el verde) o el recuadro de captura no encuadra la mesa (recalibra)")
+        return state
 
     batch = OcrBatch()
 

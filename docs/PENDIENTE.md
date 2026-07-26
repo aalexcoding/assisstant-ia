@@ -220,6 +220,36 @@ frames de retraso, que es justo por lo que las ciegas suelen quedar fuera.
 - La suma de lo comprometido cuadra con el bote leído dentro del 25% en el 37% de
   los frames. Sirve como aviso, no como cuenta.
 
+### 2.0c · Detección del tapete: solo funciona con temas CON COLOR
+
+Salió jugando: cambiar el tapete a un tema **gris oscuro** rompió la app entera.
+`find_reference` localiza el núcleo del tapete exigiendo píxeles saturados y con
+brillo (`S≥45`, `V≥60`), y un gris tiene saturación **cero**.
+
+| tapete | S | V | óvalo detectado |
+|---|---|---|---|
+| verde | 200 | 115 | **98%** (999 frames) |
+| gris oscuro | **0** | 34 | **0%** (101 frames) |
+
+Como **todas** las zonas son fracciones del núcleo, sin referencia todas quedan
+desplazadas. Medido: de los 21 frames que cayeron en el fallback durante una
+sesión con tapete verde, **cero** dieron cartas, botón, posición, stack o
+recomendación (frente a 52%/95%/95%/48%/26% en los 978 con óvalo). O sea que el
+fallback no aporta ni un frame útil.
+
+**Ya arreglado a medias**: `analyze_layout` ahora **corta** en vez de seguir con
+las zonas desplazadas, y el aviso nombra las dos causas que el usuario puede
+arreglar (tema oscuro / recalibrar). Ahorra además ~1,1 s de OCR por frame.
+Test sintético en `vision/test_table_reference.py`.
+
+**Lo que queda**: hacer la detección independiente del color, para poder usar
+cualquier tema. La vía obvia —el borde marrón del óvalo— se probó con umbrales de
+color y **no** discrimina (0 componentes grandes, tanto en el tema verde como en
+el oscuro), así que hace falta otra cosa: probablemente la **forma** (elipse
+grande y uniforme) en vez del color. Sin eso, la restricción es real y hay que
+documentarla al usuario: **el tapete tiene que tener color**. Solo el verde está
+medido.
+
 ### 2.0b · Zonas de apuesta: lo que se investigó y NO se cerró
 
 **Prioridad ya baja: §2.0 lo tapa en gran parte** (las defensas pasaron de 6 a 18

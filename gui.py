@@ -869,6 +869,11 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
     def _no_reco_reason(state):
         """Motivo en lenguaje claro de por que no hay recomendacion, segun la
         fase detectada -mas util que el ultimo aviso tecnico."""
+        # lo primero, porque invalida todo lo demas: sin la referencia del tapete
+        # ninguna zona esta donde toca, asi que analyze_layout ni siquiera analiza
+        for w in state.get("warnings") or []:
+            if "no se encuentra la mesa" in w:
+                return w
         cards = state.get("hero_cards") or []
         players = state.get("players") or []
         if not players and not cards:
