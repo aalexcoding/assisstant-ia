@@ -104,10 +104,14 @@ class AnalysisWorker(threading.Thread):
     """Hilo de analisis: abre el stream, lee frames, recorta, analiza y
     manda cada resultado a la ventana via GLib.idle_add. No toca widgets."""
 
-    def __init__(self, win, interval, sesion=None):
+    def __init__(self, win, interval, sesion=None, max_players=None):
         super().__init__(daemon=True)
         self.win = win
         self.interval = interval
+        # cuantos jugadores caben en la mesa (3-Max, 6-Max...), o None para
+        # deducirlo. Sirve de red: las posiciones salen del RECUENTO de asientos
+        # ocupados, asi que un asiento fantasma las desplaza todas.
+        self.max_players = max_players
         # TestingSession o None. Lo pone el hilo principal antes de arrancar y no
         # se toca despues: la grabacion se decide al iniciar el analisis, no a
         # mitad, para que una sesion grabada sea de principio a fin.
@@ -160,7 +164,7 @@ class AnalysisWorker(threading.Thread):
         """Un ciclo de analisis completo sobre un recorte ya validado."""
         t0 = time.perf_counter()
         cv2.imwrite(TMP_FRAME_PATH, crop)
-        state = ts.analyze_layout(TMP_FRAME_PATH)
+        state = ts.analyze_layout(TMP_FRAME_PATH, max_players=self.max_players)
         # resumen de la mano anterior. Se parsean las lineas de chat que
         # analyze_layout YA ha OCR-eado: antes esto hacia una segunda pasada de
         # OCR sobre la misma zona, con otro subproceso y otro arranque de
@@ -625,6 +629,20 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.calibrate_button = Gtk.Button(label="Recalibrar recuadro")
         self.calibrate_button.connect("clicked", self._on_calibrate)
 
+        # Tamaño de mesa. Las posiciones se derivan del RECUENTO de asientos
+        # ocupados, asi que un asiento fantasma (texto que el OCR saca del propio
+        # tapete) las desplaza TODAS y el rango elegido es el de otra posicion.
+        # Decir cuantos caben convierte eso en una contradiccion demostrable.
+        mesa_label = Gtk.Label(label="Mesa")
+        self.mesa_combo = Gtk.ComboBoxText()
+        for etiqueta in ("auto", "2 (heads-up)", "3-Max", "6-Max", "9 plazas"):
+            self.mesa_combo.append_text(etiqueta)
+        self.mesa_combo.set_active(0)
+        self.mesa_combo.set_tooltip_text(
+            "Cuantos jugadores caben en la mesa. Con 'auto' se deduce de lo que se ve; "
+            "si lo fijas, detectar mas asientos de los que caben se trata como un error "
+            "y se descarta la lectura mas debil en vez de desplazar las posiciones.")
+
         interval_label = Gtk.Label(label="Intervalo (s)")
         self.interval_spin = Gtk.SpinButton.new_with_range(0.25, 10.0, 0.25)
         self.interval_spin.set_digits(2)
@@ -643,6 +661,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
         box.append(self.start_button)
         box.append(self.calibrate_button)
+        box.append(mesa_label)
+        box.append(self.mesa_combo)
         box.append(interval_label)
         box.append(self.interval_spin)
         box.append(self.testing_check)
@@ -699,6 +719,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.calibrate_button.set_sensitive(False)
             self.interval_spin.set_sensitive(False)
             self.testing_check.set_sensitive(False)
+            self.mesa_combo.set_sensitive(False)
             self.status_label.set_markup("Iniciando...")
             intervalo = self.interval_spin.get_value()
 
@@ -722,8 +743,15 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                         f'<span foreground="#e74c3c">No se pudo crear la carpeta de '
                         f'testing: {GLib.markup_escape_text(str(e))}</span>')
 
-            self.worker = AnalysisWorker(self, intervalo, sesion=self.sesion)
+            self.worker = AnalysisWorker(self, intervalo, sesion=self.sesion,
+                                         max_players=self._max_players())
             self.worker.start()
+
+    _MESA_OPCIONES = (None, 2, 3, 6, 9)      # mismo orden que el combo
+
+    def _max_players(self):
+        i = self.mesa_combo.get_active()
+        return self._MESA_OPCIONES[i] if 0 <= i < len(self._MESA_OPCIONES) else None
 
     def _on_calibrate(self, _btn):
         if self.running:
@@ -771,6 +799,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.calibrate_button.set_sensitive(True)
         self.interval_spin.set_sensitive(True)
         self.testing_check.set_sensitive(True)
+        self.mesa_combo.set_sensitive(True)
         if self.sesion is not None:
             carpeta = self.sesion.cerrar()
             n, errores = self.sesion.n, self.sesion.errores

@@ -250,6 +250,39 @@ grande y uniforme) en vez del color. Sin eso, la restricción es real y hay que
 documentarla al usuario: **el tapete tiene que tener color**. Solo el verde está
 medido.
 
+### 2.0d · Asiento fantasma: el fallo más caro que ha tenido la app — ✅ ARREGLADO
+
+Salió revisando una sesión de un torneo **3-Max**. La app detectaba **4 jugadores
+en el 34% de los frames** y le asignaba al hero la posición **CO**, que en una
+mesa de 3 no existe. Como las posiciones se derivan del **recuento** de asientos
+ocupados, un asiento de más las desplaza *todas*: alrededor de un tercio de las
+624 recomendaciones de esa sesión usaron la fila de rango equivocada, con total
+convicción y sin un solo aviso.
+
+**Causa**: `_plate_occupied` aceptaba "un entero suelto" como stack. Era de la
+época en que los importes podían estar en fichas. La **textura de puntos del
+tapete** se OCR-ea como un número: la zona del asiento MR —tapete vacío, ni un
+carácter— leía `'60668'` en los 60 frames muestreados.
+
+**Efecto de quitarlo**, sobre 160 frames al azar:
+
+| | antes | ahora |
+|---|---|---|
+| 3 jugadores (correcto) | 84 | **132** |
+| 4 jugadores (imposible) | 58 | **9** |
+| hero en CO (imposible) | 28 | **1** |
+
+**Y un ajuste manual de tamaño de mesa** (`auto` / 2 / 3-Max / 6-Max / 9), en la
+GUI. Si se detectan más asientos de los que caben, es una contradicción
+demostrable: se suelta el de evidencia más débil —y solo si el corte es
+inequívoco; si empata, no se dan posiciones—. El orden de evidencia es: hero y
+asiento del botón (intocables) > dorso de carta o importe en BB > nombre legible
+> solo un verbo de acción.
+
+Lección general, la tercera vez que muerde lo mismo: **una señal heredada de una
+etapa anterior se vuelve un falso positivo cuando cambia el contexto.** Ya pasó
+con el área del botón en píxeles absolutos y con las zonas de apuesta.
+
 ### 2.0b · Zonas de apuesta: lo que se investigó y NO se cerró
 
 **Prioridad ya baja: §2.0 lo tapa en gran parte** (las defensas pasaron de 6 a 18

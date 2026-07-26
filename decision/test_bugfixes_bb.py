@@ -100,7 +100,16 @@ check("0.3 un stack en BB marca el asiento como ocupado", _plate_occupied([L("36
 check("0.3 el caso real completo (nick que la blacklist mata + stack BB)",
       _plate_occupied([L("makeao31"), L("36,6 BB")]) is True)
 check("0.3 un asiento vacio sigue vacio", _plate_occupied([L("* * *"), L("~—")]) is False)
-check("0.3 el stack en fichas sigue marcando ocupado", _plate_occupied([L("5.892")]) is True)
+# Un ENTERO SUELTO ya NO marca ocupado. Lo hacia cuando los importes podian estar
+# en fichas; con la app BB-only un stack lleva sufijo ("36,6 BB") y lo coge la
+# comprobacion de arriba. Y era un falso positivo caro: la textura de puntos del
+# tapete se OCR-ea como un numero. Medido en un torneo 3-Max, la zona del asiento
+# MR -tapete vacio- leia '60668' en los 60 frames muestreados y contaba como
+# ocupado, asi que la app veia 4 jugadores en el 34% de los frames y le asignaba
+# al hero la posicion CO, que en una mesa de 3 NO EXISTE. Al quitarlo, sobre una
+# muestra de 160 frames: >3 jugadores 58 -> 9, y hero en CO 28 -> 1.
+check("0.3b un entero suelto NO marca ocupado (el tapete lo produce solo)",
+      _plate_occupied([L("5.892")]) is False and _plate_occupied([L("60668")]) is False)
 
 # --- 0.4 el bote estaba roto en modo BB ---------------------------------------
 # POT_RE + _to_int tratan la , y el . como separador de MILES, asi que el decimal

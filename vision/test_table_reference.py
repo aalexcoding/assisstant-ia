@@ -119,6 +119,40 @@ check("si la ultima linea es basura se coge la anterior valida",
 check("y si no hay ninguna linea valida, None (no se inventa carta)",
       normalize_rank("X\nZ") is None and normalize_rank("") is None)
 
+# --- ocupacion de asientos: lo que decide TODAS las posiciones --------------
+# Las posiciones salen del RECUENTO de asientos ocupados, asi que un asiento de
+# mas las desplaza todas y el rango elegido es el de otra posicion. Caso real:
+# en un torneo 3-Max la app veia 4 jugadores en el 34% de los frames y llego a
+# asignarle al hero la posicion CO, que en una mesa de 3 no existe.
+print("\n# --- ocupacion de asientos ---")
+
+
+def lineas(*textos):
+    return [{"text": t, "left": 0, "top": 0, "right": 10, "bottom": 10, "cx": 5, "cy": 5}
+            for t in textos]
+
+
+check("un importe en BB ocupa el asiento", ts._plate_occupied(lineas("69,3 BB")))
+check("un nick tambien", ts._plate_occupied(lineas("Dav6934")))
+check("y un verbo de accion", ts._plate_occupied(lineas("Igualar")))
+check("el 'No ir' del cliente, que va en dos palabras", ts._plate_occupied(lineas("No ir")))
+check("tapete vacio -> NO ocupado", ts._plate_occupied(lineas("")) is False)
+check("un ENTERO SUELTO ya no ocupa: era de la epoca de las fichas y la textura "
+      "de puntos del tapete se OCR-ea como un numero ('60668' en 60 de 60 frames)",
+      ts._plate_occupied(lineas("60668")) is False)
+check("ni con separador de miles", ts._plate_occupied(lineas("5.892")) is False)
+
+# la fuerza de la evidencia, que es lo que decide cual se suelta si sobran
+f = ts._fuerza_ocupacion
+check("el hero nunca se suelta", f("HERO", {}, set(), None) == 4)
+check("ni el asiento del boton", f("MR", {}, set(), "MR") == 4)
+check("un dorso de carta pesa mas que un nombre",
+      f("MR", {}, {"MR"}, None) > f("MR", {"name": "pepe"}, set(), None))
+check("y un importe en BB tambien",
+      f("MR", {"stack": 44.5}, set(), None) > f("MR", {"name": "pepe"}, set(), None))
+check("lo mas debil es un asiento sin nada de eso",
+      f("MR", {}, set(), None) < f("MR", {"name": "pepe"}, set(), None))
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

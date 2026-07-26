@@ -284,25 +284,35 @@ SEAT_STATUS_WORDS = {
 
 def _plate_occupied(lines):
     """True si la zona del nameplate contiene texto propio de un asiento
-    ocupado: un nombre (por palabra suelta, para pillar nombres de dos
-    palabras como "david sagunt"), un stack numerico, o un verbo/estado de
-    accion ("Igualar"/"Pasar"/"Ausente"/"Poner CP"/"No ir"...). Un asiento
-    vacio -sillas granate sobre fondo oscuro- no da ninguno de estos."""
-    # Un stack en BIG BLINDS ("36,6 BB") es evidencia de asiento ocupado igual que
-    # un entero de fichas, pero NINGUNA de las señales de abajo lo ve:
-    # _is_number_candidate("36,6") es falso (exige >=3 digitos o separador de
-    # miles) y "BB" no es ni nombre ni numero. Sin esta comprobacion un asiento con
-    # stack perfectamente legible cuenta como VACIO, y como las posiciones se
-    # asignan por el RECUENTO de ocupados (SEATING_BY_N), perder un asiento
-    # desplaza la posicion de TODOS. Medido en vision/samples_bb/sample_bb_1.png:
-    # el asiento ML lee ['makeao31', '36,6 BB'] y se juzgaba vacio -su nick lo
-    # rechaza la blacklist por subcadena ("make" dentro de "makeao31") y su stack
-    # no encaja en NUMBER_RE-, asi que se contaban 4 asientos en vez de 5 y el hero
-    # pasaba de HJ a CO: el rango equivocado.
-    # Se usa has_bb_amount y no parse_amount_bb porque aqui la pregunta es "¿hay
-    # un importe en BB en esta zona?", no "¿cuanto?": parse_amount_bb devuelve
-    # None a proposito cuando hay dos importes distintos (ambiguedad), y eso no
-    # debe hacer que un asiento claramente ocupado cuente como vacio.
+    ocupado: un importe en BB, un nombre (por palabra suelta, para pillar
+    nombres de dos palabras como "david sagunt"), o un verbo/estado de accion
+    ("Igualar"/"Pasar"/"Ausente"/"Poner CP"/"No ir"...). Un asiento vacio
+    -sillas granate sobre fondo oscuro- no da ninguno de estos.
+
+    ESTA FUNCION DECIDE LAS POSICIONES DE TODOS. El recuento de ocupados es lo
+    que elige la fila de SEATING_BY_N, asi que un asiento de mas o de menos
+    desplaza la posicion de TODOS los jugadores y con ella el rango. Es la via
+    mas directa que hay a una recomendacion convincente y equivocada, de ahi que
+    cada señal tenga que ser evidencia de verdad y no "algo que parece texto".
+
+    Se usa has_bb_amount y no parse_amount_bb porque aqui la pregunta es "¿hay un
+    importe en BB en esta zona?", no "¿cuanto?": parse_amount_bb devuelve None a
+    proposito cuando hay dos importes distintos (ambiguedad), y eso no debe hacer
+    que un asiento claramente ocupado cuente como vacio. El caso que lo motivo
+    (vision/samples_bb/sample_bb_1.png): el asiento ML lee ['makeao31', '36,6 BB']
+    y se juzgaba VACIO -su nick lo rechaza la blacklist por subcadena ("make"
+    dentro de "makeao31") y su stack no encajaba en ninguna señal-, asi que se
+    contaban 4 asientos en vez de 5 y el hero pasaba de HJ a CO.
+
+    RETIRADO: "un entero suelto tambien vale como stack" (_is_number_candidate).
+    Era de la epoca en que los importes podian estar en FICHAS; con la app ya
+    BB-only un entero desnudo no es un stack, porque los stacks llevan el sufijo
+    BB y los coge has_bb_amount aqui arriba. Y era un falso positivo grave: la
+    TEXTURA DE PUNTOS DEL TAPETE se OCR-ea como un numero. Medido sobre una
+    sesion real de un torneo 3-Max, la zona del asiento MR -tapete vacio, ni un
+    caracter de verdad- leia '60668' en los 60 frames muestreados y contaba como
+    ocupado, asi que la app veia 4 jugadores en el 34% de los frames y llego a
+    asignarle al hero la posicion CO, que en una mesa de 3 NO EXISTE."""
     if seat_map.has_bb_amount(lines):
         return True
     for ln in lines:
@@ -313,9 +323,24 @@ def _plate_occupied(lines):
             wl = word.lower().strip(".,;:'\"|")
             if wl in SEAT_STATUS_WORDS:
                 return True
-            if _is_username_token(word) or _is_number_candidate(word.strip()):
+            if _is_username_token(word):
                 return True
     return False
+
+
+def _fuerza_ocupacion(seat, info, en_mano, button_seat):
+    """Cuanta confianza hay en que ese asiento este ocupado de verdad. Solo se usa
+    para decidir cual soltar cuando se detectan mas asientos de los que caben en
+    la mesa; el orden va de la evidencia mas dura a la mas blanda."""
+    if seat == seat_map.HERO_SEAT or seat == button_seat:
+        return 4          # el hero somos nosotros; el dealer es un jugador sentado
+    if seat in en_mano:
+        return 3          # dorso de carta: la señal mejor medida que hay (13,6x)
+    if info.get("stack") is not None:
+        return 3          # un importe con sufijo BB no lo produce el tapete
+    if info.get("name"):
+        return 2
+    return 1              # solo un verbo de accion, o texto que parecia un nick
 
 
 def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
@@ -335,7 +360,7 @@ def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
     return cards, unresolved
 
 
-def analyze_layout(image_path):
+def analyze_layout(image_path, max_players=None):
     """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
     produccion para el cliente real de PokerStars capturado limpio. Ancla una
     referencia independiente del color (nucleo del tapete por contraste) y lee
@@ -344,6 +369,12 @@ def analyze_layout(image_path):
     rango del color-deck, ya validados), bote y boton del dealer por
     ancla-por-asiento -> posiciones por aritmetica horaria. Ademas expone
     "facing" ("bet"/"check"/None) segun los botones de accion del hero.
+
+    max_players: cuantos jugadores caben en la mesa (3 en un 3-Max, 6 en un
+    6-Max...). Opcional pero MUY recomendable, porque las posiciones se derivan
+    del RECUENTO de asientos ocupados y un asiento fantasma las desplaza todas.
+    Con este dato, detectar de mas es una contradiccion demostrable y se puede
+    corregir o, si no esta claro cual sobra, callarse.
 
     TODOS LOS IMPORTES EN BIG BLINDS. Requiere el cliente de PokerStars
     configurado para mostrarlos asi; si no lo esta, no se leen y la app se
@@ -482,16 +513,53 @@ def analyze_layout(image_path):
             occupied[name] = {"name": n, "stack": stk,
                               "bet": seat_map.parse_amount_bb(bet_lines)}
 
-    # boton -> posiciones (orden de reparto horario entre los ocupados)
+    # quien sigue en la mano (dorso de carta visible). Se resuelve AQUI, antes de
+    # cerrar la ocupacion, porque un dorso es la evidencia mas fuerte que hay de
+    # que un asiento esta ocupado (medido: separacion 13,6x sobre 705
+    # observaciones) y sirve para desempatar si sobran asientos.
+    en_mano = seat_map.detect_in_hand_seats(bgr, ref)
+
     button_seat = seat_map.detect_button_seat(bgr, ref)
+    if button_seat is not None and button_seat not in occupied:
+        # el dealer es siempre un jugador sentado: si el boton se detecto en ese
+        # asiento pero el OCR no leyo su nameplate, esta ocupado igual.
+        occupied[button_seat] = {"name": None, "stack": None, "bet": None}
+
+    # TAMAÑO DE MESA. Si el usuario dice cuantos jugadores caben (3-max, 6-max...)
+    # y se detectan MAS asientos ocupados, sobra alguno: es una contradiccion
+    # demostrable, no una sospecha. Y es cara, porque las posiciones salen del
+    # RECUENTO de ocupados, asi que un asiento de mas las desplaza TODAS.
+    # Se sueltan los mas debiles, y solo si el corte es inequivoco: si el ultimo
+    # que se soltaria tiene la misma evidencia que el primero que se queda, no
+    # hay forma de elegir sin adivinar y se prefiere no dar posiciones.
+    exceso = None
+    if max_players and len(occupied) > max_players:
+        fuerza = {s: _fuerza_ocupacion(s, occupied[s], en_mano, button_seat)
+                  for s in occupied}
+        orden = sorted(occupied, key=lambda s: (fuerza[s], s))
+        sobran = len(occupied) - max_players
+        if fuerza[orden[sobran - 1]] < fuerza[orden[sobran]]:
+            soltados = orden[:sobran]
+            for s in soltados:
+                del occupied[s]
+            state["warnings"].append(
+                f"se detectaron {len(soltados) + max_players} asientos ocupados en una mesa "
+                f"de {max_players}: se descarta(n) {sorted(soltados)} por ser la lectura mas "
+                f"debil (sin cartas, sin importe en BB y sin nombre)")
+        else:
+            exceso = len(occupied)
+            state["warnings"].append(
+                f"se detectaron {len(occupied)} asientos ocupados en una mesa de "
+                f"{max_players} y no se puede saber cual sobra: sin posiciones, porque "
+                f"un asiento de mas las desplaza todas")
+
+    # boton -> posiciones (orden de reparto horario entre los ocupados)
     positions = {}
-    if button_seat is None:
+    if exceso is not None:
+        pass                                   # ya avisado arriba
+    elif button_seat is None:
         state["warnings"].append("no se detecto el boton del dealer; sin posiciones")
     else:
-        if button_seat not in occupied:
-            # el dealer es siempre un jugador sentado: si el boton se detecto en
-            # ese asiento pero el OCR no leyo su nameplate, esta ocupado igual.
-            occupied[button_seat] = {"name": None, "stack": None, "bet": None}
         order = seat_map.dealing_order(list(occupied), ref)
         n = len(order)
         if n in seat_map.SEATING_BY_N:
@@ -512,11 +580,6 @@ def analyze_layout(image_path):
         state["warnings"].append(f"{hero_unresolved} carta(s) del hero detectada(s) pero sin rango legible")
     if board_unresolved:
         state["warnings"].append(f"{board_unresolved} carta(s) de board detectada(s) pero sin rango legible")
-
-    # quien sigue en la mano (dorso de carta visible). El hero se resuelve por sus
-    # propias cartas, que van boca arriba. Es lo que necesita la equity postflop
-    # para saber contra cuantos rivales simula.
-    en_mano = seat_map.detect_in_hand_seats(bgr, ref)
 
     for name in seat_map.dealing_order(list(occupied), ref) if occupied else []:
         info = occupied[name]
