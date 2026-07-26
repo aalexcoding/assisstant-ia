@@ -171,21 +171,31 @@ m0 = tr4.update(estado({"UL": 46.0}, board=("2h", "3h", "4h")))["mano"]
 info = tr4.update(estado({"UL": 46.0}, board=()))
 check("el board que se vacia = mano nueva", info["mano"] == m0 + 1)
 
+# EL NUMERO DE MANO DEL CHAT ya NO corta, y era LA REFERENCIA de este modulo.
+# Es una etiqueta estable de la mano, pero hay que LEERLA y el OCR la lee mal: va
+# y viene entre dos manos y a veces inventa una. Contra la verdad de campo (104
+# numeros de mano distintos en una sesion de 100 minutos) pasaba de 111 manos a
+# 150, un +44%, y de 21 cortes falsos a 71. Ni exigiendo que el numero sea nuevo
+# ni que crezca se arregla: un numero mal leido tambien es nuevo y tambien puede
+# ser mayor.
 tr = ht.HandTracker()
 for _ in range(ht.MIN_FRAMES_POR_MANO):
     tr.update(estado({"UL": 50.0}), hand_number="111")
 info = tr.update(estado({"UL": 46.0}), hand_number="111")
 check("el mismo numero de mano no corta", com(info, "UL") == 4.0)
-info = tr.update(estado({"UL": 80.0}), hand_number="222")
-check("un numero de mano nuevo corta", com(info, "UL") == 0)
+info = tr.update(estado({"UL": 44.0}), hand_number="222")
+check("un numero de mano distinto TAMPOCO corta: el OCR del chat oscila y cada "
+      "oscilacion partia una mano", com(info, "UL") == 6.0)
+check("pero la señal se sigue exponiendo",
+      "mano_chat" in ht.motivos_de_frontera(ht._vista(estado({"UL": 50.0}), "111"),
+                                            ht._vista(estado({"UL": 50.0}), "222")))
 
-# UNA MANO NO DURA DOS FRAMES. Las señales se solapan -el board se vacia, se
-# reparten cartas y el chat cambia el numero en un par de segundos- asi que una
-# frontera real dispara varias veces. Sin minimo, el rastreador veia 110 manos
-# donde el chat contaba 53.
+# UNA MANO NO DURA DOS FRAMES. Las señales se solapan -el board se vacia y el
+# boton se mueve en un par de segundos- asi que una frontera real dispara varias
+# veces. Sin minimo, el rastreador veia 110 manos donde el chat contaba 53.
 tr5 = ht.HandTracker()
-tr5.update(estado({"UL": 50.0}), hand_number="111")
-m0 = tr5.update(estado({"UL": 50.0}), hand_number="222")["mano"]
+tr5.update(estado({"UL": 50.0}, board=("2h", "3h", "4h")))
+m0 = tr5.update(estado({"UL": 50.0}))["mano"]        # board_vacio, pero muy pronto
 check(f"un corte en los primeros {ht.MIN_FRAMES_POR_MANO} frames se ignora",
       m0 == 1)
 

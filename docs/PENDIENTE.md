@@ -928,6 +928,38 @@ propio botón y ahí el movimiento ya ha ocurrido. Se deja puesto porque es grat
 el comportamiento del cliente que lo motiva es real, pero conviene saber que en
 esa sesión no llegó a activarse.
 
+#### Y detrás se cayó `mano_chat`, que era LA referencia
+
+Al medir apareció una **verdad de campo** que no se había usado nunca: los números
+de mano **distintos** que se leen en el chat a lo largo de la sesión. En esta son
+**104 manos en 100 minutos**, y con eso ya se puede contar el error absoluto, no
+solo comparar señales entre sí.
+
+| configuración | manos | error | cortes falsos |
+|---|---|---|---|
+| lo que había en producción (chat + board_vacio + botón + cartas_aparecen) | 215 | +107% | 134 |
+| tras quitar `cartas_aparecen` | 150 | **+44%** | 71 |
+| chat solo si el número es **nuevo** | 123 | +18% | 59 |
+| chat solo si el número **crece** | 123 | +18% | 59 |
+| **`board_vacio` + `boton`** | **111** | **+7%** | **21** |
+| solo `boton` | 78 | −25% | 0 |
+
+El número del chat es una etiqueta estable de la mano, pero **hay que leerla**, y
+el OCR la lee mal: oscila entre dos manos (`…642773` → `…648658` → `…642773`) y a
+veces inventa una. Cada oscilación es un corte falso. **No se arregla filtrando**:
+un número mal leído también es nuevo y también puede ser mayor.
+
+Lo que queda cortando es justo lo que **no** hay que leer con OCR: que el board se
+vacíe y que el botón se mueva. La señal se sigue exponiendo, y el número de mano
+se sigue usando en el panel "Mano anterior", que es donde una lectura suelta no
+hace daño.
+
+**La lección, que es más general que este módulo**: las tres señales que se han
+caído (`cartas`, `cartas_aparecen`, `mano_chat`) se eligieron midiendo cuántos
+cortes **aciertan**, y ninguna medida contaba los que **inventan**. Cualquier
+señal que dependa de leer algo hereda la tasa de error de esa lectura. Antes de
+añadir una señal nueva hay que preguntarse de qué lectura depende.
+
 **Lo que queda**: la posición del hero todavía cambia dentro de 33 de las 111
 manos. De esas, **24 son frames sueltos** (ruido de lectura, se arreglan con la
 regla de mayoría dentro de la mano que ya funciona para los nombres) y **9 son dos

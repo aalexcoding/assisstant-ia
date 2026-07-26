@@ -84,6 +84,7 @@ verdad. Si aparece alguna, es un bug y va primero.
 | `hero_position` que no existe con ese nº de jugadores | p.ej. `CO` en una mesa de 3 | Fue el bug más caro: un entero suelto del tapete contaba como asiento ocupado y desplazaba **todas** las posiciones |
 | un rango que sale muy por encima del 7,7% | 13 rangos son equiprobables | La **T** salió al 10,7% con el mazo de cara blanca: eran dieces inventados por el borde de la carta y por los pips. Referencia tras el arreglo: 6,6% |
 | manos seguidas que comparten botón con la anterior | el botón se mueve **una** vez por mano | Es la única vara para medir la PRECISION de los cortes, no solo cuántos se aciertan. Referencia: **12%**; con `cartas_aparecen` cortando era el 42% |
+| nº de manos seguidas vs nº de manos reales | los números de mano **distintos** del chat son la verdad de campo | `len({parse_hand_result(f)["hand_number"]})` sobre todos los frames. Referencia: **+7%** de más (111 seguidas contra 104 reales). Llegó a estar en +107% |
 
 ---
 

@@ -249,7 +249,30 @@ def motivos_de_frontera(previo, actual):
 #
 # Ni siquiera con 6 frames de espera compensa: recupera 5 cortes buenos y mete
 # 17 falsos. Fuera del todo.
-MOTIVOS_DE_CORTE = frozenset({"mano_chat", "board_vacio", "boton"})
+#
+# Y MANO_CHAT SE CAYO DETRAS, que era LA REFERENCIA de este modulo. Aparecio al
+# tener por fin una VERDAD DE CAMPO del numero de manos: los numeros de mano
+# DISTINTOS que se leen en el chat a lo largo de la sesion. En la del 26-07 a las
+# 19:35 son 104 manos en 100 minutos. Contando manos seguidas contra esas 104:
+#
+#     chat + board_vacio + boton   (lo que habia)   150 manos   +44%   71 falsos
+#     chat solo si el numero es NUEVO                123        +18%   59
+#     chat solo si el numero CRECE                   123        +18%   59
+#     board_vacio + boton                            111         +7%   21
+#     boton solo                                      78        -25%    0
+#     ...y con cartas_aparecen encima                215       +107%  134
+#
+# El numero del chat es una etiqueta ESTABLE de la mano, pero hay que LEERLA, y
+# el OCR la lee mal: va y viene entre dos manos ('...642773' -> '...648658' ->
+# '...642773') y a veces inventa un numero nuevo. Cada oscilacion es un corte
+# falso. Filtrarla no la salva -ni exigiendo que el numero sea nuevo ni que
+# crezca-, porque un numero mal leido tambien es nuevo y tambien puede ser mayor.
+#
+# Lo que queda es lo que NO hay que leer con OCR: que el board se vacie y que el
+# boton se mueva. La señal se sigue exponiendo y el numero de mano se sigue
+# usando en el panel "Mano anterior", que es donde una lectura suelta no hace
+# daño; lo que ya no hace es cortar.
+MOTIVOS_DE_CORTE = frozenset({"board_vacio", "boton"})
 
 # Frames minimos que tiene que durar una mano antes de poder cortarla otra vez.
 #
