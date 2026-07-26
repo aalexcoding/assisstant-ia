@@ -6,6 +6,7 @@ Dos situaciones cubiertas hasta ahora:
 
     bb_option()   la opcion de la BB en un bote limpeado
     vs_limp()     limpers delante, con el hero FUERA de las ciegas
+    squeeze()     una subida Y ademas alguien que la ha pagado
 
 --- LA OPCION DE LA BB ---
 
@@ -218,4 +219,87 @@ def bb_option(hero_cards, stack_bb, limpers=None):
         "stack_key": key,
         "limpers": limpers,
         "assumptions": supuestos,
+    }
+
+
+# --- SQUEEZE: una subida Y ademas quien la ha pagado ------------------------
+#
+# Enfrentar una subida con gente que ya la ha pagado detras no es lo mismo que
+# enfrentarla heads-up: hay mas dinero muerto, pero tambien mas manos que pueden
+# superarte y menos posibilidad de que la subida sea un robo. Su tabla de
+# threebet_call esta digitalizada para el caso heads-up, asi que aqui hay que
+# apretar.
+#
+# EL DONANTE es otra celda REAL suya de la MISMA familia: su defensa contra ese
+# mismo raiser, pero desde la posicion que esta `callers` asientos mas temprana.
+# La logica es la misma que en vs_limp -cada rival de mas equivale a estar un
+# asiento antes- solo que en la tabla de defensa en vez de en la de apertura.
+#
+# Medido sobre ranges.json, eje del HERO en threebet_call (sin las ciegas, que son
+# outliers por su forma): n=105, media 0.848, sd 0.081. Cada asiento hacia EP
+# aprieta la defensa un 15%.
+#
+# El eje del RAISER tambien es monotono (n=188, media 0.950) pero mucho mas flojo,
+# asi que apretar por ahi apenas movería el rango: se usa el del hero.
+
+_DIRECTO_SQUEEZE = {
+    "fold": "fold",
+    "ALL IN": "ALL IN",
+    "CALL": "CALL",
+    "MARGINAL CALL": "MARGINAL CALL",
+}
+
+
+def _traducir_squeeze(etiqueta_donante):
+    directo = _DIRECTO_SQUEEZE.get(etiqueta_donante)
+    if directo is not None:
+        return directo
+    # "3BET (5 BB)" -> "SQUEEZE (5 BB)": resubir con gente dentro ES un squeeze,
+    # y llamarlo por su nombre importa porque el sizing correcto es otro (aunque
+    # aqui se copie el del donante, como en el resto de la capa derivada).
+    if etiqueta_donante.upper().startswith("3BET"):
+        return "SQUEEZE" + etiqueta_donante[len("3BET"):]
+    return None
+
+
+def squeeze(hero_cards, hero_position, vs_position, stack_bb, callers=1):
+    """Que hacer con una subida delante que ademas ya ha pagado alguien.
+
+    Devuelve None -y el motor se queda con lo que hiciera antes- cuando no hay
+    donante valido: si el hero esta en las ciegas (su fila tiene otra forma), si
+    al desplazar se cae por debajo de EP1, si no existe celda de defensa contra
+    ese raiser desde la posicion donante, o si `callers` no es util."""
+    if not isinstance(callers, int) or callers < 1:
+        return None
+    if hero_position not in ORDEN_TIGHT_A_SUELTA or not vs_position:
+        return None
+    i = ORDEN_TIGHT_A_SUELTA.index(hero_position) - callers
+    if i < 0:
+        return None
+    donante_pos = ORDEN_TIGHT_A_SUELTA[i]
+
+    donante = recommend(hero_cards, donante_pos, stack_bb,
+                        facing="threebet_call", vs_position=vs_position)
+    if donante is None:
+        return None
+    accion = _traducir_squeeze(donante["action"])
+    if accion is None:
+        return None
+
+    key = donante["stack_key"]
+    plural = "" if callers == 1 else "s"
+    return {
+        "action": accion,
+        "source": "derived",
+        # media-baja: el salto esta medido, pero es mas flojo que el de apertura
+        # (15% por asiento frente al 20%) y la tabla de partida ya es la mas
+        # dispersa de las suyas
+        "confidence": "media-baja" if callers == 1 else "baja",
+        "donor": f"tu defensa de {donante_pos} contra {vs_position} a {key:g}bb",
+        "donor_action": donante["action"],
+        "stack_key": key,
+        "callers": callers,
+        "assumptions": [f"se trata {callers} rival{plural} que ya ha pagado la subida como "
+                        f"estar {callers} asiento{plural} mas temprano ({hero_position} -> "
+                        f"{donante_pos}); cada asiento aprieta tu defensa un 15%"],
     }

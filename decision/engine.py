@@ -88,7 +88,7 @@ import equity
 import hand_tracker
 
 from actions import CHECK_BB_OPTION, translate_into
-from derive import bb_option, vs_limp
+from derive import bb_option, squeeze, vs_limp
 from lookup import RANGES, recommend
 
 _DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.jsonl")
@@ -282,11 +282,66 @@ def _contar_limpers(players):
     return n if visto else None
 
 
+# Orden en que se habla PREFLOP, de primero a ultimo. Es universal: las ciegas
+# hablan las ultimas porque ya tienen dinero puesto.
+_ORDEN_PREFLOP = ("EP1", "EP2", "MP1", "MP2", "HJ", "CO", "BTN", "SB", "BB")
+
+
+def _habla_antes(a, b):
+    """True si la posicion a habla ANTES que b en preflop."""
+    if a not in _ORDEN_PREFLOP or b not in _ORDEN_PREFLOP:
+        return True          # sin poder juzgarlo, no se bloquea nada
+    return _ORDEN_PREFLOP.index(a) < _ORDEN_PREFLOP.index(b)
+
+
+def _contar_callers(players, vs_position):
+    """Rivales, aparte del raiser, que ya han metido mas que la ciega grande: han
+    PAGADO la subida. Es lo que convierte una defensa normal en un squeeze."""
+    n = 0
+    for p in players:
+        if p.get("is_hero") or p.get("position") == vs_position:
+            continue
+        v = p.get("committed_calle")
+        if not isinstance(v, (int, float)):
+            v = p.get("bet")
+        if isinstance(v, (int, float)) and v > BB * 1.5:
+            n += 1
+    return n
+
+
 def _hero_player(state):
     for p in state.get("players", []):
         if p.get("is_hero"):
             return p
     return None
+
+
+def _agresor_del_log(state):
+    """Quien subio, segun el HISTORIAL DE ACCIONES (los verbos del nameplate), o
+    None. Es la unica señal capaz de distinguir al que SUBE del que PAGA cuando
+    los dos tienen el mismo importe puesto -que es exactamente lo que pasa en un
+    squeeze- porque el importe, por definicion, coincide.
+
+    Se exige CORROBORACION: la posicion que da el log tiene que ser una de las que
+    tienen el importe mas alto en la mesa. Son dos fuentes independientes (OCR del
+    nameplate vs OCR de la zona de apuesta), y sin ese cruce una sola lectura mala
+    del verbo elegiria el rango de defensa equivocado."""
+    ult = ((state.get("acciones") or {}).get("acciones") or [])
+    agresor = None
+    for r in reversed(ult):
+        if r.get("accion") in ("raise", "bet", "allin"):
+            agresor = r.get("position")
+            break
+    if agresor is None:
+        return None
+    apuestas = [(p.get("position"), p.get("bet")) for p in state.get("players") or []
+                if not p.get("is_hero") and isinstance(p.get("bet"), (int, float))]
+    if not apuestas:
+        return None
+    tope = max(v for _p, v in apuestas)
+    if agresor not in [p for p, v in apuestas if v >= tope - 0.05]:
+        return None                    # el log y la mesa no coinciden: no se elige
+    return agresor
 
 
 _RAISE_ABSTAIN = {
@@ -438,6 +493,19 @@ def decide(state):
         vs_position, code = _detect_raiser(state.get("players", []), BB)
         if vs_position is not None:
             facing = "threebet_call"
+        elif code == "multiway":
+            # Varias apuestas por encima de la ciega. Por IMPORTE no se puede
+            # saber quien subio y quien pago -el que paga iguala, asi que los dos
+            # numeros son el mismo-, y por eso esto se abstenia siempre. El
+            # historial de acciones si lo distingue, porque el cliente enseña el
+            # verbo. Es justo el spot del squeeze.
+            agresor = _agresor_del_log(state)
+            if agresor is None:
+                return abstain(_RAISE_ABSTAIN["multiway"])
+            vs_position = agresor
+            facing = "threebet_call"
+            origen_subida = (f"subida atribuida a {agresor} por el verbo que mostro su "
+                             f"nameplate, corroborado con el importe de la mesa")
         elif code != "no_raise":
             return abstain(_RAISE_ABSTAIN[code])
         else:
@@ -474,16 +542,49 @@ def decide(state):
                         f"la bajada de stack entre frames ({detalle}); sin defensa fiable")
 
     if facing == "threebet_call":
-        result = recommend(hero_cards, hero_position, stack_bb,
-                           facing="threebet_call", vs_position=vs_position)
-        if result is None:
-            return abstain(f"sin rango de defensa para {hero_position} vs {vs_position} "
-                           f"a {stack_bb:.1f}bb (threebet_call)")
-        action = result["action"]
-        reasoning = (f"Defensa (3bet/call) de {hero_position} a {stack_bb:.1f}bb efectivos "
-                     f"contra la subida de {vs_position} ({fuente};{nota_cache} "
-                     f"{origen_subida})"
-                     + _stack_key_note(result, stack_bb, facing, warnings))
+        # GUARDA ESTRUCTURAL: sus tablas de defensa solo cubren raisers que hablan
+        # ANTES que el hero. Si el "raiser" habla despues, lo que hay delante no es
+        # una subida que defender sino una RESUBIDA a una apertura del propio hero,
+        # y eso esta fuera del modelo. Medido sobre dos sesiones reales: 67 de 134
+        # atribuciones eran de este tipo, y la mayoria (47) eran hero=BTN vs SB, que
+        # en 3-max es imposible porque la SB habla despues del BTN. Sin esta guarda
+        # el motivo que se daba era "sin rango de defensa para BTN vs SB", que suena
+        # a hueco de datos y no lo es: digitalizar mas graficos no lo arreglaria.
+        if not _habla_antes(vs_position, hero_position):
+            return abstain(f"la subida se atribuye a {vs_position}, que en preflop habla "
+                           f"DESPUES que {hero_position}: eso no es una subida que defender "
+                           f"sino una resubida a tu propia apertura, y esta fuera del modelo "
+                           f"(open_raise / threebet_call)")
+
+        # SQUEEZE: si ademas del raiser hay quien ya ha pagado, la defensa
+        # heads-up de sus tablas se queda suelta. Ver derive.squeeze.
+        callers = _contar_callers(state.get("players", []), vs_position)
+        derivada = (squeeze(hero_cards, hero_position, vs_position, stack_bb, callers)
+                    if callers >= 1 else None)
+        if derivada is not None:
+            action = derivada["action"]
+            plural = "" if callers == 1 else "es"
+            reasoning = (f"{callers} rival{plural} ya ha{'n' if plural else ''} pagado la "
+                         f"subida de {vs_position}, asi que no es una defensa heads-up. "
+                         f"INFERIDO de {derivada['donor']}, que en tu tabla dice "
+                         f"'{derivada['donor_action']}': con gente dentro hay que apretar, y "
+                         f"en tus tablas cada asiento aprieta la defensa un 15%. "
+                         f"{stack_bb:.1f}bb efectivos ({fuente};{nota_cache})")
+            derivada_meta = derivada
+            translate_into({"action": action})       # valida que hay traduccion
+            result = None
+        else:
+            result = recommend(hero_cards, hero_position, stack_bb,
+                               facing="threebet_call", vs_position=vs_position)
+        if derivada is None:
+            if result is None:
+                return abstain(f"sin rango de defensa para {hero_position} vs {vs_position} "
+                               f"a {stack_bb:.1f}bb (threebet_call)")
+            action = result["action"]
+            reasoning = (f"Defensa (3bet/call) de {hero_position} a {stack_bb:.1f}bb efectivos "
+                         f"contra la subida de {vs_position} ({fuente};{nota_cache} "
+                         f"{origen_subida})"
+                         + _stack_key_note(result, stack_bb, facing, warnings))
     elif hero_position == "BB":
         # LA OPCION DE LA BB. La BB nunca ABRE el bote, asi que si aqui no hay
         # subida que enfrentar es un bote limpeado y su decision es subir o pasar.

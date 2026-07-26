@@ -56,6 +56,7 @@ _BASE = {
     "RAISE OVER LIMPERS":          ("RAISE OVER LIMPERS", "subir sobre los que han entrado"),
     "MARGINAL RAISE OVER LIMPERS": ("MARGINAL RAISE OVER LIMPERS",
                                     "subir sobre los que han entrado, justo"),
+    "SQUEEZE":                     ("SQUEEZE", "resubir con gente dentro (squeeze)"),
 }
 
 

@@ -74,13 +74,24 @@ check("MARGINAL CALL no lo captura CALL", en == "MARGINAL CALL" and es == "pagar
 # --- la BB pasando ------------------------------------------------------------
 check("opcion de la BB", translate_action(CHECK_BB_OPTION) == ("CHECK", "pasar (opcion de la BB)"))
 
+# --- la capa derivada (Fase E) -------------------------------------------------
+# Estas no salen de ranges.json: las produce decision/preflop/derive.py.
+for etiqueta, esperado_en in (("CHECK", "CHECK"),
+                              ("RAISE OVER LIMPERS (2 BB)", "RAISE OVER LIMPERS (2 BB)"),
+                              ("MARGINAL RAISE OVER LIMPERS", "MARGINAL RAISE OVER LIMPERS"),
+                              ("SQUEEZE (5 BB)", "SQUEEZE (5 BB)")):
+    en, es = translate_action(etiqueta)
+    check(f"la accion derivada {etiqueta!r} tiene ingles y castellano",
+          en == esperado_en and es is not None)
+
 # --- robustez ----------------------------------------------------------------
-# una etiqueta desconocida NO debe reventar: la capa probabilistica del preflop
-# va a introducir etiquetas nuevas y el HUD tiene que seguir enseñando la linea
-# grande mientras tanto
-en, es = translate_action("SQUEEZE (6 BB)")
+# una etiqueta desconocida NO debe reventar: la capa derivada del preflop sigue
+# creciendo y el HUD tiene que seguir enseñando la linea grande mientras tanto.
+# (Este caso usaba "SQUEEZE", que dejo de servir en cuanto se implemento el
+# squeeze: el test hizo su trabajo y avisó.)
+en, es = translate_action("STRADDLE (4 BB)")
 check("etiqueta desconocida -> ingles en mayusculas, castellano None",
-      en == "SQUEEZE (6 BB)" and es is None)
+      en == "STRADDLE (4 BB)" and es is None)
 check("etiqueta vacia no revienta", translate_action("") == ("", None))
 check("None no revienta", translate_action(None) == ("", None))
 check("espacios de sobra se toleran",

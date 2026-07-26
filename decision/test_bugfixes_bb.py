@@ -277,6 +277,29 @@ if os.path.exists(_CORPUS):
     check(f"A-3b las {len(_estados)} capturas en FICHAS dan 0 recomendaciones "
           f"(eran 4 antes del paso a BB-only)", _recos == 0)
 
+# --- GUARDA ESTRUCTURAL: el raiser tiene que hablar ANTES que el hero ---------
+# Sus tablas de defensa solo cubren raisers que hablan antes. Si el "raiser" habla
+# despues, lo de delante no es una subida que defender sino una RESUBIDA a la
+# apertura del propio hero. Medido sobre dos sesiones: 67 de 134 atribuciones eran
+# de este tipo, y 47 de ellas hero=BTN vs SB, imposible en 3-max.
+def _defensa(hero_pos, vs_pos):
+    st = {"board": [], "hero_cards": ["9c", "8c"], "hero_position": hero_pos,
+          "facing": "bet", "stack_unit": "bb", "to_call": 5.0, "warnings": [],
+          "players": [
+              dict(P(hero_pos, None, hero=True), stack=20.0),
+              dict(P(vs_pos, 5.0), stack=30.0)]}
+    engine._last_hero_stack.update(value=None, t=0.0)
+    return engine.decide(st), st
+
+
+_r, _st = _defensa("BTN", "SB")
+check("un raiser que habla DESPUES que el hero -> abstiene", _r is None)
+check("y el motivo dice que es una resubida, no un hueco de datos",
+      any("habla" in w and "DESPUES" in w for w in _st["warnings"]))
+_r, _st = _defensa("BB", "SB")
+check("BB vs SB si es posible (la SB habla antes que la BB) y no lo bloquea",
+      _r is not None or not any("DESPUES" in w for w in _st["warnings"]))
+
 # --- postflop_equity: separado de decide(), y abstenerse antes que inflar ------
 # El riesgo real de este camino es contar MENOS rivales de los que hay (en
 # showdown las cartas se giran y los dorsos desaparecen), porque eso INFLA la

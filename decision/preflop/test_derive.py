@@ -213,6 +213,56 @@ check("toda accion de vs_limp tiene castellano para el HUD",
       not [a for a in acc_limp if translate_action(a)[1] is None])
 print(f"    acciones que produce: {sorted(acc_limp)}")
 
+# --- SQUEEZE: una subida Y ademas quien la ha pagado -----------------------
+# Medido sobre ranges.json, eje del HERO en threebet_call (sin las ciegas): n=105,
+# media 0.848, sd 0.081. Cada asiento hacia EP aprieta la defensa un 15%.
+print("\n# --- squeeze ---")
+sq = derive.squeeze(["9c", "8c"], "BTN", "HJ", 20.0, callers=1)
+normal = recommend_defensa = None
+from lookup import recommend as _rec  # noqa: E402
+normal = _rec(["9c", "8c"], "BTN", 20.0, facing="threebet_call", vs_position="HJ")
+check("con un pagador detras el donante es el asiento mas tight (BTN -> CO)",
+      sq is not None and "CO" in sq["donor"])
+check("y APRIETA respecto a la defensa heads-up: 98s pasa de pagar a retirarse",
+      normal["action"] == "MARGINAL CALL" and sq["action"] == "fold")
+check("se marca como derivado con confianza media-baja",
+      sq["source"] == "derived" and sq["confidence"] == "media-baja")
+check("y dice el supuesto", any("15%" in a for a in sq["assumptions"]))
+
+check("una mano fuerte sigue metiendo",
+      derive.squeeze(["Ah", "Ks"], "BTN", "HJ", 20.0, 1)["action"] == "ALL IN")
+
+# el 3BET del donante pasa a llamarse SQUEEZE, que es lo que es
+check("'3BET (5 BB)' -> 'SQUEEZE (5 BB)'",
+      derive._traducir_squeeze("3BET (5 BB)") == "SQUEEZE (5 BB)")
+check("y CALL/fold/ALL IN se copian tal cual",
+      derive._traducir_squeeze("CALL") == "CALL"
+      and derive._traducir_squeeze("fold") == "fold"
+      and derive._traducir_squeeze("ALL IN") == "ALL IN")
+check("una etiqueta desconocida no se traduce a ciegas",
+      derive._traducir_squeeze("ALGO NUEVO") is None)
+
+print("\n# --- guardas del squeeze ---")
+check("sin pagadores no hay squeeze",
+      derive.squeeze(["9c", "8c"], "BTN", "HJ", 20.0, 0) is None)
+check("en EP1 no hay fila mas tight",
+      derive.squeeze(["9c", "8c"], "EP1", "EP1", 20.0, 1) is None)
+check("la SB queda fuera del eje, igual que en vs_limp",
+      derive.squeeze(["9c", "8c"], "SB", "HJ", 20.0, 1) is None)
+check("si al desplazar el donante cae sobre el propio raiser no hay celda -> None",
+      derive.squeeze(["9c", "8c"], "BTN", "CO", 20.0, 1) is None)
+check("sin raiser tampoco", derive.squeeze(["9c", "8c"], "BTN", None, 20.0, 1) is None)
+
+acc_sq = set()
+for k in PROFUNDIDADES:
+    for mano in MANOS:
+        x = derive.squeeze(cartas(mano), "BTN", "HJ", float(k), 1)
+        if x:
+            acc_sq.add(x["action"])
+check("toda accion del squeeze tiene castellano para el HUD",
+      not [a for a in acc_sq if translate_action(a)[1] is None])
+print(f"    acciones que produce: {sorted(acc_sq)}")
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
