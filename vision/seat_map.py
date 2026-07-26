@@ -376,9 +376,24 @@ def detect_button_seat(bgr, ref):
 # NO hay zona para el HERO: sus cartas van boca arriba y state["hero_cards"] ya
 # responde a "¿esta el hero en la mano?". Es justo el caso que la nota antigua
 # señalaba como problematico, y desaparece por construccion.
-CARD_BACK_H = (168, 6)        # H circular: >=168 o <=6
-CARD_BACK_S = (95, 175)
-CARD_BACK_V = (85, 175)
+# EL DORSO CAMBIA DE COLOR CON EL TEMA DE MESA, asi que hay un perfil por cada
+# uno visto y basta con que encaje UNO. Medidos, los dos planos porque el cliente
+# los renderiza vectoriales:
+#
+#   granate (tema con trama de puntos)   H=178  S=131  V=127
+#   naranja (tema de fieltro liso)       H= 19  S=255  V=248
+#
+# Costo caro: con el tema naranja el dorso no encajaba en NINGUN asiento, asi que
+# in_hand salia 0 rivales en los 65 frames de una sesion y la equity no se
+# calculaba ni una vez -"no se detecta ningun rival con cartas"-. El usuario lo
+# noto como que los porcentajes de ganar/perder habian desaparecido.
+#
+# Cada perfil es (H_lo, H_hi, S_lo, S_hi, V_lo, V_hi), con H circular cuando
+# H_lo > H_hi (el granate cae a caballo del origen del tono).
+CARD_BACK_PERFILES = (
+    (168, 6, 95, 175, 85, 175),      # granate
+    (12, 26, 190, 255, 190, 255),    # naranja
+)
 CARD_BACK_MIN_AREA_FRAC = 0.10   # area del mayor blob / area de la zona
 
 CARD_BACK_ZONES = {
@@ -391,7 +406,7 @@ CARD_BACK_ZONES = {
 
 
 def card_back_fractions(bgr, ref):
-    """{asiento: fraccion del area de su zona ocupada por el mayor blob granate}.
+    """{asiento: fraccion del area de su zona ocupada por el mayor blob de dorso}.
 
     Se devuelve la metrica cruda y no solo el si/no para que el test pueda
     afirmar el MARGEN entre las dos poblaciones y para poder depurar en vivo,
@@ -400,9 +415,11 @@ def card_back_fractions(bgr, ref):
     h = hsv[:, :, 0].astype(np.int32)
     s = hsv[:, :, 1].astype(np.int32)
     v = hsv[:, :, 2].astype(np.int32)
-    mask = (((h >= CARD_BACK_H[0]) | (h <= CARD_BACK_H[1]))
-            & (s >= CARD_BACK_S[0]) & (s <= CARD_BACK_S[1])
-            & (v >= CARD_BACK_V[0]) & (v <= CARD_BACK_V[1])).astype(np.uint8) * 255
+    mask = np.zeros(h.shape, dtype=bool)
+    for hlo, hhi, slo, shi, vlo, vhi in CARD_BACK_PERFILES:
+        tono = ((h >= hlo) | (h <= hhi)) if hlo > hhi else ((h >= hlo) & (h <= hhi))
+        mask |= tono & (s >= slo) & (s <= shi) & (v >= vlo) & (v <= vhi)
+    mask = mask.astype(np.uint8) * 255
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE,
                             cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
 
@@ -420,7 +437,7 @@ def card_back_fractions(bgr, ref):
 
 
 def detect_in_hand_seats(bgr, ref):
-    """Asientos rivales con cartas repartidas (dorso granate visible).
+    """Asientos rivales con cartas repartidas (dorso visible, del color que sea).
 
     LIMITACION que hay que tener presente: en un all-in o en el showdown el
     cliente da la vuelta a las cartas, los dorsos desaparecen y el recuento BAJA.

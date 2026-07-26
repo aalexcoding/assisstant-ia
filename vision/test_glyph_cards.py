@@ -274,6 +274,32 @@ check("un disco claro sin pica tampoco (falta el rojo)",
 check("y el tapete pelado no inventa boton",
       seat_map.detect_button_seat(np.full((700, 1200, 3), (60, 110, 70), np.uint8), REF) is None)
 
+print("\n# --- el dorso de las cartas cambia de color con el tema ---")
+# Sin dorsos no se sabe cuantos rivales siguen en la mano, y sin eso no hay
+# equity: el usuario lo noto como que los porcentajes de ganar/perder habian
+# desaparecido. Colores medidos: granate (178,131,127) y naranja (19,255,248).
+DORSOS = {"granate": (178, 131, 127), "naranja": (19, 255, 248)}
+
+
+def mesa_con_dorso(seat, hsv_color):
+    img = np.full((700, 1200, 3), (60, 110, 70), dtype=np.uint8)
+    bgr = cv2.cvtColor(np.uint8([[list(hsv_color)]]), cv2.COLOR_HSV2BGR)[0][0].tolist()
+    x0, y0, x1, y1 = seat_map.zone_to_px(REF, seat_map.CARD_BACK_ZONES[seat], img.shape)
+    w, h = x1 - x0, y1 - y0
+    cv2.rectangle(img, (x0 + int(w * .12), y0 + int(h * .22)),
+                  (x0 + int(w * .88), y0 + int(h * .78)), bgr, -1)
+    return img
+
+
+for nombre, color in DORSOS.items():
+    check(f"un dorso {nombre} cuenta como asiento con cartas",
+          seat_map.detect_in_hand_seats(mesa_con_dorso("ML", color), REF) == {"ML"})
+check("el tapete pelado no da ningun asiento con cartas",
+      seat_map.detect_in_hand_seats(
+          np.full((700, 1200, 3), (60, 110, 70), np.uint8), REF) == set())
+check("y cada dorso se cuenta en SU asiento",
+      seat_map.detect_in_hand_seats(mesa_con_dorso("UR", DORSOS["naranja"]), REF) == {"UR"})
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
