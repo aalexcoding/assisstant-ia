@@ -25,7 +25,7 @@ from rank_ocr import card_code, normalize_rank, rank_crop_variants
 from suit_classifier import classify_suit
 from table_region import find_table_region
 from text_extract import (_clean_name, _is_name_candidate, _is_number_candidate, _is_username_token, _to_int,
-                          find_blinds, find_blinds_chat, find_blinds_corner, find_players, find_pot,
+                          find_blinds, find_blinds_corner, find_players, find_pot,
                           find_pot_bb,
                           merge_line_sets, parse_tsv_lines)
 
@@ -47,21 +47,20 @@ TITLE_BAR_HEIGHT_FRAC = 0.06
 # de saber de antemano cual es cual.
 CORNER_BLINDS_CROPS = [(0.12, 0.55, 4), (0.15, 0.50, 4)]
 
-# analyze_layout (mapa de asientos): el cliente real muestra en la esquina
-# superior derecha un recuadro fijo (junto al reloj de nivel y "Media: XX,XXK")
-# con las ciegas en formato SB/BB(ante) -"250/500(80)", "17,5K/35K(4,5K)"-.
-# Es PERSISTENTE (a diferencia del aviso del chat, que solo sale unos segundos
-# al subir de nivel), asi que es la fuente automatica mas fiable. El recuadro
-# esta anclado a la esquina de la VENTANA, no al ovalo del tapete, por eso se
-# expresa como fraccion del FRAME (como TITLE_BAR_HEIGHT_FRAC) y no como zona
-# del mapa de asientos. Margen generoso por cada lado (x desde 0.55 hasta el
-# borde, y desde 0 hasta 0.17) para que aunque el encuadre baile unos pixeles
-# el texto no se corte: el OCR lee bien texto rodeado de fondo, lo que no
-# perdona es texto cortado por el borde. Escala x4 porque la fuente es pequeña
-# a tamaño de frame completo, igual que la barra de titulo en analyze_color_deck.
-# (x0, y0, x1, y1) en fracciones del frame.
-CORNER_BLINDS_ZONE = (0.55, 0.0, 1.0, 0.17)
-CORNER_BLINDS_SCALE = 4
+# RETIRADO EN EL PASO A BB-ONLY: el recuadro de ciegas de la esquina superior
+# derecha (CORNER_BLINDS_ZONE = (0.55, 0.0, 1.0, 0.17), escala x4). Leia las
+# ciegas en formato SB/BB(ante) -"250/500(80)", "17,5K/35K(4,5K)"- y era la
+# fuente automatica mas fiable que habia, porque es PERSISTENTE (el aviso del
+# chat solo sale unos segundos al subir de nivel).
+#
+# Ya no hace falta: con el cliente configurado en BIG BLINDS el stack leido YA
+# ES la profundidad en bb, asi que no hay nada que dividir y las ciegas dejan de
+# ser un dato necesario. Quitarlo ahorra un job de OCR por frame.
+#
+# Se conserva la medicion por si alguna vez se vuelve: el recuadro esta anclado
+# a la esquina de la VENTANA, no al ovalo del tapete, asi que iba en fracciones
+# del FRAME (como TITLE_BAR_HEIGHT_FRAC) y no como zona del mapa de asientos.
+# analyze_color_deck() sigue usando CORNER_BLINDS_CROPS, que es su equivalente.
 
 
 def _assign_player_positions(bgr, region, players, diag, warnings):
@@ -250,62 +249,37 @@ SEAT_STATUS_WORDS = {
 }
 
 
-# --- unidad de los importes (fichas o big blinds), con LATCH de sesion ---
-# El cliente muestra stacks/apuestas/bote en FICHAS (enteros con separador de
-# miles, "5.892") o en BIG BLINDS ("123,4 BB", coma decimal + sufijo BB) segun
-# la config del usuario, que NO cambia a mitad de mano.
+# --- LA APP ES BB-ONLY: por que se retiro la deteccion de unidad ---
 #
-# El problema de detectarlo frame a frame: el sufijo "BB" no siempre se OCR-ea
-# (entre manos los nameplates se leen mal, y el "Media: N BB" de la esquina
-# puede fallar), y asumir "chips" por defecto es una ADIVINANZA silenciosa. Si
-# la mesa estaba en modo BB, el motor divide una profundidad YA expresada en bb
-# por la ciega grande y sale una profundidad absurda: una recomendacion
-# plausible pero equivocada, que es el peor modo de fallo posible en esta app
-# (mucho peor que abstenerse). Medido sobre una sesion real de 34 min, la
-# unidad detectada oscilaba dentro de la misma sesion (bbx30, chipsx17, bbx24,
-# chipsx37) aunque la config del cliente no habia cambiado.
+# El cliente puede mostrar los importes en FICHAS (enteros con separador de
+# miles, "5.892") o en BIG BLINDS ("123,4 BB", coma decimal + sufijo BB) segun la
+# config del usuario. Se intento DETECTARLO frame a frame y no funciono: el
+# sufijo "BB" no siempre se OCR-ea (entre manos los nameplates se leen mal) y
+# asumir "chips" por defecto es una adivinanza silenciosa. Medido sobre una
+# sesion real de 34 min, la unidad detectada oscilaba DENTRO de la misma sesion
+# (bbx30, chipsx17, bbx24, chipsx37) aunque la config del cliente no habia
+# cambiado. Se añadio un latch de sesion, que lo mitigaba pero no lo resolvia.
 #
-# Solucion: se late la unidad en cuanto hay EVIDENCIA y en los frames sin
-# evidencia se reutiliza la latida en vez de volver a adivinar. La evidencia
-# siempre manda sobre el latch, asi que si el usuario cambia la config a mitad
-# de sesion se re-late solo en el primer frame legible. Sin evidencia NI latch
-# se asume "chips" (como antes) pero se AVISA, para que ni el HUD ni el log
-# presenten como firme algo que no se pudo determinar.
-_UNIT_LATCH = {"value": None}
-
-
-def reset_unit_latch():
-    """Olvida la unidad latida. Para tests y para arrancar sesion limpia."""
-    _UNIT_LATCH["value"] = None
-
-
-def _chips_style_stack(seat_lines):
-    """True si algun nameplate muestra un entero de estilo fichas ("5.892",
-    "12500"). En modo BB los stacks salen como "44,5 BB", que NO encaja con
-    _is_number_candidate (exige >=3 digitos o separador de miles), asi que un
-    entero suelto en un nameplate es evidencia de modo fichas."""
-    for lines in seat_lines.values():
-        for ln in lines:
-            if _is_number_candidate(ln["text"].strip()):
-                return True
-    return False
-
-
-def _detect_stack_unit(corner_lines, seat_lines, warnings):
-    """Devuelve (unit, source) con source en {"evidence", "latch", "assumed"}.
-    Ver el comentario de _UNIT_LATCH para el porque del latch."""
-    if (seat_map.has_bb_marker(corner_lines)
-            or any(seat_map.has_bb_marker(ls) for ls in seat_lines.values())):
-        _UNIT_LATCH["value"] = "bb"
-        return "bb", "evidence"
-    if _chips_style_stack(seat_lines):
-        _UNIT_LATCH["value"] = "chips"
-        return "chips", "evidence"
-    if _UNIT_LATCH["value"] is not None:
-        return _UNIT_LATCH["value"], "latch"
-    warnings.append("no se pudo determinar si los importes estan en fichas o en BB "
-                    "(sin sufijo 'BB' ni stack numerico legible); se asume fichas")
-    return "chips", "assumed"
+# El fallo que esto puede producir es el peor posible en esta app: si la mesa
+# estaba en modo BB y se lee como fichas, el motor divide una profundidad YA
+# expresada en bb por la ciega grande y sale una profundidad absurda -o al reves,
+# un stack de 3955 fichas leido como 3955bb-. En los dos casos, una recomendacion
+# con conviccion y falsa, que es mucho peor que abstenerse.
+#
+# La salida no es detectar mejor, es NO TENER QUE DETECTAR: se pide configurar el
+# cliente en big blinds y punto. Entonces el stack leido YA ES la profundidad en
+# bb, no hacen falta ciegas (ni detectadas ni manuales), y una subida es
+# simplemente cualquier importe > 1.
+#
+# LA GARANTIA DE SEGURIDAD del diseño es que parse_amount_bb EXIGE el sufijo "BB"
+# literal. Si el cliente no esta en modo BB, no se lee stack -> el motor se
+# abstiene por falta de profundidad. Nunca lee mal. Por eso el parseo no se puede
+# aflojar a "el mayor entero de la zona": eso leeria la denominacion impresa en
+# una ficha (25, 100) como un importe.
+#
+# Las rutas de diagnostico analyze() y analyze_color_deck() siguen produciendo
+# FICHAS y siguen sin declarar stack_unit; engine.decide() las rechaza a
+# proposito (ver su guard).
 
 
 def _plate_occupied(lines):
@@ -328,10 +302,7 @@ def _plate_occupied(lines):
     # Se usa has_bb_amount y no parse_amount_bb porque aqui la pregunta es "¿hay
     # un importe en BB en esta zona?", no "¿cuanto?": parse_amount_bb devuelve
     # None a proposito cuando hay dos importes distintos (ambiguedad), y eso no
-    # debe hacer que un asiento claramente ocupado cuente como vacio. Y tampoco
-    # has_bb_marker, que acepta un "BB" suelto sin numero: como señal de unidad
-    # vale, como señal de ocupacion es ruido de OCR de dos caracteres capaz de
-    # dar por ocupado un asiento vacio y desplazar las posiciones de todos.
+    # debe hacer que un asiento claramente ocupado cuente como vacio.
     if seat_map.has_bb_amount(lines):
         return True
     for ln in lines:
@@ -370,26 +341,30 @@ def analyze_layout(image_path):
     referencia independiente del color (nucleo del tapete por contraste) y lee
     cada elemento en su zona fija: ocupacion + nombre/stack por asiento, cartas
     del hero y board (reutilizando la deteccion de palo por color y el OCR de
-    rango del color-deck, ya validados), bote, ciegas (del chat) y boton del
-    dealer por ancla-por-asiento -> posiciones por aritmetica horaria. Ademas
-    expone "facing" ("bet"/"check"/None) segun los botones de accion del hero.
+    rango del color-deck, ya validados), bote y boton del dealer por
+    ancla-por-asiento -> posiciones por aritmetica horaria. Ademas expone
+    "facing" ("bet"/"check"/None) segun los botones de accion del hero.
 
-    Produce el MISMO esquema de GameState que analyze_color_deck() (mas el
-    campo "facing") para que decision/engine.py y alpha.py funcionen sin
-    cambios."""
+    TODOS LOS IMPORTES EN BIG BLINDS. Requiere el cliente de PokerStars
+    configurado para mostrarlos asi; si no lo esta, no se leen y la app se
+    abstiene (ver el bloque "LA APP ES BB-ONLY" mas arriba). Por eso ya no hay
+    campo "blinds": con los stacks en bb, el nivel de ciegas no hace falta para
+    nada. Las rutas de diagnostico analyze()/analyze_color_deck() si lo tienen,
+    porque sus importes estan en fichas."""
     bgr = cv2.imread(image_path)
     state = {
         "image": os.path.basename(image_path),
         "hero_cards": [],
         "board": [],
         "pot": None,
-        "blinds": None,
         "players": [],
         "hero_position": None,
         "facing": None,
         "vs_position": None,
-        "stack_unit": None,
-        "stack_unit_source": None,
+        # literal, no detectado: la app es BB-only (ver el bloque de arriba).
+        # Lo declara para que engine.decide() pueda RECHAZAR los GameState de las
+        # rutas de diagnostico, cuyos importes estan en fichas.
+        "stack_unit": "bb",
         "to_call": None,
         "chat_lines": [],
         "warnings": [],
@@ -443,12 +418,6 @@ def analyze_layout(image_path):
     chat_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2, lang="spa")
     px = seat_map.zone_to_px(ref, seat_map.ACTION_ZONE, bgr.shape)
     action_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2, lang="spa")
-    # recuadro de ciegas de la esquina superior derecha (fraccion del frame)
-    fh, fw = bgr.shape[0], bgr.shape[1]
-    cz = CORNER_BLINDS_ZONE
-    corner_idx = batch.add_tsv_job(
-        bgr[int(fh * cz[1]):int(fh * cz[3]), int(fw * cz[0]):int(fw * cz[2])],
-        scale=CORNER_BLINDS_SCALE)
 
     # cartas del hero y del board: encolar el OCR de rango (cajas ya detectadas)
     hero_jobs = []
@@ -475,26 +444,21 @@ def analyze_layout(image_path):
     # de reentrada; esos pocos frames quedan con un hero fantasma (limitacion
     # conocida) a cambio de no perder el hero en los frames entre manos, en que
     # no tiene cartas y el OCR de su nameplate suele fallar.
-    # unidad de los importes (fichas o big blinds), con latch de sesion: ver
-    # _UNIT_LATCH / _detect_stack_unit. En modo BB el valor leido YA es la
-    # profundidad/apuesta en bb (no hace falta dividir por la ciega).
+    # Los importes se leen SIEMPRE en big blinds: parse_amount_bb exige el sufijo
+    # "BB" literal, asi que si el cliente no esta en ese modo no se lee nada y el
+    # motor se abstiene. Nunca lee un numero en la unidad equivocada.
     seat_lines = {name: parse_tsv_lines(results[seat_tsv[name]]) for name in seat_map.SEATS}
-    corner_lines = parse_tsv_lines(results[corner_idx])
-    unit, unit_source = _detect_stack_unit(corner_lines, seat_lines, state["warnings"])
-    state["stack_unit"] = unit
-    state["stack_unit_source"] = unit_source
 
     occupied = {}
     for name in seat_map.SEATS:
         lines = seat_lines[name]
-        n, stk_chips = _seat_plate_name_stack(lines)
-        stk = seat_map.parse_amount_bb(lines) if unit == "bb" else stk_chips
+        n, _stk_chips = _seat_plate_name_stack(lines)
+        stk = seat_map.parse_amount_bb(lines)
         occ = True if name == seat_map.HERO_SEAT else _plate_occupied(lines)
         if occ:
             bet_lines = parse_tsv_lines(results[bet_tsv[name]])
-            bet = (seat_map.parse_amount_bb(bet_lines) if unit == "bb"
-                   else seat_map.parse_bet_amount(bet_lines))
-            occupied[name] = {"name": n, "stack": stk, "bet": bet}
+            occupied[name] = {"name": n, "stack": stk,
+                              "bet": seat_map.parse_amount_bb(bet_lines)}
 
     # boton -> posiciones (orden de reparto horario entre los ocupados)
     button_seat = seat_map.detect_button_seat(bgr, ref)
@@ -567,50 +531,40 @@ def analyze_layout(image_path):
     if seat_map.HERO_SEAT in positions:
         state["hero_position"] = positions[seat_map.HERO_SEAT]
 
-    # bote, ciegas, facing. Ciegas: primero el recuadro persistente de la
-    # esquina (SB/BB(ante), la fuente mas fiable), luego el aviso del chat
-    # (transitorio) como respaldo.
-    # el bote se lee segun la unidad: en modo BB lleva el sufijo y decimales
-    # ("Bote: 3,75 BB"), que find_pot interpretaria como separador de miles
-    # (x10/x100). Ver find_pot_bb.
+    # el bote lleva sufijo y decimales ("Bote: 3,75 BB"), que find_pot
+    # interpretaria como separador de miles (x10/x100). Ver find_pot_bb.
     pot_lines = parse_tsv_lines(results[pot_idx])
-    state["pot"] = find_pot_bb(pot_lines) if unit == "bb" else find_pot(pot_lines)
-    # Las lineas del chat se EXPONEN en el GameState. Hasta ahora se OCR-eaban
-    # dos veces por frame: aqui para las ciegas de respaldo, y otra vez en
-    # hand_result.read_chat_lines() para el panel "Mano anterior", con un segundo
-    # subproceso y un segundo arranque de tesseract. Medido sobre frames reales,
-    # esa segunda pasada costaba 571 ms de un ciclo de 3,9 s (el 15%). Se guardan
-    # con posicion (no solo el texto) porque parse_hand_result las necesita para
-    # reconstruir el orden de lectura.
-    chat_lines = parse_tsv_lines(results[chat_idx])
-    state["chat_lines"] = chat_lines
-    state["blinds"] = (find_blinds_corner(corner_lines, require_double=False)
-                       or find_blinds_chat(chat_lines) or find_blinds(chat_lines))
+    state["pot"] = find_pot_bb(pot_lines)
+    # Las lineas del chat se EXPONEN en el GameState, y ahora son la unica razon
+    # por la que se OCR-ea esa zona: alimentan el panel "Mano anterior" y, sobre
+    # todo, el NUMERO DE MANO, que es la señal de frontera mas fiable que tiene
+    # el rastreador (decision/hand_tracker.py). Antes se OCR-eaba dos veces por
+    # frame -aqui para las ciegas y otra vez en hand_result.read_chat_lines()-,
+    # con un segundo subproceso y un segundo arranque de tesseract: 571 ms de un
+    # ciclo de 3,9 s. Se guardan con posicion (no solo el texto) porque
+    # parse_hand_result las necesita para reconstruir el orden de lectura.
+    state["chat_lines"] = parse_tsv_lines(results[chat_idx])
     action_lines = parse_tsv_lines(results[action_idx])
     state["facing"] = seat_map.parse_facing(" ".join(ln["text"] for ln in action_lines))
     # importe que pide el boton "Igualar": evidencia INDEPENDIENTE de que hay una
-    # subida que enfrentar, para poder abstenerse cuando el importe de la mesa no
-    # se lee y el motor recomendaria una apertura enfrentando una subida. Solo en
-    # modo BB (el boton no lleva sufijo en modo fichas). Ver parse_to_call_bb.
-    state["to_call"] = seat_map.parse_to_call_bb(action_lines) if unit == "bb" else None
+    # subida que enfrentar. Sirve para dos cosas: abstenerse cuando nadie la
+    # explica, y autorizar al rastreador a ATRIBUIRLA por la bajada de stack.
+    # Ver parse_to_call_bb y hand_tracker.atribuir_subida.
+    state["to_call"] = seat_map.parse_to_call_bb(action_lines)
 
     # vs_position: quien subio, a partir del importe apostado por asiento. Solo
     # se rellena si el hero enfrenta una apuesta (facing="bet") y hay UNA subida
-    # clara; en cualquier otro caso queda None. En modo BB la ciega grande es 1;
-    # en modo fichas la detectada. El motor lo recalcula con la ciega efectiva
-    # (que en fichas puede venir de blinds.local.json), pero se expone aqui para
-    # el HUD/depuracion.
-    bb_for_raiser = 1 if unit == "bb" else (state["blinds"]["bb"] if state["blinds"] else None)
+    # clara; en cualquier otro caso queda None. La ciega grande es 1 por
+    # definicion (los importes estan en big blinds). El motor lo recalcula por su
+    # cuenta, pero se expone aqui para el HUD y para depurar.
     if state["facing"] == "bet":
-        vs, _code = seat_map.detect_raiser(state["players"], bb_for_raiser)
+        vs, _code = seat_map.detect_raiser(state["players"], 1)
         state["vs_position"] = vs
 
     if not state["hero_cards"]:
         state["warnings"].append("no se detectaron las cartas del hero")
     if not state["pot"]:
         state["warnings"].append("no se encontro texto de pot")
-    if not state["blinds"]:
-        state["warnings"].append("no se encontraron las ciegas (esquina/chat)")
     if not occupied:
         state["warnings"].append("ningun asiento ocupado detectado")
 

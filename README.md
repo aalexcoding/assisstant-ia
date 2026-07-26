@@ -49,8 +49,9 @@ estado detectado (tus cartas, board, bote, jugadores con posición y stack), una
 (oculta entre manos, cuando no hay cartas del hero), la recomendación de `engine.decide` en
 grande (o el motivo si no la hay), una sección "Mano anterior" que resume la última mano
 terminada leyendo el resultado del panel de chat (`vision/hand_result.py`: ganador, importe,
-mano ganadora, jugadores de showdown y si el hero ganó/perdió/**empató** el bote), un campo de ciegas que escribe
-`blinds.local.json` en el mismo formato que `./set-blinds` (intercambiables), y botones para
+mano ganadora, jugadores de showdown y si el hero ganó/perdió/**empató** el bote), un panel
+para **marcar una situación** rara y anotarla mientras juegas (fija el frame en el momento y
+la nota se le pega después, se tarde lo que se tarde en escribirla), y botones para
 iniciar/parar el análisis y relanzar la calibración del recuadro. El selector de intervalo baja
 hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
 
@@ -123,17 +124,18 @@ hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
   falta algún dato. `test_lookup.py` es un script suelto (sin pytest, el proyecto no lo
   usa) que lo verifica contra casos leídos a mano de `ranges.json`.
 - `decision/engine.py` — Fase 4 (primera pieza): dado el `GameState` de `vision/`, si es
-  preflop y hay cartas+posición+stack_bb (stack del hero / `blinds["bb"]`), llama a
-  `decision/preflop/lookup.py` y devuelve `{action, reasoning, hero_cards, hero_position,
-  stack_bb}`. Si falta cualquier dato (sin board vacío, sin ciegas, sin posición...)
-  devuelve `None` y anota el motivo en `warnings`. Cuando sí recomienda pero sobre datos
-  de fiabilidad reducida, lo **dice** en vez de callarlo: (a) si las ciegas manuales de
-  `blinds.local.json` llevan más de 10 min sin actualizar (antigüedad por el `mtime` del
-  fichero) avisa de que, si el nivel ya subió, la profundidad en bb —y con ella el
-  rango— está mal; (b) si la profundidad real cae a más de 2.6bb de la clave de stack
-  que usó `lookup` (p.ej. 100bb al principio de un torneo, que cae en el rango de 40bb,
-  el máximo digitalizado) marca la acción como extrapolada. Ambos avisos van a
-  `warnings` y al `reasoning` que ve el usuario. Limitación conocida: el `GameState`
+  preflop y hay cartas+posición+stack, llama a `decision/preflop/lookup.py` y devuelve
+  `{action, reasoning, hero_cards, hero_position, stack_bb}`. Si falta cualquier dato
+  (hay board, no hay posición, no se lee el stack...) devuelve `None` y anota el motivo
+  en `warnings`. **La app es BB-only**: el stack leído ya viene en big blinds, así que
+  no hace falta ningún nivel de ciegas; `stack_unit` sobrevive como **guarda**, y todo
+  `GameState` que no declare `"bb"` se rechaza (las rutas de diagnóstico producen fichas
+  enteras, y leerlas como bb daría una recomendación convincente y falsa). Cuando sí
+  recomienda pero sobre datos de fiabilidad reducida, lo **dice** en vez de callarlo: si
+  la profundidad real cae fuera de la rejilla de esa tabla (p.ej. 100bb al principio de
+  un torneo, que sale del gráfico de 40bb, el máximo digitalizado) marca la acción como
+  extrapolada; si cae entre dos claves que sí existen, lo nombra como interpolación. Los
+  avisos van a `warnings` y al `reasoning` que ve el usuario. Limitación conocida: el `GameState`
   no registra el historial de apuestas de la mano, así que el juicio de si el hero abre
   o responde a una subida se hace con lo que hay dibujado en ese frame (importes
   apostados por asiento), no con el historial real de la calle.

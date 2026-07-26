@@ -43,18 +43,16 @@ def format_state(state, recommendation):
     lines = []
     hero = " ".join(state["hero_cards"]) or "?"
     board = " ".join(state["board"]) or "(preflop)"
-    pot = state["pot"] if state["pot"] is not None else "?"
+    pot = f"{state['pot']:g} BB" if state["pot"] is not None else "?"
     lines.append(f"Hero: {hero}   Board: {board}   Pot: {pot}")
-    if state["blinds"]:
-        b = state["blinds"]
-        lines.append(f"Ciegas: {b.get('sb')}/{b.get('bb')} ante {b.get('ante')}")
     if state.get("facing"):
         lines.append(f"Enfrenta: {state['facing']}")
     for p in state["players"]:
         marker = "  <- tu" if p["is_hero"] else ""
         pos = f" [{p['position']}]" if p.get("position") else ""
         name = p["name"] if p["name"] is not None else "(?)"
-        lines.append(f"  {name}{pos}: {p['stack']}{marker}")
+        stack = f"{p['stack']:g} BB" if p.get("stack") is not None else "?"
+        lines.append(f"  {name}{pos}: {stack}{marker}")
     if recommendation:
         en = recommendation.get("action_en") or recommendation["action"]
         es = recommendation.get("action_es")

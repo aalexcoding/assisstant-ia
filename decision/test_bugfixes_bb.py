@@ -7,6 +7,7 @@ exactamente que se rompe y por que importaba.
 Script suelto, sin pytest (el proyecto no lo usa).
 Uso: .venv/bin/python decision/test_bugfixes_bb.py
 """
+import json
 import os
 import sys
 
@@ -130,7 +131,7 @@ CONTRADICCION = {
     "stack_unit": "bb", "players": [P("CO", None, hero=True)], "warnings": [],
 }
 CONTRADICCION["players"][0]["stack"] = 25.0
-engine._last_hero_stack.update(value=None, t=0.0, unit=None)
+engine._last_hero_stack.update(value=None, t=0.0)
 check("0.5 facing=check con hero != BB -> abstiene", engine.decide(CONTRADICCION) is None)
 check("0.5 y nombra la contradiccion",
       any("contradiccion" in w for w in CONTRADICCION["warnings"]))
@@ -140,7 +141,7 @@ SIN_BOTONES = {
     "stack_unit": "bb", "players": [dict(P("BTN", None, hero=True), stack=40.0)],
     "warnings": [],
 }
-engine._last_hero_stack.update(value=None, t=0.0, unit=None)
+engine._last_hero_stack.update(value=None, t=0.0)
 check("0.5 facing=None SIGUE recomendando (decision medida, no descuido)",
       engine.decide(SIN_BOTONES) is not None)
 
@@ -216,7 +217,7 @@ SUBIDA_NO_ATRIBUIDA = {
     "stack_unit": "bb", "to_call": 3.0, "warnings": [],
     "players": [dict(P("BTN", None, hero=True), stack=30.0), dict(P("BB", 1.0), stack=20.0)],
 }
-engine._last_hero_stack.update(value=None, t=0.0, unit=None)
+engine._last_hero_stack.update(value=None, t=0.0)
 check("A-1d subida que el boton delata pero la mesa no explica -> abstiene",
       engine.decide(SUBIDA_NO_ATRIBUIDA) is None)
 check("A-1d y lo dice",
@@ -228,21 +229,44 @@ SB_COMPLETA = {
     "stack_unit": "bb", "to_call": 0.5, "warnings": [],
     "players": [dict(P("SB", 0.5, hero=True), stack=30.0), dict(P("BB", 1.0), stack=20.0)],
 }
-engine._last_hero_stack.update(value=None, t=0.0, unit=None)
+engine._last_hero_stack.update(value=None, t=0.0)
 check("A-1d la SB completando sigue recomendando (no es una subida)",
       engine.decide(SB_COMPLETA) is not None)
 
-# A-3 guard fail-closed: un GameState sin unidad declarada viene de las rutas de
-# diagnostico, cuyos stacks son FICHAS enteras. Interpretarlos como bb daria una
-# recomendacion con conviccion y falsa en cuanto el default pase a "bb".
-LEGACY = {
-    "board": [], "hero_cards": ["Ah", "Kd"], "hero_position": "BTN", "facing": None,
-    "warnings": [], "players": [dict(P("BTN", None, hero=True), stack=3955)],
-}
-engine._last_hero_stack.update(value=None, t=0.0, unit=None)
-check("A-3 GameState sin stack_unit -> abstiene", engine.decide(LEGACY) is None)
-check("A-3 y nombra la causa",
-      any("no declara la unidad" in w for w in LEGACY["warnings"]))
+# A-3 LA GUARDA DE UNIDAD, ahora que la app es BB-ONLY. Las rutas de diagnostico
+# (analyze/analyze_color_deck) siguen produciendo stacks en FICHAS ENTERAS. Sin
+# esta guarda, un stack de 3955 fichas se leeria como 3955bb -> tabla de 40bb ->
+# una recomendacion con conviccion y falsa. Se comprueban las DOS formas de que
+# un estado no sea de produccion: sin declarar unidad, y declarando "chips".
+def _legacy(unit):
+    st = {"board": [], "hero_cards": ["Ah", "Kd"], "hero_position": "BTN", "facing": None,
+          "warnings": [], "players": [dict(P("BTN", None, hero=True), stack=3955)]}
+    if unit is not None:
+        st["stack_unit"] = unit
+    return st
+
+
+for _u, _desc in ((None, "sin stack_unit"), ("chips", 'con stack_unit="chips"')):
+    _st = _legacy(_u)
+    engine._last_hero_stack.update(value=None, t=0.0)
+    check(f"A-3 GameState {_desc} -> abstiene", engine.decide(_st) is None)
+    check(f"A-3 ({_desc}) nombra la causa",
+          any("BIG BLINDS" in w for w in _st["warnings"]))
+
+# A-3b LA ASERCION DE SEGURIDAD DEL PASO A BB-ONLY. El corpus de 111 capturas
+# reconocidas en modo FICHAS tiene que ser INDECIDIBLE en una build BB-only: si
+# alguna produjera recomendacion, seria una profundidad en fichas interpretada
+# como bb. Antes del cambio salian 4.
+_CORPUS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       "..", "vision", "results_samples_layout2.json")
+if os.path.exists(_CORPUS):
+    with open(_CORPUS) as _fh:
+        _estados = json.load(_fh)
+    _log_real, engine._log_decision = engine._log_decision, lambda *a, **k: None
+    _recos = sum(1 for _st in _estados if engine.decide(dict(_st)) is not None)
+    engine._log_decision = _log_real
+    check(f"A-3b las {len(_estados)} capturas en FICHAS dan 0 recomendaciones "
+          f"(eran 4 antes del paso a BB-only)", _recos == 0)
 
 # --- postflop_equity: separado de decide(), y abstenerse antes que inflar ------
 # El riesgo real de este camino es contar MENOS rivales de los que hay (en

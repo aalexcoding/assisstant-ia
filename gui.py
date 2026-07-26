@@ -6,10 +6,12 @@ en una ventana no bloqueante: la UI corre en el hilo principal (GLib main
 loop) y el analisis (captura + OCR, ~1-2s por frame) corre en un hilo aparte
 que actualiza los widgets via GLib.idle_add (GTK no es thread-safe).
 
-El campo de ciegas escribe blinds.local.json en la raiz con el mismo formato
-que ./set-blinds, asi que engine.decide lo recoge en cada analisis sin
-reiniciar. "Recalibrar recuadro" lanza calibration/select_region.py como
-subproceso y recarga el recuadro al volver.
+Todos los importes se leen en BIG BLINDS: hay que configurar PokerStars para
+mostrarlos asi. Si no lo esta, no se leen y la app se abstiene en vez de
+adivinar (ver el bloque "LA APP ES BB-ONLY" de vision/table_state.py). Por eso
+ya no hay panel de ciegas: con los stacks en bb, el nivel no hace falta.
+"Recalibrar recuadro" lanza calibration/select_region.py como subproceso y
+recarga el recuadro al volver.
 
 Uso: .venv/bin/python gui.py [--interval SEGUNDOS] [--self-test]
 """
@@ -30,7 +32,6 @@ sys.path.insert(0, os.path.join(BASE_DIR, "decision", "preflop"))
 import cv2
 
 import engine
-import equity
 import hand_result as hr
 import hand_strength as hstr
 import hand_tracker
@@ -46,7 +47,6 @@ from gi.repository import Gio, GLib, Gtk, Pango
 
 CALIBRATION_PATH = os.path.join(BASE_DIR, "calibration", "config.local.json")
 SELECT_REGION_PATH = os.path.join(BASE_DIR, "calibration", "select_region.py")
-BLINDS_PATH = os.path.join(BASE_DIR, "blinds.local.json")
 TMP_FRAME_PATH = "/tmp/poker_gui_frame.png"
 
 SUIT_SYMBOLS = {"h": "♥", "d": "♦", "c": "♣", "s": "♠"}
@@ -57,21 +57,6 @@ def load_region():
     with open(CALIBRATION_PATH) as f:
         region = json.load(f)["capture_region"]
     return region["x"], region["y"], region["width"], region["height"]
-
-
-def read_blinds():
-    try:
-        with open(BLINDS_PATH) as f:
-            data = json.load(f)
-        return {"sb": data.get("sb", 0), "bb": data.get("bb"), "ante": data.get("ante", 0)}
-    except (FileNotFoundError, ValueError):
-        return None
-
-
-def write_blinds(sb, bb, ante):
-    with open(BLINDS_PATH, "w") as f:
-        json.dump({"sb": int(sb), "bb": int(bb), "ante": int(ante)}, f)
-        f.write("\n")
 
 
 def _card_span(code):
@@ -96,7 +81,9 @@ def players_markup(players):
     for p in players:
         name = p["name"] if p.get("name") else "(?)"
         pos = f" [{p['position']}]" if p.get("position") else ""
-        stack = p["stack"] if p.get("stack") is not None else "?"
+        # con unidad: los importes son big blinds, y verlo evita confundir un
+        # stack de 44,5 BB con 44,5 fichas de un vistazo
+        stack = f"{p['stack']:g} BB" if p.get("stack") is not None else "?"
         mark = "  <b>(TU)</b>" if p.get("is_hero") else ""
         # lo que lleva puesto en la mano, deducido de como le ha bajado el stack
         # entre frames (ver decision/hand_tracker.py). Es una COTA INFERIOR, de
@@ -234,9 +221,6 @@ class AnalysisWorker(threading.Thread):
             return
 
         GLib.idle_add(self.win.on_status, "Stream activo.")
-        # sesion nueva: la unidad de los importes (fichas/BB) se vuelve a latir
-        # desde cero, no se hereda de un analisis anterior de este mismo proceso.
-        ts.reset_unit_latch()
         try:
             while not self._stop.is_set():
                 frame = stream.read(timeout_s=5.0)
@@ -301,11 +285,9 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         root.append(self._build_recommendation_frame())
         root.append(self._build_prev_hand_frame())
         root.append(self._build_note_frame())
-        root.append(self._build_blinds_frame())
         root.append(self._build_controls())
         root.append(self._build_status_frame())
 
-        self._load_blinds_into_entries()
         self._refresh_region_label()
         self.connect("close-request", self._on_close)
 
@@ -634,30 +616,6 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.mark_button.set_sensitive(True)
         return False
 
-    def _build_blinds_frame(self):
-        frame = Gtk.Frame(label="Ciegas (manda sobre lo detectado; escribe blinds.local.json)")
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        box.set_margin_top(8)
-        box.set_margin_bottom(8)
-        box.set_margin_start(8)
-        box.set_margin_end(8)
-
-        self.entry_sb = self._blind_entry("SB")
-        self.entry_bb = self._blind_entry("BB")
-        self.entry_ante = self._blind_entry("ante")
-        save = Gtk.Button(label="Guardar ciegas")
-        save.connect("clicked", self._on_save_blinds)
-
-        box.append(Gtk.Label(label="SB"))
-        box.append(self.entry_sb)
-        box.append(Gtk.Label(label="BB"))
-        box.append(self.entry_bb)
-        box.append(Gtk.Label(label="ante"))
-        box.append(self.entry_ante)
-        box.append(save)
-        frame.set_child(box)
-        return frame
-
     def _build_controls(self):
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
 
@@ -722,48 +680,12 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         label.set_xalign(0.0)
         return label
 
-    @staticmethod
-    def _blind_entry(placeholder):
-        entry = Gtk.Entry()
-        entry.set_max_width_chars(6)
-        entry.set_width_chars(6)
-        entry.set_placeholder_text(placeholder)
-        entry.set_input_purpose(Gtk.InputPurpose.DIGITS)
-        return entry
-
-    def _load_blinds_into_entries(self):
-        b = read_blinds()
-        if b:
-            self.entry_sb.set_text(str(b.get("sb") or 0))
-            if b.get("bb"):
-                self.entry_bb.set_text(str(b["bb"]))
-            self.entry_ante.set_text(str(b.get("ante") or 0))
-
     def _refresh_region_label(self):
         try:
             x, y, w, h = load_region()
             self.region_label.set_markup(f"Recuadro: x={x} y={y} {w}x{h}")
         except (FileNotFoundError, ValueError, KeyError):
             self.region_label.set_markup('Recuadro: <span foreground="#e67e22">sin calibrar</span>')
-
-    def _on_save_blinds(self, _btn):
-        def parse(entry, default=0):
-            txt = entry.get_text().strip()
-            if not txt:
-                return default
-            return int(txt)
-        try:
-            sb = parse(self.entry_sb, 0)
-            bb = parse(self.entry_bb, 0)
-            ante = parse(self.entry_ante, 0)
-        except ValueError:
-            self.status_label.set_markup('<span foreground="#e74c3c">Ciegas invalidas (usa numeros enteros).</span>')
-            return
-        if bb <= 0:
-            self.status_label.set_markup('<span foreground="#e74c3c">La ciega grande (BB) debe ser mayor que 0.</span>')
-            return
-        write_blinds(sb, bb, ante)
-        self.status_label.set_markup(f"Ciegas fijadas: SB={sb} BB={bb} ante={ante}")
 
     def _on_toggle(self, _btn):
         if self.running:
@@ -963,19 +885,17 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         if not state.get("hero_position"):
             return ("No se detecta tu posicion (el boton de dealer no se ve o esta tapado). "
                     "Sin posicion no se puede elegir el rango.")
-        # el caso mas comun de abstencion con todo lo demas listo: modo FICHAS sin
-        # ciegas legibles. Las ciegas solo salen en pantalla de forma fiable en el
-        # recuadro de la esquina o al subir de nivel en el chat, asi que se le da
-        # al usuario la salida que NO depende de leerlas: si el cliente muestra
-        # los importes en BB, la profundidad ya viene en bb y no hacen falta.
-        if state.get("stack_unit") == "chips" and not state.get("blinds"):
-            aviso = ("Faltan las ciegas para pasar tu stack a bb. Dos salidas: pon las ciegas "
-                     "a mano en el panel de abajo, o -mejor- configura PokerStars para mostrar "
-                     "los importes en BIG BLINDS y entonces no hacen falta.")
-            if state.get("stack_unit_source") == "assumed":
-                aviso += (" (Ojo: tampoco se pudo confirmar en que unidad estan los importes; "
-                          "se asumio fichas.)")
-            return aviso
+        # el caso mas comun de abstencion con todo lo demas listo: no se leyo el
+        # stack. Como parse_amount_bb EXIGE el sufijo "BB", eso casi siempre
+        # significa que el cliente no esta en modo big blinds; se le dice, porque
+        # es lo unico que el usuario puede arreglar.
+        hero = next((p for p in players if p.get("is_hero")), None)
+        if hero is not None and hero.get("stack") is None:
+            return ("No se lee tu stack en BB. La app trabaja SOLO con importes en big "
+                    "blinds: en PokerStars, ajustes de mesa -> mostrar los importes en "
+                    "BIG BLINDS. Mientras no sea asi se abstiene en vez de adivinar, "
+                    "porque leer un importe en la unidad equivocada daria una "
+                    "recomendacion convincente y falsa.")
         warnings = state.get("warnings") or []
         return warnings[-1] if warnings else "Sin recomendacion en este spot."
 

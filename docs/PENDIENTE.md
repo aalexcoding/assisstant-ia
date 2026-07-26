@@ -1,6 +1,6 @@
 # Trabajo pendiente
 
-Estado a 2026-07-25 (tras 4 sesiones de testing grabadas, ~700 frames). El plan completo del que sale esto está en
+Estado a 2026-07-26. El plan completo del que sale esto está en
 [`prompt.md`](../prompt.md) (objetivo y fases originales) y en el README
 (qué hace cada módulo hoy).
 
@@ -24,8 +24,9 @@ Estado a 2026-07-25 (tras 4 sesiones de testing grabadas, ~700 frames). El plan 
 
 ## 1 · Lo que dependía de las capturas en BB (ya desbloqueado)
 
-Había tres trabajos esperando capturas en modo BB. **Ya hay cuatro sesiones
-grabadas** (~700 frames) con el modo testing, así que el bloqueo se levantó.
+Había tres trabajos esperando capturas en modo BB. Con las sesiones grabadas en
+modo testing el bloqueo se levantó, y los tres están hechos (§1.1 y §1.2) o
+listos para empezar (§1.3).
 
 ### Las dos incógnitas quedaron resueltas
 
@@ -66,31 +67,39 @@ Nota sobre una decisión que se apartó del plan: **no** se exige que
 que exigirlo dejaría el panel casi siempre vacío; en su lugar se añade un aviso
 de que quizá no sea el turno del hero.
 
-### 1.2 Cutover BB-only (Fase A, pasos 4-5)
+### 1.2 Cutover BB-only — ✅ HECHO
 
-Ya no está bloqueado: hay cuatro sesiones en modo BB para validarlo. Sigue
-siendo el único cambio que altera el comportamiento, así que conviene hacerlo con
-el corpus de fichas delante — las 111 capturas antiguas producirán 111
-abstenciones por diseño, y eso ES la aserción de seguridad.
+La app trabaja solo con el cliente configurado en **big blinds**. El stack leído
+ya *es* la profundidad, así que no hace falta ningún nivel de ciegas.
 
-- `analyze_layout`: quitar el fork de unidad; `stack_unit = "bb"` literal.
-  Se comenta **con su razón** todo lo que documenta medición (el bloque
-  `_UNIT_LATCH` entero, `CORNER_BLINDS_*`, `parse_bet_amount`, `has_bb_marker`,
-  `find_blinds_chat`) y se borra solo la fontanería.
-- Se liberan **dos jobs de OCR por frame** (`chat_idx` y `corner_idx` solo
-  alimentaban las ciegas y la detección de unidad; `hand_result` OCR-ea el chat
-  por su cuenta).
-- Motor: se queda solo la rama bb; fuera `_manual_blinds`, `blinds.local.json`,
-  `_MANUAL_BLINDS_STALE_S`, el parámetro `unit` del caché. El guard pasa de
-  `unit is None` a `unit != "bb"`.
-- GUI: fuera el panel de ciegas entero. `players_markup` debe mostrar `44,5 BB`,
-  no `44.5` a secas.
-- Borrar `./set-blinds`. Actualizar README y `prompt.md`.
-- `alpha.py:48` lee `state["blinds"]` **con corchetes** → `KeyError` si no se
-  actualiza en el mismo commit.
+**La aserción de seguridad pasa**: las 111 capturas reconocidas en modo fichas
+dan **0 recomendaciones** (daban 4). Está como test, `A-3b`.
 
-Aserción de seguridad: los 111 estados de fichas alimentados a `engine.decide`
-deben dar **0 recomendaciones y 111 abstenciones**.
+Qué se retiró: el bloque `_UNIT_LATCH` + `_detect_stack_unit` + `_chips_style_stack`,
+`CORNER_BLINDS_ZONE/SCALE`, `seat_map.parse_bet_amount` y `has_bb_marker`, la rama
+de fichas del motor con `_manual_blinds`/`blinds.local.json`/`./set-blinds`, y el
+panel de ciegas de la GUI. El campo `state["blinds"]` desaparece del esquema de
+`analyze_layout` (las rutas de diagnóstico lo conservan, porque sus importes sí
+están en fichas).
+
+**`stack_unit` sobrevive como guarda, no como interruptor.** `analyze_layout` lo
+pone a `"bb"` literal y `decide()` rechaza todo lo que no lo declare: las rutas de
+diagnóstico siguen produciendo fichas enteras, y leer 3955 fichas como 3955bb daría
+una recomendación con convicción y falsa.
+
+Una corrección al plan original, que decía que se liberaban **dos** jobs de OCR:
+solo se libera **uno** (`corner_idx`). El del chat es ahora imprescindible — además
+del panel "Mano anterior" alimenta el **número de mano**, que es la señal de
+frontera más fiable del rastreador (§2.0). Medido tras el cambio: 1,13 s por frame,
+y 15 de 15 capturas reales dan un resultado idéntico al de antes.
+
+La razón de fondo, conservada en el código para que no se reintente: se probó
+**detectar** la unidad frame a frame y la detectada oscilaba dentro de una misma
+sesión de 34 min (bbx30, chipsx17, bbx24, chipsx37) sin que la config del cliente
+hubiera cambiado. La garantía ahora es que `parse_amount_bb` **exige el sufijo
+`BB` literal**: si el cliente no está en ese modo no se lee nada y la app se
+abstiene. Por eso el parseo no se puede aflojar a "el mayor entero de la zona" —
+eso leería la denominación impresa en una ficha (25, 100) como un importe.
 
 ### 1.3 Fase E: respaldo probabilístico del preflop
 

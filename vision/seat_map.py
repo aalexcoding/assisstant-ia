@@ -444,15 +444,16 @@ SEAT_BET_ZONES = {
 # El cliente muestra los importes en dos unidades segun la config del usuario:
 #   - FICHAS: enteros con separador de miles ("5.892", "1.900").
 #   - BIG BLINDS: coma decimal + sufijo BB ("123,4 BB", "3,75 BB", "89 BB").
-# En modo BB el valor leido YA ES la profundidad/apuesta en bb (no hace falta
-# dividir por la ciega). Se auto-detecta el modo por la presencia del sufijo BB.
+#
+# LA APP SOLO LEE BIG BLINDS. Habia un parse_bet_amount para el modo fichas que
+# tomaba "el mayor entero de la zona"; se retiro con el paso a BB-only y NO debe
+# volver como respaldo de parse_amount_bb "para ganar cobertura": un entero
+# desnudo sobre el tapete es tambien la DENOMINACION IMPRESA en una ficha (25,
+# 100), asi que aceptarlo leeria una ficha como una apuesta de 25bb e inventaria
+# un raiser. Exigir el sufijo "BB" es lo que garantiza que, si el cliente no esta
+# en modo big blinds, no se lea NADA y la app se abstenga en vez de leer mal.
 
-# modo FICHAS: tira de digitos (con separador de miles opcional). Se extrae de
-# cada token en vez de exigir que el token entero cuadre, para tolerar glifos
-# pegados del OCR sobre el tapete/fichas ("B50" -> 50).
-_BET_DIGITS_RE = re.compile(r"\d{1,3}(?:[.,]\d{3})+|\d{1,6}")
-
-# modo BB: numero seguido del sufijo BB.
+# numero seguido del sufijo BB.
 #
 # El separador decimal del cliente en castellano es la COMA, pero el OCR la lee a
 # veces como PUNTO, asi que se aceptan los dos. Y el lookbehind + el \b no son
@@ -464,19 +465,6 @@ _BET_DIGITS_RE = re.compile(r"\d{1,3}(?:[.,]\d{3})+|\d{1,6}")
 # en modo BB no existe -es OCR corrupto de un importe en fichas- y aceptarlo
 # volveria a introducir el error de 1000x.
 _BB_AMOUNT_RE = re.compile(r"(?<![\d.,])(\d{1,4}(?:[.,]\d{1,2})?)\s*BB\b", re.IGNORECASE)
-
-
-def parse_bet_amount(lines):
-    """Modo FICHAS: importe apostado (int) o None. Toma el mayor entero de la
-    zona: el total apostado siempre iguala o supera la denominacion impresa en
-    las fichas del stack, e ignora la marca de bounty ("0,31 €", no es entero)."""
-    best = None
-    for ln in lines:
-        for m in _BET_DIGITS_RE.finditer(ln["text"]):
-            val = int(m.group(0).replace(".", "").replace(",", ""))
-            if val > 0 and (best is None or val > best):
-                best = val
-    return best
 
 
 def parse_amount_bb(lines):
@@ -505,22 +493,12 @@ def has_bb_amount(lines):
     ("¿hay alguien sentado?"), distinta de la que responde parse_amount_bb
     ("¿cuanto tiene?"), que devuelve None a proposito si hay ambiguedad.
 
-    Y distinta de has_bb_marker, que acepta un token "BB" suelto sin numero: eso
-    vale para detectar la UNIDAD (el sufijo basta), pero como señal de ocupacion
-    un "BB" suelto es ruido de OCR de dos caracteres, y un asiento vacio que lo
-    produzca contaria como ocupado y desplazaria las posiciones de todos."""
+    Exige NUMERO + sufijo. Hubo un has_bb_marker que aceptaba un token "BB"
+    suelto: valia para detectar la UNIDAD (donde el sufijo bastaba), pero como
+    señal de ocupacion un "BB" suelto es ruido de OCR de dos caracteres, y un
+    asiento vacio que lo produzca contaria como ocupado y desplazaria las
+    posiciones de TODOS. Se retiro con la deteccion de unidad."""
     return _BB_AMOUNT_RE.search(" ".join(ln["text"] for ln in lines)) is not None
-
-
-def has_bb_marker(lines):
-    """True si en las lineas OCR aparece el sufijo de unidad BB (stacks/apuestas
-    mostrados en big blinds, p.ej. "Media: 89 BB" en la esquina o "44,5 BB" en
-    un nameplate)."""
-    for ln in lines:
-        for w in ln["text"].split():
-            if w.strip(".,;:'\"|()").upper() == "BB":
-                return True
-    return bool(_BB_AMOUNT_RE.search(" ".join(ln["text"] for ln in lines)))
 
 
 # La apuesta del asiento BB no puede tomarse como prueba de una subida: la BB ya

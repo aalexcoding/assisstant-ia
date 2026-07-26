@@ -1,7 +1,8 @@
 """
 Fase 4 (primera pieza): motor de decision. Toma el GameState que produce
-vision/table_state.py (analyze()/analyze_color_deck()) y, si hay datos
-suficientes, devuelve una recomendacion consultando decision/preflop/lookup.py.
+vision/table_state.py (analyze_layout(), la ruta de produccion) y, si hay
+datos suficientes, devuelve una recomendacion consultando
+decision/preflop/lookup.py.
 
 decide() solo recomienda ACCION en preflop: no hay rango postflop digitalizado,
 asi que con board no devuelve accion. Lo que si hay postflop es equity estimada
@@ -13,9 +14,10 @@ trae facing="bet" (hay un boton "Igualar/Pagar", asi que hay una apuesta que
 enfrentar) y a partir del importe apostado por asiento (table_state /
 seat_map.detect_raiser) se identifica UNA sola subida clara -un unico rival
 con apuesta por encima de la ciega grande-, se consulta el rango de defensa
-con vs_position = la posicion de ese raiser. La ciega grande usada es la
-EFECTIVA (blinds.local.json manda sobre la detectada), de ahi que la subida
-se recompute aqui y no se confie sin mas en state["vs_position"].
+con vs_position = la posicion de ese raiser. Cuando el importe de la mesa no
+se lee -que es el caso mayoritario- se intenta ATRIBUIR la subida por la
+bajada de stack del rival entre frames (decision/hand_tracker.py), pero solo
+si el boton "Igualar" ya ha demostrado que la subida existe.
 
 Conservador por diseño: si hay varias apuestas por encima de la ciega
 (bote multiway o 3bet ya presente), si el propio hero ya ha subido (enfrenta
@@ -37,23 +39,27 @@ Requiere decision/preflop en sys.path (lo hace el caller, igual que
 vision/table_state.py no gestiona su propio sys.path para importar a sus
 hermanos de vision/).
 
-Unidades (state["stack_unit"], lo pone la vision): el cliente muestra los
-importes en FICHAS o en BIG BLINDS ("123,4 BB") segun la config del usuario.
-En modo BB el stack leido YA es la profundidad en bb: se usa directamente
-como stack_bb y NO hacen falta ciegas (ni detectadas ni manuales), y una
-subida es cualquier apuesta > 1 bb. En modo fichas todo sigue igual: se
-divide el stack por la ciega grande efectiva.
+BB-ONLY. La app trabaja con el cliente configurado para mostrar los importes
+en BIG BLINDS, y solo con eso: el stack leido YA ES la profundidad en bb, asi
+que se usa directamente como stack_bb, NO hacen falta ciegas (ni detectadas
+ni manuales) y una subida es simplemente cualquier importe > 1.
 
-Ciegas manuales (solo modo fichas): el nivel de ciegas es transitorio en
-pantalla (solo sale en el chat al subir de nivel) pero el usuario lo sabe y
-cambia cada varios minutos, asi que se puede fijar a mano. Si existe
-blinds.local.json en la raiz del repo (lo escribe el comando ./set-blinds
-mientras la app corre), su valor MANDA sobre lo que detecte la vision. El
-stack del hero sigue siendo automatico (cambia cada mano; meterlo a mano
-seria insufrible). Como el fichero no caduca solo y en torneo los niveles
-suben cada pocos minutos, se mide su antiguedad por el mtime y pasados
-_MANUAL_BLINDS_STALE_S se AVISA (sin descartarlas: son lo unico que hay),
-tanto en warnings como en el propio reasoning que ve el usuario.
+Se intento soportar tambien el modo FICHAS, detectando la unidad frame a
+frame, y no funciono: medido sobre una sesion real de 34 min, la unidad
+detectada oscilaba DENTRO de la misma sesion (bbx30, chipsx17, bbx24,
+chipsx37) aunque la config del cliente no habia cambiado. El fallo que eso
+produce es el peor posible aqui -dividir por la ciega una profundidad que ya
+estaba en bb, o leer 3955 fichas como 3955bb: una recomendacion con
+conviccion y falsa-. Con las ciegas manuales pasaba algo parecido por otra
+via: blinds.local.json no caducaba solo y en torneo el nivel sube cada pocos
+minutos, asi que unas ciegas viejas daban una profundidad inflada sin que
+nada lo delatara.
+
+La salida no fue detectar mejor, sino no tener que detectar. state["stack_unit"]
+sigue existiendo como GUARDA, no como interruptor: analyze_layout() lo pone a
+"bb" literal y las rutas de diagnostico (analyze/analyze_color_deck), cuyos
+stacks son enteros de fichas, no lo declaran. decide() rechaza cualquier
+GameState que no diga "bb", asi que esa clase de fallo no puede existir.
 
 Profundidad fuera de rejilla: lookup._nearest_stack_key redondea a la clave de
 stack mas cercana sin limite, asi que a 100bb (principio de torneo) devuelve el
@@ -84,16 +90,15 @@ import hand_tracker
 from actions import CHECK_BB_OPTION, translate_into
 from lookup import RANGES, recommend
 
-_MANUAL_BLINDS_PATH = os.path.join(os.path.dirname(__file__), "..", "blinds.local.json")
 _DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.jsonl")
 
 _HERO_STACK_TTL_S = 90.0
-_last_hero_stack = {"value": None, "t": 0.0, "unit": None}
+_last_hero_stack = {"value": None, "t": 0.0}
 
-# a partir de esta edad, unas ciegas manuales se consideran sospechosas de estar
-# desfasadas: los niveles de torneo duran tipicamente entre 3 y 15 min, asi que
-# 10 min sin actualizar es motivo suficiente para avisar (no para descartarlas).
-_MANUAL_BLINDS_STALE_S = 600.0
+# La ciega grande vale 1 POR DEFINICION: los importes vienen en big blinds. Se
+# nombra en vez de escribir 1 suelto para que se lea que es una unidad, no una
+# constante magica.
+BB = 1
 
 # tolerancia (en bb) para considerar que la profundidad COINCIDE con una clave de
 # la tabla. Por debajo de esto no se dice nada; por encima se nombra la tabla
@@ -115,17 +120,16 @@ _STACK_KEY_EXACT_TOL = 0.25
 # Ahora el juicio se hace contra la rejilla REAL de cada familia (_stack_grid).
 
 
-def _cached_hero_stack(hero, unit):
-    """Stack del hero, con cache reciente: cuando es su turno el nameplate deja
-    de mostrar el numero de fichas (muestra la accion o lo tapan los botones),
-    asi que se reutiliza el ultimo leido si es reciente y de la MISMA unidad
-    (fichas o bb; no se mezclan si el usuario cambia de modo). Devuelve
-    (valor, cacheado)."""
+def _cached_hero_stack(hero):
+    """Stack del hero en bb, con cache reciente: cuando es su turno el nameplate
+    deja de mostrar el numero (muestra la accion, o lo tapan los botones), o sea
+    que el stack desaparece de pantalla JUSTO en el momento en que hace falta
+    recomendar. Devuelve (valor, cacheado)."""
     val = hero.get("stack") if hero else None
     if val is not None:
-        _last_hero_stack.update(value=val, t=time.monotonic(), unit=unit)
+        _last_hero_stack.update(value=val, t=time.monotonic())
         return val, False
-    if (_last_hero_stack["value"] is not None and _last_hero_stack["unit"] == unit
+    if (_last_hero_stack["value"] is not None
             and time.monotonic() - _last_hero_stack["t"] <= _HERO_STACK_TTL_S):
         return _last_hero_stack["value"], True
     return None, False
@@ -245,31 +249,6 @@ def _log_decision(state, recommendation, abstain_reason):
         pass
 
 
-def _manual_blinds():
-    """Lee blinds.local.json (si existe y es valido). Devuelve (blinds, edad_s),
-    con blinds None si no hay o esta mal.
-
-    La EDAD importa: en torneo el nivel de ciegas sube cada pocos minutos, pero
-    el fichero manual manda sobre lo detectado y no caduca solo. Unas ciegas
-    manuales viejas dan una profundidad en bb equivocada -y por tanto el rango
-    equivocado- sin que nada lo delate. Se mide por el mtime del fichero en vez
-    de guardar un timestamp dentro, asi ./set-blinds y el panel de la GUI siguen
-    escribiendo el mismo formato de siempre sin cambiar nada."""
-    try:
-        with open(_MANUAL_BLINDS_PATH) as f:
-            data = json.load(f)
-        bb = data.get("bb")
-        if isinstance(bb, (int, float)) and bb > 0:
-            try:
-                age = max(0.0, time.time() - os.path.getmtime(_MANUAL_BLINDS_PATH))
-            except OSError:
-                age = None
-            return {"sb": data.get("sb"), "bb": bb, "ante": data.get("ante")}, age
-    except (FileNotFoundError, ValueError, TypeError):
-        pass
-    return None, None
-
-
 def _hero_player(state):
     for p in state.get("players", []):
         if p.get("is_hero"):
@@ -334,7 +313,7 @@ def postflop_equity(state, iterations=None):
     stack_bb = None
     hero = _hero_player(state)
     if state.get("stack_unit") == "bb":
-        stack_bb, _cacheado = _cached_hero_stack(hero, "bb")
+        stack_bb, _cacheado = _cached_hero_stack(hero)
 
     resultado = equity.estimate_equity(
         state.get("hero_cards"), board, state.get("hero_position"), len(rivales),
@@ -373,55 +352,26 @@ def decide(state):
     if hero_position is None:
         return abstain("no se detecto la posicion del hero; no se puede recomendar")
 
-    # Profundidad efectiva en bb. En modo BB el stack leido YA esta en bb (no
-    # hacen falta ciegas). En modo fichas se divide por la ciega grande
-    # efectiva (blinds.local.json manda sobre la detectada).
-    # La unidad tiene que venir DECLARADA por la vision. El default silencioso que
-    # habia aqui ("chips" si el campo faltaba) era una trampa: analyze() y
-    # analyze_color_deck() son rutas de diagnostico que producen stacks en FICHAS
-    # ENTERAS y no declaran stack_unit, asi que en cuanto el default pase a "bb"
-    # (el paso siguiente, la app va a ser BB-only) un stack de 3955 fichas se leeria
-    # como 3955bb -> tabla de 40bb -> una recomendacion con conviccion y falsa.
-    # Rechazando el estado sin unidad, esa clase de fallo no puede existir en
-    # ninguna de las dos direcciones. Produccion es table_state.analyze_layout().
+    # LA GUARDA DE UNIDAD. La app es BB-only, pero eso no se puede DAR POR HECHO:
+    # analyze() y analyze_color_deck() son rutas de diagnostico que siguen
+    # produciendo stacks en FICHAS ENTERAS. Si se asumiera "bb" por defecto, un
+    # stack de 3955 fichas se leeria como 3955bb -> tabla de 40bb -> una
+    # recomendacion con conviccion y falsa, el peor fallo posible aqui.
+    # Exigiendo que la vision lo DECLARE, esa clase de fallo no puede existir.
+    # Produccion es table_state.analyze_layout(), que lo pone a "bb" literal.
     unit = state.get("stack_unit")
-    if unit is None:
-        return abstain("este GameState no declara la unidad de los importes "
-                       "(stack_unit): viene de una ruta de diagnostico "
-                       "(analyze/analyze_color_deck), cuyos stacks estan en fichas "
-                       "enteras y no se pueden interpretar como profundidad. "
-                       "Produccion es table_state.analyze_layout()")
-    if unit == "bb":
-        stack_val, stack_cacheado = _cached_hero_stack(hero, "bb")
-        if stack_val is None:
-            return abstain("no se encontro el stack del hero en bb (ni reciente en cache); "
-                           "no se puede calcular la profundidad")
-        stack_bb = stack_val
-        bb_efectiva = 1
-        blinds = None
-        fuente = "stacks en BB"  # sin ciegas necesarias
-    else:
-        manual, manual_age_s = _manual_blinds()
-        blinds = manual or state.get("blinds")
-        if not blinds or not blinds.get("bb"):
-            return abstain("no hay ciegas (ni manuales via ./set-blinds ni detectadas); "
-                           "no se puede calcular el stack en bb")
-        stack_val, stack_cacheado = _cached_hero_stack(hero, "chips")
-        if stack_val is None:
-            return abstain("no se encontro el stack del hero (ni reciente en cache); "
-                           "no se puede calcular el stack en bb")
-        stack_bb = stack_val / blinds["bb"]
-        bb_efectiva = blinds["bb"]
-        fuente = "ciegas manuales" if manual else "ciegas del chat"
-        # ciegas manuales viejas: se siguen usando (son lo unico que hay) pero se
-        # avisa, porque si el nivel ha subido la profundidad en bb esta inflada.
-        if manual and manual_age_s is not None and manual_age_s > _MANUAL_BLINDS_STALE_S:
-            mins = int(manual_age_s // 60)
-            warnings.append(f"las ciegas manuales se fijaron hace {mins} min; si el nivel ya "
-                            f"subio, la profundidad en bb (y con ella el rango) esta mal. "
-                            f"Actualizalas con ./set-blinds o en el panel de ciegas")
-            fuente = f"ciegas manuales de hace {mins} min, comprueba el nivel"
+    if unit != "bb":
+        return abstain("este GameState no viene del reconocimiento en BIG BLINDS "
+                       "(stack_unit != 'bb'): sus importes podrian estar en fichas y no "
+                       "se pueden interpretar como profundidad. Produccion es "
+                       "table_state.analyze_layout(); configura PokerStars para mostrar "
+                       "los importes en big blinds")
 
+    stack_bb, stack_cacheado = _cached_hero_stack(hero)
+    if stack_bb is None:
+        return abstain("no se encontro el stack del hero en BB (ni reciente en cache); "
+                       "no se puede calcular la profundidad")
+    fuente = "stacks en BB"          # sin ciegas necesarias: el stack YA es la profundidad
     nota_cache = " stack cacheado de un frame anterior;" if stack_cacheado else ""
 
     # Defensa vs subida ajena: si el hero enfrenta una apuesta (facing="bet") y
@@ -451,7 +401,7 @@ def decide(state):
     vs_position = None
     origen_subida = "subida inferida del importe apostado en la mesa"
     if state.get("facing") == "bet":
-        vs_position, code = _detect_raiser(state.get("players", []), bb_efectiva)
+        vs_position, code = _detect_raiser(state.get("players", []), BB)
         if vs_position is not None:
             facing = "threebet_call"
         elif code != "no_raise":
@@ -465,7 +415,7 @@ def decide(state):
             # open_raise ahi seria recomendar el rango de APERTURA enfrentando una
             # subida: plausible y falso, el peor fallo posible en esta app.
             to_call = state.get("to_call")
-            if isinstance(to_call, (int, float)) and to_call > bb_efectiva:
+            if isinstance(to_call, (int, float)) and to_call > BB:
                 # El importe dibujado en la mesa no explica la subida -es el caso
                 # mayoritario: 59% de los frames preflop con to_call>1-, pero la
                 # BAJADA DE STACK del rival entre frames si puede. Ver
@@ -530,7 +480,6 @@ def decide(state):
         "stack_bb": stack_bb,
         "stack_unit": unit,
         "stack_cacheado": stack_cacheado,
-        "blinds": blinds,
         "facing_used": facing,
         "vs_position": vs_position,
     }
