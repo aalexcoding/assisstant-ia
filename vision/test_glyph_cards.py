@@ -320,6 +320,39 @@ check("el de fondo solido sigue encolando DOS (ancla + close), que ahi si suman"
       b2.n == 2 * len(color_rank_ocr.PSM_SCALE_VARIANTS))
 check("y por tanto el mazo nuevo cuesta la mitad de OCR por carta", b.n < b2.n)
 
+print("\n# --- el boton tambien se encuentra SIN mirar el color ---")
+# La via de forma: en el hueco del boton hay ALGO que tapa el tapete y en los
+# otros cinco no hay nada. Asi el tema de mesa deja de importar.
+def mesa_con_disco(seat, color_bgr, felt=(60, 110, 70)):
+    img = np.full((700, 1200, 3), felt, dtype=np.uint8)
+    fx, fy = seat_map.SEATS[seat]["button"]
+    cx, cy = int(REF[0] + fx * REF[2]), int(REF[1] + fy * REF[3])
+    r = int(((seat_map.BOTON_FORMA_AREA_MIN + seat_map.BOTON_FORMA_AREA_MAX) / 2
+             * REF[2] * REF[3] / np.pi) ** 0.5)
+    cv2.circle(img, (cx, cy), r, color_bgr, -1)
+    return img
+
+
+for nombre, col in (("azul", (220, 120, 20)), ("morado", (180, 40, 130)),
+                    ("blanco", (250, 250, 250)), ("negro", (15, 15, 15))):
+    check(f"un disco {nombre} -un color que nadie ha calibrado- se encuentra igual",
+          seat_map.detect_button_seat_por_forma(mesa_con_disco("MR", col), REF) == "MR")
+
+check("con dos discos parecidos en dos huecos NO se elige: no se sabe cual es",
+      seat_map.detect_button_seat_por_forma(
+          np.maximum(mesa_con_disco("MR", (220, 120, 20)),
+                     mesa_con_disco("UL", (220, 120, 20))), REF) is None)
+check("tapete pelado no da boton",
+      seat_map.detect_button_seat_por_forma(
+          np.full((700, 1200, 3), (60, 110, 70), np.uint8), REF) is None)
+check("y funciona con el tapete de OTRO color, porque se lee del propio frame",
+      seat_map.detect_button_seat_por_forma(
+          mesa_con_disco("UL", (220, 120, 20), felt=(120, 60, 90)), REF) == "UL")
+
+verde = mesa_con_disco("TOPC", (250, 250, 250))
+check("la union responde cuando responde el de color",
+      seat_map.detect_button_seat_union(verde, REF) == "TOPC")
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

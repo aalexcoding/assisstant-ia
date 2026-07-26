@@ -610,7 +610,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None):
     # observaciones) y sirve para desempatar si sobran asientos.
     en_mano = seat_map.detect_in_hand_seats(bgr, ref)
 
-    button_seat = seat_map.detect_button_seat(bgr, ref)
+    button_seat = seat_map.detect_button_seat_union(bgr, ref)
     if button_seat is not None and button_seat not in occupied:
         # el dealer es siempre un jugador sentado: si el boton se detecto en ese
         # asiento pero el OCR no leyo su nameplate, esta ocupado igual.

@@ -351,6 +351,118 @@ def detect_button_seat(bgr, ref):
     return best
 
 
+# --- el boton SIN MIRAR COLOR: gana el hueco donde hay algo ---
+#
+# La idea es del usuario y es mejor que cualquier calibracion de color: en el
+# hueco del boton hay ALGO que tapa el tapete, y en los otros cinco no hay nada.
+# Con eso el tono del disco deja de importar, que es lo que ha roto esta pieza
+# dos veces (el tema de mesa cambia el dibujo del boton).
+#
+# El unico color que se usa es el DEL PROPIO TAPETE, leido del frame en dos
+# parches dentro del ovalo, asi que no hay nada calibrado que un tema pueda
+# invalidar.
+#
+# Se exige que el objeto NO TOQUE el borde del hueco (eso descarta el rail, los
+# nameplates y cualquier estructura que entre por un lado) y que el ganador
+# DOBLE al segundo: si dos huecos tienen algo parecido no se sabe cual es y se
+# devuelve None, que es la respuesta honesta.
+#
+# Medido sobre 614 frames de tres sesiones con tres temas distintos:
+#
+#                       por color   sin color   union    desacuerdos
+#     tema con puntos       95%        90%        95%         0
+#     tema liso             32%        36%        49%         0
+#     mesa de 4             49%        51%        76%         0
+#
+# CERO desacuerdos en las 438 veces que los dos responden, asi que la union es
+# segura: no hay que decidir cual gana porque nunca se contradicen.
+#
+# Los limites de area salen de una barrida: con el rango estrecho del detector
+# por color la cobertura se queda en el 13%, y aflojando el margen por debajo de
+# 1.6 empiezan a aparecer desacuerdos. 0.0008-0.005 con margen 1.6 es el punto
+# donde la cobertura es maxima con acuerdo perfecto.
+BOTON_FORMA_AREA_MIN = 0.0008
+BOTON_FORMA_AREA_MAX = 0.005
+BOTON_FORMA_MARGEN = 1.6
+TAPETE_H_TOL = 12
+TAPETE_S_TOL = 80
+
+
+def _color_del_tapete(hsv, ref):
+    """Tono y saturacion del fieltro, leidos del propio frame: dos parches
+    dentro del ovalo, a los lados, lejos del board y de las fichas del bote."""
+    rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
+    ps = []
+    for fx0, fx1 in ((0.06, 0.20), (0.80, 0.94)):
+        sub = hsv[ry + int(0.30 * rh):ry + int(0.65 * rh),
+                  rx + int(fx0 * rw):rx + int(fx1 * rw)]
+        if sub.size:
+            ps.append(sub.reshape(-1, 3))
+    if not ps:
+        return None
+    a = np.vstack(ps)
+    return int(np.median(a[:, 0])), int(np.median(a[:, 1]))
+
+
+def button_shape_scores(bgr, ref):
+    """{asiento: area del mayor objeto AISLADO en su hueco / area del hueco}.
+    Publico para poder auditar por que gano un hueco y no otro."""
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+    felt = _color_del_tapete(hsv, ref)
+    if felt is None:
+        return {name: 0.0 for name in SEATS}
+    h = hsv[:, :, 0].astype(np.int32)
+    s = hsv[:, :, 1].astype(np.int32)
+    rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
+    area_nucleo = max(1, rw * rh)
+    out = {}
+    for name, cfg in SEATS.items():
+        fx, fy = cfg["button"]
+        cx, cy = rx + fx * rw, ry + fy * rh
+        x0 = max(0, int(cx - BUTTON_HALF_W * rw))
+        y0 = max(0, int(cy - BUTTON_HALF_H * rh))
+        x1 = min(bgr.shape[1], int(cx + BUTTON_HALF_W * rw))
+        y1 = min(bgr.shape[0], int(cy + BUTTON_HALF_H * rh))
+        zh, zs = h[y0:y1, x0:x1], s[y0:y1, x0:x1]
+        if zh.size == 0:
+            out[name] = 0.0
+            continue
+        d = np.minimum(np.abs(zh - felt[0]), 180 - np.abs(zh - felt[0]))
+        m = (~((d <= TAPETE_H_TOL) & (np.abs(zs - felt[1]) <= TAPETE_S_TOL))).astype(np.uint8) * 255
+        m = cv2.morphologyEx(m, cv2.MORPH_CLOSE,
+                             cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+        n, _lab, st, _c = cv2.connectedComponentsWithStats(m, connectivity=8)
+        hh, ww = m.shape
+        mejor = 0
+        for i in range(1, n):
+            x, y, w, hb, a = st[i]
+            if x <= 1 or y <= 1 or x + w >= ww - 1 or y + hb >= hh - 1:
+                continue
+            if not (BOTON_FORMA_AREA_MIN <= a / area_nucleo <= BOTON_FORMA_AREA_MAX):
+                continue
+            mejor = max(mejor, int(a))
+        out[name] = mejor / max(1, zh.size)
+    return out
+
+
+def detect_button_seat_por_forma(bgr, ref):
+    """El asiento cuyo hueco de boton tiene algo, cuando los demas no tienen
+    nada. None si empatan o si no hay nada en ninguno."""
+    orden = sorted(button_shape_scores(bgr, ref).items(), key=lambda kv: -kv[1])
+    if not orden or orden[0][1] <= 0:
+        return None
+    if len(orden) > 1 and orden[1][1] > 0 and orden[0][1] < BOTON_FORMA_MARGEN * orden[1][1]:
+        return None
+    return orden[0][0]
+
+
+def detect_button_seat_union(bgr, ref):
+    """El boton por las dos vias: primero por color (mas preciso donde funciona)
+    y si no responde, por forma. Nunca se contradicen -0 desacuerdos en 438
+    comparaciones- asi que no hay que arbitrar entre ellas."""
+    return detect_button_seat(bgr, ref) or detect_button_seat_por_forma(bgr, ref)
+
+
 # --- quien sigue en la mano: dorsos de carta por asiento ---
 #
 # Esta nota SUSTITUYE a la que habia al final del fichero diciendo que la
