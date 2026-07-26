@@ -194,6 +194,13 @@ def resumen(directorio):
     con_cartas = con_reco = postflop = con_equity = 0
     motivos = {}
     notas = []
+    # acciones vistas por mano: es LA medida de si la vigilancia rapida cumple.
+    # La referencia con muestreo de 1,48 s eran 5,7 por mano, y una mano de 3-max
+    # tiene tipicamente 4-8 acciones.
+    manos = set()
+    acciones_max = {}
+    vigilancia = {}
+    ciclos = []
     for nombre in frames:
         try:
             with open(os.path.join(directorio, nombre)) as fh:
@@ -219,6 +226,17 @@ def resumen(directorio):
         if d.get("nota"):
             notas.append({"n": d.get("n"), "png": d.get("png"), "hora": d.get("hora"),
                           "nota": d["nota"]})
+        if d.get("duracion_analisis_s"):
+            ciclos.append(d["duracion_analisis_s"])
+        mano = st.get("mano_seguida")
+        if mano is not None:
+            manos.add(mano)
+            acc = (st.get("acciones") or {}).get("acciones") or []
+            # se queda el maximo por mano: el historial CRECE dentro de la mano,
+            # asi que el ultimo frame de cada una es el que la resume
+            acciones_max[mano] = max(acciones_max.get(mano, 0), len(acc))
+        if st.get("vigilancia"):
+            vigilancia = st["vigilancia"]
     return {
         "directorio": directorio,
         "frames": total,
@@ -228,4 +246,9 @@ def resumen(directorio):
         "con_equity": con_equity,
         "motivos_de_abstencion": dict(sorted(motivos.items(), key=lambda kv: -kv[1])),
         "notas": notas,
+        "manos": len(manos),
+        "acciones_por_mano": (round(sum(acciones_max.values()) / len(acciones_max), 1)
+                              if acciones_max else None),
+        "vigilancia": vigilancia,
+        "ciclo_medio_s": round(sum(ciclos) / len(ciclos), 2) if ciclos else None,
     }

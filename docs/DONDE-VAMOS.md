@@ -21,8 +21,13 @@ está hecho, qué toca ahora y qué depende de ti.
    saturación cero y la detección del óvalo falla al 100%; la app lo dice, pero
    no puede trabajar.
 
-Y dos que conviene: el selector **Mesa** en `3-Max` si juegas eso, y la casilla
-**"Grabar sesión de testing"** antes de darle a iniciar.
+Y dos que conviene: el selector **Mesa** con el tamaño real (o en `auto`), y la
+casilla **"Grabar sesión de testing"** antes de darle a iniciar.
+
+⚠️ **Cuidado con el selector Mesa**: si lo dejas en `3-Max` y te sientas en una
+mesa de 6, la app deja de dar recomendaciones —correctamente, porque no puede
+saber qué asiento sobra— y el síntoma es "no dice nada". Ahora lo dice en el
+panel de recomendación con la solución delante, pero en la duda déjalo en `auto`.
 
 La suite completa (528 checks):
 
@@ -55,6 +60,14 @@ Es lo único que bloquea. Graba **una sesión** con el código actual y se mide:
   El número de referencia es **5,7 por mano** (medido a 1,48 s de muestreo, con
   una mano de 3-max teniendo típicamente 4-8 acciones). Si sube claramente, el
   buffer cumple; si no, hay que mirar por qué.
+
+  Ya no hay que derivarlo a mano: `testing_session.resumen()` lo da hecho.
+
+  ```python
+  import testing_session as t
+  r = t.resumen("testing/sesion-<fecha>")
+  print(r["manos"], r["acciones_por_mano"], r["ciclo_medio_s"], r["vigilancia"])
+  ```
 - que el **ciclo de 0,68 s** se sostiene en producción con el vigilante corriendo.
 - que las nuevas recomendaciones derivadas (`RAISE OVER LIMPERS`, la opción de la
   BB) salen cuando deben y con el color ámbar que las marca como inferidas.

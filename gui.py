@@ -1095,6 +1095,14 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         for w in state.get("warnings") or []:
             if "no se encuentra la mesa" in w:
                 return w
+        # y lo segundo, porque es un ajuste que el usuario arregla en dos segundos
+        # y sin el no hay NI UNA recomendacion: haber fijado un tamaño de mesa que
+        # no es el de la mesa en la que se esta sentado. Sin nombrarlo aqui, el
+        # sintoma es "no dice nada" y no hay forma de adivinar la causa.
+        for w in state.get("warnings") or []:
+            if "asientos ocupados en una mesa de" in w:
+                return (w + ". Cambia el selector 'Mesa' de la barra de abajo al tamaño "
+                        "real, o ponlo en 'auto'.")
         cards = state.get("hero_cards") or []
         players = state.get("players") or []
         if not players and not cards:

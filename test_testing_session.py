@@ -163,6 +163,28 @@ try:
     check("y no inventa notas donde no las hay",
           all(f["n"] != 2 for f in r3["notas"]))
 
+    # --- la medida que decide si la vigilancia rapida cumple ------------------
+    # acciones vistas por mano. La referencia con muestreo de 1,48 s eran 5,7, y
+    # una mano de 3-max tiene tipicamente 4-8 acciones.
+    ses4 = tss.TestingSession(root=raiz, now=4)
+    for n, (mano, nacc) in enumerate([(1, 1), (1, 3), (2, 2), (2, 5), (2, 4)], 1):
+        ses4.guardar(None, {"state": {"mano_seguida": mano, "warnings": [],
+                                      "acciones": {"acciones": [{}] * nacc},
+                                      "vigilancia": {"ticks": 100 * n, "capsulas_ocr": 7 * n}},
+                            "duracion_analisis_s": 0.7},
+                     lambda ruta: open(ruta, "wb").write(b"png"))
+    r4 = tss.resumen(ses4.dir)
+    check("el resumen cuenta las manos seguidas", r4["manos"] == 2)
+    check("y las acciones por mano, cogiendo el MAXIMO de cada una (el historial "
+          "crece dentro de la mano, asi que el ultimo frame la resume)",
+          r4["acciones_por_mano"] == 4.0)      # (3 + 5) / 2
+    check("y el ciclo medio", r4["ciclo_medio_s"] == 0.7)
+    check("y el estado de la vigilancia rapida",
+          r4["vigilancia"]["ticks"] == 500 and r4["vigilancia"]["capsulas_ocr"] == 35)
+    r_vacio = tss.resumen(ses2.dir)
+    check("una sesion sin esos datos no revienta ni inventa un numero",
+          r_vacio["manos"] == 0 and r_vacio["acciones_por_mano"] is None)
+
     # --- marcar sin modo testing: carpeta aparte creada al vuelo ---------------
     notas = tss.TestingSession(root=raiz, now=3, prefix="notas")
     check("la sesion de solo-notas va a notas-<fecha>, no a sesion-<fecha>",
