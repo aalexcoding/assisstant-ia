@@ -279,6 +279,19 @@ inequívoco; si empata, no se dan posiciones—. El orden de evidencia es: hero 
 asiento del botón (intocables) > dorso de carta o importe en BB > nombre legible
 > solo un verbo de acción.
 
+Verificado sobre los 9 frames que aún daban un recuento imposible: con
+`max_players=3`, **7 se corrigen** (3 de ellos recuperan posición; los otros 4 no
+la tienen porque en esos frames no se ve el botón del dealer) y **2 activan la
+rama honesta** —no hay corte inequívoco, así que no se dan posiciones—. **Ninguno
+queda con una lectura imposible.** El balance completo:
+
+```
+frames con recuento imposible (>3 en un 3-Max), muestra de 160
+    antes                       58
+    sin el entero suelto         9
+    + tope manual en 3-Max       0
+```
+
 Lección general, la tercera vez que muerde lo mismo: **una señal heredada de una
 etapa anterior se vuelve un falso positivo cuando cambia el contexto.** Ya pasó
 con el área del botón en píxeles absolutos y con las zonas de apuesta.
