@@ -19,6 +19,7 @@ import color_card_detector
 import color_rank_ocr
 import glyph_card_detector
 import dealer_button
+import rango_directo
 import seat_map
 from card_detector import classify_boxes, find_card_boxes
 from ocr_client import OcrBatch
@@ -457,7 +458,7 @@ def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
 
 
 def analyze_layout(image_path, max_players=None, asientos_estables=None,
-                   plantilla_boton=None, referencia=None):
+                   plantilla_boton=None, referencia=None, escala_glifo=None):
     """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
     produccion para el cliente real de PokerStars capturado limpio. Ancla una
     referencia independiente del color (nucleo del tapete por contraste) y lee
@@ -481,6 +482,13 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     del RECUENTO de asientos ocupados y un asiento fantasma las desplaza todas.
     Con este dato, detectar de mas es una contradiccion demostrable y se puede
     corregir o, si no esta claro cual sobra, callarse.
+
+    escala_glifo: rango_directo.EscalaGlifo de la sesion. Si se pasa, cuando la
+    cadena normal no saque las DOS cartas del hero se intenta leerlas deslizando
+    las plantillas de rango sobre la zona (ver rango_directo). Es el camino que
+    salva las cartas CORTADAS por el nameplate, que la cadena normal no puede
+    segmentar. Medido sobre 300 frames: 167 -> 177 frames con las dos cartas,
+    sin una sola contradiccion entre los dos caminos.
 
     TODOS LOS IMPORTES EN BIG BLINDS. Requiere el cliente de PokerStars
     configurado para mostrarlos asi; si no lo esta, no se leen y la app se
@@ -687,6 +695,39 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # SIEMPRE con in_hand=False: 883 de 883 registros en las sesiones grabadas,
     # incluidos los 484 frames en que si tenia cartas.
     state["hero_cards"], hero_unresolved = _resolve_zone_cards(bgr, hero_px, results, hero_jobs)
+    # SEGUNDO CAMINO para las cartas del hero, solo si el primero no saco las dos.
+    # No es un reemplazo ni un desempate: el de arriba manda siempre. Este entra
+    # donde el otro no llega -las cartas del hero salen cortadas por su propio
+    # nameplate, asi que no hay caja de carta que segmentar- y por eso no hace
+    # falta arbitrar entre los dos. Medido sobre 300 frames de una sesion real:
+    # 167 frames con las dos cartas -> 177, y en los 153 frames en que los dos
+    # caminos leyeron dos cartas coincidieron las 153 veces.
+    #
+    # Los 10 frames que gana no se pueden contrastar con el otro camino -por
+    # definicion, entra porque el otro fallo-, asi que se validaron por
+    # CONTINUIDAD: la mano del hero no cambia de un frame al siguiente, asi que
+    # la lectura tiene que coincidir con la de los frames vecinos que si resolvio
+    # la cadena normal. Los 10 coinciden, incluidos los 8 en que no habia ni una
+    # caja de carta que mirar.
+    #
+    # OJO CON hero_cards_dimmed: se calcula de las cajas de la cadena normal, y
+    # este camino entra justo cuando no hay cajas (10 de los 300 frames), asi que
+    # ahi saldria False por omision. No es un agujero porque rango_directo NO PUEDE
+    # leer una carta apagada: su mascara exige tinta con V>170 y la cara apagada
+    # esta a V=77. Medido sobre los 37 frames con cartas apagadas de las ocho
+    # sesiones grabadas: en los 37 este camino no lee nada. Ver el docstring de
+    # rango_directo.mascara_zona y su caso de regresion.
+    if len(state["hero_cards"]) != 2 and escala_glifo is not None:
+        alto = escala_glifo.de(bgr[hero_px[1]:hero_px[3], hero_px[0]:hero_px[2]])
+        if alto:
+            leidas = []
+            for _x, rango, palo, _pico in rango_directo.leer_zona(
+                    bgr[hero_px[1]:hero_px[3], hero_px[0]:hero_px[2]], alto):
+                codigo = card_code(rango, palo)
+                if codigo and codigo not in leidas:
+                    leidas.append(codigo)
+            if len(leidas) == 2:      # dos y solo dos: el hero no tiene mas
+                state["hero_cards"] = leidas
     # cartas apagadas = el hero ya se retiro de esta mano (ver glyph_card_detector).
     # Se conservan las cartas -sirven para el repaso post-mano- pero el motor no
     # recomienda sobre ellas y el hero no cuenta como jugador en mano.

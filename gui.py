@@ -41,6 +41,7 @@ import postmano
 from ocr_client import OcrBatch, cerrar_workers
 from text_extract import parse_tsv_lines
 import portal_capture as pc
+import rango_directo
 import seat_map
 import seat_watch as sw
 import table_state as ts
@@ -143,6 +144,10 @@ class AnalysisWorker(threading.Thread):
         # El ovalo del tapete no se mueve mientras juegas: se fija con las
         # primeras lecturas buenas y se reutiliza. Ver seat_map.ReferenciaFijada.
         self.referencia = seat_map.ReferenciaFijada()
+        # El tamaño del numero de las cartas tampoco cambia mientras no cambie la
+        # ventana: se busca con los primeros frames y se fija, en vez de barrer 21
+        # escalas en cada uno. Ver rango_directo.EscalaGlifo.
+        self.escala_glifo = rango_directo.EscalaGlifo()
         super().__init__(daemon=True)
         self.win = win
         self.interval = interval
@@ -262,7 +267,8 @@ class AnalysisWorker(threading.Thread):
         state = ts.analyze_layout(TMP_FRAME_PATH, max_players=self.max_players,
                                   asientos_estables=self.tracker.asientos_estables(),
                                   plantilla_boton=self.plantilla_boton,
-                                  referencia=self.referencia)
+                                  referencia=self.referencia,
+                                  escala_glifo=self.escala_glifo)
         # la referencia del tapete se guarda para el lazo rapido, que no puede
         # permitirse recalcularla (29 ms) diez veces por segundo
         try:
