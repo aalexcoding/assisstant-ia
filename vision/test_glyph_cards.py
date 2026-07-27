@@ -547,9 +547,12 @@ check(f"dos plantillas de rangos DISTINTOS no pasan de {mejor_ajeno:.3f}",
 check("cada plantilla se identifica a si misma por argmax",
       all(etiquetas[int(np.argmax(M @ M[i]))] == r for i, r in enumerate(etiquetas)))
 
-check("el umbral es el 90% CALCADO, no un coeficiente: significa que 9 de cada "
-      "10 pixeles del glifo coinciden con la plantilla",
-      color_rank_ocr.GLIFO_UMBRAL == 0.90)
+check("el umbral es el 95% CALCADO, no un coeficiente: significa que 95 de cada "
+      "100 pixeles del glifo coinciden con la plantilla",
+      color_rank_ocr.GLIFO_UMBRAL == 0.95)
+check("y esta por encima del 90% a proposito: los glifos REDONDOS (3, 6, 8, 9) "
+      "ganan a su segunda opcion por menos de 0.12, asi que ahi un falso "
+      "positivo seria silencioso", color_rank_ocr.GLIFO_UMBRAL >= 0.95)
 
 
 def _calcado(g_bin, i):

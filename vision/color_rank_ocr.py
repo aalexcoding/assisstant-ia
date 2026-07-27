@@ -405,7 +405,7 @@ GLIFO_LADO = 40
 #
 # Con 0.90 de acuerdo entra el 95% de los glifos enteros y ningun cortado se
 # acerca: el peor llega a 0.582, o sea 32 puntos de margen.
-GLIFO_UMBRAL = 0.90
+GLIFO_UMBRAL = 0.95
 _GLIFOS = None
 
 
