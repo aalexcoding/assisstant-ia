@@ -354,6 +354,47 @@ Pendiente de decidir con el usuario si merece la pena para las dos rotas o solo
 para la negra (depende de si juega Mystery Bounty a menudo). El catálogo y las
 mediciones están escritos en `vision/seat_map.py` (commit `d4ba436`).
 
+#### El tapete también choca con el COLOR DE UN PALO, y eso cuesta la equity
+
+Encontrado el 2026-07-27 tirando del hilo de "ya no me salen las probabilidades
+de ganar". No es que fallara el tapete —se detecta al 95%— ni la equity: es que
+**el fieltro de la mesa verde clara cae dentro del perfil de color del trébol**.
+
+| sesión | fieltro | el perfil `club` cubre del fieltro | del frame |
+|---|---|---|---|
+| 224024 (verde oscuro) | H68 S200 V110 | 0% | 0,6% |
+| 230132 (verde claro) | H49 S148 V150 | **100%** | **22,4%** |
+
+La app ve el tapete como una carta de trébol gigante, así que no puede segmentar
+las cartas del hero: **135/150 → 84/150**, y los 63 frames perdidos son
+exactamente los que dan cero cajas de carta. Sin cartas no hay equity: de 51
+frames con board, las 45 abstenciones son *todas* "no se ven tus 2 cartas".
+
+No es una regresión: las sesiones 224024 y 230132 corrieron el **mismo commit**
+y dieron 87% y 15%.
+
+**El arreglo obvio NO vale, y está medido.** La idea era leer el color del
+fieltro del propio frame y excluirlo de los perfiles de palo. Pero en el mazo de
+dos tonos, sobre 465 cuerpos de carta de 13 sesiones:
+
+| | H | S | V |
+|---|---|---|---|
+| cuerpo de **trébol** | 48 | 139 | 127-135 |
+| **fieltro verde claro** | 49 | 148 | 148-150 |
+
+Son el mismo color. Excluir el fieltro borraría los tréboles.
+
+Rompe además el segundo camino (`rango_directo`), porque su máscara exige tinta
+blanca *pegada a un cuerpo de carta* y con el fieltro contando como cuerpo eso
+deja pasar todo el texto blanco de la UI.
+
+**Lo que queda por probar**: separar carta de fieltro por algo que no sea el
+color de relleno —el borde del naipe, o que el fieltro de esta mesa lleva trama
+de puntos y la carta es lisa—. Ojo: la textura ya se descartó como criterio
+*universal* (los fieltros naranjas salen más rugosos que el fondo), pero para
+esta mesa concreta sí podría servir, que es otra vez el mismo patrón: **hace
+falta saber qué mesa es antes de elegir la regla**.
+
 ### 2.0d · Asiento fantasma: el fallo más caro que ha tenido la app — ✅ ARREGLADO
 
 Salió revisando una sesión de un torneo **3-Max**. La app detectaba **4 jugadores
