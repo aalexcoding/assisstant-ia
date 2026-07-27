@@ -385,13 +385,25 @@ def _cajas_de_carta(bgr, zona_px, esperadas=None):
 
     No se mezclan resultados de los dos: un mazo u otro, nunca cartas de ambos.
     Cada caja lleva su `deck` para que color_rank_ocr lea el rango con la
-    polaridad que toca."""
-    cajas = glyph_card_detector.find_card_boxes(bgr, zona_px, esperadas)
-    if cajas:
-        return cajas
-    return [dict(b, deck="solid", dimmed=False)
-            for b in sorted(color_card_detector.find_card_boxes(bgr, zona_px),
-                            key=lambda b: b["x"])]
+    polaridad que toca.
+
+    GANA EL QUE ENCUENTRA MAS CARTAS, no el que responda primero. Antes bastaba
+    con que el de cara blanca devolviera algo para quedarse con el, y con el mazo
+    de fondo solido nuevo eso costaba caro: devolvia 1 o 2 cajas basura -que NUNCA
+    resuelven un rango- mientras el otro encontraba el board entero. Medido sobre
+    la sesion del 27-07 a las 02:32:
+
+        glifo 0 / solido 3-5   11 frames   rango leido 3/3, 4/4, 5/5
+        glifo 1 / solido 3-5   13 frames   rango leido 0/1   <- tapaba al bueno
+        glifo 2 / solido 3-5    8 frames   rango leido 0/2   <- idem
+
+    En el mazo de cara blanca la regla no cambia nada: alli el de fondo solido
+    encuentra 0 y el de glifo 2-5, asi que sigue ganando el mismo."""
+    glifo = glyph_card_detector.find_card_boxes(bgr, zona_px, esperadas)
+    solido = [dict(b, deck="solid", dimmed=False)
+              for b in sorted(color_card_detector.find_card_boxes(bgr, zona_px),
+                              key=lambda b: b["x"])]
+    return glifo if len(glifo) >= len(solido) else solido
 
 
 def _encolar_cartas(batch, bgr, boxes):
