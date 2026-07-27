@@ -395,6 +395,55 @@ def _agresor_del_log(state):
     return agresor
 
 
+def _hay_que_igualar(state):
+    """Importe (>1bb) que el boton "Igualar" esta pidiendo, o None.
+
+    Es la evidencia INDEPENDIENTE de que hay una subida enfrente: el propio
+    cliente pidiendo dinero. Solo se usa para ABSTENERSE o para disparar la
+    atribucion, nunca para construir una recomendacion -ver el docstring de
+    seat_map.parse_to_call_bb-."""
+    v = state.get("to_call")
+    return v if isinstance(v, (int, float)) and v > BB else None
+
+
+def _log_dice_que_subieron(state):
+    """True si lo ULTIMO que vio el historial fue a alguien SUBIR.
+
+    Misma asimetria que en _contar_limpers y _agresor_del_log: solo se usa la
+    PRESENCIA del verbo, nunca su ausencia. El historial viene con
+    completo=False, asi que "no he visto ninguna subida" no significa que no la
+    haya; pero haber visto un "Subir" si demuestra que la hubo.
+
+    DOS RECORTES, y los dos salen de medir sobre 4.749 frames preflop de 15
+    sesiones, contando cuantas recomendaciones se pierden:
+
+        se mira...                                    pierde
+        nada (solo to_call)                              28
+        cualquier subida de la mano                     485   <- inaceptable
+        la ULTIMA accion, sea de quien sea              204
+        la ultima accion Y QUE NO SEA DEL HERO          111   <- esta
+
+    1. SOLO LA ULTIMA ACCION, no toda la mano. El historial acumula la mano
+       entera, asi que una subida ya respondida bloqueaba el camino de "bote sin
+       abrir" durante el resto de la mano.
+    2. Y QUE NO SEA DEL PROPIO HERO. De los 204 que se perdian, 91 no tenian
+       NINGUNA prueba independiente de subida, y al mirarlos eran todos el mismo
+       caso: la ultima accion vista era el hero subiendo. El motor se bloqueaba
+       a si mismo.
+
+    Lo que queda es justo lo que el usuario anoto ("el que esta a mi derecha ha
+    subido y a mi no me lo ha detectado rapido"): un RIVAL acaba de subir y
+    todavia nadie ha respondido. De esos 111, 28 traen ademas to_call>1, 76 una
+    bajada de stack de mas de 1,35bb en algun rival y 50 un importe dibujado en
+    la mesa: casi todos con corroboracion independiente."""
+    acciones = (state.get("acciones") or {}).get("acciones") or []
+    if not acciones:
+        return False
+    ultima = acciones[-1]
+    return (ultima.get("accion") in ("raise", "allin")
+            and ultima.get("seat") != "HERO")
+
+
 _RAISE_ABSTAIN = {
     "multiway": "hay varias apuestas por encima de la ciega (bote multiway o 3bet ya "
                 "presente); no se recomienda defensa contra una posicion incierta",
@@ -592,8 +641,8 @@ def decide(state):
             # -tipicamente porque el OCR del importe de la mesa fallo-. Seguir por
             # open_raise ahi seria recomendar el rango de APERTURA enfrentando una
             # subida: plausible y falso, el peor fallo posible en esta app.
-            to_call = state.get("to_call")
-            if isinstance(to_call, (int, float)) and to_call > BB:
+            to_call = state.get("to_call") if _hay_que_igualar(state) else None
+            if to_call is not None:
                 # El importe dibujado en la mesa no explica la subida -es el caso
                 # mayoritario: 59% de los frames preflop con to_call>1-, pero la
                 # BAJADA DE STACK del rival entre frames si puede. Ver
@@ -616,6 +665,42 @@ def decide(state):
                         f"el boton pide {to_call:g} BB para igualar, o sea que hay una subida, "
                         f"pero ningun asiento la explica: ni el importe dibujado en la mesa ni "
                         f"la bajada de stack entre frames ({detalle}); sin defensa fiable")
+
+    # LA RED DE to_call TAMBIEN VALE SIN BOTONES LEIDOS. Estaba dentro del
+    # if facing=="bet", o sea que solo se aplicaba en el 10% de los frames en que
+    # se leen los botones; en el resto un to_call de 2bb se tiraba entero y el
+    # motor seguia como si el bote estuviera sin abrir.
+    #
+    # Lo cazo el usuario jugando (28-07-2026, frame 0181): era la BB, el boton
+    # pedia 2 BB y el historial habia visto "Subir" en el asiento de su derecha,
+    # y aun asi la app le dijo "opcion de la BB, nadie ha subido" y le sirvio un
+    # RAISE OVER LIMPERS. Su nota: "no entiendo porque me dice que suba sobre
+    # limpers, yo era ciega".
+    #
+    # parse_facing y parse_to_call_bb leen la MISMA zona por caminos distintos,
+    # asi que uno puede fallar y el otro no. Fiarse solo de facing tira la
+    # evidencia mas dura que hay: el cliente pidiendo un importe.
+    if facing == "open_raise":
+        to_call = _hay_que_igualar(state)
+        subida_en_log = _log_dice_que_subieron(state)
+        if to_call is not None or subida_en_log:
+            pos_derivada, detalle = hand_tracker.atribuir_subida(
+                state.get("players", []), to_call or 0)
+            if pos_derivada is not None and _habla_antes(pos_derivada, hero_position):
+                vs_position = pos_derivada
+                facing = "threebet_call"
+                origen_subida = (f"subida atribuida a {pos_derivada} por su bajada de "
+                                 f"stack entre frames (los botones no se leyeron)")
+            else:
+                prueba = []
+                if to_call is not None:
+                    prueba.append(f"el boton pide {to_call:g} BB para igualar")
+                if subida_en_log:
+                    prueba.append("lo ultimo que se vio en la mesa fue a un rival SUBIR")
+                return abstain(
+                    f"{' y '.join(prueba)}, o sea que el bote NO esta sin abrir, pero no se "
+                    f"ha podido atribuir la subida a ningun asiento ({detalle}); sin defensa "
+                    f"fiable. No se recomienda como si nadie hubiera subido")
 
     if facing == "threebet_call":
         # GUARDA ESTRUCTURAL: sus tablas de defensa solo cubren raisers que hablan

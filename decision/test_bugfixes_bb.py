@@ -378,6 +378,59 @@ check("el ante tambien es 'post' y tampoco convierte a nadie en limper",
       _limpers_log([("TOPC", "MP2", 1.0)],
                    [{"seat": "TOPC", "accion": "post", "verbo": "Ante"}]) == 0)
 
+# --- SIN BOTONES LEIDOS, EL BOTE PUEDE ESTAR SUBIDO IGUAL --------------------
+# Toda la deteccion de subida vivia dentro de `if facing == "bet"`, incluida la
+# red de to_call. Pero los botones solo se leen en ~el 10% de los frames, asi
+# que en el resto un to_call de 2bb se tiraba entero y el motor seguia como si
+# el bote estuviera sin abrir.
+#
+# Lo cazo el usuario jugando (28-07-2026, sesion 004126), dos notas que son el
+# mismo fallo visto desde dos sitios:
+#   frame 0181, era la BB, el boton pedia 2 BB -> la app dijo RAISE OVER LIMPERS
+#               ("no entiendo porque me dice que suba sobre limpers, yo era ciega")
+#   frame 0247, era la SB, el historial acababa de ver "Subir" a su derecha
+#               -> la app dijo LIMP ("ha subido y a mi no me lo ha detectado rapido")
+print("\n# --- sin botones leidos, el bote puede estar subido igual ---")
+
+
+def _decide(hero_pos, cartas, to_call=None, acciones=None, rivales=()):
+    st = {"board": [], "hero_cards": list(cartas), "stack_unit": "bb",
+          "hero_position": hero_pos, "facing": None, "to_call": to_call,
+          "acciones": {"acciones": list(acciones or []), "completo": False},
+          "players": [dict(P(hero_pos, None, hero=True), stack=60.0, seat="HERO")]
+                     + [dict(P(pos, bet), stack=60.0, seat=s)
+                        for s, pos, bet in rivales],
+          "warnings": []}
+    return engine.decide(st), st
+
+
+_r, _st = _decide("BB", ["Ks", "9d"], to_call=2.0)
+check("con facing=None pero el boton pidiendo 2 BB, NO se recomienda como bote "
+      "sin abrir (frame 0181 del usuario)", _r is None)
+check("y el motivo nombra el importe que pide el boton",
+      any("2 BB para igualar" in w for w in _st["warnings"]))
+
+_SUBE = [{"seat": "MR", "accion": "raise", "verbo": "Subir"}]
+_r, _st = _decide("SB", ["Ah", "7c"], acciones=_SUBE)
+check("si lo ULTIMO que se vio fue a un rival subir, tampoco (frame 0247)",
+      _r is None)
+
+# los dos recortes que hacen que esto no se coma las recomendaciones buenas
+_r, _st = _decide("SB", ["Ah", "7c"],
+                  acciones=_SUBE + [{"seat": "UL", "accion": "call"}])
+check("una subida YA RESPONDIDA no bloquea: se mira la ultima accion, no toda "
+      "la mano (asi se pasa de perder 485 recomendaciones a 204)",
+      _r is not None)
+_r, _st = _decide("BTN", ["Ah", "Kd"],
+                  acciones=[{"seat": "HERO", "accion": "raise", "verbo": "Subir"}])
+check("y la subida del PROPIO HERO no le bloquea a el mismo (de 204 a 111)",
+      _r is not None)
+_r, _st = _decide("BTN", ["Ah", "Kd"])
+check("sin ninguna señal, se recomienda como siempre", _r is not None)
+_r, _st = _decide("BTN", ["Ah", "Kd"], to_call=0.5)
+check("un to_call de media ciega (la SB completando) no es una subida",
+      _r is not None)
+
 # --- postflop_equity: separado de decide(), y abstenerse antes que inflar ------
 # El riesgo real de este camino es contar MENOS rivales de los que hay (en
 # showdown las cartas se giran y los dorsos desaparecen), porque eso INFLA la
