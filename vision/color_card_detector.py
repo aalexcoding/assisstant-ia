@@ -107,7 +107,53 @@ def find_card_boxes(bgr, region=None):
             if not (AR_MIN <= ar <= AR_MAX):
                 continue
             boxes.append({"x": rx0 + x, "y": ry0 + y, "w": w, "h": hh, "suit": suit})
-    return boxes
+    return _limpiar(boxes)
+
+
+# Ancho de carta admisible, en fracciones del ancho MEDIANO de la zona. Las
+# cartas de una misma mesa miden todas lo mismo, asi que una caja que se sale de
+# ahi no es una carta.
+ANCHO_MIN_FRAC = 0.60
+ANCHO_MAX_FRAC = 1.60
+
+
+def _solapan(a, b):
+    return (a["x"] < b["x"] + b["w"] and b["x"] < a["x"] + a["w"] and
+            a["y"] < b["y"] + b["h"] and b["y"] < a["y"] + a["h"])
+
+
+def _limpiar(boxes):
+    """Quita cajas imposibles: las que miden mucho mas o mucho menos que una
+    carta, y las que se SOLAPAN con otra.
+
+    POR QUE. Las fichas del bote se apoyan encima de las cartas, y cuando el chip
+    es rojo y la carta tambien SE FUNDEN en un solo blob. Ese blob sigue pasando
+    el filtro de forma -183x140 da 1.31 de proporcion, dentro del 0.6-2.0- asi
+    que salia como una carta mas, encima de las buenas: boards de SEIS cartas,
+    con la misma carta contada dos veces. Medido en la sesion del 27-07 a las
+    04:00, frame 18:
+
+        x=481 w= 57  heart     <- fragmento
+        x=481 w=183  heart     <- el MISMO sitio, dos cartas fundidas
+        x=547 w= 83  heart     x=641 w=82   x=732 w=83   x=824 w=82
+
+    Dos cartas del board NUNCA se solapan y todas miden lo mismo, asi que las dos
+    reglas son estructurales, no umbrales tanteados. Con menos de 3 cajas no se
+    aplica el filtro de ancho: no hay mediana fiable y la mano del hero son 2."""
+    if not boxes:
+        return boxes
+    orden = sorted(boxes, key=lambda b: b["x"])
+    if len(orden) >= 3:
+        anchos = sorted(b["w"] for b in orden)
+        med = anchos[len(anchos) // 2]
+        orden = [b for b in orden
+                 if ANCHO_MIN_FRAC * med <= b["w"] <= ANCHO_MAX_FRAC * med]
+    fuera = []
+    for b in orden:
+        if any(_solapan(b, y) for y in fuera):
+            continue
+        fuera.append(b)
+    return fuera
 
 
 def _group_rows(boxes):

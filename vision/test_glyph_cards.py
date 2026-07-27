@@ -446,6 +446,43 @@ for deck, carta in (("solid", carta_vieja), ("glyph", carta_glifo)):
     check(f"[{deck}] y sigue teniendo tinta dentro (no se ha recortado a nada)",
           (ancla[:, :, 0] < 128).sum() > 0)
 
+print("\n# --- una carta no se solapa con otra ni mide el doble ---")
+# Las fichas del bote se apoyan encima de las cartas, y cuando el chip es rojo y
+# la carta tambien SE FUNDEN. El blob resultante sigue pasando el filtro de forma
+# (183x140 da 1.31, dentro del 0.6-2.0) y salia como una carta MAS, encima de las
+# buenas: boards de SEIS cartas con una contada dos veces.
+def fila_solida(n, palo="heart", w=83, h=117, hueco=11):
+    img = np.full((h + 60, 60 + n * (w + hueco) + 60, 3), TAPETE, dtype=np.uint8)
+    bgr = cv2.cvtColor(np.uint8([[list(NUEVOS[palo])]]), cv2.COLOR_HSV2BGR)[0][0].tolist()
+    for i in range(n):
+        x = 60 + i * (w + hueco)
+        cv2.rectangle(img, (x, 30), (x + w, 30 + h), bgr, -1)
+        cv2.putText(img, "K", (x + 18, 30 + int(h * 0.6)), cv2.FONT_HERSHEY_SIMPLEX,
+                    h / 90.0, (255, 255, 255), 4)
+    return img
+
+
+limpio = fila_solida(5)
+check("cinco cartas separadas dan cinco cajas",
+      len(solido.find_card_boxes(limpio)) == 5)
+
+# un chip del mismo color puenteando dos cartas: las funde en un blob doble
+fundido = fila_solida(5).copy()
+bgr_h = cv2.cvtColor(np.uint8([[list(NUEVOS["heart"])]]), cv2.COLOR_HSV2BGR)[0][0].tolist()
+cv2.circle(fundido, (60 + 83 + 5, 30 + 110), 26, bgr_h, -1)   # chip rojo entre 2 cartas
+cajas = solido.find_card_boxes(fundido)
+check("con un chip del mismo color puenteando dos cartas NO salen mas de cinco",
+      len(cajas) <= 5)
+check("y ninguna caja se solapa con otra",
+      all(not (a["x"] < b["x"] + b["w"] and b["x"] < a["x"] + a["w"])
+          for i, a in enumerate(cajas) for b in cajas[i + 1:]))
+anchos = [c["w"] for c in cajas]
+check("ni mide el doble que las demas (seria dos cartas fundidas)",
+      not anchos or max(anchos) <= 1.6 * sorted(anchos)[len(anchos) // 2])
+
+check("con solo 2 cajas no se filtra por ancho: la mano del hero son 2 y no hay "
+      "mediana fiable", len(solido.find_card_boxes(fila_solida(2))) == 2)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
