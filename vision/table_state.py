@@ -318,6 +318,40 @@ def es_verbo_de_accion(texto):
     return bool(limpio) and limpio in SEAT_STATUS_WORDS
 
 
+# --- veto de asiento vacio: si no hay CAPSULA, no hay nadie ------------------
+#
+# El nameplate es una capsula GRIS MUY OSCURA Y CASI SIN COLOR. Un asiento vacio
+# no tiene nada: se ve el tapete, el rail y el papel de pared.
+#
+# Este modulo ya intento algo parecido y lo descarto -ver el comentario de la
+# ocupacion por contenido- porque "las sillas granate son tan oscuras como la
+# capsula". Es cierto, pero solo si se mira el BRILLO. El granate esta SATURADO
+# y la capsula no, asi que exigiendo las dos cosas si se separan.
+#
+# Medido sobre 2.856 zonas de asiento de 15 sesiones y seis temas de mesa, la
+# fraccion de pixeles "oscuros y sin color" sale BIMODAL con hueco:
+#
+#     0.00-0.05   217 zonas     <- vacias
+#     0.05-0.10     3 zonas     <- el hueco
+#     0.10-1.00  2636 zonas     <- con plate
+#
+# Las 179 zonas de menos de 0.05 (sin contar al hero) se revisaron a ojo por
+# muestreo: todas son tapete y papel de pared, sin plate ni sillas ni texto.
+# En el frame que lo destapo (0301 de la sesion 012453) el asiento vacio da
+# 0.005 y los cuatro ocupados 0.357-0.443.
+CAPSULA_S_MAX, CAPSULA_V_MAX = 70, 70
+# en el centro del hueco medido, con margen por los dos lados
+CAPSULA_MIN_FRAC = 0.07
+
+
+def _hay_capsula(plate_bgr):
+    if plate_bgr.size == 0:
+        return True                # sin zona que mirar no se veta nada
+    hsv = cv2.cvtColor(plate_bgr, cv2.COLOR_BGR2HSV)
+    s, v = hsv[:, :, 1], hsv[:, :, 2]
+    return float(((s < CAPSULA_S_MAX) & (v < CAPSULA_V_MAX)).mean()) >= CAPSULA_MIN_FRAC
+
+
 def _plate_occupied(lines):
     """True si la zona del nameplate contiene texto propio de un asiento
     ocupado: un importe en BB, un nombre (por palabra suelta, para pillar
@@ -566,11 +600,13 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # del hero se ancla a sus cartas (hero_plate_px); si no las hay ese frame
     # (entre manos), cae a la fraccion fija del ovalo.
     seat_tsv = {}
+    seat_plate_px = {}
     for name in seat_map.SEATS:
         if name == seat_map.HERO_SEAT and hero_plate_px is not None:
             x0, y0, x1, y1 = hero_plate_px
         else:
             x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.SEATS[name]["plate"], bgr.shape)
+        seat_plate_px[name] = (x0, y0, x1, y1)
         seat_tsv[name] = batch.add_tsv_job(bgr[y0:y1, x0:x1], scale=3)
     # importe apostado por asiento (zona hacia el centro del tapete), para
     # inferir quien subio; se encola para todos y luego se lee solo en los
@@ -619,6 +655,12 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         n, _stk_chips, accion = _seat_plate_name_stack(lines)
         stk = seat_map.parse_amount_bb(lines)
         occ = True if name == seat_map.HERO_SEAT else _plate_occupied(lines)
+        # VETO: si ahi no hay ni capsula de nameplate, no hay nadie, diga lo que
+        # diga el OCR. Solo QUITA asientos, nunca los inventa.
+        if occ and name != seat_map.HERO_SEAT:
+            z = seat_plate_px[name]
+            if not _hay_capsula(bgr[z[1]:z[3], z[0]:z[2]]):
+                occ = False
         if occ:
             bet_lines = parse_tsv_lines(results[bet_tsv[name]])
             occupied[name] = {"name": n, "stack": stk, "action": accion,
