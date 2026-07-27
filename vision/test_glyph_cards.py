@@ -165,10 +165,25 @@ check("y lo que queda esta en la parte de ARRIBA de la carta, que es donde va "
 check("queda algo: aislar no puede dejar la carta en blanco", ys_a.size > 0)
 # en el mazo de fondo solido el aislamiento es GEOMETRICO (la franja de arriba)
 # y no por componentes: alli el rango siempre esta en el mismo sitio.
+# LOS DOS MAZOS aislan por componentes, no por una fraccion de la altura: las
+# cartas del hero salen cortadas por su nameplate y una fraccion fija les parte
+# el numero. Ese era el motivo de que hubiera que ELEVARLAS para leerlas.
 solo_arriba = color_rank_ocr.rango_grande_mask(carta_k, "solid")
-corte = int(carta_k.shape[0] * color_rank_ocr.RANGO_ARRIBA_FRAC)
-check("en el mazo de fondo solido se aisla por geometria: nada por debajo del "
-      "corte", (solo_arriba[corte:] > 0).sum() == 0)
+entera_k = color_rank_ocr.rank_mask(carta_k, "solid")
+check("en el mazo de fondo solido tambien se aisla por componentes",
+      np.array_equal(solo_arriba,
+                     color_rank_ocr._fila_de_arriba(entera_k)))
+
+# UNA CARTA CORTADA por el nameplate: el glifo ocupa casi toda la franja visible.
+# Es el caso real que obligaba al usuario a elevar sus cartas con el raton.
+franja = np.full((53, 83, 3), (60, 60, 200), np.uint8)      # fondo de color
+cv2.putText(franja, "K", (18, 45), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (255, 255, 255), 4)
+m_franja = color_rank_ocr.rango_grande_mask(franja, "solid")
+ys = np.where(m_franja > 0)[0]
+ys_ent = np.where(color_rank_ocr.rank_mask(franja, "solid") > 0)[0]
+check("en una carta CORTADA no se pierde la parte de abajo del glifo al aislarlo "
+      "(una fraccion fija de la altura si la perdia)",
+      len(ys) > 0 and ys.max() >= ys_ent.max() - 1)
 
 print("\n# --- las 2 cartas del hero se dibujan PEGADAS, sin hueco ---")
 def pegadas(palos, alto=73):
@@ -411,8 +426,10 @@ def carta_solida(hsv_color, w=83, h=117):
     bgr = cv2.cvtColor(np.uint8([[list(hsv_color)]]), cv2.COLOR_HSV2BGR)[0][0].tolist()
     oscuro = [max(0, int(x * 0.72)) for x in bgr]
     cv2.rectangle(img, (30, 30), (30 + w, 30 + h), bgr, -1)
-    cv2.putText(img, "K", (48, 30 + int(h * 0.45)), cv2.FONT_HERSHEY_SIMPLEX,
-                h / 110.0, (255, 255, 255), 4)
+    # el rango ocupa entre el 4,7% y el 15,7% del recorte en las cartas reales;
+    # dibujarlo pequeño lo tira el filtro de ruido y el molde deja de valer
+    cv2.putText(img, "K", (34, 30 + int(h * 0.52)), cv2.FONT_HERSHEY_SIMPLEX,
+                h / 62.0, (255, 255, 255), 7)
     cv2.circle(img, (30 + w // 2, 30 + int(h * 0.80)), max(6, h // 9), oscuro, -1)
     return img
 

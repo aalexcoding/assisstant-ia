@@ -203,18 +203,32 @@ def _fila_de_arriba(mask):
 # cartas mas altas. Es la misma idea que _fila_de_arriba resuelve por componentes
 # en el otro mazo; aqui basta con la geometria porque el rango siempre esta en el
 # mismo sitio.
-RANGO_ARRIBA_FRAC = 0.65
+# RETIRADO: el recorte del rango era una fraccion fija de la altura de la carta
+# (0.65). Ver rango_grande_mask para por que se cayo -partia el glifo en las
+# cartas del hero, que salen cortadas por el nameplate- y para la medicion.
 
 
 def rango_grande_mask(card_bgr, deck="solid"):
-    """Mascara del rango solo, sin el pip ni lo que se apoye en la carta."""
-    mask = rank_mask(card_bgr, deck)
-    if deck == "glyph":
-        return _fila_de_arriba(mask)
-    corte = max(1, int(mask.shape[0] * RANGO_ARRIBA_FRAC))
-    recortada = mask.copy()
-    recortada[corte:, :] = 0
-    return recortada
+    """Mascara del rango solo, sin el pip ni lo que se apoye en la carta.
+
+    SE AISLA POR COMPONENTES EN LOS DOS MAZOS, no por una fraccion de la altura.
+    La fraccion parecia equivalente y mas simple, y funcionaba mientras la carta
+    estuviera ENTERA. Pero las cartas del hero salen CORTADAS por su propio
+    nameplate -se ve una franja de 51 a 66 px de los 117 que mide la carta- y ahi
+    la fraccion se come el numero: en un frame real la caja media 83x53, el corte
+    caia en y=34 y el glifo ocupaba de y=10 a y=45. Partido por la mitad.
+
+    Ese era el motivo de que el usuario tuviera que ELEVAR sus cartas con el raton
+    para que se reconocieran: al elevarlas se ve mas carta, el corte deja de
+    tocar el glifo y vuelve a leerse. Medido sobre cartas etiquetadas:
+
+                        board    cartas del hero
+        por fraccion    24/25         2/6
+        por componentes 24/25         6/6
+
+    Aislar por componentes no depende de cuanta carta se vea, que es justo la
+    propiedad que hacia falta."""
+    return _fila_de_arriba(rank_mask(card_bgr, deck))
 
 
 def _recortar(mask):
