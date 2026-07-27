@@ -163,9 +163,12 @@ ys_c = np.where(completa > 0)[0]
 check("y lo que queda esta en la parte de ARRIBA de la carta, que es donde va "
       "el rango", ys_a.max() < ys_c.max())
 check("queda algo: aislar no puede dejar la carta en blanco", ys_a.size > 0)
-check("en el mazo de fondo solido no se aisla nada (el rango ya domina)",
-      np.array_equal(color_rank_ocr.rango_grande_mask(carta_k, "solid"),
-                     color_rank_ocr.rank_mask(carta_k, "solid")))
+# en el mazo de fondo solido el aislamiento es GEOMETRICO (la franja de arriba)
+# y no por componentes: alli el rango siempre esta en el mismo sitio.
+solo_arriba = color_rank_ocr.rango_grande_mask(carta_k, "solid")
+corte = int(carta_k.shape[0] * color_rank_ocr.RANGO_ARRIBA_FRAC)
+check("en el mazo de fondo solido se aisla por geometria: nada por debajo del "
+      "corte", (solo_arriba[corte:] > 0).sum() == 0)
 
 print("\n# --- las 2 cartas del hero se dibujan PEGADAS, sin hueco ---")
 def pegadas(palos, alto=73):
@@ -401,12 +404,16 @@ VIEJOS = {"heart": (5, 190, 230), "club": (82, 230, 170),
 
 
 def carta_solida(hsv_color, w=83, h=117):
-    """Carta del mazo de fondo solido: bloque de color con el rango en BLANCO."""
+    """Carta del mazo de fondo solido: bloque de color, rango en BLANCO arriba y
+    pip en un tono mas oscuro del mismo color ABAJO, que es la disposicion real y
+    la que hace falta para probar que el rango se busca solo arriba."""
     img = np.full((h + 60, w + 60, 3), TAPETE, dtype=np.uint8)
     bgr = cv2.cvtColor(np.uint8([[list(hsv_color)]]), cv2.COLOR_HSV2BGR)[0][0].tolist()
+    oscuro = [max(0, int(x * 0.72)) for x in bgr]
     cv2.rectangle(img, (30, 30), (30 + w, 30 + h), bgr, -1)
-    cv2.putText(img, "K", (48, 30 + int(h * 0.6)), cv2.FONT_HERSHEY_SIMPLEX,
-                h / 90.0, (255, 255, 255), 4)
+    cv2.putText(img, "K", (48, 30 + int(h * 0.45)), cv2.FONT_HERSHEY_SIMPLEX,
+                h / 110.0, (255, 255, 255), 4)
+    cv2.circle(img, (30 + w // 2, 30 + int(h * 0.80)), max(6, h // 9), oscuro, -1)
     return img
 
 
@@ -482,6 +489,29 @@ check("ni mide el doble que las demas (seria dos cartas fundidas)",
 
 check("con solo 2 cajas no se filtra por ancho: la mano del hero son 2 y no hay "
       "mediana fiable", len(solido.find_card_boxes(fila_solida(2))) == 2)
+
+print("\n# --- el rango se busca en la parte de ARRIBA de la carta ---")
+# En el mazo de fondo solido el rango va arriba y el pip debajo, y las FICHAS del
+# bote -que son claras- se apoyan sobre la mitad inferior y entran en la mascara
+# de blanco como manchas pegadas al numero. Medido sobre 28 cartas de board
+# etiquetadas: carta entera 18/28, mitad 21/28, 65% de arriba 22/28.
+carta_c = carta_solida(NUEVOS["club"])
+entera = color_rank_ocr.rank_mask(carta_c, "solid")
+arriba = color_rank_ocr.rango_grande_mask(carta_c, "solid")
+check("en una carta limpia no quita NADA: el pip es de color, no blanco, asi "
+      "que nunca estuvo en la mascara", (arriba > 0).sum() == (entera > 0).sum())
+check("y el glifo se conserva entero, sin cortarlo por arriba ni por abajo",
+      np.array_equal(np.where(arriba > 0)[0], np.where(entera > 0)[0]))
+
+# una ficha clara pegada bajo el numero no debe entrar en la mascara del rango
+con_ficha = carta_solida(NUEVOS["club"]).copy()
+cv2.circle(con_ficha, (30 + 40, 30 + 100), 16, (245, 245, 245), -1)
+sucia = color_rank_ocr.rank_mask(con_ficha, "solid")
+limpia = color_rank_ocr.rango_grande_mask(con_ficha, "solid")
+check("una ficha clara apoyada abajo ensucia la mascara completa",
+      (sucia > 0).sum() > (entera > 0).sum())
+check("pero NO la del rango, que solo mira arriba",
+      abs(int((limpia > 0).sum()) - int((arriba > 0).sum())) < 30)
 
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")

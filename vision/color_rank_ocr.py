@@ -188,12 +188,32 @@ def _fila_de_arriba(mask):
     return keep
 
 
+# EL RANGO VIVE EN LA PARTE DE ARRIBA DE LA CARTA. En el mazo de fondo solido va
+# arriba y el pip debajo, asi que quedarse con esa franja quita de un plumazo lo
+# que ensucia la mascara: las FICHAS DEL BOTE, que son claras, se apoyan sobre la
+# mitad inferior de las cartas y entran en la mascara de blanco como manchas
+# pegadas al numero. Medido sobre 28 cartas de board etiquetadas a ojo:
+#
+#     carta entera            18/28
+#     mitad de arriba (0.55)  21/28
+#     el 65% de arriba        22/28
+#
+# 0.65 y no 0.55 porque con 0.55 se empezaba a cortar el propio glifo en las
+# cartas mas altas. Es la misma idea que _fila_de_arriba resuelve por componentes
+# en el otro mazo; aqui basta con la geometria porque el rango siempre esta en el
+# mismo sitio.
+RANGO_ARRIBA_FRAC = 0.65
+
+
 def rango_grande_mask(card_bgr, deck="solid"):
-    """Mascara del rango solo (sin pip ni rango pequeño de la esquina). En el
-    mazo de fondo solido el rango ya domina la mascara, asi que no hay nada que
-    aislar."""
+    """Mascara del rango solo, sin el pip ni lo que se apoye en la carta."""
     mask = rank_mask(card_bgr, deck)
-    return _fila_de_arriba(mask) if deck == "glyph" else mask
+    if deck == "glyph":
+        return _fila_de_arriba(mask)
+    corte = max(1, int(mask.shape[0] * RANGO_ARRIBA_FRAC))
+    recortada = mask.copy()
+    recortada[corte:, :] = 0
+    return recortada
 
 
 def _recortar(mask):
