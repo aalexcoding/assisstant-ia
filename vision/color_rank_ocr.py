@@ -389,6 +389,22 @@ GLIFOS_FICHERO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 # vistazo: vision/glifos_rango.png se abre y se leen los trece seguidos.
 GLIFOS_ETIQUETAS = ("A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K")
 GLIFO_LADO = 64
+# SE DA POR BUENO CUANDO SE CALCA EL 90%. El criterio es literal: que fraccion de
+# los pixeles del glifo coincide con la plantilla, medido sobre el area del mas
+# grande de los dos. Se eligio esta metrica y no la correlacion porque significa
+# algo que se puede leer y discutir -"se calca el 90%"- en vez de un coeficiente.
+#
+# La correlacion se sigue usando para ELEGIR cual de las trece es (es robusta a
+# los grises del promedio); el acuerdo decide si se acepta o se manda al OCR.
+# Medido sobre 414 glifos de tres sesiones:
+#
+#                     glifo entero (p5)   mediana   glifo CORTADO (maximo)
+#     correlacion           0.915          0.986            0.498
+#     solape IoU            0.857          0.948            0.435
+#     acuerdo de pixeles    0.907          0.966            0.582
+#
+# Con 0.90 de acuerdo entra el 95% de los glifos enteros y ningun cortado se
+# acerca: el peor llega a 0.582, o sea 32 puntos de margen.
 GLIFO_UMBRAL = 0.90
 _GLIFOS = None
 
@@ -421,6 +437,29 @@ def _encajar(m, lado=None):
     return out.astype(np.float32) / 255.0
 
 
+def _acuerdo(g, plantilla_bin):
+    """Fraccion de los pixeles del glifo que COINCIDEN con la plantilla, sobre el
+    area del mas grande de los dos: "se calca el X%"."""
+    a = g > 0.5
+    mayor = max(int(a.sum()), int(plantilla_bin.sum()))
+    if not mayor:
+        return 0.0
+    return float((a & plantilla_bin).sum()) / mayor
+
+
+_PLANTILLAS_BIN = None
+
+
+def _plantilla_binaria(i):
+    global _PLANTILLAS_BIN
+    if _PLANTILLAS_BIN is None:
+        atlas = cv2.imread(GLIFOS_FICHERO, cv2.IMREAD_GRAYSCALE)
+        _PLANTILLAS_BIN = [
+            (atlas[:, k * GLIFO_LADO:(k + 1) * GLIFO_LADO] > 127)
+            for k in range(len(GLIFOS_ETIQUETAS))] if atlas is not None else []
+    return _PLANTILLAS_BIN[i]
+
+
 def _vector_glifo(g):
     v = g.reshape(-1) - g.mean()
     n = np.linalg.norm(v)
@@ -437,9 +476,10 @@ def rango_por_calco(card_bgr, deck="solid"):
     m = _recortar(rango_grande_mask(card_bgr, deck))
     if m.size < 64 or m.shape[0] < 8:
         return None, 0.0
-    sims = M @ _vector_glifo(_encajar(m))
-    i = int(np.argmax(sims))
-    return (etiquetas[i], float(sims[i])) if sims[i] >= GLIFO_UMBRAL else (None, float(sims[i]))
+    g = _encajar(m)
+    i = int(np.argmax(M @ _vector_glifo(g)))
+    calcado = _acuerdo(g, _plantilla_binaria(i))
+    return (etiquetas[i], calcado) if calcado >= GLIFO_UMBRAL else (None, calcado)
 
 
 def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ", deck="solid"):

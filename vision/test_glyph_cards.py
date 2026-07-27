@@ -547,8 +547,26 @@ check(f"dos plantillas de rangos DISTINTOS no pasan de {mejor_ajeno:.3f}",
 check("cada plantilla se identifica a si misma por argmax",
       all(etiquetas[int(np.argmax(M @ M[i]))] == r for i, r in enumerate(etiquetas)))
 
-check("el 6 y el 8 son el par mas parecido y aun asi se distinguen",
-      color_rank_ocr.GLIFO_UMBRAL > 0.878)
+check("el umbral es el 90% CALCADO, no un coeficiente: significa que 9 de cada "
+      "10 pixeles del glifo coinciden con la plantilla",
+      color_rank_ocr.GLIFO_UMBRAL == 0.90)
+
+
+def _calcado(g_bin, i):
+    return color_rank_ocr._acuerdo(g_bin.astype(np.float32),
+                                   color_rank_ocr._plantilla_binaria(i))
+
+
+for i, r in enumerate(etiquetas):
+    trozo = (atlas[:, i * lado:(i + 1) * lado] > 127)
+    check(f"la plantilla del '{r}' se calca a si misma al 100%",
+          abs(_calcado(trozo, i) - 1.0) < 1e-9)
+
+# un glifo al que le falta un trozo NO llega al 90%
+roto = (atlas[:, 0:lado] > 127).copy()
+roto[:, lado // 2:] = False
+check("un glifo al que le falta la mitad no llega al 90% calcado",
+      _calcado(roto, 0) < color_rank_ocr.GLIFO_UMBRAL)
 
 ruido = np.full((80, 80, 3), (40, 140, 60), np.uint8)
 cv2.circle(ruido, (40, 40), 22, (255, 255, 255), -1)     # un borron, no un glifo
