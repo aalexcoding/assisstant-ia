@@ -40,6 +40,54 @@ import numpy as np
 FELT_CORE_IN_FRAME = (0.186, 0.164, 0.675, 0.458)
 
 # --- deteccion del ovalo por contraste (independiente del color) ---
+#
+# HAY VARIOS TIPOS DE MESA Y EL CLIENTE PONE UNO U OTRO SEGUN EL TORNEO. No es
+# el tema que elige el usuario: en una sola sesion grabada (215025) aparecen
+# TRES mesas distintas segun la mano. Catalogo medido sobre 13 sesiones, con el
+# HSV mediano del fieltro y el acierto de esta funcion:
+#
+#     fieltro (H,S,V)     sesiones                          acierto
+#     ( 12,201,220) naranja  021103 022334 023224 034522     76-96%
+#     ( 67,200,100) verde    014058 163519 220231            86-100%
+#     ( 82,200, 97) verde az 214214 215025                   83-88%
+#     (104,160, 72) azul     020044 020432                   88-100%
+#     ( 44, 96,145) oliva    003045                          14-20%   <-- roto
+#     (  0,  0, 30) NEGRA    215025 (Mystery Bounty)          2-4%    <-- roto
+#
+# El papel de pared es (43,81,32) en casi todas y gris (0,0,33) en las ultimas.
+#
+# Las dos rotas lo estan por razones distintas y las dos rompen la premisa de
+# esta funcion:
+#   - La NEGRA no pasa NINGUNO de los dos umbrales (S=0 < 45, V=30 < 60): para
+#     esta funcion la mesa sencillamente no existe.
+#   - La OLIVA tiene el mismo tono que el papel de pared (44 contra 43), asi que
+#     fieltro y fondo son la misma mancha.
+# Ademas el fondo NO es oscuro como dice el parrafo de _nucleo_plausible: en las
+# esquinas esta a V=32, pero tiene una banda arriba a V=85 que pasa el umbral y
+# suelda el ovalo con el borde de arriba del frame.
+#
+# CUATRO SUSTITUTOS PROBADOS Y DESCARTADOS, todos medidos sobre las 13 sesiones,
+# comparando la caja contra la de aqui (importa que sea LA MISMA: todas las
+# zonas son fracciones suyas, asi que moverla desplaza el mapa entero):
+#
+#     sustituto                        arregla        rompe            desvio
+#     tono dominante del fieltro       215025 0->100  014058 100->16   29%
+#     recorte por forma de ovalo       215025 0->40   -                p95 54%
+#     ancla de color HSV completo      215025 2->72   naranjas 96->0   13%
+#     elipse por bordes (Canny)        -              TODO 0%          -
+#     "lo que no es el papel de pared" 215025 3->43   casi todo <16%   24%
+#
+# El de bordes falla porque los nameplates y las cartas parten el contorno del
+# ovalo en trozos y no queda ni una elipse entera. El de "no es el fondo" falla
+# porque la barra de arriba, el chat y los nameplates tampoco son fondo y se
+# funden en una sola mancha pegada al borde.
+#
+# La textura tampoco separa, aunque lo parezca: se midio la desviacion tipica
+# local y los fieltros naranjas salen MAS rugosos que el papel de pared (12.5
+# contra 7.3) porque llevan trama de puntos.
+#
+# O sea que la solucion no es cambiar estos dos numeros: hace falta IDENTIFICAR
+# QUE MESA ES y usar la regla que le toque, que es lo que pidio el usuario.
 CORE_MIN_S = 45
 CORE_MIN_V = 60
 CORE_OPEN_KERNEL = 41
