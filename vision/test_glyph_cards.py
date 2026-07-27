@@ -424,6 +424,28 @@ check("las cartas del hero salen recortadas por su nameplate (83x54) y aun asi "
 check("el tapete solo no da cartas",
       solido.find_card_boxes(np.full((200, 300, 3), TAPETE, np.uint8)) == [])
 
+print("\n# --- la mascara del rango se recorta al glifo, en LOS DOS mazos ---")
+# Sin recortar, el rango queda pequeño dentro de un recuadro casi vacio y
+# tesseract ni lo encuentra: en un 9 real de board, 5 de las 9 variantes
+# devolvian cadena vacia y las otras 4 daban '3','J','3','3'. Recortada, las 9
+# dicen '9'. En la sesion jugando, los boards con carta repetida bajaron de 13 a 1.
+class _Vistas:
+    def __init__(self): self.imgs = []
+    def job_count(self): return len(self.imgs)
+    def add_text_job(self, img, **k): self.imgs.append(img)
+
+
+for deck, carta in (("solid", carta_vieja), ("glyph", carta_glifo)):
+    v = _Vistas()
+    color_rank_ocr.add_rank_jobs(v, carta, deck=deck)
+    ancla = v.imgs[0]
+    entera = color_rank_ocr.rank_mask(carta, deck)
+    check(f"[{deck}] el ancla que se manda al OCR es MAS PEQUEÑA que la carta "
+          f"(esta recortada al glifo)",
+          ancla.shape[0] * ancla.shape[1] < entera.shape[0] * entera.shape[1])
+    check(f"[{deck}] y sigue teniendo tinta dentro (no se ha recortado a nada)",
+          (ancla[:, :, 0] < 128).sum() > 0)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:

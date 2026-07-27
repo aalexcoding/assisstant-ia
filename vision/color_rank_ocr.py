@@ -345,14 +345,18 @@ def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ", deck="solid"):
              el rango aislado por posicion, que no se equivoca nunca, y la
              mascara completa solo desempata: 40/40."""
     start = batch.job_count()
+    # LA MASCARA SE RECORTA AL GLIFO en los dos mazos. Sin recortar, el rango
+    # queda pequeño dentro de un recuadro casi vacio y tesseract ni lo encuentra:
+    # en un 9 real de board, 5 de las 9 variantes devolvian CADENA VACIA y las
+    # otras 4 daban '3','J','3','3'. Recortada, las 9 dicen '9'.
+    ancla = cv2.cvtColor(255 - _recortar(rango_grande_mask(card_bgr, deck)),
+                         cv2.COLOR_GRAY2BGR)
     if deck == "glyph":
         # UNA SOLA VISTA. Ver el docstring: aqui cualquier segunda vista mete mas
         # error del que quita, y ademas asi el frame cuesta la mitad de OCR.
-        vistas = [cv2.cvtColor(255 - _recortar(rango_grande_mask(card_bgr, deck)),
-                               cv2.COLOR_GRAY2BGR)]
+        vistas = [ancla]
     else:
-        vistas = [white_text_mask(card_bgr, deck),
-                  _rank_only_close_img(card_bgr, deck)]
+        vistas = [ancla, _rank_only_close_img(card_bgr, deck)]
     for v in vistas:
         for psm, scale in PSM_SCALE_VARIANTS:
             batch.add_text_job(v, whitelist=whitelist, psm=psm, scale=scale, pad=20)
