@@ -388,7 +388,7 @@ GLIFOS_FICHERO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 # En ORDEN DE BARAJA, uno por rango, para que el atlas se pueda revisar de un
 # vistazo: vision/glifos_rango.png se abre y se leen los trece seguidos.
 GLIFOS_ETIQUETAS = ("A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K")
-GLIFO_LADO = 64
+GLIFO_LADO = 40
 # SE DA POR BUENO CUANDO SE CALCA EL 90%. El criterio es literal: que fraccion de
 # los pixeles del glifo coincide con la plantilla, medido sobre el area del mas
 # grande de los dos. Se eligio esta metrica y no la correlacion porque significa
