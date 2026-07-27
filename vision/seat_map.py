@@ -243,6 +243,14 @@ def find_reference(bgr):
             best = (int(x), int(y), int(bw), int(bh))
     if best is not None and _nucleo_plausible(best, h_img, w_img):
         return best[0], best[1], best[2], best[3], False
+    # REPARACION, no sustitucion. Solo se intenta cuando el blob mayor NO es
+    # plausible, o sea cuando hoy el frame se pierde entero. Los frames que hoy
+    # funcionan no pasan por aqui, asi que no pueden cambiar: la garantia es
+    # estructural, no estadistica. Ver _recortar_puente.
+    if best is not None:
+        arreglado = _recortar_puente(core, best)
+        if arreglado is not None and _nucleo_plausible(arreglado, h_img, w_img):
+            return arreglado[0], arreglado[1], arreglado[2], arreglado[3], False
     fx, fy, fw, fh = FELT_CORE_IN_FRAME
     return int(fx * w_img), int(fy * h_img), int(fw * w_img), int(fh * h_img), True
 
@@ -279,6 +287,61 @@ def _nucleo_plausible(caja, h_img, w_img):
     if y <= NUCLEO_MARGEN_BORDE or y + h >= h_img - NUCLEO_MARGEN_BORDE:
         return False
     return True
+
+
+# Holgura al subir por el ovalo: su borde sale con dientes, asi que se permite
+# que una fila sea algo mas ancha que la de debajo sin dar el corte por bueno.
+PUENTE_TOL = 1.06
+# Ancho minimo, en fraccion del ancho maximo, para seguir considerando que una
+# fila es del ovalo. Un ovalo se estrecha hasta CASI CERO en su borde: con este
+# valor solo se le recorta el 1% de arriba (para una elipse, el ancho cae al 20%
+# cuando ya se esta al 98% del semieje). Un puente, en cambio, sube con ancho
+# mas o menos constante y se corta limpio. Hace falta ADEMAS de la regla de "no
+# se ensancha", porque un puente de ancho constante nunca la incumple.
+PUENTE_ANCHO_MIN_FRAC = 0.20
+
+
+def _recortar_puente(core, caja):
+    """Quita del blob la protuberancia que lo suelda con el borde del frame.
+
+    EL CASO QUE LO MOTIVA. El papel de pared tiene una banda clara arriba que
+    pasa el umbral de brillo, y cuando el encuadre deja bastante margen por
+    encima de la mesa se une con el ovalo. El resultado es un blob que llega a
+    y=0 y con proporcion 1,5 en vez de 2,5, asi que _nucleo_plausible lo rechaza
+    -bien rechazado: esa caja desplazaria todas las zonas- y el frame se pierde
+    entero. Medido en la sesion 014613: 123 de 123 frames, el 100%.
+
+    COMO SE CORTA. Un ovalo, subiendo desde su fila mas ancha, solo puede
+    ESTRECHARSE. Donde deja de cumplirse es donde empieza lo que no es la mesa.
+    Se sube desde la fila mas ancha hasta la primera que se ensancha y ahi se
+    corta; por abajo no hace falta, porque nada suelda el ovalo hacia abajo.
+
+    SOLO SE LLAMA CUANDO EL BLOB YA ES IMPLAUSIBLE. Esa es la diferencia con los
+    seis intentos anteriores de mejorar la deteccion (ver el catalogo de tipos de
+    mesa mas arriba y docs 2.0c): todos cambiaban la caja TAMBIEN donde ya
+    funcionaba -desvios medianos del 5% al 29%- y eso mueve el mapa de zonas
+    entero. Aqui los frames que hoy salen bien ni entran en esta funcion."""
+    x, y, w, h = caja
+    sub = core[y:y + h, x:x + w] > 0
+    if not sub.any():
+        return None
+    anchos = sub.sum(axis=1)
+    y_ancha = int(np.argmax(anchos))
+    minimo = PUENTE_ANCHO_MIN_FRAC * anchos[y_ancha]
+    arriba = y_ancha
+    for i in range(y_ancha - 1, -1, -1):
+        if anchos[i] < minimo or anchos[i] > anchos[i + 1] * PUENTE_TOL:
+            break
+        arriba = i
+    if arriba == 0:
+        return None                    # no se corto nada: sigue tocando el borde
+    filas = sub[arriba:]
+    cols = np.flatnonzero(filas.any(axis=0))
+    ys = np.flatnonzero(filas.any(axis=1))
+    if not len(cols) or not len(ys):
+        return None
+    return (x + int(cols[0]), y + arriba + int(ys[0]),
+            int(cols[-1] - cols[0]) + 1, int(ys[-1] - ys[0]) + 1)
 
 
 def zone_to_px(ref, zone, shape):

@@ -383,6 +383,104 @@ for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR * 2):
 check("una variacion dentro de la tolerancia no re-fija nada: es el ruido "
       "normal de la deteccion (0-4,5% medido)", rf2.fijada == base)
 
+# --- EL PUENTE DE PAPEL DE PARED, y por que se REPARA en vez de sustituir ----
+#
+# El papel de pared tiene una banda clara arriba que pasa el umbral de brillo.
+# Cuando el encuadre deja bastante margen por encima de la mesa, esa banda se
+# suelda con el ovalo: el bloque llega a y=0 y su proporcion cae de ~2,5 a ~1,5,
+# asi que _nucleo_plausible lo rechaza -bien rechazado- y el frame se pierde
+# ENTERO. Lo cazo el usuario jugando (28-07-2026, sesion 014613): 123 de 123
+# frames, el 100% de la partida sin analizar.
+#
+# La reparacion NO es un detector nuevo. Van SIETE intentos de sustituir la
+# deteccion (tono dominante, forma de ovalo, ancla HSV, elipse por bordes, "lo
+# que no es el fondo", textura, simetria) y los siete se descartaron por lo
+# mismo: cambiaban la caja TAMBIEN donde ya funcionaba, con desvios medianos del
+# 5% al 29%, y eso mueve el mapa de zonas entero.
+#
+# Esto solo se ejecuta cuando el bloque YA es implausible, o sea cuando hoy el
+# frame se pierde. Comprobado sobre 880 frames de 21 sesiones:
+#
+#     669 cajas IDENTICAS   90 recuperadas   121 siguen fallando
+#       0 perdidas            0 cambiadas
+print("\n# --- reparacion del puente con el papel de pared ---")
+
+alto, ancho = 900, 1400
+mesa = np.full((alto, ancho, 3), 12, dtype=np.uint8)
+cv2.ellipse(mesa, (700, 480), (520, 210), 0, 0, 360, (40, 120, 40), -1)
+solo = seat_map.find_reference(mesa)
+check("sin puente, el ovalo se detecta y no es fallback", not solo[4])
+
+# el mismo frame con una lengua clara que sube desde el ovalo hasta y=0
+puente = mesa.copy()
+cv2.rectangle(puente, (820, 0), (1010, 300), (40, 120, 40), -1)
+con = seat_map.find_reference(puente)
+check("con puente, se sigue detectando (antes se perdia el frame entero)",
+      not con[4])
+check("y la caja reparada es practicamente la del ovalo limpio",
+      all(abs(a - b) <= 0.06 * max(solo[2], solo[3]) for a, b in zip(con[:4], solo[:4])))
+check("la caja reparada ya no toca el borde de arriba",
+      con[1] > seat_map.NUCLEO_MARGEN_BORDE)
+
+# GARANTIA ESTRUCTURAL: si el bloque ya era plausible, no se toca
+check("un frame que ya iba bien devuelve EXACTAMENTE lo mismo",
+      seat_map.find_reference(mesa)[:4] == solo[:4])
+
+# y si el recorte no consigue despegarlo del borde, se sigue abstiendo
+todo = np.full((alto, ancho, 3), 12, dtype=np.uint8)
+cv2.rectangle(todo, (200, 0), (1200, 700), (40, 120, 40), -1)
+check("un bloque que no es un ovalo no se 'arregla' a la fuerza: fallback",
+      seat_map.find_reference(todo)[4])
+
+# --- SI NO HAY CAPSULA, NO HAY NADIE ------------------------------------------
+#
+# El usuario lo cazo jugando (28-07-2026, sesion 012453): la app listaba 6
+# jugadores con 5 en la mesa. El sobrante era "wwww584" leido en un asiento
+# VACIO -se recorto la zona y es tapete y papel de pared, nada mas-. Como las
+# posiciones salen del RECUENTO, ese fantasma las corrio todas: el hero pasaba de
+# BB a MP2 y le servia un rango de apertura donde tocaba la opcion de la ciega.
+# Su nota: "porque me dice fold si es call? hice ciega".
+#
+# Este modulo YA conocia la trampa por otra puerta: la textura del tapete se
+# OCR-eaba como '60668' y contaba como ocupado (ver _plate_occupied). Se tapo
+# quitando la señal numerica; ahora la misma zona entra por la del NOMBRE.
+#
+# Se descarto en su dia mirar solo el brillo, porque "las sillas granate son tan
+# oscuras como la capsula". Cierto, pero el granate esta SATURADO: pidiendo
+# oscuro Y sin color si se separan. Medido sobre 2.856 zonas de 15 sesiones y
+# seis temas de mesa, sale bimodal con hueco:
+#
+#     0.00-0.05   217 zonas    <- vacias (revisadas a ojo por muestreo)
+#     0.05-0.10     3 zonas    <- el hueco
+#     0.10-1.00  2636 zonas    <- con plate
+print("\n# --- veto de asiento vacio por ausencia de capsula ---")
+
+vacio = np.zeros((120, 380, 3), np.uint8)
+vacio[:, :] = (40, 90, 45)                       # tapete
+check("una zona de solo tapete no tiene capsula", not ts._hay_capsula(vacio))
+
+papel = np.zeros((120, 380, 3), np.uint8)
+papel[:, :] = (35, 55, 40)                       # papel de pared verde oscuro
+check("el papel de pared tampoco", not ts._hay_capsula(papel))
+
+sillas = vacio.copy()
+cv2.rectangle(sillas, (60, 5), (150, 45), (60, 40, 110), -1)    # granate, SATURADO
+cv2.rectangle(sillas, (170, 5), (260, 45), (60, 40, 110), -1)
+check("las sillas granate NO cuentan como capsula: son oscuras pero con color "
+      "(es lo que tumbo el intento anterior de usar solo el brillo)",
+      not ts._hay_capsula(sillas))
+
+plate = vacio.copy()
+cv2.rectangle(plate, (20, 25), (330, 95), (28, 28, 30), -1)     # capsula gris oscura
+check("un nameplate de verdad si la tiene", ts._hay_capsula(plate))
+check("y con las sillas encima tambien", ts._hay_capsula(
+    cv2.rectangle(sillas.copy(), (20, 25), (330, 95), (28, 28, 30), -1)))
+
+check("el umbral esta en el hueco medido, no pegado a un extremo",
+      0.05 < ts.CAPSULA_MIN_FRAC < 0.10)
+check("una zona vacia de tamaño nulo no veta nada (no se inventa un vacio)",
+      ts._hay_capsula(np.zeros((0, 0, 3), np.uint8)))
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
