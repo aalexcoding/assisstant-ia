@@ -19,6 +19,7 @@ import color_card_detector
 import color_rank_ocr
 import glyph_card_detector
 import dealer_button
+import disco_dealer
 import rango_directo
 import seat_map
 from card_detector import classify_boxes, find_card_boxes
@@ -639,7 +640,23 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # observaciones) y sirve para desempatar si sobran asientos.
     en_mano = seat_map.detect_in_hand_seats(bgr, ref)
 
-    button_seat = seat_map.detect_button_seat_union(bgr, ref, plantilla_boton)
+    # EL DISCO SE BUSCA BARRIENDO LA MESA, no en seis puntos fijos. La idea es del
+    # usuario ("hay que montar un sistema que mapee la mesa buscando el boton
+    # basandose en una version sample en codigo... la menor distancia a un jugador
+    # determina que ese es el que tiene el boton"). Medido sobre 895 frames de 14
+    # sesiones, con tres criterios independientes:
+    #
+    #                                  por anclas   barriendo
+    #     frames con boton               728 (81%)   855 (96%)
+    #     cuadra con la ficha de 1 BB     70/112      81/121
+    #     avanza UN asiento al cambiar       55%         69%
+    #     salta 3+ asientos (imposible)      24%         14%
+    #
+    # El de anclas se queda de RESPALDO y no se retira: cuando el barrido no ve
+    # nada, sigue aportando frames.
+    button_seat = disco_dealer.detectar(bgr, ref)
+    if button_seat is None:
+        button_seat = seat_map.detect_button_seat_union(bgr, ref, plantilla_boton)
     if button_seat is not None and button_seat not in occupied:
         # el dealer es siempre un jugador sentado: si el boton se detecto en ese
         # asiento pero el OCR no leyo su nameplate, esta ocupado igual.
