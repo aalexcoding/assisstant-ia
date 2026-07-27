@@ -388,8 +388,8 @@ GLIFOS_FICHERO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 # En ORDEN DE BARAJA, uno por rango, para que el atlas se pueda revisar de un
 # vistazo: vision/glifos_rango.png se abre y se leen los trece seguidos.
 GLIFOS_ETIQUETAS = ("A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K")
-GLIFO_LADO = 32
-GLIFO_UMBRAL = 0.89
+GLIFO_LADO = 64
+GLIFO_UMBRAL = 0.90
 _GLIFOS = None
 
 
@@ -409,6 +409,18 @@ def _glifos():
     return _GLIFOS
 
 
+def _encajar(m, lado=None):
+    """Escala el glifo a caber en lado x lado SIN deformarlo y lo centra."""
+    lado = lado or GLIFO_LADO
+    h, w = m.shape
+    e = min(lado / h, lado / w)
+    nh, nw = max(1, int(round(h * e))), max(1, int(round(w * e)))
+    g = cv2.resize(m, (nw, nh), interpolation=cv2.INTER_AREA)
+    out = np.zeros((lado, lado), np.uint8)
+    out[(lado - nh) // 2:(lado - nh) // 2 + nh, (lado - nw) // 2:(lado - nw) // 2 + nw] = g
+    return out.astype(np.float32) / 255.0
+
+
 def _vector_glifo(g):
     v = g.reshape(-1) - g.mean()
     n = np.linalg.norm(v)
@@ -425,9 +437,7 @@ def rango_por_calco(card_bgr, deck="solid"):
     m = _recortar(rango_grande_mask(card_bgr, deck))
     if m.size < 64 or m.shape[0] < 8:
         return None, 0.0
-    g = cv2.resize(m, (GLIFO_LADO, GLIFO_LADO),
-                   interpolation=cv2.INTER_AREA).astype(np.float32) / 255.0
-    sims = M @ _vector_glifo(g)
+    sims = M @ _vector_glifo(_encajar(m))
     i = int(np.argmax(sims))
     return (etiquetas[i], float(sims[i])) if sims[i] >= GLIFO_UMBRAL else (None, float(sims[i]))
 

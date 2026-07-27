@@ -556,6 +556,31 @@ got, _sim = color_rank_ocr.rango_por_calco(ruido, "solid")
 check("un borron que no es ningun glifo NO se fuerza a un rango: cae al OCR",
       got is None)
 
+print("\n# --- las plantillas conservan la PROPORCION del glifo ---")
+# La primera version escalaba cada glifo a un cuadrado, y eso deforma -una 'J'
+# estrecha se estiraba hasta llenarlo- y tira la proporcion, que es informacion
+# que distingue unos glifos de otros. Lo cazo el usuario abriendo el atlas.
+anchos = {}
+for i, r in enumerate(etiquetas):
+    trozo = atlas[:, i * lado:(i + 1) * lado]
+    cols = np.where(trozo.max(axis=0) > 40)[0]
+    anchos[r] = (cols.max() - cols.min() + 1) if len(cols) else 0
+check(f"la 'J' es MAS ESTRECHA que la 'Q' ({anchos['J']} vs {anchos['Q']} px): "
+      f"si se hubiera escalado a un cuadrado medirian lo mismo",
+      anchos["J"] < anchos["Q"])
+check(f"y el '10' es el MAS ANCHO de los trece ({anchos['10']} px)",
+      anchos["10"] == max(anchos.values()))
+check("ningun glifo llena el ancho entero salvo el mas ancho",
+      sum(1 for a in anchos.values() if a >= lado - 1) <= 1)
+
+m = np.zeros((40, 12), np.uint8)      # un glifo muy estrecho, tipo '1'
+m[5:35, 3:9] = 255
+g = color_rank_ocr._encajar(m)
+cols = np.where(g.max(axis=0) > 0.15)[0]
+filas = np.where(g.max(axis=1) > 0.15)[0]
+check("un glifo estrecho se escala por su ALTO y deja hueco a los lados, "
+      "no se estira", (cols.max() - cols.min()) < (filas.max() - filas.min()))
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
