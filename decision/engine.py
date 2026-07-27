@@ -445,8 +445,16 @@ def decide(state):
         return None
 
     if state.get("board"):
-        return abstain("hay board (ya no es preflop); este motor solo cubre preflop, "
-                       "el postflop es la Fase 4.3 (RAG) y todavia no existe")
+        # NO se dice "el postflop no existe": si existe, lo da postflop_equity() y
+        # el HUD lo pinta en su panel. Lo que no hay es una ACCION postflop, y es
+        # a proposito -no hay rango postflop digitalizado, y convertir una
+        # probabilidad en una orden seria justo lo que este repo rechaza-. El
+        # texto viejo decia que el postflop era la Fase 4.3 (RAG) y que no
+        # existia; se quedo caduco cuando entro el Monte Carlo y el usuario lo
+        # leyo en el HUD como "se ha perdido la equity".
+        return abstain("hay board: no se recomienda accion postflop (no hay rango "
+                       "postflop digitalizado). La probabilidad de ganar SI se "
+                       "calcula y sale en el panel de equity")
 
     hero_cards = state.get("hero_cards") or []
     if len(hero_cards) != 2:
