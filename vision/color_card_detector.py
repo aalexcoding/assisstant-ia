@@ -34,12 +34,38 @@ import numpy as np
 # Calibrado contra sample_1784855343738/393862/429002.png (los 4 palos
 # confirmados con ejemplos reales, no solo corazon/trebol como en el board
 # revisado a mano).
-SUIT_HSV_RANGES = {
-    "heart": (0, 12, 140, 230, 200, 255),
-    "club": (70, 95, 200, 255, 120, 220),
-    "diamond": (100, 120, 70, 140, 150, 230),
-    "spade": (10, 30, 5, 40, 110, 170),
+# PokerStars tiene VARIOS mazos de fondo solido y el usuario los cambia desde
+# las opciones sin que la app se entere, asi que hay una lista de perfiles por
+# palo y basta con que encaje UNO. Todos los colores son planos (minimo = maximo
+# en las medianas medidas), porque el cliente los renderiza vectoriales.
+#
+#   mazo "vivo"   (calibrado contra 57 capturas de samples_pokerstars/)
+#       corazon salmon, trebol turquesa, diamante azul claro, pica gris claro
+#   mazo "apagado" (medido el 27-07-2026 sobre 205 cartas de board de una sesion)
+#       corazon H=0 S=142 V=130   trebol H=48 S=139 V=138
+#       diamante H=97 S=126 V=128  pica gris H=0 S=0 V=90
+#
+# Los dos juegos NO se pisan: el corazon apagado tiene V=130 y el vivo exige
+# V>=200; el trebol apagado esta en H=48 y el vivo empieza en H=70; la pica
+# apagada tiene V=90 y la viva exige V>=110. El unico solape es entre los dos
+# diamantes, y ahi los dos dicen "diamante", asi que no hay ambigüedad.
+#
+# Los margenes son de ~15% alrededor de lo medido, no ajustados al pixel: una
+# tolerancia demasiado justa convierte cualquier variacion de render en un fallo.
+SUIT_HSV_PROFILES = {
+    "heart": [(0, 12, 140, 230, 200, 255),
+              (0, 6, 120, 165, 110, 155), (174, 180, 120, 165, 110, 155)],
+    "club": [(70, 95, 200, 255, 120, 220),
+             (42, 56, 110, 165, 80, 165)],
+    "diamond": [(100, 120, 70, 140, 150, 230),
+                (90, 104, 60, 150, 110, 215)],
+    "spade": [(10, 30, 5, 40, 110, 170),
+              (0, 180, 0, 28, 72, 108)],
 }
+
+# se conserva el nombre antiguo para quien lo consulte: el primer perfil de cada
+# palo es el mazo con el que se calibro el modulo
+SUIT_HSV_RANGES = {k: v[0] for k, v in SUIT_HSV_PROFILES.items()}
 
 MIN_AREA = 800
 MIN_W, MIN_H = 40, 35
@@ -63,9 +89,12 @@ def find_card_boxes(bgr, region=None):
     h, s, v = hsv[:, :, 0].astype(np.int32), hsv[:, :, 1].astype(np.int32), hsv[:, :, 2].astype(np.int32)
 
     boxes = []
-    for suit, (hlo, hhi, slo, shi, vlo, vhi) in SUIT_HSV_RANGES.items():
-        mask = (((h >= hlo) & (h <= hhi)) & ((s >= slo) & (s <= shi)) &
-                ((v >= vlo) & (v <= vhi))).astype(np.uint8) * 255
+    for suit, perfiles in SUIT_HSV_PROFILES.items():
+        m = np.zeros(h.shape, dtype=bool)
+        for hlo, hhi, slo, shi, vlo, vhi in perfiles:
+            m |= (((h >= hlo) & (h <= hhi)) & ((s >= slo) & (s <= shi)) &
+                  ((v >= vlo) & (v <= vhi)))
+        mask = m.astype(np.uint8) * 255
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for c in contours:
             area = cv2.contourArea(c)

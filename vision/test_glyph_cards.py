@@ -391,6 +391,39 @@ antes = len(pl2)
 pl2.aprender(np.full((700, 1200, 3), (60, 110, 70), np.uint8), REF, "UL")
 check("aprender de un frame sin disco no guarda nada", len(pl2) == antes)
 
+print("\n# --- el mazo de fondo solido tiene mas de un juego de colores ---")
+# PokerStars cambia los colores del mazo con el tema y el usuario lo cambia sin
+# que la app se entere. Medidos sobre 205 cartas de board de una sesion real:
+NUEVOS = {"heart": (0, 142, 130), "club": (48, 139, 138),
+          "diamond": (97, 126, 128), "spade": (0, 0, 90)}
+VIEJOS = {"heart": (5, 190, 230), "club": (82, 230, 170),
+          "diamond": (110, 105, 190), "spade": (20, 20, 140)}
+
+
+def carta_solida(hsv_color, w=83, h=117):
+    """Carta del mazo de fondo solido: bloque de color con el rango en BLANCO."""
+    img = np.full((h + 60, w + 60, 3), TAPETE, dtype=np.uint8)
+    bgr = cv2.cvtColor(np.uint8([[list(hsv_color)]]), cv2.COLOR_HSV2BGR)[0][0].tolist()
+    cv2.rectangle(img, (30, 30), (30 + w, 30 + h), bgr, -1)
+    cv2.putText(img, "K", (48, 30 + int(h * 0.6)), cv2.FONT_HERSHEY_SIMPLEX,
+                h / 90.0, (255, 255, 255), 4)
+    return img
+
+
+for palo, col in NUEVOS.items():
+    cajas = solido.find_card_boxes(carta_solida(col))
+    check(f"el {palo} del mazo nuevo se detecta",
+          len(cajas) == 1 and cajas[0]["suit"] == palo)
+for palo, col in VIEJOS.items():
+    cajas = solido.find_card_boxes(carta_solida(col))
+    check(f"y el {palo} del mazo con el que se calibro sigue igual",
+          len(cajas) == 1 and cajas[0]["suit"] == palo)
+
+check("las cartas del hero salen recortadas por su nameplate (83x54) y aun asi "
+      "se detectan", len(solido.find_card_boxes(carta_solida(NUEVOS["diamond"], 83, 54))) == 1)
+check("el tapete solo no da cartas",
+      solido.find_card_boxes(np.full((200, 300, 3), TAPETE, np.uint8)) == [])
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
