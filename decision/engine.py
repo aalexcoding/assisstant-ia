@@ -258,7 +258,28 @@ _LIMP_MIN_BB = 0.75
 _LIMP_MAX_BB = 1.35
 
 
-def _contar_limpers(players):
+def _asientos_que_solo_pusieron(acciones):
+    """Asientos cuya ULTIMA accion vista es 'post' (poner ciega o ante).
+
+    Poner la ciega NO es entrar pagando: es obligatorio. El cliente lo dice con
+    todas las letras -escribe "Poner" en el nameplate, distinto de "Igualar"- y
+    la vigilancia rapida lo captura (ver vision/seat_watch.py). Esa evidencia
+    estaba guardandose y nadie la miraba.
+
+    ASIMETRIA DELIBERADA, la misma que en _agresor_del_log y en atribuir_subida:
+    solo se usa la PRESENCIA de un 'post', nunca la AUSENCIA de un 'call'. El
+    historial viene siempre con completo=False -el verbo dura menos de 1,5 s y
+    solo se ve lo que se muestrea-, asi que exigir un 'call' para creerse un limp
+    haria perder limpers de verdad. Ver un 'post' si es prueba positiva de que ese
+    importe es una ciega."""
+    ultima = {}
+    for r in (acciones or {}).get("acciones") or []:
+        if r.get("seat") and r.get("accion"):
+            ultima[r["seat"]] = r["accion"]
+    return {s for s, a in ultima.items() if a == "post"}
+
+
+def _contar_limpers(players, acciones=None):
     """Cuantos rivales han ENTRADO PAGANDO voluntariamente. 0 si el bote no esta
     limpeado, None si no se pudo saber.
 
@@ -271,6 +292,16 @@ def _contar_limpers(players):
        Contarla como limper corria la fila donante un asiento de mas SIEMPRE, en
        todas las manos. Se le permite hasta _BB_POSTED_MAX_MULT porque en torneo
        con BB-ante su importe es ciega + ante (igual que en _detect_raiser).
+
+       Esa regla mira la ETIQUETA de posicion, y por eso no basta: si la posicion
+       sale corrida, la ciega grande real no se llama "BB" y su importe vuelve a
+       parecer un limp. Paso de verdad -el usuario lo anoto en vivo el 2026-07-27,
+       frame 0462 de la sesion 220231-: era BTN con Kc5s a 26,5bb, la BB real
+       estaba etiquetada MP2, su 1,1bb obligatorio conto como limp y el motor
+       sirvio el rango de CO en vez del de BTN y dijo FOLD. El historial de
+       acciones de ese mismo frame no tenia ni un solo "Igualar": tenia "Poner"
+       en los dos asientos de las ciegas. Por eso se cruza con el log, que es
+       evidencia INDEPENDIENTE de la etiqueta de posicion.
     2. SI ALGUIEN HA PUESTO MAS QUE UNA CIEGA, EL BOTE NO ESTA LIMPEADO, esta
        subido, y "subir sobre los limpers" no es el spot. Se devuelve 0 para que
        la capa derivada no se dispare y el motor siga por donde iba.
@@ -279,6 +310,7 @@ def _contar_limpers(players):
     deduce de la bajada de stack EN ESTA CALLE. Devolver None cuando ningun rival
     da ninguna de las dos señales importa: no es lo mismo "he mirado y no hay
     limpers" que "no he podido mirar"."""
+    solo_pusieron = _asientos_que_solo_pusieron(acciones)
     visto = False
     n = 0
     for p in players:
@@ -290,7 +322,9 @@ def _contar_limpers(players):
         if not isinstance(v, (int, float)):
             continue
         visto = True
-        es_bb = p.get("position") == "BB"
+        # el log manda sobre la etiqueta: si lo ultimo que se le vio hacer fue
+        # PONER, ese importe es una ciega o un ante, no una entrada voluntaria
+        es_bb = p.get("position") == "BB" or p.get("seat") in solo_pusieron
         tope = BB * _BB_POSTED_MAX_MULT if es_bb else _LIMP_MAX_BB
         if v > tope:
             return 0                     # el bote esta SUBIDO, no limpeado
@@ -642,7 +676,7 @@ def decide(state):
                            "(pasar no es gratis) pero tampoco se ha podido atribuir la "
                            "subida a ningun asiento; sin recomendacion fiable")
 
-        limpers = _contar_limpers(state.get("players", []))
+        limpers = _contar_limpers(state.get("players", []), state.get("acciones"))
         derivada = bb_option(hero_cards, stack_bb, limpers)
         if derivada is None:
             # sin donante valido (2+ limpers, o etiqueta que no se sabe traducir):
@@ -671,7 +705,7 @@ def decide(state):
         # (ver derive.vs_limp). Se exige un recuento POSITIVO: con limpers=None no
         # se sabe si hay alguien dentro, y ahi lo correcto es el rango de apertura
         # de siempre, que es lo que se venia haciendo.
-        limpers = _contar_limpers(state.get("players", []))
+        limpers = _contar_limpers(state.get("players", []), state.get("acciones"))
         derivada = (vs_limp(hero_cards, hero_position, stack_bb, limpers)
                     if isinstance(limpers, int) and limpers >= 1 else None)
         if derivada is not None:

@@ -329,6 +329,55 @@ check("si ningun rival da importe, no es 0 sino None: no es lo mismo 'he mirado 
       "y no hay' que 'no he podido mirar'",
       _limpers(("CO", None), ("HJ", None)) is None)
 
+# --- PONER UNA CIEGA NO ES ENTRAR PAGANDO ------------------------------------
+# La regla "la BB no es un limper" mira la ETIQUETA de posicion, y por eso no
+# basta: si las posiciones salen corridas, la ciega grande real no se llama "BB"
+# y su importe vuelve a parecer un limp.
+#
+# Paso de verdad y lo anoto el usuario en vivo (2026-07-27, frame 0462 de la
+# sesion 220231): era BTN con Kc5s a 26,5bb, la BB real estaba etiquetada MP2,
+# su 1,1bb obligatorio conto como limp y el motor sirvio el rango de CO en vez
+# del de BTN. Su nota: "dice que un rival ha entrado pagando pero en realidad
+# son las ciegas".
+#
+# El arreglo cruza con el HISTORIAL DE ACCIONES, que es evidencia INDEPENDIENTE
+# de la etiqueta: el cliente escribe "Poner" al poner una ciega y "Igualar" al
+# pagar, y la vigilancia rapida (vision/seat_watch.py) lo captura. En ese frame
+# el log no tenia ni un "Igualar" y si dos "Poner".
+#
+# Medido sobre las 14 sesiones grabadas: 301 frames preflop corrigen el recuento
+# (263 de 1->0) y 72 cambian la orden, todos en la misma direccion -al quitar el
+# limper fantasma la fila donante deja de apretarse un asiento de mas-.
+def _limpers_log(rivales, acciones):
+    return engine._contar_limpers(
+        [dict(P("BTN", None, hero=True), stack=20.0, seat="HERO")]
+        + [dict(P(pos, imp), stack=20.0, seat=seat) for seat, pos, imp in rivales],
+        {"acciones": acciones, "completo": False})
+
+
+_LOG_PONER = [{"seat": "TOPC", "accion": "post", "verbo": "Poner"}]
+check("un asiento cuya ultima accion vista fue PONER no es un limper, aunque su "
+      "etiqueta de posicion este equivocada (el bug que anoto el usuario)",
+      _limpers_log([("TOPC", "MP2", 1.1)], _LOG_PONER) == 0)
+check("sin el log, ese mismo frame contaba un limper fantasma",
+      _limpers_log([("TOPC", "MP2", 1.1)], []) == 1)
+check("un limper de verdad al lado sigue contando",
+      _limpers_log([("TOPC", "MP2", 1.1), ("MR", "CO", 1.0)], _LOG_PONER) == 1)
+check("si despues de PONER se le ve IGUALAR, vuelve a contar: manda lo ULTIMO",
+      _limpers_log([("TOPC", "MP2", 1.1)],
+                   _LOG_PONER + [{"seat": "TOPC", "accion": "call"}]) == 1)
+# ASIMETRIA: solo se usa la PRESENCIA de un 'post', nunca la AUSENCIA de un
+# 'call'. El historial viene siempre con completo=False -el verbo dura menos de
+# 1,5 s y solo se ve lo que se muestrea-, asi que exigir ver el "Igualar" haria
+# perder limpers de verdad.
+check("un log vacio no borra a nadie: sin evidencia positiva se cuenta igual",
+      _limpers_log([("MR", "CO", 1.0)], []) == 1)
+check("y un 'post' de OTRO asiento no afecta a este",
+      _limpers_log([("MR", "CO", 1.0)], _LOG_PONER) == 1)
+check("el ante tambien es 'post' y tampoco convierte a nadie en limper",
+      _limpers_log([("TOPC", "MP2", 1.0)],
+                   [{"seat": "TOPC", "accion": "post", "verbo": "Ante"}]) == 0)
+
 # --- postflop_equity: separado de decide(), y abstenerse antes que inflar ------
 # El riesgo real de este camino es contar MENOS rivales de los que hay (en
 # showdown las cartas se giran y los dorsos desaparecen), porque eso INFLA la
