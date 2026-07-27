@@ -305,13 +305,54 @@ las zonas desplazadas, y el aviso nombra las dos causas que el usuario puede
 arreglar (tema oscuro / recalibrar). Ahorra además ~1,1 s de OCR por frame.
 Test sintético en `vision/test_table_reference.py`.
 
-**Lo que queda**: hacer la detección independiente del color, para poder usar
-cualquier tema. La vía obvia —el borde marrón del óvalo— se probó con umbrales de
-color y **no** discrimina (0 componentes grandes, tanto en el tema verde como en
-el oscuro), así que hace falta otra cosa: probablemente la **forma** (elipse
-grande y uniforme) en vez del color. Sin eso, la restricción es real y hay que
-documentarla al usuario: **el tapete tiene que tener color**. Solo el verde está
-medido.
+#### Ampliado el 2026-07-27: no es el tema, es **el torneo**
+
+El usuario lo señaló y los datos lo confirman: **el cliente pone una mesa u otra
+según el torneo**, no según el tema que él elige. En una sola sesión grabada
+(`215025`) aparecen **tres mesas distintas** según la mano. Catálogo medido sobre
+13 sesiones (HSV mediano del fieltro y acierto de `find_reference`):
+
+| fieltro (H,S,V) | sesiones | acierto |
+|---|---|---|
+| (12,201,220) naranja | 021103 022334 023224 034522 | 76-96% |
+| (67,200,100) verde | 014058 163519 220231 | 86-100% |
+| (82,200,97) verde azulado | 214214 215025 | 83-88% |
+| (104,160,72) azul | 020044 020432 | 88-100% |
+| (44,96,145) oliva | 003045 | **14-20%** |
+| (0,0,30) **negra** (Mystery Bounty) | 215025 | **2-4%** |
+
+Las dos rotas lo están por razones **distintas**: la negra no pasa ninguno de los
+dos umbrales (S=0, V=30), o sea que para el detector no existe; la oliva tiene el
+**mismo tono que el papel de pared** (44 contra 43) y se funden en una mancha.
+De paso queda desmentida una afirmación del código: el fondo **no** es casi
+negro, tiene una banda arriba a V=85 que suelda el óvalo con el borde del frame.
+
+**Cinco sustitutos probados y descartados**, todos medidos sobre las 13 sesiones.
+El desvío se mide contra la caja actual, y eso es lo que los tumba: todas las
+zonas son fracciones suyas, así que moverla desplaza el mapa entero.
+
+| sustituto | arregla | rompe | desvío |
+|---|---|---|---|
+| tono dominante del fieltro | 215025 0→100% | 014058 100→16% | 29% |
+| recorte por forma de óvalo | 215025 0→40% | — | p95 54% |
+| ancla de color HSV completo | 215025 2→72% | naranjas 96→0% | 13% |
+| elipse por bordes (Canny) | — | **todas a 0%** | — |
+| "lo que no es el papel de pared" | 215025 3→43% | casi todo <16% | 24% |
+
+La elipse por bordes —la vía "por forma" que esta sección proponía— **falla**:
+los nameplates y las cartas parten el contorno del óvalo en trozos y no
+sobrevive ni una elipse entera. La textura tampoco separa: los fieltros naranjas
+salen **más** rugosos que el fondo (12,5 contra 7,3) por su trama de puntos.
+
+**Lo que queda por hacer**: identificar **qué mesa es** y aplicar la regla que le
+toque, en vez de buscar un umbral único. La negra, por ejemplo, se separa del
+fondo por saturación (0 contra 81) aunque el brillo no ayude. El tipo se puede
+fijar al empezar, como `ReferenciaFijada` y `PlantillaBoton`, pero **tiene que
+poder re-detectarse**: `215025` cambia de mesa tres veces dentro de la sesión.
+
+Pendiente de decidir con el usuario si merece la pena para las dos rotas o solo
+para la negra (depende de si juega Mystery Bounty a menudo). El catálogo y las
+mediciones están escritos en `vision/seat_map.py` (commit `d4ba436`).
 
 ### 2.0d · Asiento fantasma: el fallo más caro que ha tenido la app — ✅ ARREGLADO
 
