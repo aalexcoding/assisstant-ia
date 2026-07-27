@@ -352,6 +352,9 @@ class HandTracker:
         self._frames = 0
         self._motivos = frozenset()
         self._botones = []
+        # ultimo nombre conocido de cada asiento, de manos ANTERIORES. Sobrevive a
+        # _abrir a proposito; es el respaldo del voto de esta mano (ver _nombres).
+        self._nombres_previos = {}
         self._abrir(frozenset())
 
     def _abrir(self, motivos):
@@ -373,6 +376,12 @@ class HandTracker:
         self._boton_previo = None if cambio else ultimo
         self._botones = []
         self.mano += 1
+        # lo que la mano que se cierra dejo aprendido pasa al respaldo, ANTES de
+        # borrar el voto de la mano
+        for seat, cuentas in (getattr(self, "_nombres", None) or {}).items():
+            ganador = _mas_visto(cuentas)
+            if ganador:
+                self._nombres_previos[seat] = ganador
         self._asientos = {}
         self._meta = {}
         # Nombres vistos en cada asiento durante ESTA mano, CON SU CUENTA. Se
@@ -390,6 +399,20 @@ class HandTracker:
         # cambia de mesa entre manos, asi que el ocupante de un asiento puede ser
         # otra persona. Dentro de una mano el asiento no cambia de dueño, que es
         # justo el alcance en el que fijar el nombre es seguro.
+        #
+        # Pero olvidarlo DEL TODO dejaba el HUD lleno de "(?)": medido sobre 250
+        # frames de dos sesiones, 308 y 337 filas de jugador salian sin nombre
+        # (una de cada cinco), y en una de ellas 335 de las 337 eran de un asiento
+        # cuyo nombre YA SE HABIA LEIDO en una mano anterior. Por eso el nombre de
+        # la mano que se cierra pasa a _nombres_previos (ver _abrir), que NO se
+        # olvida y solo se usa de RESPALDO: en cuanto esta mano lee un nombre para
+        # ese asiento, gana el de esta mano. Asi el caso de Zoom se corrige solo
+        # en cuanto el asiento se lee una vez, y mientras tanto se enseña el
+        # ultimo ocupante conocido en vez de nada.
+        #
+        # Es seguro porque el nombre NO ENTRA EN LA DECISION: solo se pinta. Las
+        # posiciones salen del recuento de asientos y el rastreo de un jugador
+        # entre frames va por "seat", nunca por nombre.
         self._nombres = {}
         self._veces = {}           # en cuantos frames de la mano se vio cada asiento
         self._botones = []         # asientos por los que ha pasado el boton EN ESTA MANO
@@ -437,11 +460,15 @@ class HandTracker:
             if p.get("name"):
                 self._nombres.setdefault(seat, {})
                 self._nombres[seat][p["name"]] = self._nombres[seat].get(p["name"], 0) + 1
+            votado = _mas_visto(self._nombres.get(seat))
             self._meta[seat].update(
                 position=p.get("position"),
                 is_hero=bool(p.get("is_hero")),
                 in_hand=p.get("in_hand"),
-                nombre=_mas_visto(self._nombres.get(seat)),
+                # el voto de ESTA mano manda; el ultimo conocido solo rellena
+                nombre=(votado or self._nombres_previos.get(seat)),
+                nombre_de_mano_anterior=(votado is None
+                                         and seat in self._nombres_previos),
                 action=p.get("action"),
                 bet_leido=p.get("bet") if isinstance(p.get("bet"), (int, float)) else None)
 
@@ -487,6 +514,8 @@ class HandTracker:
                 "comprometido_calle": a.comprometido_calle(),
                 "position": m.get("position"),
                 "nombre": m.get("nombre"),
+                # el nombre no se leyo en esta mano, viene de una anterior
+                "nombre_de_mano_anterior": m.get("nombre_de_mano_anterior", False),
                 "action": m.get("action"),
                 "is_hero": m.get("is_hero", False),
                 "in_hand": m.get("in_hand"),
@@ -548,6 +577,10 @@ def aplicar(state, info):
             if d.get("nombre") and p.get("name") != d["nombre"]:
                 p["name"] = d["nombre"]
                 p["name_repuesto"] = True
+            # se marca aparte del repuesto: "repuesto" es que no es la lectura de
+            # este frame, y esto es que no es de esta MANO. Solo informativo.
+            if d.get("nombre_de_mano_anterior"):
+                p["name_de_mano_anterior"] = True
     state["mano_seguida"] = info.get("mano")
     state["calle_seguida"] = info.get("calle")
     state["posiciones_asentadas"] = info.get("posiciones_asentadas", True)

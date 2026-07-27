@@ -18,7 +18,24 @@ NAME_BLACKLIST = {
     "table", "kos", "sit out", "any", "bet", "to", "won",
 }
 
-RANK_WORDS_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_\-\.]{2,19}$")
+# EL APOSTROFO CUENTA COMO PARTE DEL NICK. Sin el, un nick con apostrofo no se
+# lee NUNCA, y no es un caso raro: en la sesion 220231 el asiento UR es
+# "LinyoKing's" y salia "(?)" en todos los frames mientras los otros cinco se
+# leian bien. Se aceptan los dos apostrofos porque el OCR devuelve el tipografico
+# (’, U+2019) y no el recto: la linea que llegaba era "LinyoKing’ S".
+#
+# El resto de la regex NO se afloja, y hay medicion para ello. De las lineas de
+# nameplate que no son verbo de accion, sobre 3 sesiones:
+#
+#     5007  menos de 5 caracteres      ('-', '_', 'ee', '— =')      ruido, bien rechazado
+#     1794  rechazadas por la regex    ('30,9 BB', '- ©? 2 oo')     stacks y ruido
+#      542  aceptadas como nombre
+#        3  lista negra por subcadena  ('Participantes', 'Restantes')
+#        1  menos de dos minusculas    ('VELOCIDAD')
+#
+# O sea que bajar el minimo de 5 caracteres inundaria de ruido y la lista negra
+# por subcadena casi no pesa aqui, aunque siga siendo un fallo (docs, §3).
+RANK_WORDS_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_\-\.'’]{2,19}$")
 # el cliente en ingles agrupa miles con "," (12,500); el cliente en
 # castellano (vision/samples_pokerstars/) con "." (12.500). Aceptar ambos
 # formatos, nunca mezclados dentro del mismo numero.
@@ -295,7 +312,9 @@ def find_blinds_chat(lines):
 
 
 def _clean_name(text):
-    return text.strip().strip("/.,;:'\"|")
+    # el apostrofo tipografico se quita en los EXTREMOS igual que el recto -ahi es
+    # basura de OCR- pero dentro del nick se conserva (ver RANK_WORDS_RE)
+    return text.strip().strip("/.,;:'’\"|")
 
 
 def _is_name_candidate(text):

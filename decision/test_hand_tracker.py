@@ -390,14 +390,37 @@ for _ in range(20):
 check("si la lectura nueva se vuelve mayoritaria, se adopta (no es un latch)",
       s4["players"][0]["name"] == "Dav693A")
 
-# EN ZOOM el cliente cambia de mesa entre manos, asi que el ocupante de un
-# asiento puede ser OTRA persona: reponer entre manos seria inventarse quien es.
+# ENTRE MANOS SE RECUERDA, pero solo como RESPALDO.
+#
+# Antes no se recordaba nada, por el caso de Zoom -el cliente te cambia de mesa
+# entre manos, asi que el ocupante de un asiento puede ser otra persona-. Medido,
+# eso dejaba el HUD lleno de "(?)": 308 y 337 filas de jugador sin nombre sobre
+# 250 frames de dos sesiones (una de cada cinco), y en una de ellas 335 de las
+# 337 eran de un asiento cuyo nombre YA se habia leido en una mano anterior.
+#
+# El caso de Zoom se cubre igual porque el respaldo NO es un latch: en cuanto la
+# mano nueva lee un nombre para ese asiento, gana el nuevo. Lo unico que puede
+# quedar mal es un asiento que cambie de ocupante Y no se lea en toda la mano, y
+# ahi enseñar el ultimo conocido no es peor que enseñar "(?)". Es seguro porque
+# el nombre solo se pinta: no entra en la decision ni en el rastreo, que va por
+# "seat".
 s4 = con_nombre(None, "Pasar", cartas=())          # se recogen las cartas
 ht.aplicar(s4, tr.update(s4))
 s4 = con_nombre(None, "Pasar", cartas=("7c", "2d"), boton="MR")   # el boton rota: mano nueva
 ht.aplicar(s4, tr.update(s4))
-check("en una mano NUEVA no se repone (en Zoom el asiento puede ser de otro)",
-      s4["players"][0]["name"] is None)
+check("en una mano nueva sin lectura se enseña el ultimo nombre conocido",
+      s4["players"][0]["name"] == "Dav693A")
+check("y se marca que viene de una mano anterior, no de esta",
+      s4["players"][0].get("name_de_mano_anterior") is True)
+
+# el respaldo NO es un latch: una lectura nueva lo desplaza
+for _ in range(3):
+    s5 = con_nombre("otroJugador9", None, cartas=("7c", "2d"), boton="MR")
+    ht.aplicar(s5, tr.update(s5))
+check("si el asiento cambia de ocupante, la lectura nueva manda (caso Zoom)",
+      s5["players"][0]["name"] == "otroJugador9")
+check("y deja de marcarse como de una mano anterior",
+      s5["players"][0].get("name_de_mano_anterior") is not True)
 
 # --- integracion con el motor ---------------------------------------------
 # La propiedad que hace SEGURO el cambio: el comprometido solo puede convertir
