@@ -415,6 +415,12 @@ def _encolar_cartas(batch, bgr, boxes):
     for box in boxes:
         crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
         deck = box.get("deck", "solid")
+        # EL CALCO PRIMERO: si el glifo casa con una plantilla guardada no hace
+        # falta OCR, que es el 86% del coste de un frame. Ver color_rank_ocr.
+        calco, _sim = color_rank_ocr.rango_por_calco(crop, deck)
+        if calco is not None:
+            jobs.append((box, None, None, calco))
+            continue
         key = color_rank_ocr.cache_key(crop, box["suit"], deck)
         hay, rango = color_rank_ocr.cached_rank(key)
         if hay:

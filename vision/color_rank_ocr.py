@@ -56,6 +56,7 @@ Dos mejoras validadas contra 543 recortes reales etiquetados a mano
    etiquetadas acierta 36, falla 0 y deja 4 en blanco. No miente, solo se calla,
    que es justo el reparto de errores que quiere esta app.
 """
+import os
 from collections import Counter
 
 import cv2
@@ -348,6 +349,87 @@ def store_rank(key, rank):
 def reset_rank_cache():
     """Para tests y para empezar sesion limpia."""
     _RANK_CACHE.clear()
+
+
+# --- CALCO DE GLIFOS: leer el rango sin OCR ---
+#
+# Idea del usuario: la fuente del mazo es la misma para los cuatro palos, asi que
+# basta con guardar UNA plantilla por rango y comparar por calco. Se generan una
+# vez y se versionan en el repo (vision/glifos_rango.png), asi que no hay que
+# extraerlas en cada sesion ni pagar OCR en cada frame.
+#
+# POR QUE FUNCIONA, medido sobre 1.208 glifos de cuatro sesiones:
+#
+#     correlacion entre dos ejemplares del MISMO rango   mediana 1.000  min 0.927
+#     correlacion entre rangos DISTINTOS                 mediana 0.265  max 0.857
+#
+# Hay un hueco limpio entre 0.86 y 0.93, asi que el umbral va en 0.89. El par mas
+# parecido es 8 contra 9 (0.857), que es justo la confusion que el OCR cometia.
+#
+# LAS ETIQUETAS SE PUSIERON A OJO, mirando las plantillas medias, y no por
+# mayoria del OCR. No es pereza: el OCR es lo que falla, y en el grupo del '8'
+# votaba 980 veces '8' y 784 veces '6'. Etiquetar con el mismo instrumento que se
+# quiere sustituir habria fijado su error en piedra.
+#
+# EL '6' COSTO UNA VUELTA MAS, y la leccion vale. Con el umbral de agrupacion en
+# 0.87 el 6 y el 8 caian en el MISMO grupo -de ahi que el OCR lo votara 980 veces
+# '8' y 784 '6'- y las plantillas salian con 12 rangos en vez de 13. Peor aun:
+# con el 6 ausente, un 6 real casaba con la plantilla del 8 y se leia mal CON
+# CONFIANZA, o sea peor que antes (24/28 frente a los 26/28 del OCR solo).
+# Subiendo el umbral de agrupacion a 0.94 se separan, y su parecido entre si es
+# 0.878: por eso el umbral de decision va en 0.89, justo por encima.
+#
+# De los 21 grupos que salen se guardan SOLO los trece que son un glifo entero.
+# Los demas son glifos cortados -por el borde de la zona o por una ficha encima- y
+# meterlos como plantilla seria enseñarle a la app a reconocer sus propios
+# errores. Ese descarte lo hace el ojo, no un umbral.
+GLIFOS_FICHERO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "glifos_rango.png")
+# En ORDEN DE BARAJA, uno por rango, para que el atlas se pueda revisar de un
+# vistazo: vision/glifos_rango.png se abre y se leen los trece seguidos.
+GLIFOS_ETIQUETAS = ("A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K")
+GLIFO_LADO = 32
+GLIFO_UMBRAL = 0.89
+_GLIFOS = None
+
+
+def _glifos():
+    """(etiquetas, matriz de vectores normalizados). Se carga una vez."""
+    global _GLIFOS
+    if _GLIFOS is None:
+        atlas = cv2.imread(GLIFOS_FICHERO, cv2.IMREAD_GRAYSCALE)
+        if atlas is None:
+            _GLIFOS = ((), np.zeros((0, GLIFO_LADO * GLIFO_LADO), np.float32))
+        else:
+            vs = []
+            for i in range(len(GLIFOS_ETIQUETAS)):
+                g = atlas[:, i * GLIFO_LADO:(i + 1) * GLIFO_LADO].astype(np.float32) / 255.0
+                vs.append(_vector_glifo(g))
+            _GLIFOS = (GLIFOS_ETIQUETAS, np.array(vs))
+    return _GLIFOS
+
+
+def _vector_glifo(g):
+    v = g.reshape(-1) - g.mean()
+    n = np.linalg.norm(v)
+    return (v / n) if n else v
+
+
+def rango_por_calco(card_bgr, deck="solid"):
+    """Rango por comparacion con las plantillas guardadas, o None si ninguna
+    llega al umbral (entonces decide el OCR). Devuelve tambien el parecido para
+    poder auditarlo."""
+    etiquetas, M = _glifos()
+    if not len(M):
+        return None, 0.0
+    m = _recortar(rango_grande_mask(card_bgr, deck))
+    if m.size < 64 or m.shape[0] < 8:
+        return None, 0.0
+    g = cv2.resize(m, (GLIFO_LADO, GLIFO_LADO),
+                   interpolation=cv2.INTER_AREA).astype(np.float32) / 255.0
+    sims = M @ _vector_glifo(g)
+    i = int(np.argmax(sims))
+    return (etiquetas[i], float(sims[i])) if sims[i] >= GLIFO_UMBRAL else (None, float(sims[i]))
 
 
 def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ", deck="solid"):

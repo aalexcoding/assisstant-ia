@@ -513,6 +513,49 @@ check("una ficha clara apoyada abajo ensucia la mascara completa",
 check("pero NO la del rango, que solo mira arriba",
       abs(int((limpia > 0).sum()) - int((arriba > 0).sum())) < 30)
 
+print("\n# --- el rango por CALCO, con las plantillas guardadas ---")
+# Idea del usuario: la fuente es la misma en los cuatro palos, asi que basta una
+# plantilla por rango, generada una vez y versionada. Medido sobre 1.208 glifos
+# de cuatro sesiones: dos ejemplares del mismo rango correlacionan 0.927 o mas y
+# dos rangos distintos 0.878 como mucho, asi que el umbral va en 0.89.
+etiquetas, M = color_rank_ocr._glifos()
+check("las plantillas se cargan del fichero versionado", len(M) > 0)
+check("y cubren los TRECE rangos",
+      set(etiquetas) == set("2 3 4 5 6 7 8 9 10 J Q K A".split()))
+
+atlas = cv2.imread(color_rank_ocr.GLIFOS_FICHERO, cv2.IMREAD_GRAYSCALE)
+lado = color_rank_ocr.GLIFO_LADO
+check("el atlas tiene una casilla por etiqueta",
+      atlas.shape == (lado, lado * len(etiquetas)))
+
+# cada plantilla es MAS parecida a si misma que a cualquier otra de otro rango:
+# eso es lo que hace que el argmax acierte. Se compara al nivel de los vectores,
+# no reconstruyendo una carta falsa: binarizar la plantilla destruye los grises
+# del promedio y el parecido se hunde sin que eso diga nada del sistema.
+peor_propio, mejor_ajeno = 1.0, 0.0
+for i, ri in enumerate(etiquetas):
+    for j, rj in enumerate(etiquetas):
+        if i == j:
+            continue
+        sim = float(M[i] @ M[j])
+        if ri == rj:
+            peor_propio = min(peor_propio, sim)
+        else:
+            mejor_ajeno = max(mejor_ajeno, sim)
+check(f"dos plantillas de rangos DISTINTOS no pasan de {mejor_ajeno:.3f}",
+      mejor_ajeno < color_rank_ocr.GLIFO_UMBRAL)
+check("cada plantilla se identifica a si misma por argmax",
+      all(etiquetas[int(np.argmax(M @ M[i]))] == r for i, r in enumerate(etiquetas)))
+
+check("el 6 y el 8 son el par mas parecido y aun asi se distinguen",
+      color_rank_ocr.GLIFO_UMBRAL > 0.878)
+
+ruido = np.full((80, 80, 3), (40, 140, 60), np.uint8)
+cv2.circle(ruido, (40, 40), 22, (255, 255, 255), -1)     # un borron, no un glifo
+got, _sim = color_rank_ocr.rango_por_calco(ruido, "solid")
+check("un borron que no es ningun glifo NO se fuerza a un rango: cae al OCR",
+      got is None)
+
 n_fail = sum(1 for _, cond in checks if not cond)
 print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
 if n_fail:
