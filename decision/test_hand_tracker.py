@@ -422,6 +422,48 @@ check("si el asiento cambia de ocupante, la lectura nueva manda (caso Zoom)",
 check("y deja de marcarse como de una mano anterior",
       s5["players"][0].get("name_de_mano_anterior") is not True)
 
+# UN ASIENTO QUE NO SE VE EN TODA UNA MANO OLVIDA SU NOMBRE. Es la señal de que
+# ahi ya no esta quien estaba: si un jugador se levanta o se cambia de sitio, su
+# asiento viejo deja de aparecer. Sin esto el respaldo no caduca nunca y sostiene
+# al ocupante anterior indefinidamente -lo noto el usuario: "los nombres no
+# terminan de actualizarse cuando cambio un jugador de asiento"-.
+def mesa(asientos, boton, cartas=("Ah", "Kd")):
+    """asientos = [(seat, nombre)]; el boton nombra el asiento que lo tiene."""
+    return {"board": [], "hero_cards": list(cartas), "to_call": None,
+            "players": [{"seat": s, "name": n, "action": None, "stack": 40.0,
+                         "is_hero": False,
+                         "position": "BTN" if s == boton else None}
+                        for s, n in asientos]}
+
+
+TRES = [("UL", "sentado_uno"), ("MR", "otro"), ("UR", "tercero")]
+SIN_UL = [("MR", "otro"), ("UR", "tercero")]
+
+tr2 = ht.HandTracker()
+for _ in range(4):
+    s6 = mesa(TRES, "UL")
+    ht.aplicar(s6, tr2.update(s6))
+check("con el asiento visto, su nombre se recuerda",
+      s6["players"][0]["name"] == "sentado_uno")
+
+# UNA MANO ENTERA SIN ESE ASIENTO: el jugador se levanto o se cambio de sitio
+ht.aplicar(mesa(SIN_UL, "MR"), tr2.update(mesa(SIN_UL, "MR")))   # el boton se mueve: frontera
+for _ in range(4):
+    s = mesa(SIN_UL, "MR")
+    ht.aplicar(s, tr2.update(s))
+# otra frontera: el boton pasa a UR, que si esta en la mesa
+s = mesa(SIN_UL, "UR")
+ht.aplicar(s, tr2.update(s))
+
+# y ahora vuelve a haber alguien en UL, con el nick ilegible
+s7 = mesa([("UL", None), ("MR", "otro"), ("UR", "tercero")], "UR")
+ht.aplicar(s7, tr2.update(s7))
+check("si el asiento no se vio en toda una mano, se OLVIDA: no se enseña al "
+      "ocupante anterior (el usuario lo noto al cambiarse un jugador de asiento)",
+      s7["players"][0].get("name") is None)
+check("y los asientos que si se vieron conservan el suyo",
+      s7["players"][1].get("name") == "otro")
+
 # --- integracion con el motor ---------------------------------------------
 # La propiedad que hace SEGURO el cambio: el comprometido solo puede convertir
 # una ABSTENCION en recomendacion, nunca cambiar una recomendacion que ya habia.

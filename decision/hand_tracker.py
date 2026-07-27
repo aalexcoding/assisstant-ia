@@ -382,6 +382,20 @@ class HandTracker:
             ganador = _mas_visto(cuentas)
             if ganador:
                 self._nombres_previos[seat] = ganador
+        # UN ASIENTO QUE NO SE HA VISTO EN TODA LA MANO OLVIDA SU NOMBRE. Es la
+        # señal de que ahi ya no esta quien estaba: si un jugador se levanta o se
+        # cambia de sitio, su asiento viejo deja de aparecer. Sin esto el respaldo
+        # no caduca nunca y puede sostener al ocupante anterior indefinidamente,
+        # que es lo que el usuario noto ("los nombres no terminan de actualizarse
+        # cuando cambio un jugador de asiento").
+        #
+        # Se acota a UNA mano, no mas: el respaldo hace mucho trabajo -medido
+        # sobre 3.198 filas de una sesion, rellena 767 (24%)- asi que tirarlo
+        # antes de tiempo devolveria los "(?)" que este mecanismo vino a quitar.
+        if getattr(self, "_veces", None) is not None:
+            vistos = {s for s, n in self._veces.items() if n}
+            self._nombres_previos = {s: n for s, n in self._nombres_previos.items()
+                                     if s in vistos}
         self._asientos = {}
         self._meta = {}
         # Nombres vistos en cada asiento durante ESTA mano, CON SU CUENTA. Se
