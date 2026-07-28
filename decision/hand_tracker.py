@@ -457,6 +457,30 @@ class HandTracker:
             for a in self._asientos.values():
                 a.abrir_calle()
 
+        # EL VOTO DE OCUPACION VA SOBRE LO LEIDO EN EL FRAME, no sobre players.
+        #
+        # Es el bucle que habia que romper: asientos_estables() sale de _veces,
+        # table_state lo usa para AÑADIR asientos a `occupied`, y los players se
+        # construyen despues de eso. Contando players, un asiento metido por
+        # memoria se votaba a si mismo en la vuelta siguiente y se sostenia solo.
+        # Medido antes del cambio: 187 rachas asi, la mas larga de 261 frames
+        # seguidos, y 1.794 frames (21,6%) con algun asiento sin ninguna evidencia.
+        #
+        # Y el voto va SEPARADO del recorrido de players, no dentro, porque el
+        # override tambien BORRA de `occupied` lo que no esta en el conjunto
+        # estable. Contando solo lo que llega a players, un asiento leido por
+        # primera vez se borraba antes de poder votarse y no podia entrar nunca:
+        # el conjunto quedaba cerrado desde el principio de la mano.
+        #
+        # `asientos_leidos` es la lectura cruda del frame (ver table_state). Si no
+        # viene -GameState de una version anterior o de las rutas de diagnostico-
+        # se cae a players, que es el comportamiento de antes.
+        leidos = state.get("asientos_leidos")
+        if leidos is None:
+            leidos = [p.get("seat") for p in state.get("players") or [] if p.get("seat")]
+        for seat in leidos:
+            self._veces[seat] = self._veces.get(seat, 0) + 1
+
         for p in state.get("players") or []:
             seat = p.get("seat")
             if not seat:
@@ -464,12 +488,11 @@ class HandTracker:
             a = self._asientos.get(seat)
             if a is None:
                 a = self._asientos[seat] = _Asiento()
-                self._veces[seat] = 0
+                self._veces.setdefault(seat, 0)
                 # si el asiento aparece en el PRIMER frame de la mano hay al menos
                 # la posibilidad de haberle visto el stack intacto; si aparece mas
                 # tarde, seguro que se perdio algo de lo que ya habia puesto
                 self._meta[seat] = {"desde_el_principio": self._frames == 1}
-            self._veces[seat] = self._veces.get(seat, 0) + 1
             a.leer(p.get("stack") if isinstance(p.get("stack"), (int, float)) else None)
             if p.get("name"):
                 self._nombres.setdefault(seat, {})

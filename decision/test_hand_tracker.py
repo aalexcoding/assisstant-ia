@@ -588,3 +588,75 @@ def test_sin_to_call_un_comprometido_disparatado_no_crea_una_defensa():
     r = engine.decide(spot(committed=99.0, bet=None, to_call=None))
     assert r is not None
     assert r["facing_used"] == "open_raise"
+
+
+# --- el voto de ocupacion va sobre lo LEIDO, no sobre la propia salida -------
+#
+# EL BUCLE QUE SE ROMPIO. asientos_estables() sale de _veces; table_state usa ese
+# conjunto para AÑADIR asientos a `occupied`, y los `players` se construyen
+# DESPUES. Contando players, un asiento metido por memoria se votaba a si mismo
+# en la vuelta siguiente y se sostenia solo. Medido sobre las 26 sesiones antes
+# del arreglo: 1.794 frames (21,6%) con algun asiento sin ninguna evidencia -ni
+# nombre, ni stack, ni apuesta, ni accion, ni cartas- y 187 rachas asi, la mas
+# larga de 261 frames seguidos, o sea unos 3 minutos con un asiento inventado.
+#
+# Y es caro porque las posiciones salen del RECUENTO: un asiento de mas las corre
+# todas y se sirve el rango de otra posicion, en silencio.
+
+def leido(stacks, leidos):
+    st = estado(stacks)
+    st["asientos_leidos"] = list(leidos)
+    return st
+
+
+def test_un_asiento_que_no_se_lee_NO_suma_votos():
+    """Aunque siga llegando en players porque la memoria lo metio."""
+    tr = ht.HandTracker()
+    for _ in range(10):
+        tr.update(leido({"HERO": 10.0, "UL": 20.0, "MR": 30.0}, ["HERO", "UL"]))
+    assert tr.asientos_estables() == {"HERO", "UL"}, "MR nunca se leyo"
+
+
+def test_un_asiento_que_se_deja_de_leer_acaba_soltandose():
+    """Antes no podia: cada frame en que la memoria lo mantenia en players le
+    sumaba un voto, asi que el ratio nunca bajaba del 50%."""
+    tr = ht.HandTracker()
+    todos = {"HERO": 10.0, "UL": 20.0, "MR": 30.0}
+    for _ in range(6):
+        tr.update(leido(todos, ["HERO", "UL", "MR"]))
+    assert "MR" in tr.asientos_estables()
+    for _ in range(8):
+        tr.update(leido(todos, ["HERO", "UL"]))     # MR ya no se ve
+    assert "MR" not in tr.asientos_estables(), "el asiento fantasma no se soltaba"
+
+
+def test_un_asiento_nuevo_PUEDE_entrar_aunque_no_llegue_a_players():
+    """El otro lado del mismo candado: el override BORRA de `occupied` lo que no
+    esta en el conjunto estable, asi que un asiento leido por primera vez no
+    llegaba a players y por tanto no podia votarse nunca. El conjunto quedaba
+    cerrado desde el primer frame de la mano."""
+    tr = ht.HandTracker()
+    for _ in range(4):
+        tr.update(leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL"]))
+    # UR empieza a verse, pero el override todavia no lo deja pasar a players
+    for _ in range(6):
+        tr.update(leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL", "UR"]))
+    assert "UR" in tr.asientos_estables()
+
+
+def test_sin_asientos_leidos_se_cuenta_como_antes():
+    """Los GameState de una version anterior y los de las rutas de diagnostico no
+    traen el campo, y esos no pueden perder el rastreo."""
+    tr = ht.HandTracker()
+    for _ in range(10):
+        tr.update(estado({"HERO": 10.0, "UL": 20.0, "MR": 30.0}))
+    assert tr.asientos_estables() == {"HERO", "UL", "MR"}
+
+
+def test_el_comprometido_se_sigue_leyendo_de_players():
+    """El voto y la lectura del stack son cosas distintas: un asiento puede no
+    votar en este frame y aun asi aportar su bajada de stack."""
+    tr = ht.HandTracker()
+    calentar(tr, leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL"]))
+    info = tr.update(leido({"HERO": 10.0, "UL": 15.0}, ["HERO", "UL"]))
+    assert com(info, "UL") == 5.0

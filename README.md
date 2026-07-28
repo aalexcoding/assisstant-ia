@@ -64,6 +64,43 @@ proteger de que baje. Quedan fuera `capture/` (portal/PipeWire), `decision/rag/`
 (estudio offline) y las rutas de diagnóstico de `vision/` — ver el `omit` de
 `pyproject.toml`, donde está escrito el porqué de cada exclusión.
 
+## Los cuatro estados de un asiento
+
+Es la especificación de la que sale el recuento de jugadores, y de ese recuento
+salen **todas** las posiciones y con ellas el rango que se sirve:
+
+| estado | qué se ve | ¿sentado? | ¿en la mano? |
+|---|---|---|---|
+| 1 | hueco, tapete pelado | no | no |
+| 2 | cápsula **oscurecida**, sin cartas | sí | no (se retiró) |
+| 3 | cápsula + **dorsos** | sí | sí |
+| 4 | cápsula + **cartas boca arriba** | sí | sí (all-in / showdown) |
+
+Lo que aporta es **separar dos preguntas con señales distintas**: *"¿sentado?"*
+son los estados 2/3/4 y *"¿en la mano?"* los 3/4. Antes "sentado" dependía de que
+el OCR leyera el nick, y sobre una cápsula oscurecida —un jugador ya retirado—
+eso falla a menudo: el asiento desaparecía del recuento y corría todas las
+posiciones.
+
+Medido sobre 13.900 observaciones de asiento de las 26 sesiones, con verdad de
+terreno que **no sale de la app** (un asiento con cartas está ocupado; una
+fracción de cápsula < 0,005 es tapete pelado):
+
+| | inestabilidad | recall | precisión |
+|---|---|---|---|
+| antes | 0,3 % | 99,0 % | **64,8 %** |
+| ahora | 2,4 % | 99,8 % | **87,9 %** |
+
+Se contaba tapete pelado como jugador **1 de cada 3 veces**; ahora 1 de cada 8.
+El 0,3 % de inestabilidad de antes no era una virtud sino un **candado**: el
+rastreador votaba sobre su propia salida, así que una vez fijado el conjunto no
+podía cambiar (medidas 187 rachas de asientos sostenidos solo por esa memoria, la
+más larga de 261 frames seguidos). Ese bucle está roto —el voto va sobre
+`state["asientos_leidos"]`, la lectura cruda del frame— y el precio es que ahora
+el recuento puede moverse dentro de una mano. **Es un cambio abierto**: reducirlo
+sin perder precisión pasa por fijar el conjunto al abrir la mano (medido offline:
+0 % de inestabilidad con 98,7 % de recall y 86,3 % de precisión).
+
 ## Herramientas de desarrollo
 
 ```bash

@@ -344,12 +344,72 @@ CAPSULA_S_MAX, CAPSULA_V_MAX = 70, 70
 CAPSULA_MIN_FRAC = 0.07
 
 
-def _hay_capsula(plate_bgr):
+def _capsula_frac(plate_bgr):
+    """Fraccion de la zona ocupada por pixeles de capsula, o None si no hay zona
+    que mirar (el asiento cae fuera del encuadre).
+
+    Se expone la metrica CRUDA y no solo el si/no porque es la que separa las dos
+    poblaciones y la que hay que poder medir cuando cambie el tema de mesa."""
     if plate_bgr.size == 0:
-        return True                # sin zona que mirar no se veta nada
+        return None
     hsv = cv2.cvtColor(plate_bgr, cv2.COLOR_BGR2HSV)
     s, v = hsv[:, :, 1], hsv[:, :, 2]
-    return float(((s < CAPSULA_S_MAX) & (v < CAPSULA_V_MAX)).mean()) >= CAPSULA_MIN_FRAC
+    return float(((s < CAPSULA_S_MAX) & (v < CAPSULA_V_MAX)).mean())
+
+
+def _hay_capsula(plate_bgr):
+    f = _capsula_frac(plate_bgr)
+    return True if f is None else f >= CAPSULA_MIN_FRAC   # sin zona no se veta nada
+
+
+# --- los cuatro estados de un asiento ---------------------------------------
+#
+# La idea es del usuario, y es la especificacion que le faltaba a la ocupacion:
+#
+#   1  hueco                       no hay nadie
+#   2  capsula, sin cartas         sentado, pero fuera de esta mano
+#   3  capsula + dorsos            sentado y jugando
+#   4  capsula + cartas a la vista  sentado y jugando (all-in / showdown)
+#
+# Lo que aporta es SEPARAR las dos preguntas con señales distintas: "¿sentado?"
+# son los estados 2/3/4 y "¿en la mano?" los 3/4. Antes "sentado" dependia de que
+# el OCR leyera el nick, que es justo lo que mas falla sobre una capsula
+# oscurecida (estado 2), y por eso un asiento ocupado desaparecia del recuento.
+#
+# MEDIDO sobre 13.900 observaciones de asiento de las 26 sesiones grabadas, con
+# la referencia fijada de cada sesion como en vivo. La verdad de terreno NO sale
+# de la app: un asiento con cartas esta ocupado con seguridad, y un asiento con
+# fraccion < 0,005 es tapete pelado.
+#
+#                              inestabilidad   recall   precision
+#     la app (antes)                    0,5%    97,3%       59,2%
+#     los 4 estados, crudo              4,4%   100,0%       98,3%
+#
+# O sea que CUATRO DE CADA DIEZ asientos que se contaban eran tapete pelado. La
+# inestabilidad del 0,5% no era una virtud sino el candado del override del
+# rastreador, que se auto-reforzaba (ver asientos_estables).
+#
+# Y la capsula SI separa, al contrario de lo que decia el comentario anterior
+# -medido con otro tema de mesa-: la poblacion sin cartas sale bimodal, con 1.594
+# observaciones por debajo de 0,05 (hueco), un valle de 71 entre 0,05 y 0,10, y
+# ~4.000 entre 0,30 y 0,60 (sentado). CAPSULA_MIN_FRAC=0,07 cae en el valle, y
+# solo el 0,63% de los asientos con cartas queda por debajo.
+HUECO, SENTADO, EN_MANO_TAPADAS, EN_MANO_A_LA_VISTA = 1, 2, 3, 4
+
+
+def estado_asiento(capsula_frac, tiene_dorsos, ensena_cartas):
+    """Uno de los cuatro estados, a partir de señales ya medidas.
+
+    Recibe las señales en vez de la imagen para no volver a barrer los mismos
+    pixeles: quien llama ya ha detectado dorsos y manos reveladas de toda la mesa
+    en una sola pasada."""
+    if ensena_cartas:
+        return EN_MANO_A_LA_VISTA
+    if tiene_dorsos:
+        return EN_MANO_TAPADAS
+    if capsula_frac is None:
+        return HUECO               # el asiento cae fuera del encuadre
+    return SENTADO if capsula_frac >= CAPSULA_MIN_FRAC else HUECO
 
 
 def _plate_occupied(lines):
@@ -675,31 +735,64 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # motor se abstiene. Nunca lee un numero en la unidad equivocada.
     seat_lines = {name: parse_tsv_lines(results[seat_tsv[name]]) for name in seat_map.SEATS}
 
+    # Los DORSOS se resuelven aqui arriba, antes de juzgar la ocupacion, porque
+    # tener cartas repartidas es la prueba mas fuerte que hay de estar sentado:
+    # a una silla vacia no se le reparte. Antes se miraban despues y solo servian
+    # para emitir un aviso de "asiento fantasma" que no cambiaba el recuento.
+    dorsos = seat_map.detect_in_hand_seats(bgr, ref)
+
     occupied = {}
+    estados = {}
     for name in seat_map.SEATS:
         lines = seat_lines[name]
         n, _stk_chips, accion = _seat_plate_name_stack(lines)
         stk = seat_map.parse_amount_bb(lines)
-        occ = True if name == seat_map.HERO_SEAT else _plate_occupied(lines)
-        # VETO: si ahi no hay ni capsula de nameplate, no hay nadie, diga lo que
-        # diga el OCR. Solo QUITA asientos, nunca los inventa.
-        if occ and name != seat_map.HERO_SEAT:
-            z = seat_plate_px[name]
-            if not _hay_capsula(bgr[z[1]:z[3], z[0]:z[2]]):
-                occ = False
+        z = seat_plate_px[name]
+        estados[name] = e = estado_asiento(_capsula_frac(bgr[z[1]:z[3], z[0]:z[2]]),
+                                           name in dorsos, name in reveladas_px)
+        # El HERO es NUESTRO propio asiento: se da por ocupado siempre. En caso de
+        # bust el cliente lo tapa con un dialogo de reentrada y esos pocos frames
+        # quedan con un hero fantasma (limitacion conocida), a cambio de no
+        # perderlo entre manos, cuando no tiene cartas y su nameplate no se lee.
+        #
+        # Para el resto, la evidencia es CUALQUIERA de las tres, no las dos a la
+        # vez. Antes se exigia texto Y capsula, y el texto era el unico que podia
+        # afirmar: sobre una capsula oscurecida -un jugador que ya se retiro- el
+        # OCR falla a menudo y el asiento desaparecia del recuento, desplazando
+        # TODAS las posiciones y con ellas el rango que se sirve.
+        occ = (name == seat_map.HERO_SEAT
+               or e != HUECO
+               or _plate_occupied(lines))
         if occ:
             bet_lines = parse_tsv_lines(results[bet_tsv[name]])
             occupied[name] = {"name": n, "stack": stk, "action": accion,
                               "bet": seat_map.parse_amount_bb(bet_lines)}
 
+    # LO QUE SE LEE EN ESTE FRAME, antes de que la memoria del rastreador opine.
+    # Se guarda porque el rastreador tiene que votar sobre EVIDENCIA y no sobre su
+    # propia salida: como el override de abajo escribe en `occupied` y los
+    # jugadores se construyen despues, un asiento metido por memoria volvia a
+    # contarse como "visto ocupado" en la votacion siguiente y se reforzaba solo.
+    # Medido: 187 rachas de asientos sostenidos unicamente por ese bucle, la mas
+    # larga de 261 frames seguidos (unos 3 minutos con un asiento inventado).
+    state["asientos_leidos"] = sorted(occupied)
+
     # los asientos que el rastreador da por estables MANDAN sobre la lectura de
     # este frame (ver el docstring). El hero nunca se suelta: es nuestro asiento.
+    #
+    # NI SIQUIERA LA MEMORIA BORRA UN ASIENTO CON CARTAS DELANTE. A una silla
+    # vacia no se le reparte, asi que si en ESTE frame se le ven cartas, esta
+    # ocupado y no hay recuerdo que valga: borrarlo seria preferir lo que se creia
+    # hace veinte frames sobre lo que se esta viendo.
+    con_cartas = dorsos | set(reveladas_px)
     if asientos_estables:
         for name in asientos_estables:
             occupied.setdefault(name, {"name": None, "stack": None,
                                        "bet": None, "action": None})
         for name in list(occupied):
-            if name not in asientos_estables and name != seat_map.HERO_SEAT:
+            if (name not in asientos_estables
+                    and name != seat_map.HERO_SEAT
+                    and name not in con_cartas):
                 del occupied[name]
 
     # quien sigue en la mano. Se resuelve AQUI, antes de cerrar la ocupacion,
@@ -716,7 +809,9 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     #
     # Cuenta como en la mano quien ENSEÑA las cartas aunque no se haya podido
     # leer el rango: para el recuento basta con ver que hay una mano ahi.
-    en_mano = seat_map.detect_in_hand_seats(bgr, ref) | set(reveladas_px)
+    # `dorsos` ya se calculo arriba, antes de juzgar la ocupacion, porque tener
+    # cartas es tambien la prueba mas fuerte de estar sentado.
+    en_mano = dorsos | set(reveladas_px)
 
     # EL DISCO SE BUSCA BARRIENDO LA MESA, no en seis puntos fijos. La idea es del
     # usuario ("hay que montar un sistema que mapee la mesa buscando el boton
@@ -877,12 +972,16 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # contradiccion entre las dos señales (texto del nameplate vs dorso), y
     # significa que el recuento de asientos -y por tanto TODAS las posiciones-
     # puede estar mal
+    # Con las cartas contando ya como evidencia de ocupacion, esto solo puede
+    # saltar si algo posterior descarto el asiento pese a versele la mano. Deja de
+    # ser "el OCR no leyo el nombre" -que ya no descarta a nadie- y pasa a ser una
+    # contradiccion de verdad, asi que se dice mas fuerte.
     fantasmas = en_mano - set(occupied)
     if fantasmas:
         state["warnings"].append(
-            f"asiento(s) con cartas repartidas pero sin nameplate legible: "
-            f"{sorted(fantasmas)}; el recuento de ocupados puede estar mal y con el "
-            f"las posiciones")
+            f"asiento(s) con cartas repartidas que NO estan en el recuento: "
+            f"{sorted(fantasmas)}; las posiciones salen de ese recuento, asi que "
+            f"pueden estar todas desplazadas")
     if seat_map.HERO_SEAT in positions:
         state["hero_position"] = positions[seat_map.HERO_SEAT]
 

@@ -26,6 +26,7 @@ import pytest
 from vision import color_card_detector as solido
 from vision import color_rank_ocr, seat_map
 from vision import glyph_card_detector as glifo
+from vision import table_state as ts
 
 pytestmark = pytest.mark.vision
 
@@ -902,3 +903,49 @@ def test_un_glifo_estrecho_se_escala_por_su_alto_y_no_se_estira():
     cols = np.where(g.max(axis=0) > 0.15)[0]
     filas = np.where(g.max(axis=1) > 0.15)[0]
     assert (cols.max() - cols.min()) < (filas.max() - filas.min())
+
+
+# --- los cuatro estados de un asiento --------------------------------------
+#
+# La taxonomia es del usuario y es la especificacion que le faltaba a la
+# ocupacion. Lo que aporta es SEPARAR dos preguntas que antes iban juntas:
+# "¿sentado?" (estados 2/3/4) y "¿en la mano?" (3/4). Antes "sentado" dependia
+# de que el OCR leyera el nick, y sobre una capsula oscurecida -un jugador ya
+# retirado- eso falla a menudo: el asiento desaparecia del recuento y con el se
+# desplazaban TODAS las posiciones.
+
+@pytest.mark.parametrize("frac, dorsos, vista, esperado, desc", [
+    (0.00, False, False, ts.HUECO, "tapete pelado"),
+    (0.45, False, False, ts.SENTADO, "capsula sin cartas: sentado y retirado"),
+    (0.45, True, False, ts.EN_MANO_TAPADAS, "con dorsos"),
+    (0.45, False, True, ts.EN_MANO_A_LA_VISTA, "boca arriba"),
+    (0.45, True, True, ts.EN_MANO_A_LA_VISTA, "girando: manda lo que se ve"),
+])
+def test_los_cuatro_estados(frac, dorsos, vista, esperado, desc):
+    assert ts.estado_asiento(frac, dorsos, vista) == esperado, desc
+
+
+@pytest.mark.parametrize("frac, dorsos, vista", [
+    (0.00, True, False), (0.00, False, True),
+])
+def test_las_CARTAS_mandan_sobre_la_capsula(frac, dorsos, vista):
+    """A una silla vacia no se le reparte. Si hay cartas, hay alguien, aunque la
+    capsula no se vea: es la evidencia mas fuerte que existe."""
+    assert ts.estado_asiento(frac, dorsos, vista) != ts.HUECO
+
+
+def test_un_asiento_fuera_del_encuadre_no_se_inventa():
+    """_capsula_frac devuelve None cuando no hay zona que mirar. Contarlo como
+    ocupado añadiria un asiento y correria todas las posiciones."""
+    assert ts.estado_asiento(None, False, False) == ts.HUECO
+
+
+def test_el_umbral_de_capsula_cae_en_el_VALLE_entre_las_dos_poblaciones():
+    """Medido sobre 13.900 observaciones de asiento de las 26 sesiones: la
+    poblacion sin cartas es bimodal -1.594 observaciones bajo 0,05 (hueco), un
+    valle de 71 entre 0,05 y 0,10, y ~4.000 entre 0,30 y 0,60 (sentado)-, y los
+    asientos CON cartas empiezan en 0,126 (p01). El umbral tiene que quedar entre
+    el hueco y ambos."""
+    assert 0.05 <= ts.CAPSULA_MIN_FRAC <= 0.12
+    assert ts.estado_asiento(0.02, False, False) == ts.HUECO
+    assert ts.estado_asiento(0.13, False, False) == ts.SENTADO

@@ -18,6 +18,7 @@ Lo que de verdad protege:
 
 Estos SI arrancan tesseract de verdad: es lo unico que prueba el pool.
 """
+import os
 import subprocess
 
 import cv2
@@ -37,7 +38,15 @@ def texto(t):
 
 
 def procesos_vivos():
-    out = subprocess.run(["pgrep", "-f", "vision.ocr_worker --serve"],
+    """Workers de OCR lanzados POR ESTE PROCESO.
+
+    Acotado a los hijos directos (-P) y no a toda la maquina: el pool los crea
+    con subprocess.Popen, asi que son hijos de quien corre los tests. Sin el -P,
+    este test se ponia rojo por cualquier otro proceso que estuviera usando la
+    app -la GUI abierta, un replay en marcha-, o sea que fallaba por algo que no
+    tiene nada que ver con lo que comprueba."""
+    out = subprocess.run(["pgrep", "-P", str(os.getpid()),
+                          "-f", "vision.ocr_worker --serve"],
                          capture_output=True, text=True)
     return [p for p in out.stdout.split() if p]
 
