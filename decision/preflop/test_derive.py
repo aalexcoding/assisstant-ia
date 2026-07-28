@@ -1,6 +1,6 @@
 """
-Verificacion de la capa derivada del preflop (derive.py), de momento la opcion
-de la BB.
+Verificacion de la capa derivada del preflop (derive.py): la opcion de la BB,
+frente a un limp y el squeeze.
 
 Lo que de verdad protege, en orden de gravedad:
 
@@ -13,31 +13,16 @@ Lo que de verdad protege, en orden de gravedad:
      la fila SB de ranges.json tiene que estar mapeada (si el usuario
      redigitaliza y aparece una nueva, falla el test, no la mesa).
   3. TODA ETIQUETA DERIVADA TIENE CASTELLANO, o el HUD se queda medio mudo.
-
-Script suelto, sin pytest (el proyecto no lo usa).
-Uso: .venv/bin/python decision/preflop/test_derive.py
 """
-import json
-import os
-import sys
+import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from decision.preflop import derive, lookup
+from decision.preflop.actions import translate_action
+from decision.preflop.lookup import recommend
 
-import derive
-from actions import translate_action
-from lookup import RANGES
-
-checks = []
-
-
-def check(desc, cond):
-    checks.append((desc, cond))
-    print(("OK  " if cond else "FAIL") + " " + desc)
-
-
-PROFUNDIDADES = sorted(RANGES["open_raise"], key=float)
+PROFUNDIDADES = sorted(lookup.RANGES["open_raise"], key=float)
 MANOS = sorted({m for k in PROFUNDIDADES
-                for manos in RANGES["open_raise"][k]["SB"].values() for m in manos})
+                for manos in lookup.RANGES["open_raise"][k]["SB"].values() for m in manos})
 
 
 def cartas(mano):
@@ -47,223 +32,250 @@ def cartas(mano):
     return [mano[0] + "h", mano[1] + ("h" if mano[2] == "s" else "d")]
 
 
-print(f"# --- {len(MANOS)} manos x {len(PROFUNDIDADES)} profundidades ---")
+@pytest.fixture(scope="module")
+def barrido_bb():
+    """bb_option sobre las 169 manos x las 11 profundidades. De modulo porque son
+    ~1.800 llamadas y varios tests miran la misma pasada desde angulos distintos."""
+    respuestas, sin_respuesta = {}, []
+    for k in PROFUNDIDADES:
+        for mano in MANOS:
+            r = derive.bb_option(cartas(mano), float(k), limpers=1)
+            if r is None:
+                sin_respuesta.append((k, mano))
+            else:
+                respuestas[(k, mano)] = r
+    return {"respuestas": respuestas, "sin_respuesta": sin_respuesta,
+            "acciones": {r["action"] for r in respuestas.values()}}
 
-# --- 1. nunca se retira ----------------------------------------------------
-folds = []
-sin_respuesta = []
-acciones = set()
-for k in PROFUNDIDADES:
-    for mano in MANOS:
-        r = derive.bb_option(cartas(mano), float(k), limpers=1)
-        if r is None:
-            sin_respuesta.append((k, mano))
-            continue
-        acciones.add(r["action"])
-        if "FOLD" in r["action"].upper():
-            folds.append((k, mano, r["action"]))
-check("con la opcion NUNCA se retira (pasar es gratis)", not folds)
-check("y hay respuesta para todas las manos de todas las profundidades",
-      not sin_respuesta)
-print(f"    acciones que produce: {sorted(acciones)}")
 
-# --- 2. no se inventa nada -------------------------------------------------
-etiquetas_datos = {e for k in PROFUNDIDADES for e in RANGES["open_raise"][k]["SB"]}
-sin_mapear = [e for e in etiquetas_datos if derive._traducir(e) is None]
-check("toda etiqueta que existe en la fila SB esta mapeada "
-      f"({len(etiquetas_datos)} etiquetas en los datos)", not sin_mapear)
-if sin_mapear:
-    print("     sin mapear:", sin_mapear)
+# --- 1. nunca se retira ------------------------------------------------------
 
-check("una etiqueta desconocida NO se traduce a ciegas",
-      derive._traducir("SOMETHING NEW") is None)
+def test_la_bb_con_la_opcion_nunca_se_retira(barrido_bb):
+    """Pasar es gratis: un fold aqui seria tirar una mano que se puede ver sin
+    pagar. Es el fallo mas grave que puede tener esta capa."""
+    folds = [(k, m, r["action"]) for (k, m), r in barrido_bb["respuestas"].items()
+             if "FOLD" in r["action"].upper()]
+    assert not folds, folds[:10]
 
-# el mapeo, caso por caso
-check("LIMP -> CHECK", derive._traducir("LIMP") == "CHECK")
-check("fold -> CHECK, que es la traduccion forzada por las reglas",
-      derive._traducir("fold") == "CHECK")
-check("OPEN RAISE ALL IN -> ALL IN", derive._traducir("OPEN RAISE ALL IN") == "ALL IN")
-check("el sizing del donante se CONSERVA, no se recalcula",
-      derive._traducir("OPEN RAISE (3.5 BB)") == "RAISE OVER LIMPERS (3.5 BB)")
-check("y la version marginal tambien",
-      derive._traducir("MARGINAL OPEN RAISE") == "MARGINAL RAISE OVER LIMPERS")
 
-# la respuesta es SIEMPRE el donante mapeado
-discrepan = []
-for k in ("6", "20", "40"):
-    for mano in MANOS:
-        r = derive.bb_option(cartas(mano), float(k), limpers=1)
-        if r and derive._traducir(r["donor_action"]) != r["action"]:
-            discrepan.append((k, mano))
-check("cada respuesta es exactamente la etiqueta del donante mapeada", not discrepan)
+def test_hay_respuesta_para_todas_las_manos_de_todas_las_profundidades(barrido_bb):
+    assert not barrido_bb["sin_respuesta"], barrido_bb["sin_respuesta"][:10]
 
-# --- 3. castellano para todo lo que produce --------------------------------
-sin_es = [a for a in acciones if translate_action(a)[1] is None]
-check("toda accion derivada tiene castellano para el HUD", not sin_es)
-if sin_es:
-    print("     sin castellano:", sin_es)
 
-# --- 4. procedencia: se dice SIEMPRE de donde sale -------------------------
-print("\n# --- procedencia ---")
-r = derive.bb_option(["Ah", "Ad"], 25.0, limpers=1)
-check("marca que es derivado, no una tabla suya", r["source"] == "derived")
-check("y nombra la celda donante", "SB" in r["donor"] and "25" in r["donor"])
-check("y dice que decia el donante", r["donor_action"] == "OPEN RAISE (3.5 BB)")
+# --- 2. no se inventa nada ---------------------------------------------------
 
-# --- 5. las guardas --------------------------------------------------------
-print("\n# --- guardas ---")
-check("con 2 limpers no hay donante valido -> None (el motor deja el CHECK)",
-      derive.bb_option(["Ah", "Ad"], 25.0, limpers=2) is None)
-check("con 3 tampoco", derive.bb_option(["Ah", "Ad"], 25.0, limpers=3) is None)
-check("con 1 si", derive.bb_option(["Ah", "Ad"], 25.0, limpers=1) is not None)
+def test_toda_etiqueta_de_la_fila_sb_esta_mapeada():
+    """Si el usuario redigitaliza sus rangos y aparece una etiqueta nueva, tiene
+    que fallar aqui y no quedarse muda en la mesa."""
+    etiquetas = {e for k in PROFUNDIDADES for e in lookup.RANGES["open_raise"][k]["SB"]}
+    sin_mapear = [e for e in etiquetas if derive._traducir(e) is None]
+    assert not sin_mapear, f"de {len(etiquetas)} etiquetas, sin mapear: {sin_mapear}"
 
-r = derive.bb_option(["Ah", "Ad"], 25.0, limpers=None)
-check("si no se pudo contar, se responde igual pero con confianza BAJA",
-      r is not None and r["confidence"] == "baja")
-check("y se dice el supuesto que se ha hecho",
-      any("se asume UN rival" in s for s in r["assumptions"]))
-# CERO se trata como desconocido: con la opcion de verdad siempre hay alguien
-# dentro (si no, la mano habria terminado), asi que contar cero es no haber
-# visto, no que no haya nadie.
-cero = derive.bb_option(["Ah", "Ad"], 25.0, limpers=0)
-check("contar CERO limpers no da confianza media: con la opcion siempre hay "
-      "alguien dentro, asi que cero significa que no se ha visto",
-      cero is not None and cero["confidence"] == "baja")
-check("con 1 limper contado, la confianza sube a media",
-      derive.bb_option(["Ah", "Ad"], 25.0, limpers=1)["confidence"] == "media")
 
-check("sin cartas legibles -> None", derive.bb_option(["Ah"], 25.0, 1) is None)
-check("sin stack -> None", derive.bb_option(["Ah", "Ad"], None, 1) is None)
+def test_una_etiqueta_desconocida_no_se_traduce_a_ciegas():
+    assert derive._traducir("SOMETHING NEW") is None
 
-# --- 6. el caso que motivo todo esto ---------------------------------------
-print("\n# --- el caso que motivo la Fase E ---")
-# Antes, AA con 5bb en la BB recibia "pasa y ve el flop gratis", lo mismo que 72o.
-aa = derive.bb_option(["Ah", "Ad"], 5.0, limpers=1)
-basura = derive.bb_option(["7c", "2d"], 5.0, limpers=1)
-check("AA a 5bb ya no es 'pasa': es ALL IN, que es lo que dicen sus tablas",
-      aa["action"] == "ALL IN")
-check("y 72o a 5bb sigue siendo CHECK", basura["action"] == "CHECK")
-check("o sea que la respuesta YA depende de la mano", aa["action"] != basura["action"])
 
-# el ancho de lo que se recomienda subir, por profundidad, para que quede escrito
-print("\n    % de manos (de 169) a las que se sube, por profundidad:")
-for k in PROFUNDIDADES:
-    n = sum(1 for m in MANOS
-            if (derive.bb_option(cartas(m), float(k), 1) or {}).get("action", "") != "CHECK")
-    print(f"      {k:>5}bb  {100 * n / len(MANOS):5.1f}%")
+@pytest.mark.parametrize("donante, derivada", [
+    ("LIMP", "CHECK"),
+    ("fold", "CHECK"),                                   # forzado por las reglas
+    ("OPEN RAISE ALL IN", "ALL IN"),
+    ("OPEN RAISE (3.5 BB)", "RAISE OVER LIMPERS (3.5 BB)"),   # el sizing se CONSERVA
+    ("MARGINAL OPEN RAISE", "MARGINAL RAISE OVER LIMPERS"),
+])
+def test_el_mapeo_caso_por_caso(donante, derivada):
+    assert derive._traducir(donante) == derivada
 
-# --- FRENTE A UN LIMP, con el hero fuera de las ciegas ---------------------
+
+def test_cada_respuesta_es_la_etiqueta_del_donante_mapeada(barrido_bb):
+    """No se recalcula ninguna etiqueta: el 94% de los buckets no son contiguos
+    en el orden de fuerza, asi que recalcular seria inventar."""
+    discrepan = [(k, m) for (k, m), r in barrido_bb["respuestas"].items()
+                 if derive._traducir(r["donor_action"]) != r["action"]]
+    assert not discrepan, discrepan[:10]
+
+
+# --- 3. castellano para todo lo que produce ----------------------------------
+
+def test_toda_accion_derivada_tiene_castellano(barrido_bb):
+    sin_es = [a for a in barrido_bb["acciones"] if translate_action(a)[1] is None]
+    assert not sin_es, sin_es
+
+
+# --- 4. procedencia: se dice SIEMPRE de donde sale ---------------------------
+
+def test_la_respuesta_viaja_con_su_procedencia():
+    """El HUD la pinta en ambar precisamente por esto: no es una lectura de
+    tabla, es una celda ajena adaptada, y hay que poder ver cual."""
+    r = derive.bb_option(["Ah", "Ad"], 25.0, limpers=1)
+    assert r["source"] == "derived"
+    assert "SB" in r["donor"] and "25" in r["donor"]
+    assert r["donor_action"] == "OPEN RAISE (3.5 BB)"
+
+
+# --- 5. las guardas ----------------------------------------------------------
+
+@pytest.mark.parametrize("limpers", [2, 3])
+def test_con_mas_de_un_limper_no_hay_donante_valido(limpers):
+    """El motor deja el CHECK: mejor eso que una celda que no corresponde."""
+    assert derive.bb_option(["Ah", "Ad"], 25.0, limpers=limpers) is None
+
+
+def test_con_un_limper_si_hay_respuesta():
+    assert derive.bb_option(["Ah", "Ad"], 25.0, limpers=1) is not None
+
+
+def test_si_no_se_pudo_contar_se_responde_con_confianza_baja():
+    r = derive.bb_option(["Ah", "Ad"], 25.0, limpers=None)
+    assert r is not None
+    assert r["confidence"] == "baja"
+    assert any("se asume UN rival" in s for s in r["assumptions"])
+
+
+def test_contar_cero_limpers_es_no_haber_visto_no_que_no_haya_nadie():
+    """Con la opcion de verdad siempre hay alguien dentro: si no, la mano habria
+    terminado. Asi que cero no puede dar mas confianza que desconocido."""
+    r = derive.bb_option(["Ah", "Ad"], 25.0, limpers=0)
+    assert r is not None
+    assert r["confidence"] == "baja"
+
+
+def test_con_un_limper_contado_la_confianza_sube_a_media():
+    assert derive.bb_option(["Ah", "Ad"], 25.0, limpers=1)["confidence"] == "media"
+
+
+@pytest.mark.parametrize("args", [(["Ah"], 25.0, 1), (["Ah", "Ad"], None, 1)])
+def test_sin_cartas_o_sin_stack_no_hay_respuesta(args):
+    assert derive.bb_option(*args) is None
+
+
+# --- 6. el caso que motivo la Fase E -----------------------------------------
+
+def test_aa_a_5bb_en_la_bb_ya_no_es_lo_mismo_que_72o():
+    """Antes, AA con 5bb en la BB recibia "pasa y ve el flop gratis", exactamente
+    igual que 72o. La respuesta YA depende de la mano."""
+    aa = derive.bb_option(["Ah", "Ad"], 5.0, limpers=1)
+    basura = derive.bb_option(["7c", "2d"], 5.0, limpers=1)
+    assert aa["action"] == "ALL IN", "es lo que dicen sus propias tablas"
+    assert basura["action"] == "CHECK"
+
+
+# --- frente a un limp, con el hero fuera de las ciegas -----------------------
 # El donante es otra celda REAL suya: su rango de apertura desde la posicion que
 # esta `limpers` asientos mas temprana. Medido sobre ranges.json, cada asiento
 # hacia EP aprieta el rango un 20% (ratio 0.802, sd 0.114, n=77) y es monotono en
 # las once profundidades.
-print("\n# --- frente a un limp (hero fuera de las ciegas) ---")
 
-r = derive.vs_limp(["Ah", "Ad"], "CO", 20.0, limpers=1)
-check("con 1 limper el donante es el asiento inmediatamente mas tight",
-      r is not None and "HJ" in r["donor"])
-check("y se marca como derivado", r["source"] == "derived")
-check("con confianza media-alta: es una celda real y el salto esta medido",
-      r["confidence"] == "media-alta")
+def test_con_un_limper_el_donante_es_el_asiento_inmediatamente_mas_tight():
+    r = derive.vs_limp(["Ah", "Ad"], "CO", 20.0, limpers=1)
+    assert r is not None
+    assert "HJ" in r["donor"]
+    assert r["source"] == "derived"
+    assert r["confidence"] == "media-alta", "es una celda real y el salto esta medido"
 
-# AQUI SI SE PUEDE FOLDEAR, y es la diferencia clave con la opcion de la BB:
-# el hero no esta en la BB, asi que entrar cuesta dinero.
-basura = derive.vs_limp(["7c", "2d"], "CO", 20.0, limpers=1)
-check("fuera de la BB, una mano mala SI se retira (entrar cuesta dinero)",
-      basura["action"] == "fold")
-check("y una buena sube sobre los limpers",
-      r["action"].startswith("RAISE OVER LIMPERS"))
 
-dos = derive.vs_limp(["9c", "8c"], "BTN", 20.0, limpers=2)
-check("con 2 limpers se retrocede 2 asientos (BTN -> HJ)",
-      dos is not None and "HJ" in dos["donor"])
-check("y baja la confianza, porque el desplazamiento se encadena",
-      dos["confidence"] == "media")
-check("se dice el supuesto que se ha hecho",
-      any("asiento" in a for a in dos["assumptions"]))
+def test_fuera_de_la_bb_una_mano_mala_si_se_retira():
+    """La diferencia clave con la opcion de la BB: aqui entrar cuesta dinero."""
+    assert derive.vs_limp(["7c", "2d"], "CO", 20.0, limpers=1)["action"] == "fold"
 
-# --- las guardas -----------------------------------------------------------
-print("\n# --- guardas de vs_limp ---")
-check("en EP1 no hay fila mas tight que copiar -> None",
-      derive.vs_limp(["Ah", "Ad"], "EP1", 20.0, 1) is None)
-check("con 2 limpers desde EP2 tampoco (se cae por debajo de EP1)",
-      derive.vs_limp(["Ah", "Ad"], "EP2", 20.0, 2) is None)
-check("la SB queda fuera: su fila esta construida sobre LIMP y romperia la "
-      "monotonia del eje (mover de SB a BTN no aprieta, ensancha)",
-      derive.vs_limp(["Ah", "Ad"], "SB", 20.0, 1) is None)
-check("la BB tambien: tiene su propia funcion",
-      derive.vs_limp(["Ah", "Ad"], "BB", 20.0, 1) is None)
-check("sin limpers no hay nada que derivar",
-      derive.vs_limp(["Ah", "Ad"], "CO", 20.0, 0) is None)
-check("ni con un numero raro de limpers",
-      derive.vs_limp(["Ah", "Ad"], "CO", 20.0, None) is None)
-check("sin cartas o sin stack tampoco",
-      derive.vs_limp(["Ah"], "CO", 20.0, 1) is None
-      and derive.vs_limp(["Ah", "Ad"], "CO", None, 1) is None)
 
-# no se inventa ninguna etiqueta, y todas tienen castellano
-acc_limp = set()
-for k in PROFUNDIDADES:
-    for pos in ("EP2", "MP1", "MP2", "HJ", "CO", "BTN"):
-        for mano in MANOS:
-            x = derive.vs_limp(cartas(mano), pos, float(k), 1)
-            if x:
-                acc_limp.add(x["action"])
-check("toda accion de vs_limp tiene castellano para el HUD",
-      not [a for a in acc_limp if translate_action(a)[1] is None])
-print(f"    acciones que produce: {sorted(acc_limp)}")
+def test_y_una_buena_sube_sobre_los_limpers():
+    r = derive.vs_limp(["Ah", "Ad"], "CO", 20.0, limpers=1)
+    assert r["action"].startswith("RAISE OVER LIMPERS")
 
-# --- SQUEEZE: una subida Y ademas quien la ha pagado -----------------------
+
+def test_con_dos_limpers_se_retroceden_dos_asientos():
+    dos = derive.vs_limp(["9c", "8c"], "BTN", 20.0, limpers=2)
+    assert dos is not None
+    assert "HJ" in dos["donor"], "BTN -> CO -> HJ"
+    assert dos["confidence"] == "media", "el desplazamiento se encadena"
+    assert any("asiento" in a for a in dos["assumptions"])
+
+
+@pytest.mark.parametrize("desc, args", [
+    ("en EP1 no hay fila mas tight que copiar", (["Ah", "Ad"], "EP1", 20.0, 1)),
+    ("desde EP2 con 2 limpers se cae por debajo de EP1", (["Ah", "Ad"], "EP2", 20.0, 2)),
+    ("la SB queda fuera: su fila esta construida sobre LIMP y romperia la "
+     "monotonia del eje (mover de SB a BTN no aprieta, ensancha)",
+     (["Ah", "Ad"], "SB", 20.0, 1)),
+    ("la BB tiene su propia funcion", (["Ah", "Ad"], "BB", 20.0, 1)),
+    ("sin limpers no hay nada que derivar", (["Ah", "Ad"], "CO", 20.0, 0)),
+    ("ni con un numero raro de limpers", (["Ah", "Ad"], "CO", 20.0, None)),
+    ("sin cartas", (["Ah"], "CO", 20.0, 1)),
+    ("sin stack", (["Ah", "Ad"], "CO", None, 1)),
+])
+def test_guardas_de_vs_limp(desc, args):
+    assert derive.vs_limp(*args) is None, desc
+
+
+@pytest.mark.lento
+def test_toda_accion_de_vs_limp_tiene_castellano():
+    acciones = set()
+    for k in PROFUNDIDADES:
+        for pos in ("EP2", "MP1", "MP2", "HJ", "CO", "BTN"):
+            for mano in MANOS:
+                x = derive.vs_limp(cartas(mano), pos, float(k), 1)
+                if x:
+                    acciones.add(x["action"])
+    assert acciones, "el barrido no produjo ninguna accion; algo va mal"
+    assert not [a for a in acciones if translate_action(a)[1] is None]
+
+
+# --- SQUEEZE: una subida Y ademas quien la ha pagado -------------------------
 # Medido sobre ranges.json, eje del HERO en threebet_call (sin las ciegas): n=105,
 # media 0.848, sd 0.081. Cada asiento hacia EP aprieta la defensa un 15%.
-print("\n# --- squeeze ---")
-sq = derive.squeeze(["9c", "8c"], "BTN", "HJ", 20.0, callers=1)
-normal = recommend_defensa = None
-from lookup import recommend as _rec  # noqa: E402
-normal = _rec(["9c", "8c"], "BTN", 20.0, facing="threebet_call", vs_position="HJ")
-check("con un pagador detras el donante es el asiento mas tight (BTN -> CO)",
-      sq is not None and "CO" in sq["donor"])
-check("y APRIETA respecto a la defensa heads-up: 98s pasa de pagar a retirarse",
-      normal["action"] == "MARGINAL CALL" and sq["action"] == "fold")
-check("se marca como derivado con confianza media-baja",
-      sq["source"] == "derived" and sq["confidence"] == "media-baja")
-check("y dice el supuesto", any("15%" in a for a in sq["assumptions"]))
 
-check("una mano fuerte sigue metiendo",
-      derive.squeeze(["Ah", "Ks"], "BTN", "HJ", 20.0, 1)["action"] == "ALL IN")
+def test_con_un_pagador_detras_el_donante_es_el_asiento_mas_tight():
+    sq = derive.squeeze(["9c", "8c"], "BTN", "HJ", 20.0, callers=1)
+    assert sq is not None
+    assert "CO" in sq["donor"], "BTN -> CO"
+    assert sq["source"] == "derived"
+    assert sq["confidence"] == "media-baja"
+    assert any("15%" in a for a in sq["assumptions"])
 
-# el 3BET del donante pasa a llamarse SQUEEZE, que es lo que es
-check("'3BET (5 BB)' -> 'SQUEEZE (5 BB)'",
-      derive._traducir_squeeze("3BET (5 BB)") == "SQUEEZE (5 BB)")
-check("y CALL/fold/ALL IN se copian tal cual",
-      derive._traducir_squeeze("CALL") == "CALL"
-      and derive._traducir_squeeze("fold") == "fold"
-      and derive._traducir_squeeze("ALL IN") == "ALL IN")
-check("una etiqueta desconocida no se traduce a ciegas",
-      derive._traducir_squeeze("ALGO NUEVO") is None)
 
-print("\n# --- guardas del squeeze ---")
-check("sin pagadores no hay squeeze",
-      derive.squeeze(["9c", "8c"], "BTN", "HJ", 20.0, 0) is None)
-check("en EP1 no hay fila mas tight",
-      derive.squeeze(["9c", "8c"], "EP1", "EP1", 20.0, 1) is None)
-check("la SB queda fuera del eje, igual que en vs_limp",
-      derive.squeeze(["9c", "8c"], "SB", "HJ", 20.0, 1) is None)
-check("si al desplazar el donante cae sobre el propio raiser no hay celda -> None",
-      derive.squeeze(["9c", "8c"], "BTN", "CO", 20.0, 1) is None)
-check("sin raiser tampoco", derive.squeeze(["9c", "8c"], "BTN", None, 20.0, 1) is None)
+def test_el_squeeze_aprieta_respecto_a_la_defensa_heads_up():
+    """98s pasa de pagar a retirarse cuando hay alguien mas dentro."""
+    normal = recommend(["9c", "8c"], "BTN", 20.0, facing="threebet_call", vs_position="HJ")
+    sq = derive.squeeze(["9c", "8c"], "BTN", "HJ", 20.0, callers=1)
+    assert normal["action"] == "MARGINAL CALL"
+    assert sq["action"] == "fold"
 
-acc_sq = set()
-for k in PROFUNDIDADES:
-    for mano in MANOS:
-        x = derive.squeeze(cartas(mano), "BTN", "HJ", float(k), 1)
-        if x:
-            acc_sq.add(x["action"])
-check("toda accion del squeeze tiene castellano para el HUD",
-      not [a for a in acc_sq if translate_action(a)[1] is None])
-print(f"    acciones que produce: {sorted(acc_sq)}")
 
-n_fail = sum(1 for _, cond in checks if not cond)
-print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
-if n_fail:
-    raise SystemExit(1)
+def test_una_mano_fuerte_sigue_metiendo():
+    assert derive.squeeze(["Ah", "Ks"], "BTN", "HJ", 20.0, 1)["action"] == "ALL IN"
+
+
+@pytest.mark.parametrize("donante, derivada", [
+    ("3BET (5 BB)", "SQUEEZE (5 BB)"),      # es lo que es: una resubida con alguien dentro
+    ("CALL", "CALL"),
+    ("fold", "fold"),
+    ("ALL IN", "ALL IN"),
+    ("ALGO NUEVO", None),                   # no se traduce a ciegas
+])
+def test_el_mapeo_del_squeeze(donante, derivada):
+    assert derive._traducir_squeeze(donante) == derivada
+
+
+@pytest.mark.parametrize("desc, args", [
+    ("sin pagadores no hay squeeze", (["9c", "8c"], "BTN", "HJ", 20.0, 0)),
+    ("en EP1 no hay fila mas tight", (["9c", "8c"], "EP1", "EP1", 20.0, 1)),
+    ("la SB queda fuera del eje, igual que en vs_limp", (["9c", "8c"], "SB", "HJ", 20.0, 1)),
+    ("si al desplazar el donante cae sobre el propio raiser no hay celda",
+     (["9c", "8c"], "BTN", "CO", 20.0, 1)),
+    ("sin raiser tampoco", (["9c", "8c"], "BTN", None, 20.0, 1)),
+])
+def test_guardas_del_squeeze(desc, args):
+    assert derive.squeeze(*args) is None, desc
+
+
+@pytest.mark.lento
+def test_toda_accion_del_squeeze_tiene_castellano():
+    acciones = set()
+    for k in PROFUNDIDADES:
+        for mano in MANOS:
+            x = derive.squeeze(cartas(mano), "BTN", "HJ", float(k), 1)
+            if x:
+                acciones.add(x["action"])
+    assert acciones, "el barrido no produjo ninguna accion; algo va mal"
+    assert not [a for a in acciones if translate_action(a)[1] is None]

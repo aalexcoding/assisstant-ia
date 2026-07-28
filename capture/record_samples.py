@@ -14,7 +14,7 @@ import time
 import cv2
 import numpy as np
 
-import portal_capture as pc
+from capture import portal_capture as pc
 
 CALIBRATION_PATH = os.path.join(os.path.dirname(__file__), "..", "calibration", "config.local.json")
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "vision", "samples")

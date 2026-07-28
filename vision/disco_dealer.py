@@ -37,7 +37,7 @@ import os
 import cv2
 import numpy as np
 
-import seat_map
+from vision import seat_map
 
 PLANTILLA_FICHERO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "disco_boton.png")

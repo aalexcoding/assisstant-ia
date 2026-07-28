@@ -14,75 +14,98 @@ Lo que de verdad protege:
      a cuento.
 
 describir() es puro: se prueba sin indice ni modelo.
-Uso: .venv/bin/python decision/rag/test_postmano.py
 """
-import os
-import sys
+import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from decision.rag import postmano as pm
 
-import postmano as pm
-
-checks = []
+BOARD_QQ8 = ["Qc", "Qs", "8s"]
 
 
-def check(desc, cond):
-    checks.append((desc, cond))
-    print(("OK  " if cond else "FAIL") + " " + desc)
+@pytest.fixture
+def consulta_completa():
+    return pm.describir(board=BOARD_QQ8, mano_ganadora="doble pareja",
+                        hero_en_showdown=True)
 
 
-# --- la consulta ------------------------------------------------------------
-print("# --- construccion de la consulta ---")
-q = pm.describir(board=["Qc", "Qs", "8s"], mano_ganadora="doble pareja",
-                 hero_en_showdown=True)
-check("lleva el board", "Qc" in q and "Qs" in q and "8s" in q)
-check("y la mano ganadora tal y como la escribio el cliente", "doble pareja" in q)
-check("y que llego a showdown", "showdown" in q)
+# --- la consulta -------------------------------------------------------------
 
-check("un board emparejado se nombra", "emparejado" in q)
-check("y dos del mismo palo tambien", "dos del mismo palo" in q)
-check("y las cartas altas", "cartas altas" in q)
+@pytest.mark.parametrize("trozo", ["Qc", "Qs", "8s", "doble pareja", "showdown"])
+def test_la_consulta_lleva_lo_observado(consulta_completa, trozo):
+    assert trozo in consulta_completa
 
-rainbow = pm.describir(board=["2h", "7d", "9c"])
-check("un board sin repetir palo es rainbow",
-      "rainbow" in rainbow and "emparejado" not in rainbow)
-mono = pm.describir(board=["2h", "7h", "9h"])
-check("tres del mismo palo es monocolor", "monocolor" in mono)
 
-check("sin showdown se dice tambien",
-      "sin showdown" in pm.describir(board=["2h", "7d", "9c"], hero_en_showdown=False))
-check("sin datos no se inventa una consulta", pm.describir() == "")
-check("un board a medio leer no revienta", isinstance(pm.describir(board=["Qc", None]), str))
+@pytest.mark.parametrize("rasgo", ["emparejado", "dos del mismo palo", "cartas altas"])
+def test_la_consulta_describe_la_textura_del_board(consulta_completa, rasgo):
+    """Los rasgos que SI se leen de las cartas, sin suponer nada."""
+    assert rasgo in consulta_completa
 
-# lo que NO debe aparecer: nada que no se haya observado
-todo = pm.describir(board=["Qc", "Qs", "8s"], mano_ganadora="doble pareja",
-                    hero_en_showdown=True).lower()
-for inventado in ("iniciativa", "agresivo", "rango", "deberias", "recomiendo"):
-    check(f"la consulta NO inventa '{inventado}'", inventado not in todo)
 
-# --- robustez ---------------------------------------------------------------
-print("\n# --- nunca tumba nada ---")
-check("una consulta vacia devuelve [] sin tocar el indice", pm.buscar("") == [])
-check("estudiar() sin datos devuelve la forma esperada",
-      pm.estudiar() == {"consulta": "", "referencias": []})
+def test_un_board_sin_repetir_palo_es_rainbow():
+    q = pm.describir(board=["2h", "7d", "9c"])
+    assert "rainbow" in q
+    assert "emparejado" not in q
 
-# el umbral: con un minimo imposible no puede colarse nada
-r = pm.estudiar(board=["Qc", "Qs", "8s"], mano_ganadora="doble pareja")
-check("estudiar() devuelve consulta y referencias",
-      set(r) == {"consulta", "referencias"} and isinstance(r["referencias"], list))
-check("con un minimo de 1.1 (imposible) no se devuelve ninguna referencia",
-      pm.buscar("board Qc Qs 8s", minimo=1.1) == [])
-check("hay un umbral por defecto, no se enseña cualquier cosa",
-      0 < pm.SIMILITUD_MINIMA < 1)
 
-# --- formato del minuto -----------------------------------------------------
-print("\n# --- minuto para saltar al video ---")
-check("725 s -> 12:05", pm.minuto(725.3) == "12:05")
-check("0 -> 0:00", pm.minuto(0) == "0:00")
-check("None no revienta", pm.minuto(None) == "0:00")
-check("59 s no salta de minuto", pm.minuto(59) == "0:59")
+def test_tres_del_mismo_palo_es_monocolor():
+    assert "monocolor" in pm.describir(board=["2h", "7h", "9h"])
 
-n_fail = sum(1 for _, cond in checks if not cond)
-print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
-if n_fail:
-    raise SystemExit(1)
+
+def test_sin_showdown_se_dice_tambien():
+    assert "sin showdown" in pm.describir(board=["2h", "7d", "9c"], hero_en_showdown=False)
+
+
+def test_sin_datos_no_se_inventa_una_consulta():
+    assert pm.describir() == ""
+
+
+def test_un_board_a_medio_leer_no_revienta():
+    assert isinstance(pm.describir(board=["Qc", None]), str)
+
+
+@pytest.mark.parametrize("inventado", ["iniciativa", "agresivo", "rango",
+                                       "deberias", "recomiendo"])
+def test_la_consulta_no_inventa_nada_que_no_se_haya_observado(consulta_completa, inventado):
+    """Meter esto buscaria una mano que no es la que se jugo, y las referencias
+    parecerian pertinentes sin serlo."""
+    assert inventado not in consulta_completa.lower()
+
+
+# --- robustez: esto nunca puede tumbar nada ---------------------------------
+
+def test_una_consulta_vacia_devuelve_lista_vacia_sin_tocar_el_indice():
+    assert pm.buscar("") == []
+
+
+def test_estudiar_sin_datos_devuelve_la_forma_esperada():
+    assert pm.estudiar() == {"consulta": "", "referencias": []}
+
+
+def test_estudiar_devuelve_consulta_y_referencias():
+    r = pm.estudiar(board=BOARD_QQ8, mano_ganadora="doble pareja")
+    assert set(r) == {"consulta", "referencias"}
+    assert isinstance(r["referencias"], list)
+
+
+# --- el umbral ---------------------------------------------------------------
+
+def test_con_un_minimo_imposible_no_se_cuela_ninguna_referencia():
+    assert pm.buscar("board Qc Qs 8s", minimo=1.1) == []
+
+
+def test_hay_un_umbral_por_defecto():
+    """Sin el, una mano rara acabaria con tres referencias irrelevantes
+    presentadas como si vinieran a cuento."""
+    assert 0 < pm.SIMILITUD_MINIMA < 1
+
+
+# --- formato del minuto ------------------------------------------------------
+
+@pytest.mark.parametrize("segundos, esperado", [
+    (725.3, "12:05"),
+    (0, "0:00"),
+    (None, "0:00"),
+    (59, "0:59"),
+])
+def test_minuto_para_saltar_al_video(segundos, esperado):
+    assert pm.minuto(segundos) == esperado

@@ -1,176 +1,233 @@
 """
-Script suelto de verificacion de hand_result.parse_hand_result / hero_outcome
-(el proyecto no usa pytest todavia). Prueba las lineas de chat reales
-verificadas mas variantes con ruido de OCR. Uso:
-.venv/bin/python vision/test_hand_result.py
+Verificacion de hand_result.parse_hand_result / hero_outcome contra las lineas de
+chat REALES del cliente, mas variantes con el ruido de OCR que se ha observado.
+
+Es puro parseo de texto: no hace falta ni opencv ni tesseract.
 """
-import os
-import sys
+import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from vision.hand_result import hero_outcome, parse_hand_result
 
-from hand_result import hero_outcome, parse_hand_result
+# Linea real y completa: numero de mano + ganador + importe + mano ganadora.
+COMPLETA = ["Repartidor: Mano n.º 261531764294: fabiocs98 gana el bote (2.040) "
+            "con pareja de nueves"]
 
-checks = []
-
-
-def check(desc, cond):
-    checks.append((desc, cond))
-    print(("OK  " if cond else "FAIL") + " " + desc)
-
-
-# --- caso real 1: linea de resultado completa (numero + ganador + importe + mano) ---
-r = parse_hand_result([
-    "Repartidor: Mano n.º 261531764294: fabiocs98 gana el bote (2.040) con pareja de nueves",
-])
-check("real: hand_number", r is not None and r["hand_number"] == "261531764294")
-check("real: winner fabiocs98", r["winner"] == "fabiocs98")
-check("real: amount 2.040", r["amount"] == "2.040")
-check("real: winning_hand", r["winning_hand"] == "pareja de nueves")
-
-# --- caso real 2: mismas lineas + revelacion de showdown + linea de turno (a ignorar) ---
-r2 = parse_hand_result([
+CON_SHOWDOWN = [
     "Repartidor: alex_delg, es tu turno...",
     "Repartidor: Mano n.º 261531764294: fabiocs98 gana el bote (2.040) con pareja de nueves",
     "Repartidor: fortu2010 tiene pareja de nueves",
-])
-check("real2: winner fabiocs98", r2["winner"] == "fabiocs98")
-check("real2: showdown incluye fortu2010",
-      any(s["player"] == "fortu2010" and s["hand"] == "pareja de nueves" for s in r2["showdown"]))
+]
 
-# --- linea de turno sola -> None (no hay resultado) ---
-check("solo turno -> None", parse_hand_result(["Repartidor: alex_delg, es tu turno..."]) is None)
-
-# --- chat vacio -> None ---
-check("vacio -> None", parse_hand_result([]) is None)
-check("None -> None", parse_hand_result(None) is None)
-
-# --- ruido OCR: "n.º" leido como "n.o", separador raro, mano con acento ---
-r3 = parse_hand_result([
-    "Repartidor Mano n.o 261531764295 SHARKOS54 gana el bote (12.500) con trío de reyes",
-])
-check("ruido: hand_number", r3["hand_number"] == "261531764295")
-check("ruido: winner SHARKOS54", r3["winner"] == "SHARKOS54")
-check("ruido: amount 12.500", r3["amount"] == "12.500")
-check("ruido: winning_hand trío de reyes", r3["winning_hand"] == "trío de reyes")
-
-# --- gano sin showdown (todos foldearon): "gana el bote (N)" sin "con ..." ---
-r4 = parse_hand_result([
-    "Repartidor: Mano n.º 261531764296: alex_delg gana el bote (500)",
-])
-check("uncontested: winner", r4["winner"] == "alex_delg")
-check("uncontested: amount", r4["amount"] == "500")
-check("uncontested: sin winning_hand", r4["winning_hand"] is None)
-
-# --- wrapping: la linea de resultado partida en dos lineas visuales por el OCR ---
-r5 = parse_hand_result([
-    "Repartidor: Mano n.º 261531764297: fabiocs98 gana",
-    "el bote (2.040) con color de corazones",
-])
-check("wrap: winner fabiocs98", r5["winner"] == "fabiocs98")
-check("wrap: hand_number", r5["hand_number"] == "261531764297")
-check("wrap: winning_hand color de corazones", r5["winning_hand"] == "color de corazones")
-
-# --- dos resultados en el historial visible: se queda con el mas reciente (abajo) ---
-r6 = parse_hand_result([
-    "Repartidor: Mano n.º 111111111111: pepe gana el bote (100) con par de doses",
-    "Repartidor: Mano n.º 222222222222: juanito gana el bote (300) con escalera",
-])
-check("historial: mas reciente juanito", r6["winner"] == "juanito" and r6["hand_number"] == "222222222222")
-
-# --- sin numero de mano legible pero con ganador: sigue devolviendo resultado ---
-r7 = parse_hand_result(["fabiocs98 gana el bote (2.040) con pareja de nueves"])
-check("sin numero: hay resultado", r7 is not None and r7["winner"] == "fabiocs98")
-check("sin numero: hand_number None", r7["hand_number"] is None)
-
-# --- hero_outcome: el hero es el ganador ---
-o1 = hero_outcome(r, "fabiocs98")
-check("outcome: hero gana", o1["status"] == "won" and o1["hero_hand"] == "pareja de nueves")
-
-# --- hero_outcome: hero pierde, aparece en showdown ---
-o2 = hero_outcome(r2, "fortu2010")
-check("outcome: hero pierde con su mano", o2["status"] == "lost" and o2["hero_hand"] == "pareja de nueves")
-
-# --- hero_outcome: hero no aparece por ningun lado -> unknown ---
-o3 = hero_outcome(r2, "alex_delg")
-check("outcome: hero desconocido", o3["status"] == "unknown" and o3["hero_hand"] is None)
-
-# --- hero_outcome: sin nombre de hero cacheado -> unknown ---
-o4 = hero_outcome(r, None)
-check("outcome: sin hero_name -> unknown", o4["status"] == "unknown")
-
-# --- names_match tolerante: truncamiento del nick por OCR ---
-o5 = hero_outcome(r, "fabiocs9")
-check("outcome: match tolerante (truncado)", o5["status"] == "won")
-
-# --- BOTE DIVIDIDO: "empata por el bote", una linea por jugador, mismo n.o de mano.
-# Lineas reales de vision/samples_layout2/: antes no se reconocian (el patron
-# exigia "gana") y la mano salia como "resultado no legible". ---
-rs = parse_hand_result([
+SPLIT = [
     "Repartidor: Mano n.º 261531249025: Amsterdam974 empata por el bote",
     "Repartidor: Mano n.º 261531249025: rubydog77 empata por el bote (4.243)",
+]
+
+
+@pytest.fixture
+def completa():
+    return parse_hand_result(COMPLETA)
+
+
+@pytest.fixture
+def con_showdown():
+    return parse_hand_result(CON_SHOWDOWN)
+
+
+@pytest.fixture
+def split():
+    return parse_hand_result(SPLIT)
+
+
+# --- la linea de resultado ---------------------------------------------------
+
+@pytest.mark.parametrize("campo, esperado", [
+    ("hand_number", "261531764294"),
+    ("winner", "fabiocs98"),
+    ("amount", "2.040"),
+    ("winning_hand", "pareja de nueves"),
 ])
-check("split: se reconoce", rs is not None and rs["split"] is True)
-check("split: los dos jugadores", rs["winners"] == ["Amsterdam974", "rubydog77"])
-check("split: winner = el primero", rs["winner"] == "Amsterdam974")
-check("split: amount 4.243", rs["amount"] == "4.243")
-check("split: hand_number", rs["hand_number"] == "261531249025")
-check("split: hero empata -> status split", hero_outcome(rs, "rubydog77")["status"] == "split")
-check("split: hero ajeno -> unknown", hero_outcome(rs, "pepito")["status"] == "unknown")
+def test_linea_real_completa(completa, campo, esperado):
+    assert completa is not None
+    assert completa[campo] == esperado
 
-# un solo ganador NO debe marcarse como split
-check("no-split: gana normal", r["split"] is False and r["winners"] == ["fabiocs98"])
 
-# split viejo en el historial + mano nueva con un solo ganador: manda la nueva
-rs2 = parse_hand_result([
-    "Repartidor: Mano n.º 111111111111: aaa empata por el bote (100)",
-    "Repartidor: Mano n.º 111111111111: bbb empata por el bote",
-    "Repartidor: Mano n.º 222222222222: ccc gana el bote (300) con escalera",
+def test_el_showdown_recoge_lo_que_enseño_cada_uno(con_showdown):
+    assert con_showdown["winner"] == "fabiocs98"
+    assert any(s["player"] == "fortu2010" and s["hand"] == "pareja de nueves"
+               for s in con_showdown["showdown"])
+
+
+@pytest.mark.parametrize("desc, lineas", [
+    ("una linea de turno sola no es un resultado", ["Repartidor: alex_delg, es tu turno..."]),
+    ("chat vacio", []),
+    ("chat None", None),
 ])
-check("split+nueva: manda la mas reciente", rs2["split"] is False and rs2["winner"] == "ccc")
+def test_sin_resultado_devuelve_none(desc, lineas):
+    assert parse_hand_result(lineas) is None, desc
 
-# --- NICK CON ESPACIO: el OCR lee el guion bajo como espacio ("david_sagunt").
-# Antes el regex capturaba solo "sagunt". ---
-rn = parse_hand_result([
-    "Repartidor: Mano n.º 261531241628: david sagunt gana el bote (2.197) con pareja de jotas",
-])
-check("nick con espacio: no se trunca", rn["winner"] == "david sagunt")
-check("nick con espacio: casa con la forma con guion bajo",
-      hero_outcome(rn, "david_sagunt")["status"] == "won")
-check("nick con espacio: mano ganadora completa", rn["winning_hand"] == "pareja de jotas")
-# y no se come la palabra previa cuando no es parte del nick
-rn2 = parse_hand_result(["Repartidor: El jugador pepito gana el bote (50)"])
-check("nick: no se come 'jugador'", rn2["winner"] == "pepito")
 
-# --- MANO CON COMA: "doble pareja, damas y sietes" (linea real de showdown).
-# Antes se cortaba en la coma y quedaba solo "doble pareja". ---
-rc = parse_hand_result([
-    "Repartidor: Mano n.º 261531300000: david sagunt gana el bote (900) con doble pareja, damas y sietes",
-])
-check("coma: mano completa", rc["winning_hand"] == "doble pareja, damas y sietes")
-rc2 = parse_hand_result(["Repartidor: rubydog77 tiene doble pareja, reyes y doses",
-                         "Repartidor: Mano n.º 261531300001: pepe gana el bote (10)"])
-check("coma: showdown completo",
-      any(s["hand"] == "doble pareja, reyes y doses" for s in rc2["showdown"]))
+# --- ruido de OCR ------------------------------------------------------------
 
-# --- ORDEN VISUAL: la continuacion del mensaje llega ANTES que su cabecera
-# (tesseract en SPARSE_TEXT no garantiza orden de lectura). Con posicion, se
-# reordena; la mano ganadora debe encontrarse igual. ---
-ro = parse_hand_result([
-    {"text": "el bote (2.040) con color de corazones", "top": 40, "left": 0},
-    {"text": "Repartidor: Mano n.º 261531764297: fabiocs98 gana", "top": 20, "left": 0},
-])
-check("orden visual: winner", ro is not None and ro["winner"] == "fabiocs98")
-check("orden visual: winning_hand", ro["winning_hand"] == "color de corazones")
+def test_ruido_de_ocr_n_grado_leido_como_n_o_y_separadores_raros():
+    r = parse_hand_result(["Repartidor Mano n.o 261531764295 SHARKOS54 gana el bote "
+                           "(12.500) con trío de reyes"])
+    assert r["hand_number"] == "261531764295"
+    assert r["winner"] == "SHARKOS54"
+    assert r["amount"] == "12.500"
+    assert r["winning_hand"] == "trío de reyes"
 
-# --- la frase de mano NO debe invadir el mensaje siguiente ---
-rt = parse_hand_result([
-    "Repartidor: Mano n.º 261531400000: pepe gana el bote (120) con pareja de jotas",
-    "Repartidor: alex_delg, es tu turno. Tienes 7 segundos para actuar",
-])
-check("no invade el mensaje siguiente", rt["winning_hand"] == "pareja de jotas")
 
-n_fail = sum(1 for _, cond in checks if not cond)
-print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
-if n_fail:
-    raise SystemExit(1)
+def test_gana_sin_showdown_todos_foldearon():
+    """"gana el bote (N)" sin el "con ..."."""
+    r = parse_hand_result(["Repartidor: Mano n.º 261531764296: alex_delg gana el bote (500)"])
+    assert r["winner"] == "alex_delg"
+    assert r["amount"] == "500"
+    assert r["winning_hand"] is None
+
+
+def test_la_linea_partida_en_dos_por_el_ocr_se_reune():
+    r = parse_hand_result(["Repartidor: Mano n.º 261531764297: fabiocs98 gana",
+                           "el bote (2.040) con color de corazones"])
+    assert r["winner"] == "fabiocs98"
+    assert r["hand_number"] == "261531764297"
+    assert r["winning_hand"] == "color de corazones"
+
+
+def test_con_dos_resultados_visibles_manda_el_mas_reciente():
+    r = parse_hand_result([
+        "Repartidor: Mano n.º 111111111111: pepe gana el bote (100) con par de doses",
+        "Repartidor: Mano n.º 222222222222: juanito gana el bote (300) con escalera"])
+    assert r["winner"] == "juanito"
+    assert r["hand_number"] == "222222222222"
+
+
+def test_sin_numero_de_mano_legible_sigue_habiendo_resultado():
+    r = parse_hand_result(["fabiocs98 gana el bote (2.040) con pareja de nueves"])
+    assert r is not None
+    assert r["winner"] == "fabiocs98"
+    assert r["hand_number"] is None
+
+
+def test_el_orden_visual_manda_sobre_el_orden_de_lectura():
+    """tesseract en SPARSE_TEXT no devuelve las lineas en orden de lectura, asi
+    que la continuacion de un mensaje puede llegar ANTES que su cabecera."""
+    r = parse_hand_result([
+        {"text": "el bote (2.040) con color de corazones", "top": 40, "left": 0},
+        {"text": "Repartidor: Mano n.º 261531764297: fabiocs98 gana", "top": 20, "left": 0}])
+    assert r is not None
+    assert r["winner"] == "fabiocs98"
+    assert r["winning_hand"] == "color de corazones"
+
+
+def test_la_frase_de_mano_no_invade_el_mensaje_siguiente():
+    """Se busca dentro del MISMO mensaje del chat (hasta el siguiente
+    "Repartidor:"), no en una ventana fija de caracteres."""
+    r = parse_hand_result([
+        "Repartidor: Mano n.º 261531400000: pepe gana el bote (120) con pareja de jotas",
+        "Repartidor: alex_delg, es tu turno. Tienes 7 segundos para actuar"])
+    assert r["winning_hand"] == "pareja de jotas"
+
+
+# --- hero_outcome ------------------------------------------------------------
+
+def test_el_hero_gana(completa):
+    o = hero_outcome(completa, "fabiocs98")
+    assert o["status"] == "won"
+    assert o["hero_hand"] == "pareja de nueves"
+
+
+def test_el_hero_pierde_y_se_le_ve_la_mano_en_el_showdown(con_showdown):
+    o = hero_outcome(con_showdown, "fortu2010")
+    assert o["status"] == "lost"
+    assert o["hero_hand"] == "pareja de nueves"
+
+
+def test_si_el_hero_no_aparece_por_ningun_lado_es_desconocido(con_showdown):
+    o = hero_outcome(con_showdown, "alex_delg")
+    assert o["status"] == "unknown"
+    assert o["hero_hand"] is None
+
+
+def test_sin_nombre_de_hero_cacheado_es_desconocido(completa):
+    assert hero_outcome(completa, None)["status"] == "unknown"
+
+
+def test_el_emparejado_de_nicks_tolera_el_truncamiento_del_ocr(completa):
+    assert hero_outcome(completa, "fabiocs9")["status"] == "won"
+
+
+# --- BOTE DIVIDIDO -----------------------------------------------------------
+# "empata por el bote", una linea por jugador con el mismo n.º de mano. Lineas
+# reales de vision/samples_layout2/: antes no se reconocian (el patron exigia
+# "gana") y la mano salia como "resultado no legible".
+
+def test_el_bote_dividido_se_reconoce(split):
+    assert split is not None
+    assert split["split"] is True
+    assert split["winners"] == ["Amsterdam974", "rubydog77"]
+    assert split["winner"] == "Amsterdam974"
+    assert split["amount"] == "4.243"
+    assert split["hand_number"] == "261531249025"
+
+
+def test_en_un_split_el_hero_empata(split):
+    assert hero_outcome(split, "rubydog77")["status"] == "split"
+
+
+def test_en_un_split_un_ajeno_sigue_siendo_desconocido(split):
+    assert hero_outcome(split, "pepito")["status"] == "unknown"
+
+
+def test_un_solo_ganador_no_se_marca_como_split(completa):
+    assert completa["split"] is False
+    assert completa["winners"] == ["fabiocs98"]
+
+
+def test_un_split_viejo_en_el_historial_no_gana_a_la_mano_nueva():
+    r = parse_hand_result([
+        "Repartidor: Mano n.º 111111111111: aaa empata por el bote (100)",
+        "Repartidor: Mano n.º 111111111111: bbb empata por el bote",
+        "Repartidor: Mano n.º 222222222222: ccc gana el bote (300) con escalera"])
+    assert r["split"] is False
+    assert r["winner"] == "ccc"
+
+
+# --- NICK CON ESPACIO --------------------------------------------------------
+# El OCR lee el guion bajo como espacio ("david_sagunt" -> "david sagunt").
+# Antes el regex capturaba solo "sagunt".
+
+@pytest.fixture
+def nick_con_espacio():
+    return parse_hand_result(["Repartidor: Mano n.º 261531241628: david sagunt gana "
+                              "el bote (2.197) con pareja de jotas"])
+
+
+def test_un_nick_con_espacio_no_se_trunca(nick_con_espacio):
+    assert nick_con_espacio["winner"] == "david sagunt"
+    assert nick_con_espacio["winning_hand"] == "pareja de jotas"
+
+
+def test_un_nick_con_espacio_casa_con_su_forma_con_guion_bajo(nick_con_espacio):
+    assert hero_outcome(nick_con_espacio, "david_sagunt")["status"] == "won"
+
+
+def test_el_nick_no_se_come_la_palabra_previa_cuando_no_es_suya():
+    r = parse_hand_result(["Repartidor: El jugador pepito gana el bote (50)"])
+    assert r["winner"] == "pepito"
+
+
+# --- MANO CON COMA -----------------------------------------------------------
+# "doble pareja, damas y sietes" (linea real de showdown). Antes se cortaba en la
+# coma y quedaba solo "doble pareja".
+
+def test_una_mano_con_coma_se_lee_entera():
+    r = parse_hand_result(["Repartidor: Mano n.º 261531300000: david sagunt gana el "
+                           "bote (900) con doble pareja, damas y sietes"])
+    assert r["winning_hand"] == "doble pareja, damas y sietes"
+
+
+def test_una_mano_con_coma_tambien_en_el_showdown():
+    r = parse_hand_result(["Repartidor: rubydog77 tiene doble pareja, reyes y doses",
+                           "Repartidor: Mano n.º 261531300001: pepe gana el bote (10)"])
+    assert any(s["hand"] == "doble pareja, reyes y doses" for s in r["showdown"])

@@ -12,10 +12,8 @@ Controles: arrastrar para dibujar el rectangulo, Enter para guardar, Esc para sa
 """
 import json
 import os
-import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "capture"))
-import portal_capture as pc
+from capture import portal_capture as pc
 
 import gi
 

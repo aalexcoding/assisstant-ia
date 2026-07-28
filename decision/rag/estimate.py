@@ -11,7 +11,7 @@ import json
 import os
 import subprocess
 
-import video_index as vi
+from decision.rag import video_index as vi
 
 BENCHMARK_PATH = os.path.join(os.path.dirname(__file__), "transcripts", "_benchmark.json")
 

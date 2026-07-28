@@ -23,10 +23,6 @@ busqueda seria meter en la consulta cosas que no se han observado.
 
 describir() es puro y se puede probar sin indice ni modelo.
 """
-import os
-import sys
-
-HERE = os.path.dirname(os.path.abspath(__file__))
 
 # Cuantos trozos se ofrecen. Pocos: son minutos de video que hay que ver, y una
 # lista larga no se mira.
@@ -92,10 +88,8 @@ def buscar(texto, k=K_POR_DEFECTO, minimo=SIMILITUD_MINIMA):
     vacio y la app sigue. Es una ayuda para despues, no parte del analisis."""
     if not texto:
         return []
-    if HERE not in sys.path:
-        sys.path.insert(0, HERE)
     try:
-        import query
+        from decision.rag import query
         crudos = query.search(texto, k=k)
     except SystemExit:
         return []            # query._load_index sale si no hay indice construido

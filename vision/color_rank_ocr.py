@@ -64,8 +64,8 @@ import hashlib
 
 import numpy as np
 
-import glyph_card_detector
-from rank_ocr import normalize_rank
+from vision import glyph_card_detector
+from vision.rank_ocr import normalize_rank
 
 WHITE_MAX_SATURATION = 60
 WHITE_MIN_VALUE = 170

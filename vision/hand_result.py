@@ -343,9 +343,9 @@ def read_chat_lines(image_path):
     para que parse_hand_result/hero_outcome sean usables sin opencv/OCR."""
     import cv2
 
-    import seat_map
-    from ocr_client import OcrBatch
-    from text_extract import parse_tsv_lines
+    from vision import seat_map
+    from vision.ocr_client import OcrBatch
+    from vision.text_extract import parse_tsv_lines
 
     bgr = cv2.imread(image_path)
     if bgr is None:

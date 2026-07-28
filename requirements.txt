@@ -1,6 +1,19 @@
+# --- el ciclo de analisis (vision + decision) ---
 opencv-python
 pillow
 numpy
 tesserocr
+
+# --- estudio offline post-mano (decision/rag/) ---
+# No hacen falta para jugar: solo para transcribir video y consultar el indice.
 faster-whisper
 fastembed
+
+# --- la suite de tests ---
+# `pytest` en la raiz lo ejecuta todo; ver README para las dos velocidades.
+pytest
+pytest-cov
+
+# PyGObject (GTK4) NO va aqui: la GUI usa los paquetes del sistema
+# (include-system-site-packages = true en el venv), porque instalarlo por pip
+# exige compilar contra las cabeceras de GTK y ya esta en el sistema.

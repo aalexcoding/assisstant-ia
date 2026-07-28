@@ -15,8 +15,7 @@ import json
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(__file__))
-from table_state import analyze_layout
+from vision.table_state import analyze_layout
 
 VISION_DIR = os.path.dirname(__file__)
 

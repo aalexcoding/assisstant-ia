@@ -15,19 +15,19 @@ import os
 
 import cv2
 
-import color_card_detector
-import color_rank_ocr
-import glyph_card_detector
-import dealer_button
-import disco_dealer
-import rango_directo
-import seat_map
-from card_detector import classify_boxes, find_card_boxes
-from ocr_client import OcrBatch
-from rank_ocr import card_code, normalize_rank, rank_crop_variants
-from suit_classifier import classify_suit
-from table_region import find_table_region
-from text_extract import (_clean_name, _is_name_candidate, _is_number_candidate, _is_username_token, _to_int,
+from vision import color_card_detector
+from vision import color_rank_ocr
+from vision import glyph_card_detector
+from vision import dealer_button
+from vision import disco_dealer
+from vision import rango_directo
+from vision import seat_map
+from vision.card_detector import classify_boxes, find_card_boxes
+from vision.ocr_client import OcrBatch
+from vision.rank_ocr import card_code, normalize_rank, rank_crop_variants
+from vision.suit_classifier import classify_suit
+from vision.table_region import find_table_region
+from vision.text_extract import (_clean_name, _is_name_candidate, _is_number_candidate, _is_username_token, _to_int,
                           find_blinds, find_blinds_corner, find_players, find_pot,
                           find_pot_bb,
                           merge_line_sets, parse_tsv_lines)
@@ -631,7 +631,33 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     hero_jobs = _encolar_cartas(batch, bgr, hero_boxes)
     board_jobs = _encolar_cartas(batch, bgr, board_boxes)
 
+    # LAS CARTAS DEL RIVAL, cuando el cliente las enseña. En un all-in o en el
+    # showdown deja de haber dorso y se ve la mano, asi que se puede leer igual
+    # que la del hero. Vale la pena porque cambia la NATURALEZA de la equity:
+    # con las cartas del rival el numero deja de ser "cuanto gano contra su
+    # rango" y pasa a ser la respuesta exacta. Medido en
+    # sesion-2026-07-28_012156/0075: el rival enseñaba 6c 4c -escalera de color
+    # con el board 2c 5c 3c- y la equity contra rango decia 82,4%.
+    #
+    # Se detecta y encola AQUI, antes de correr el lote, porque el rango va por
+    # el mismo OCR que el board y el hero y asi viaja en el mismo viaje.
+    reveladas_px = {s: seat_map.revealed_zone_px(ref, s, bgr.shape)
+                    for s in seat_map.revealed_pair_seats(bgr, ref)}
+    reveladas_boxes = {s: _cajas_de_carta(bgr, px, esperadas=2)
+                       for s, px in reveladas_px.items()}
+    reveladas_jobs = {s: _encolar_cartas(batch, bgr, cajas)
+                      for s, cajas in reveladas_boxes.items()}
+
     results = batch.run()
+
+    # {asiento: ['6c','4c']} solo cuando se resuelven LAS DOS. Una sola carta no
+    # sirve para nada -no se puede evaluar media mano- y media lectura seria peor
+    # que ninguna, porque invitaria a tratarla como conocida.
+    reveladas = {}
+    for s, jobs in reveladas_jobs.items():
+        cartas, _sin_resolver = _resolve_zone_cards(bgr, reveladas_px[s], results, jobs)
+        if len(cartas) == 2 and len(set(cartas)) == 2:
+            reveladas[s] = cartas
 
     # ocupacion por CONTENIDO del nameplate (texto), no por oscuridad: un
     # asiento vacio muestra las sillas granate sobre fondo casi-negro, tan
@@ -676,11 +702,21 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
             if name not in asientos_estables and name != seat_map.HERO_SEAT:
                 del occupied[name]
 
-    # quien sigue en la mano (dorso de carta visible). Se resuelve AQUI, antes de
-    # cerrar la ocupacion, porque un dorso es la evidencia mas fuerte que hay de
-    # que un asiento esta ocupado (medido: separacion 13,6x sobre 705
-    # observaciones) y sirve para desempatar si sobran asientos.
-    en_mano = seat_map.detect_in_hand_seats(bgr, ref)
+    # quien sigue en la mano. Se resuelve AQUI, antes de cerrar la ocupacion,
+    # porque tener cartas es la evidencia mas fuerte que hay de que un asiento
+    # esta ocupado (medido: separacion 13,6x sobre 705 observaciones) y sirve
+    # para desempatar si sobran asientos.
+    #
+    # DOS SEÑALES, y hacen falta las dos: el dorso mientras las cartas estan
+    # tapadas, y la mano boca arriba en cuanto el cliente las gira (all-in o
+    # showdown, resuelta mas arriba en `reveladas`). Con solo la primera, en un
+    # all-in el recuento BAJA justo cuando el hero mas necesita saber contra
+    # cuantos va, y la equity sale INFLADA. Ver el bloque de
+    # seat_map.revealed_pair_seats para el caso medido.
+    #
+    # Cuenta como en la mano quien ENSEÑA las cartas aunque no se haya podido
+    # leer el rango: para el recuento basta con ver que hay una mano ahi.
+    en_mano = seat_map.detect_in_hand_seats(bgr, ref) | set(reveladas_px)
 
     # EL DISCO SE BUSCA BARRIENDO LA MESA, no en seis puntos fijos. La idea es del
     # usuario ("hay que montar un sistema que mapee la mesa buscando el boton
@@ -820,6 +856,18 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
             "is_hero": es_hero,
             "in_hand": (bool(state["hero_cards"]) and not state["hero_cards_dimmed"])
                        if es_hero else (name in en_mano),
+            # el cliente enseña esta mano BOCA ARRIBA al resto de la mesa. Solo
+            # pasa en un all-in o en el showdown, y distingue "esta en la mano
+            # con las cartas tapadas" de "esta en la mano y ya se le ven": lo
+            # segundo significa que no queda nada que decidir ahi. Del hero no se
+            # puede saber -sus cartas se le ven SIEMPRE a el, este reveladas a la
+            # mesa o no-, asi que se deja en False en vez de inventarlo.
+            "revealed": False if es_hero else (name in reveladas_px),
+            # las dos cartas del rival, si se enseñan Y se han podido leer. Es la
+            # unica informacion CIERTA que hay de una mano ajena en todo el
+            # GameState: con ella la equity deja de ser una estimacion contra un
+            # rango. None mientras esten tapadas, que es lo normal.
+            "cards": None if es_hero else reveladas.get(name),
         }
         if name in positions:
             player["position"] = positions[name]

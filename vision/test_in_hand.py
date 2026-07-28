@@ -14,28 +14,29 @@ puñado de frames comprobados a ojo:
      discontinuidad del board, no por tiempo.
   3. SUBCONJUNTO. Quien tiene cartas esta sentado, asi que in_hand ⊆ ocupados.
 
-Es lento (procesa 141 capturas, ~1 min) porque no usa OCR: solo pixeles.
-Uso: .venv/bin/python vision/test_in_hand.py
+Es lento (procesa 141 capturas, ~1 min) porque recorre imagenes, aunque no use
+OCR: solo pixeles.
+
+DEPENDE DE CAPTURAS NO VERSIONADAS (vision/samples_layout*/). Cuando faltan, los
+tests hacen SKIP con motivo. Antes esto imprimia "nada que verificar" y salia con
+codigo 0, o sea que en cualquier maquina que no fuera la del autor el fichero
+pasaba en verde sin comprobar absolutamente nada.
 """
 import glob
 import json
 import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import cv2
 import numpy as np
+import pytest
 
-import seat_map
+from vision import seat_map
+
+pytestmark = [pytest.mark.vision, pytest.mark.lento]
 
 VISION = os.path.dirname(os.path.abspath(__file__))
-checks = []
-
-
-def check(desc, cond):
-    checks.append((desc, cond))
-    print(("OK  " if cond else "FAIL") + " " + desc)
+SNAP = os.path.join(VISION, "results_samples_layout2.json")
+BANDA = (0.02, 0.10)          # la banda prohibida entre las dos poblaciones
 
 
 def medir(carpeta):
@@ -50,45 +51,62 @@ def medir(carpeta):
     return out
 
 
-datos = {c: medir(c) for c in ("samples_layout2", "samples_layout")}
-total = sum(len(v) for v in datos.values())
-if total == 0:
-    print("no hay capturas en vision/samples_layout*/ ; nada que verificar")
-    raise SystemExit(0)
+@pytest.fixture(scope="module")
+def medidas():
+    """Las fracciones de dorso de las dos carpetas de capturas. De modulo porque
+    procesar 141 imagenes cuesta ~1 min y todos los tests miran lo mismo."""
+    datos = {c: medir(c) for c in ("samples_layout2", "samples_layout")}
+    if sum(len(v) for v in datos.values()) == 0:
+        pytest.skip("no hay capturas en vision/samples_layout*/ (no versionadas)")
+    return datos
 
-# --- 1. bimodalidad con margen ------------------------------------------------
-print("--- 1. bimodalidad ---")
-BANDA = (0.02, 0.10)
-for carpeta, filas in datos.items():
-    if not filas:
-        continue
-    vals = np.array([v for _, fr in filas for v in fr.values()])
-    bajos = vals[vals < BANDA[0]]
-    altos = vals[vals > BANDA[1]]
-    medio = vals[(vals >= BANDA[0]) & (vals <= BANDA[1])]
-    print(f"     {carpeta}: {len(filas)} frames x 5 asientos = {len(vals)} observaciones")
-    print(f"       sin cartas: {len(bajos):4d} (max {bajos.max() if len(bajos) else 0:.4f})   "
-          f"con cartas: {len(altos):4d} (min {altos.min() if len(altos) else 0:.4f})")
-    check(f"{carpeta}: nada en la banda prohibida [{BANDA[0]}, {BANDA[1]}] "
-          f"({len(medio)} observaciones)", len(medio) == 0)
-    if len(bajos) and len(altos):
-        check(f"{carpeta}: el margen entre poblaciones es de al menos 5x",
-              altos.min() > bajos.max() * 5)
 
-# --- 2. monotonia dentro de una mano -----------------------------------------
-# Las manos se separan por discontinuidad del board: si el board deja de ser
-# prefijo del anterior (o se vacia y vuelve), empezo una mano nueva. El board se
-# lee del snapshot ya calculado, para no tener que correr el OCR aqui.
-print("\n--- 2. monotonia dentro de una mano ---")
-SNAP = os.path.join(VISION, "results_samples_layout2.json")
-if os.path.exists(SNAP):
+@pytest.fixture(scope="module")
+def snapshot():
+    if not os.path.exists(SNAP):
+        pytest.skip(f"falta {os.path.basename(SNAP)} (no versionado)")
     with open(SNAP) as fh:
-        snap = {r["image"]: r for r in json.load(fh)}
-    filas = datos["samples_layout2"]
+        return {r["image"]: r for r in json.load(fh)}
+
+
+# --- 1. bimodalidad con margen ----------------------------------------------
+
+@pytest.mark.parametrize("carpeta", ["samples_layout2", "samples_layout"])
+def test_nada_cae_en_la_banda_prohibida(medidas, carpeta):
+    """Si la metrica separa de verdad, no debe haber NI UNA observacion entre las
+    dos poblaciones. Una sola ya seria motivo para revisar los umbrales."""
+    filas = medidas[carpeta]
+    if not filas:
+        pytest.skip(f"no hay capturas en vision/{carpeta}/")
+    vals = np.array([v for _, fr in filas for v in fr.values()])
+    medio = vals[(vals >= BANDA[0]) & (vals <= BANDA[1])]
+    assert len(medio) == 0, \
+        f"{len(medio)} de {len(vals)} observaciones en [{BANDA[0]}, {BANDA[1]}]"
+
+
+@pytest.mark.parametrize("carpeta", ["samples_layout2", "samples_layout"])
+def test_el_margen_entre_poblaciones_es_de_al_menos_cinco_veces(medidas, carpeta):
+    filas = medidas[carpeta]
+    if not filas:
+        pytest.skip(f"no hay capturas en vision/{carpeta}/")
+    vals = np.array([v for _, fr in filas for v in fr.values()])
+    bajos, altos = vals[vals < BANDA[0]], vals[vals > BANDA[1]]
+    if not len(bajos) or not len(altos):
+        pytest.skip("las capturas no cubren las dos poblaciones")
+    assert altos.min() > bajos.max() * 5, \
+        f"sin cartas max {bajos.max():.4f}, con cartas min {altos.min():.4f}"
+
+
+# --- 2. monotonia dentro de una mano ----------------------------------------
+
+def test_el_conjunto_de_vivos_nunca_crece_dentro_de_una_mano(medidas, snapshot):
+    """Las manos se separan por discontinuidad del board: si el board deja de ser
+    prefijo del anterior (o se vacia y vuelve), empezo una mano nueva. El board se
+    lee del snapshot ya calculado, para no tener que correr el OCR aqui."""
     violaciones = []
     previo_set, previo_board, previo_img = None, None, None
-    for img, fr in filas:
-        board = tuple(snap.get(img, {}).get("board") or [])
+    for img, fr in medidas["samples_layout2"]:
+        board = tuple(snapshot.get(img, {}).get("board") or [])
         vivos = {n for n, v in fr.items() if v >= seat_map.CARD_BACK_MIN_AREA_FRAC}
         # Frontera entre manos: el board deja de crecer como prefijo del anterior,
         # O el frame anterior no tenia a NADIE con cartas -si nadie sostiene
@@ -101,46 +119,38 @@ if os.path.exists(SNAP):
                            or previo_board[:len(board)] == board)
                       and len(board) >= len(previo_board))
         if misma_mano and previo_set is not None and not vivos <= previo_set:
-            violaciones.append((previo_img, img, sorted(previo_set), sorted(vivos)))
+            violaciones.append((previo_img, sorted(previo_set), img, sorted(vivos)))
         previo_set, previo_board, previo_img = vivos, board, img
-    check(f"el conjunto de vivos nunca crece dentro de una mano "
-          f"({len(violaciones)} violaciones)", not violaciones)
-    for v in violaciones[:3]:
-        print(f"       {v[0]} {v[2]} -> {v[1]} {v[3]}")
-else:
-    print("     (sin snapshot results_samples_layout2.json, se omite)")
+    assert not violaciones, violaciones[:3]
 
-# --- 3. invariante de subconjunto --------------------------------------------
-print("\n--- 3. in_hand subset ocupados ---")
-if os.path.exists(SNAP):
-    malos = 0
-    for img, fr in datos["samples_layout2"]:
-        r = snap.get(img)
+
+# --- 3. invariante de subconjunto -------------------------------------------
+
+def test_nunca_hay_mas_rivales_con_cartas_que_asientos_ocupados(medidas, snapshot):
+    """Quien tiene cartas esta sentado."""
+    malos = []
+    for img, fr in medidas["samples_layout2"]:
+        r = snapshot.get(img)
         if not r:
             continue
         n_vivos = sum(1 for v in fr.values() if v >= seat_map.CARD_BACK_MIN_AREA_FRAC)
         # los vivos son rivales; el hero va aparte, de ahi el +1
         if n_vivos + 1 > len(r["players"]):
-            malos += 1
-    check(f"nunca hay mas rivales con cartas que asientos ocupados ({malos} casos)",
-          malos == 0)
+            malos.append((img, n_vivos, len(r["players"])))
+    assert not malos, malos[:3]
 
-# --- 4. frames comprobados a ojo ---------------------------------------------
-# sample_1784909873584: david sagunt (UL) y Amsterdam974 (UR) tienen dos cartas
-# granate cada uno; rubydog77 (ML) no, y Parfisal58 (MR) esta "Ausente".
-print("\n--- 4. frames verificados a ojo ---")
-ETIQUETAS = {
-    "sample_1784909873584.png": {"UL", "UR"},
-}
-por_nombre = dict(datos["samples_layout2"])
-for img, esperado in ETIQUETAS.items():
-    if img not in por_nombre:
-        continue
-    obtenido = {n for n, v in por_nombre[img].items()
+
+# --- 4. frames comprobados a ojo --------------------------------------------
+
+@pytest.mark.parametrize("imagen, esperado", [
+    # david sagunt (UL) y Amsterdam974 (UR) tienen dos cartas granate cada uno;
+    # rubydog77 (ML) no, y Parfisal58 (MR) esta "Ausente".
+    ("sample_1784909873584.png", {"UL", "UR"}),
+])
+def test_frames_verificados_a_ojo(medidas, imagen, esperado):
+    por_nombre = dict(medidas["samples_layout2"])
+    if imagen not in por_nombre:
+        pytest.skip(f"{imagen} no esta en las capturas locales")
+    obtenido = {n for n, v in por_nombre[imagen].items()
                 if v >= seat_map.CARD_BACK_MIN_AREA_FRAC}
-    check(f"{img}: {sorted(obtenido)} == {sorted(esperado)}", obtenido == esperado)
-
-n_fail = sum(1 for _, cond in checks if not cond)
-print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
-if n_fail:
-    raise SystemExit(1)
+    assert obtenido == esperado

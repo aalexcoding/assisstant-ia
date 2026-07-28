@@ -15,7 +15,7 @@ import sys
 
 import numpy as np
 
-from clean import clean_text
+from decision.rag.clean import clean_text
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 INDEX_DIR = os.path.join(HERE, "index")

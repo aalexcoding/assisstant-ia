@@ -1,0 +1,85 @@
+[project]
+name = "poker-assistant"
+version = "0.1.0"
+description = "Asistente de poker: vision por computador sobre el cliente de PokerStars + motor de decision preflop"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+# La suite vive junto al codigo (vision/test_*.py, decision/test_*.py...) mas
+# tests/ para lo que cruza capas. Como todo son paquetes de verdad, pytest los
+# importa por su ruta completa (vision.test_glyph_cards) y no hay colision de
+# nombres entre los dos ocr_worker.py.
+testpaths = ["tests", "core", "vision", "decision"]
+addopts = "-q --strict-markers"
+
+# El proyecto NO se instala en el venv, asi que la raiz tiene que estar en
+# sys.path para que `from decision import engine` resuelva. Esto sustituye a los
+# sys.path.insert que habia repartidos por cada modulo y cada test.
+pythonpath = ["."]
+
+markers = [
+    "lento: tarda segundos (Monte Carlo largo, OCR real, un frame entero)",
+    "vision: necesita opencv y trabaja sobre imagenes",
+    "gtk: necesita GTK4/PyGObject y un display",
+    "corpus: necesita las sesiones grabadas en testing/ (no versionadas)",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["core", "decision", "vision"]
+omit = [
+    "*/test_*.py",
+    "*/__init__.py",
+    # offline y sin relacion con el ciclo de analisis: transcripcion por lotes,
+    # generacion de plantillas, scripts de muestreo.
+    "decision/rag/transcribe.py",
+    "decision/rag/extract_audio.py",
+    "decision/rag/pipeline.py",
+    "decision/rag/run_batch.py",
+    "decision/rag/estimate.py",
+    "decision/rag/build_index.py",
+    "decision/rag/video_index.py",
+    "decision/preflop/parse_ranges.py",
+    "decision/preflop/zerospoker_layout.py",
+    "decision/preflop/ocr_worker.py",
+    "vision/ocr_worker.py",
+    "vision/generate_card_templates.py",
+    "vision/run_samples*.py",
+    # RUTAS DE DIAGNOSTICO, fuera del ciclo de analisis. table_state.analyze() y
+    # analyze_color_deck() no las llama nadie en produccion -solo los
+    # run_samples*, que ya estan omitidos aqui arriba-, y estos cuatro modulos
+    # SOLO existen para ellas: el ciclo real usa glyph/color_card_detector para
+    # las cartas y disco_dealer + seat_map.detect_button_seat_union para el
+    # boton. Medirlos arrastraria la cifra hacia abajo por codigo que no decide
+    # nada, que es justo la forma de hacer que nadie mire la cobertura.
+    "vision/card_detector.py",
+    "vision/suit_classifier.py",
+    "vision/table_region.py",
+    "vision/dealer_button.py",
+    # el subpaquete rag/ es estudio offline post-mano, no el ciclo en vivo
+    "decision/rag/*",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+# Medido con la suite ENTERA (`pytest --cov=decision --cov=core --cov=vision`):
+#
+#     core      97,6%      decision  93,7%      vision  86,4%      total  87%
+#
+# El tope se pone por DEBAJO de lo medido y no pegado a ello: sube al alcanzarlo
+# de verdad, no al rozarlo. Vigila que no BAJE, que es de lo que protege.
+#
+# OJO: solo cuenta si se corre la suite entera. Con `-m "not lento and not
+# corpus"` no se ejecutan ni el E2E ni los tests de imagen, y la cifra sale muy
+# por debajo sin que nada este mal.
+fail_under = 85
+precision = 1
+
+# El p95 de vision/table_state.py se queda en el 59% a proposito: unas 200 de sus
+# 406 sentencias son analyze() y analyze_color_deck(), las dos rutas de
+# DIAGNOSTICO que solo llaman los run_samples* (omitidos). El ciclo en vivo entra
+# por analyze_layout().

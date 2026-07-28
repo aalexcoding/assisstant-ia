@@ -35,9 +35,9 @@ mostrar importes de una mano ya resuelta -no se distingue de una subida en
 curso con una sola imagen-; y sigue sin registrarse el historial de apuestas
 de la calle, asi que el juicio es sobre lo que hay dibujado en ese frame.
 
-Requiere decision/preflop en sys.path (lo hace el caller, igual que
-vision/table_state.py no gestiona su propio sys.path para importar a sus
-hermanos de vision/).
+Se importa como paquete (`from decision import engine`) con la raiz del
+proyecto en sys.path. Antes cada caller tenia que meter decision/ y
+decision/preflop/ a mano; ya no.
 
 BB-ONLY. La app trabaja con el cliente configurado para mostrar los importes
 en BIG BLINDS, y solo con eso: el stack leido YA ES la profundidad en bb, asi
@@ -84,17 +84,35 @@ import json
 import os
 import time
 
-import equity
-import hand_tracker
+from decision import equity
+from decision import hand_tracker
 
-from actions import CHECK_BB_OPTION, translate_into
-from derive import bb_option, squeeze, vs_limp
-from lookup import RANGES, recommend
+from decision.preflop.actions import CHECK_BB_OPTION, translate_into
+from decision.preflop.derive import bb_option, squeeze, vs_limp
+from decision.preflop import lookup
+from decision.preflop.lookup import recommend
 
 _DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.jsonl")
 
+# El registro de decisiones se puede APAGAR. En produccion interesa (es la
+# semilla para "aprender el estilo" mas adelante), pero un test que llama a
+# decide() no tiene por que dejar rastro en el fichero real del usuario, y menos
+# aun cientos de lineas por pasada del corpus. POKER_DECISIONS_LOG=0 lo apaga.
+_LOG_ACTIVO = os.environ.get("POKER_DECISIONS_LOG", "1") != "0"
+
 _HERO_STACK_TTL_S = 90.0
 _last_hero_stack = {"value": None, "t": 0.0}
+
+
+def reset_state():
+    """Olvida el stack cacheado del hero.
+
+    ESTO ES ESTADO GLOBAL ENTRE LLAMADAS, y por eso hace falta poder tirarlo: sin
+    esto, un test que deja un stack en la cache cambia el resultado del siguiente
+    -decide() lo reutilizaria como si fuera de este frame- y la suite pasa a
+    depender del orden. En produccion no se llama: la cache es justo lo que salva
+    la recomendacion cuando el nameplate del hero se tapa con los botones."""
+    _last_hero_stack.update(value=None, t=0.0)
 
 # La ciega grande vale 1 POR DEFINICION: los importes vienen en big blinds. Se
 # nombra en vez de escribir 1 suelto para que se lea que es una unidad, no una
@@ -140,6 +158,11 @@ def _cached_hero_stack(hero):
 # (obligatorio), no una subida, hasta este multiplo de la ciega grande.
 _BB_POSTED_MAX_MULT = 2.0
 
+# Cuantas cartas de board tiene que haber en cada calle. Sirve para contrastar
+# las dos lecturas independientes que hay del avance de la mano: contar cartas en
+# el frame y el rastreo a lo largo de la mano (hand_tracker.calle_seguida).
+_CARTAS_POR_CALLE = {"preflop": 0, "flop": 3, "turn": 4, "river": 5}
+
 
 def _detect_raiser(players, bb):
     """Gemelo de seat_map.detect_raiser, reimplementado aqui para no acoplar el
@@ -178,7 +201,7 @@ def _stack_grid(facing):
     con los datos: open_raise tiene 4/6/8/10/12.5/15/20/25/30/35/40 y threebet_call
     solo 10/15/20/25/30/35/40 (no hay defensa digitalizada por debajo de 10bb)."""
     if facing not in _STACK_GRID_CACHE:
-        _STACK_GRID_CACHE[facing] = sorted(float(k) for k in RANGES.get(facing, {}))
+        _STACK_GRID_CACHE[facing] = sorted(float(k) for k in lookup.RANGES.get(facing, {}))
     return _STACK_GRID_CACHE[facing]
 
 
@@ -226,6 +249,8 @@ def _log_decision(state, recommendation, abstain_reason):
     """Anota una linea JSONL por cada decision (recomendacion o abstencion con
     motivo). Semilla para 'aprender el estilo' mas adelante; por ahora es solo
     registro. Un fallo al escribir nunca debe tumbar decide()."""
+    if not _LOG_ACTIVO:
+        return
     try:
         entry = {
             "t": time.time(),
@@ -458,9 +483,15 @@ _RAISE_ABSTAIN = {
 }
 
 
-def postflop_equity(state, iterations=None):
+def postflop_equity(state, iterations=None, seed=None):
     """Equity postflop del hero por simulacion, o None si no se puede calcular
     honestamente (el motivo va a state["warnings"]).
+
+    seed: se pasa tal cual a equity.estimate_equity. En produccion va a None (la
+    simulacion es distinta cada frame, que es lo correcto: 10.000 iteraciones
+    tienen su propio error y fijar la semilla solo lo congelaria). Los tests SI
+    lo fijan, porque sin el la misma entrada da un numero distinto cada vez y no
+    hay nada que afirmar.
 
     DELIBERADAMENTE SEPARADO de decide(): esto devuelve una PROBABILIDAD, no una
     decision. decide() sigue sin recomendar nada postflop y el HUD sigue con la
@@ -498,6 +529,23 @@ def postflop_equity(state, iterations=None):
         return abstain("equity: no se detecta ningun rival con cartas; la mano "
                        "pudo terminar o estar en showdown (cartas giradas)")
 
+    # EL BOARD TIENE QUE CUADRAR CON LA CALLE QUE VIENE SIGUIENDO EL RASTREADOR.
+    # Son dos lecturas independientes -una cuenta cartas en un frame, la otra
+    # lleva la cuenta a lo largo de la mano- y si se contradicen una esta mal, sin
+    # saber cual. Calcular igualmente da un numero sobre un board a medias: pasa
+    # cuando el cliente esta recogiendo la mesa al acabar la mano, o cuando dos
+    # cartas quedan tapadas por una animacion.
+    #
+    # Medido sobre los 9.225 frames grabados: la discrepancia sale en 462 (5,0%)
+    # y en 17 de las 826 equities (2,1%) se calculo el numero igualmente. Un caso
+    # real, sesion-2026-07-27_014058/0461-0465: 'river' con tres cartas leidas y
+    # la app imprimiendo 30,6% con dos cartas de menos.
+    calle = state.get("calle_seguida")
+    if calle in _CARTAS_POR_CALLE and len(board) != _CARTAS_POR_CALLE[calle]:
+        return abstain(f"equity: vas por {calle} pero se leen {len(board)} cartas de "
+                       f"board (deberian ser {_CARTAS_POR_CALLE[calle]}); una de las dos "
+                       f"lecturas esta mal y no se calcula sobre un board a medias")
+
     stack_bb = None
     hero = _hero_player(state)
     if state.get("stack_unit") == "bb":
@@ -506,8 +554,13 @@ def postflop_equity(state, iterations=None):
     resultado = equity.estimate_equity(
         state.get("hero_cards"), board, state.get("hero_position"), len(rivales),
         opponent_positions=[p.get("position") for p in rivales],
+        # las cartas que el cliente ENSEÑA de cada rival (all-in o showdown). Van
+        # como estan: si es None se le supone su rango, y si estan ahi no se
+        # supone nada. Es la unica informacion cierta que hay de una mano ajena.
+        opponent_hands=[p.get("cards") for p in rivales],
         stack_bb=stack_bb,
         iterations=iterations or equity.DEFAULT_ITERATIONS,
+        seed=seed,
         warnings=warnings)
     if resultado is None:
         return None

@@ -57,7 +57,7 @@ pasa de "pasa y ve el flop" a ALL IN, que es lo que dicen sus propias tablas.
 
 Requiere lookup.py en el mismo directorio (lo pone el caller en sys.path).
 """
-from lookup import recommend
+from decision.preflop.lookup import recommend
 
 # La posicion cuya fila se usa como donante para la OPCION DE LA BB, y por que
 # ella (ver el docstring).

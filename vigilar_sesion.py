@@ -32,15 +32,10 @@ import argparse
 import glob
 import json
 import os
-import sys
 import time
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, BASE_DIR)
-
 import testing_session as tss
-
-ORDEN_PREFLOP = ("EP1", "EP2", "MP1", "MP2", "HJ", "CO", "BTN", "SB", "BB")
+from core import invariantes as inv
 
 # Cada cuanto se mira si hay frames nuevos. La app escribe uno cada ~0,7 s, asi
 # que mirar mas a menudo no adelanta nada y solo gasta.
@@ -70,39 +65,20 @@ def hallazgos(d, memoria):
     `memoria` guarda lo ya avisado para no repetirse (ver el docstring del
     modulo): se muta."""
     st = d.get("state") or {}
-    if any("encuentra la mesa" in w or "ovalo" in w for w in st.get("warnings") or []):
-        return []                       # sin mesa no hay nada que verificar
-    out = []
+    r = d.get("recommendation") or {}
     mano = st.get("mano_seguida")
-    board = st.get("board") or []
-    hero = st.get("hero_cards") or []
 
     # --- contradicciones ---------------------------------------------------
-    if len(set(board)) < len(board):
-        out.append(("BUG", f"board con carta repetida: {board}"))
-    if set(board) & set(hero):
-        out.append(("BUG", f"carta tuya tambien en el board: "
-                           f"{sorted(set(board) & set(hero))}"))
-    hp, vs = st.get("hero_position"), st.get("vs_position")
-    if hp in ORDEN_PREFLOP and vs in ORDEN_PREFLOP \
-            and ORDEN_PREFLOP.index(vs) >= ORDEN_PREFLOP.index(hp):
-        out.append(("BUG", f"la subida se atribuye a {vs}, que habla DESPUES que {hp}"))
+    # Las escribe core/invariantes.py, que es el mismo codigo que usa la suite
+    # sobre las sesiones grabadas: aqui avisan mientras juegas, alli fallan.
+    out = [("BUG", detalle) for _clave, detalle in inv.de_frame(st, r or None)]
 
-    n = len(st.get("players") or [])
-    prev = memoria.get("jugadores")
-    if prev and prev[0] == mano and prev[1] != n:
-        out.append(("BUG", f"el numero de jugadores cambia dentro de la mano: "
-                           f"{prev[1]} -> {n}"))
-    memoria["jugadores"] = (mano, n)
-
-    prev = memoria.get("posicion")
-    if prev and prev[0] == mano and hp and prev[1] and prev[1] != hp:
-        out.append(("BUG", f"tu posicion cambia dentro de la mano: {prev[1]} -> {hp}"))
-    if hp:
-        memoria["posicion"] = (mano, hp)
+    prev = memoria.get("anterior")
+    if prev is not None:
+        out += [("BUG", detalle) for _clave, detalle in inv.de_serie(prev, (st, r or None))]
+    memoria["anterior"] = (st, r or None)
 
     # --- a revisar ---------------------------------------------------------
-    r = d.get("recommendation") or {}
     if r.get("source") == "derived":
         clave = ("derivada", mano, r.get("action"))
         if clave not in memoria["vistos"]:

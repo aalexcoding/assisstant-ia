@@ -10,128 +10,180 @@ Lo que de verdad protege:
   2. Que la lista NUNCA se presente como completa. El verbo dura menos que el
      periodo de muestreo, asi que faltan acciones por construccion; afirmar lo
      contrario llevaria a clasificar mal el spot.
-
-Script suelto, sin pytest (el proyecto no lo usa).
-Uso: .venv/bin/python decision/test_action_log.py
 """
-import os
-import sys
+import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import action_log as al
-
-checks = []
+from decision import action_log as al
 
 
-def check(desc, cond):
-    checks.append((desc, cond))
-    print(("OK  " if cond else "FAIL") + " " + desc)
+@pytest.fixture
+def log():
+    """Un historial recien abierto. Cada test parte del suyo: el ActionLog es
+    memoria de UNA mano, y compartirlo entre tests seria justo el bug que
+    intenta evitar (acciones de una mano contadas en la siguiente)."""
+    x = al.ActionLog()
+    x.nueva_mano()
+    return x
 
 
-# --- normalizacion del verbo -----------------------------------------------
-print("# --- verbo del cliente -> accion ---")
-for verbo, esperado in (("Pasar", "check"), ("Pasa", "check"),
-                        ("Igualar", "call"), ("Paga", "call"),
-                        ("Apostar", "bet"), ("Subir", "raise"), ("Resubir", "raise"),
-                        ("No ir", "fold"), ("All-in", "allin"), ("all in", "allin")):
-    check(f"{verbo!r} -> {esperado}", al.normalizar(verbo) == esperado)
+# --- normalizacion del verbo -------------------------------------------------
 
-check("un nick no es una accion", al.normalizar("Dav6934") is None)
-check("vacio tampoco", al.normalizar("") is None and al.normalizar(None) is None)
-check("'Ausente' es un ESTADO, no una accion: no puede entrar en la secuencia",
-      al.normalizar("Ausente") is None)
-check("'Sentado' tampoco", al.normalizar("Sentado") is None)
+@pytest.mark.parametrize("verbo, esperado", [
+    ("Pasar", "check"), ("Pasa", "check"),
+    ("Igualar", "call"), ("Paga", "call"),
+    ("Apostar", "bet"), ("Subir", "raise"), ("Resubir", "raise"),
+    ("No ir", "fold"), ("All-in", "allin"), ("all in", "allin"),
+])
+def test_verbo_del_cliente_a_accion(verbo, esperado):
+    assert al.normalizar(verbo) == esperado
 
-# --- deduplicacion: lo mas importante --------------------------------------
-print("\n# --- deduplicacion ---")
-log = al.ActionLog()
-log.nueva_mano()
-for _ in range(4):
+
+def test_un_nick_no_es_una_accion():
+    assert al.normalizar("Dav6934") is None
+
+
+def test_vacio_tampoco():
+    assert al.normalizar("") is None
+    assert al.normalizar(None) is None
+
+
+@pytest.mark.parametrize("estado", ["Ausente", "Sentado"])
+def test_un_estado_no_es_una_accion(estado):
+    """'Ausente'/'Sentado' son ESTADOS: no pueden entrar en la secuencia."""
+    assert al.normalizar(estado) is None
+
+
+# --- deduplicacion: lo mas importante ----------------------------------------
+
+def test_el_mismo_verbo_en_cuatro_frames_es_una_sola_subida(log):
+    for _ in range(4):
+        log.observar("UL", "Subir")
+    assert len(log.acciones()["acciones"]) == 1
+
+
+def test_si_vuelve_a_verse_el_nick_y_sube_otra_vez_son_dos_subidas(log):
+    for _ in range(4):
+        log.observar("UL", "Subir")
+    log.observar("UL", None)              # vuelve a verse el nick: cierra el evento
     log.observar("UL", "Subir")
-check("el mismo verbo en 4 frames seguidos es UNA sola subida",
-      len(log.acciones()["acciones"]) == 1)
+    assert len(log.acciones()["acciones"]) == 2
 
-log.observar("UL", None)              # vuelve a verse el nick: cierra el evento
-log.observar("UL", "Subir")
-check("si vuelve a verse el nick y luego SUBE otra vez, son dos subidas",
-      len(log.acciones()["acciones"]) == 2)
 
-log2 = al.ActionLog()
-log2.nueva_mano()
-log2.observar("UL", "Subir")
-log2.observar("UL", "Igualar")
-check("dos verbos distintos seguidos son dos acciones",
-      len(log2.acciones()["acciones"]) == 2)
+def test_dos_verbos_distintos_seguidos_son_dos_acciones(log):
+    log.observar("UL", "Subir")
+    log.observar("UL", "Igualar")
+    assert len(log.acciones()["acciones"]) == 2
 
-# --- orden y contenido ------------------------------------------------------
-print("\n# --- orden ---")
-log = al.ActionLog()
-log.nueva_mano()
-log.observar("ML", "Poner", position="SB")
-log.observar("UL", "Subir", position="CO")
-log.observar("MR", "No ir", position="BTN")
-log.observar("HERO", "Igualar", position="BB")
-acc = log.acciones()["acciones"]
-check("se conserva el orden en que se vieron",
-      [a["accion"] for a in acc] == ["post", "raise", "fold", "call"])
-check("y de quien fue cada una",
-      [a["position"] for a in acc] == ["SB", "CO", "BTN", "BB"])
-check("con numero de orden correlativo", [a["orden"] for a in acc] == [1, 2, 3, 4])
-check("el resumen se lee de un vistazo",
-      log.resumen() == "SB pone ciega · CO sube · BTN no va · BB paga")
 
-# --- la ultima agresiva, que es lo que dice si el bote esta subido ----------
-print("\n# --- ultima accion agresiva ---")
-check("la ultima agresiva es la subida de CO",
-      log.ultima_agresiva()["position"] == "CO")
-log.observar("MR", "Apostar", position="BTN")
-check("una apuesta posterior la sustituye",
-      log.ultima_agresiva()["position"] == "BTN")
-log.observar("HERO", "Pasar", position="BB")
-check("un pase NO la sustituye: pasar no es agresivo",
-      log.ultima_agresiva()["position"] == "BTN")
+# --- orden y contenido -------------------------------------------------------
 
-vacio = al.ActionLog()
-vacio.nueva_mano()
-check("sin acciones no hay ultima agresiva", vacio.ultima_agresiva() is None)
-vacio.observar("UL", "Pasar")
-check("y con solo pases tampoco", vacio.ultima_agresiva() is None)
+@pytest.fixture
+def log_mano(log):
+    """Una mano con las cuatro acciones ya vistas, en orden."""
+    log.observar("ML", "Poner", position="SB")
+    log.observar("UL", "Subir", position="CO")
+    log.observar("MR", "No ir", position="BTN")
+    log.observar("HERO", "Igualar", position="BB")
+    return log
 
-# --- LA HONESTIDAD: nunca se presenta como completo -------------------------
-print("\n# --- la lista nunca es completa ---")
-check("acciones() marca completo=False SIEMPRE: el verbo dura menos que el "
-      "periodo de muestreo, asi que faltan acciones por construccion",
-      log.acciones()["completo"] is False)
 
-# --- fronteras de mano ------------------------------------------------------
-print("\n# --- fronteras ---")
-log = al.ActionLog()
-log.nueva_mano()
-log.observar("UL", "Subir")
-antes = log.mano
-log.nueva_mano()
-check("una mano nueva vacia el historial", log.acciones()["acciones"] == [])
-check("y sube el contador", log.mano == antes + 1)
-log.observar("UL", "Subir")
-check("y el mismo verbo vuelve a contar (es otra mano)",
-      len(log.acciones()["acciones"]) == 1)
+def test_se_conserva_el_orden_en_que_se_vieron(log_mano):
+    acc = log_mano.acciones()["acciones"]
+    assert [a["accion"] for a in acc] == ["post", "raise", "fold", "call"]
 
-# --- desde un GameState entero ---------------------------------------------
-print("\n# --- integracion con el GameState ---")
-log = al.ActionLog()
-log.nueva_mano()
-st = {"players": [{"seat": "UL", "action": "Subir", "position": "CO"},
-                  {"seat": "MR", "action": None, "position": "BTN", "name": "pepe"},
-                  {"seat": "HERO", "action": "Igualar", "position": "BB", "is_hero": True}]}
-nuevas = log.observar_estado(st)
-check("de un GameState salen las acciones de todos los asientos", len(nuevas) == 2)
-check("y el que muestra su nick no aporta ninguna",
-      all(n["seat"] != "MR" for n in nuevas))
-check("repetir el MISMO estado no duplica nada", log.observar_estado(st) == [])
-check("un GameState sin jugadores no revienta", al.ActionLog().observar_estado({}) == [])
 
-n_fail = sum(1 for _, cond in checks if not cond)
-print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
-if n_fail:
-    raise SystemExit(1)
+def test_y_de_quien_fue_cada_una(log_mano):
+    acc = log_mano.acciones()["acciones"]
+    assert [a["position"] for a in acc] == ["SB", "CO", "BTN", "BB"]
+
+
+def test_con_numero_de_orden_correlativo(log_mano):
+    acc = log_mano.acciones()["acciones"]
+    assert [a["orden"] for a in acc] == [1, 2, 3, 4]
+
+
+def test_el_resumen_se_lee_de_un_vistazo(log_mano):
+    assert log_mano.resumen() == "SB pone ciega · CO sube · BTN no va · BB paga"
+
+
+# --- la ultima agresiva, que es lo que dice si el bote esta subido ------------
+
+def test_la_ultima_agresiva_es_la_subida_de_co(log_mano):
+    assert log_mano.ultima_agresiva()["position"] == "CO"
+
+
+def test_una_apuesta_posterior_la_sustituye(log_mano):
+    log_mano.observar("MR", "Apostar", position="BTN")
+    assert log_mano.ultima_agresiva()["position"] == "BTN"
+
+
+def test_un_pase_no_la_sustituye(log_mano):
+    """Pasar no es agresivo, asi que no puede desplazar a la ultima apuesta."""
+    log_mano.observar("MR", "Apostar", position="BTN")
+    log_mano.observar("HERO", "Pasar", position="BB")
+    assert log_mano.ultima_agresiva()["position"] == "BTN"
+
+
+def test_sin_acciones_no_hay_ultima_agresiva(log):
+    assert log.ultima_agresiva() is None
+
+
+def test_con_solo_pases_tampoco_hay_ultima_agresiva(log):
+    log.observar("UL", "Pasar")
+    assert log.ultima_agresiva() is None
+
+
+# --- LA HONESTIDAD: nunca se presenta como completo --------------------------
+
+def test_la_lista_nunca_se_marca_completa(log_mano):
+    """acciones() marca completo=False SIEMPRE: el verbo dura menos que el
+    periodo de muestreo, asi que faltan acciones por construccion."""
+    assert log_mano.acciones()["completo"] is False
+
+
+# --- fronteras de mano -------------------------------------------------------
+
+def test_una_mano_nueva_vacia_el_historial(log):
+    log.observar("UL", "Subir")
+    log.nueva_mano()
+    assert log.acciones()["acciones"] == []
+
+
+def test_una_mano_nueva_sube_el_contador(log):
+    log.observar("UL", "Subir")
+    antes = log.mano
+    log.nueva_mano()
+    assert log.mano == antes + 1
+
+
+def test_el_mismo_verbo_vuelve_a_contar_en_otra_mano(log):
+    log.observar("UL", "Subir")
+    log.nueva_mano()
+    log.observar("UL", "Subir")
+    assert len(log.acciones()["acciones"]) == 1
+
+
+# --- desde un GameState entero -----------------------------------------------
+
+ESTADO = {"players": [{"seat": "UL", "action": "Subir", "position": "CO"},
+                      {"seat": "MR", "action": None, "position": "BTN", "name": "pepe"},
+                      {"seat": "HERO", "action": "Igualar", "position": "BB",
+                       "is_hero": True}]}
+
+
+def test_de_un_gamestate_salen_las_acciones_de_todos_los_asientos(log):
+    assert len(log.observar_estado(ESTADO)) == 2
+
+
+def test_el_que_muestra_su_nick_no_aporta_ninguna(log):
+    nuevas = log.observar_estado(ESTADO)
+    assert all(n["seat"] != "MR" for n in nuevas)
+
+
+def test_repetir_el_mismo_estado_no_duplica_nada(log):
+    log.observar_estado(ESTADO)
+    assert log.observar_estado(ESTADO) == []
+
+
+def test_un_gamestate_sin_jugadores_no_revienta():
+    assert al.ActionLog().observar_estado({}) == []

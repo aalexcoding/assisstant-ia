@@ -21,10 +21,10 @@ import json
 import os
 import time
 
-import chunk as ch
-import extract_audio as ea
-import transcribe as tr
-import video_index as vi
+from decision.rag import chunk as ch
+from decision.rag import extract_audio as ea
+from decision.rag import transcribe as tr
+from decision.rag import video_index as vi
 
 TRANSCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "transcripts")
 BENCHMARK_PATH = os.path.join(TRANSCRIPTS_DIR, "_benchmark.json")

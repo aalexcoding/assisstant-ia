@@ -11,9 +11,10 @@ import os
 import subprocess
 import sys
 
-import video_index as vi
+from decision.rag import video_index as vi
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+RAIZ = os.path.dirname(os.path.dirname(HERE))
 
 
 def main():
@@ -28,11 +29,11 @@ def main():
     for i, chunk in enumerate(chunks):
         if not chunk:
             continue
-        cmd = [sys.executable, "pipeline.py", "--videos", *chunk]
+        cmd = [sys.executable, "-m", "decision.rag.pipeline", "--videos", *chunk]
         log_path = os.path.join(HERE, f"batch_worker_{i}.log")
         log = open(log_path, "w")
         print(f"worker {i}: {len(chunk)} videos -> {log_path}")
-        procs.append((subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, cwd=HERE), log))
+        procs.append((subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, cwd=RAIZ), log))
 
     for p, log in procs:
         p.wait()

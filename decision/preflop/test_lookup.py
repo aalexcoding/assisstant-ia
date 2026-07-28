@@ -1,66 +1,85 @@
 """
-Script suelto de verificacion de lookup.py contra casos leidos directamente
-de ranges.json (el proyecto no usa pytest todavia). Uso:
-.venv/bin/python decision/preflop/test_lookup.py
+Verificacion de lookup.py contra casos leidos A MANO de ranges.json.
+
+Los valores esperados no salen de otra funcion del repo: se miraron en el JSON
+generado por parse_ranges.py. Si un dia se redigitalizan los rangos y estos
+casos dejan de cumplirse, hay que volver a mirar el JSON, no ajustar el test.
 """
-from lookup import normalize_hand, recommend
+import pytest
 
-checks = []
-
-
-def check(desc, cond):
-    checks.append((desc, cond))
-    print(("OK  " if cond else "FAIL") + " " + desc)
+from decision.preflop.lookup import normalize_hand, recommend
 
 
-check("normalize_hand KsTd -> KTo", normalize_hand(["Ks", "Td"]) == "KTo")
-check("normalize_hand 9d4d -> 94s", normalize_hand(["9d", "4d"]) == "94s")
-check("normalize_hand AhAd -> AA", normalize_hand(["Ah", "Ad"]) == "AA")
-check("normalize_hand cartas repetidas -> None", normalize_hand(["Ah", "Ah"]) is None)
-check("normalize_hand incompleto -> None", normalize_hand(["Ah"]) is None)
+# --- normalizacion de la mano a la notacion del rango ------------------------
 
-# BTN a 40bb, KTs esta en OPEN RAISE (2 BB) segun ranges.json (verificado a mano)
-r = recommend(["Kd", "Td"], "BTN", 40, facing="open_raise")
-check("BTN 40bb KTs -> OPEN RAISE (2 BB)", r is not None and r["action"] == "OPEN RAISE (2 BB)")
+@pytest.mark.parametrize("cartas, esperado", [
+    (["Ks", "Td"], "KTo"),
+    (["9d", "4d"], "94s"),
+    (["Ah", "Ad"], "AA"),
+    (["Ah", "Ah"], None),          # cartas repetidas: lectura imposible
+    (["Ah"], None),                # mano incompleta
+])
+def test_normalize_hand(cartas, esperado):
+    assert normalize_hand(cartas) == esperado
 
-# stack_bb=38 (sin key exacta) debe caer en la key mas cercana, "40"
-r38 = recommend(["Kd", "Td"], "BTN", 38, facing="open_raise")
-check("BTN 38bb (nearest->40) KTs -> OPEN RAISE (2 BB)", r38 is not None and r38["action"] == "OPEN RAISE (2 BB)")
 
-# BTN a 40bb, 94s esta en fold segun ranges.json (verificado a mano)
-r_fold = recommend(["9d", "4d"], "BTN", 40, facing="open_raise")
-check("BTN 40bb 94s -> fold", r_fold is not None and r_fold["action"] == "fold")
+# --- casos verificados a mano en ranges.json ---------------------------------
 
-# BTN a 20bb, KTs cae en LIMP (accion distinta de OPEN RAISE/fold, confirma que no
-# se asume un vocabulario cerrado de acciones)
-r_limp = recommend(["Kd", "Td"], "BTN", 20, facing="open_raise")
-check("BTN 20bb KTs -> LIMP", r_limp is not None and r_limp["action"] == "LIMP")
+def test_btn_40bb_kts_abre_subiendo():
+    r = recommend(["Kd", "Td"], "BTN", 40, facing="open_raise")
+    assert r is not None
+    assert r["action"] == "OPEN RAISE (2 BB)"
 
-# BB nunca abre bote: no hay datos de open_raise para BB
-r_bb = recommend(["Ah", "Ad"], "BB", 40, facing="open_raise")
-check("BB no tiene rango de open_raise -> None", r_bb is None)
 
-# threebet_call: SB vs BTN a 15bb, AA esta en ALL IN o similar accion fuerte
-r_3b = recommend(["Ah", "Ad"], "SB", 15, facing="threebet_call", vs_position="BTN")
-check("SB vs BTN 15bb AA -> hay recomendacion", r_3b is not None)
+def test_una_profundidad_sin_clave_exacta_cae_en_la_mas_cercana():
+    """38bb no es una clave de la tabla; la mas cercana es 40."""
+    r = recommend(["Kd", "Td"], "BTN", 38, facing="open_raise")
+    assert r is not None
+    assert r["action"] == "OPEN RAISE (2 BB)"
 
-# threebet_call sin vs_position -> None (dato necesario ausente)
-r_3b_none = recommend(["Ah", "Ad"], "SB", 15, facing="threebet_call")
-check("threebet_call sin vs_position -> None", r_3b_none is None)
 
-# threebet_call: EP1 nunca enfrenta apertura (siempre abre el primero) -> sin datos
-r_ep1 = recommend(["Ah", "Ad"], "EP1", 15, facing="threebet_call", vs_position="BTN")
-check("EP1 no tiene rango de threebet_call como hero -> None", r_ep1 is None)
+def test_btn_40bb_94s_es_fold():
+    r = recommend(["9d", "4d"], "BTN", 40, facing="open_raise")
+    assert r is not None
+    assert r["action"] == "fold"
 
-# cartas incompletas (mano parcial detectada por vision) -> None
-r_incomplete = recommend(["Kd"], "BTN", 40, facing="open_raise")
-check("mano incompleta -> None", r_incomplete is None)
 
-# posicion desconocida -> None
-r_no_pos = recommend(["Kd", "Td"], None, 40, facing="open_raise")
-check("sin hero_position -> None", r_no_pos is None)
+def test_el_vocabulario_de_acciones_no_esta_cerrado():
+    """A 20bb el BTN con KTs LIMPEA: no es ni OPEN RAISE ni fold. La etiqueta se
+    devuelve tal cual sale de la leyenda, sin traducirla a un enum propio."""
+    r = recommend(["Kd", "Td"], "BTN", 20, facing="open_raise")
+    assert r is not None
+    assert r["action"] == "LIMP"
 
-n_fail = sum(1 for _, cond in checks if not cond)
-print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
-if n_fail:
-    raise SystemExit(1)
+
+# --- ausencias que son correctas: no hay datos porque el spot no existe ------
+
+def test_la_bb_no_tiene_rango_de_apertura():
+    """La BB nunca abre bote: habla la ultima preflop."""
+    assert recommend(["Ah", "Ad"], "BB", 40, facing="open_raise") is None
+
+
+def test_ep1_no_tiene_rango_de_defensa():
+    """EP1 abre el primero, asi que nunca enfrenta una apertura ajena."""
+    assert recommend(["Ah", "Ad"], "EP1", 15, facing="threebet_call",
+                     vs_position="BTN") is None
+
+
+def test_defensa_sb_vs_btn():
+    assert recommend(["Ah", "Ad"], "SB", 15, facing="threebet_call",
+                     vs_position="BTN") is not None
+
+
+# --- datos ausentes: se calla, no adivina ------------------------------------
+
+@pytest.mark.parametrize("desc, kwargs", [
+    ("threebet_call sin vs_position",
+     dict(hero_cards=["Ah", "Ad"], hero_position="SB", stack_bb=15,
+          facing="threebet_call")),
+    ("mano incompleta (la vision solo leyo una carta)",
+     dict(hero_cards=["Kd"], hero_position="BTN", stack_bb=40)),
+    ("sin hero_position",
+     dict(hero_cards=["Kd", "Td"], hero_position=None, stack_bb=40)),
+])
+def test_sin_los_datos_necesarios_devuelve_none(desc, kwargs):
+    assert recommend(**kwargs) is None, desc

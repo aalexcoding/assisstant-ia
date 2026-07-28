@@ -15,19 +15,10 @@ Para: Ctrl+C.
 import argparse
 import json
 import os
-import sys
 import time
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "capture"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "vision"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "decision"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "decision", "preflop"))
-
-import cv2
-
-import engine
-import portal_capture as pc
-import table_state as ts
+from core import Analizador
+from capture import portal_capture as pc
 
 CALIBRATION_PATH = os.path.join(os.path.dirname(__file__), "calibration", "config.local.json")
 TMP_FRAME_PATH = "/tmp/poker_alpha_frame.png"
@@ -68,6 +59,10 @@ def main():
     args = parser.parse_args()
 
     x, y, w, h = load_region()
+    # El MISMO ciclo que corre la GUI. Antes esto llamaba a analyze_layout y a
+    # decide() por su cuenta, sin rastreador ni registro de acciones, asi que
+    # diagnosticaba una version mas pobre de lo que el usuario ve en el HUD.
+    analizador = Analizador(tmp_frame=TMP_FRAME_PATH)
     portal, session_handle, fd, stream, _props = pc.open_frame_stream()
     print(f"Analizando cada {args.interval}s (Ctrl+C para parar)...\n")
     last_printed = None
@@ -76,10 +71,8 @@ def main():
             frame = stream.read(timeout_s=5.0)
             if frame is not None:
                 crop = frame[y:y + h, x:x + w]
-                cv2.imwrite(TMP_FRAME_PATH, crop)
-                state = ts.analyze_layout(TMP_FRAME_PATH)
-                recommendation = engine.decide(state)
-                text = format_state(state, recommendation)
+                res = analizador.analizar(crop)
+                text = format_state(res.state, res.recommendation)
                 if text != last_printed:
                     print(f"--- {time.strftime('%H:%M:%S')} ---")
                     print(text)

@@ -110,7 +110,7 @@ GHOST_SEAT_MATCH_FRAC = 0.15
 # trampa que este proyecto ya ha pisado varias veces: la copia de aqui se quedo
 # con el mapeo viejo (EP1 al primero en hablar en 6-max) mientras la otra se
 # corregia. Ver seat_map._posiciones para la regla y el bug que arregla.
-from seat_map import SEATING_BY_N          # noqa: F401  (se reexporta a proposito)
+from vision.seat_map import SEATING_BY_N          # noqa: F401  (se reexporta a proposito)
 
 
 def _red_mask(bgr, region):

@@ -15,7 +15,12 @@ import threading
 import cv2
 from concurrent.futures import ThreadPoolExecutor
 
-WORKER_PATH = os.path.join(os.path.dirname(__file__), "ocr_worker.py")
+# El worker se lanza como MODULO, no por ruta: `vision` es un paquete y hay otro
+# ocr_worker.py en decision/preflop/, asi que el nombre solo es ambiguo. Con -m la
+# resolucion la hace el import system y no el azar del sys.path del proceso hijo.
+# Necesita la raiz del proyecto como cwd, de ahi RAIZ.
+WORKER_MODULE = "vision.ocr_worker"
+RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Procesos de OCR en paralelo. Se deja la mayor parte de la maquina libre a
 # proposito: ver el docstring de OcrBatch.run. ThreadPoolExecutor y no
@@ -95,8 +100,9 @@ class OcrBatch:
 
     def _run_chunk(self, jobs):
         """Resuelve un trozo del lote. Devuelve sus resultados en el mismo orden
-        en que se le pasaron. Usa un worker PERSISTENTE del pool (ver _Pool)."""
-        return _POOL.resolver(jobs)
+        en que se le pasaron. Por defecto usa un worker PERSISTENTE del pool
+        (ver _Pool); _BACKEND es la costura para sustituirlo (ver usar_backend)."""
+        return _BACKEND(jobs)
 
     def run(self):
         """Resuelve todos los jobs y devuelve una lista alineada con el orden de
@@ -193,7 +199,7 @@ class OcrBatch:
 class _Worker:
     def __init__(self):
         self.proc = subprocess.Popen(
-            [sys.executable, WORKER_PATH, "--serve"],
+            [sys.executable, "-m", WORKER_MODULE, "--serve"], cwd=RAIZ,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, text=True, bufsize=1)
 
@@ -279,6 +285,32 @@ class _Pool:
 
 _POOL = _Pool()
 atexit.register(_POOL.cerrar)
+
+
+def _backend_real(jobs):
+    return _POOL.resolver(jobs)
+
+
+# QUIEN resuelve de verdad un trozo del lote. En produccion es el pool de
+# subprocesos; en un test se sustituye por una funcion que devuelve texto fijo,
+# y entonces table_state.analyze_layout() se puede ejercitar sin tesseract, sin
+# subprocesos y en milisegundos en vez de segundos. Es la unica dependencia
+# externa del pipeline de vision, asi que es el unico sitio donde hace falta.
+_BACKEND = _backend_real
+
+
+def usar_backend(fn):
+    """Sustituye el resolvedor de OCR y devuelve el anterior, para poder
+    restaurarlo. `fn(jobs) -> lista de resultados alineada con jobs`."""
+    global _BACKEND
+    anterior, _BACKEND = _BACKEND, fn
+    return anterior
+
+
+def restaurar_backend():
+    """Vuelve al pool de subprocesos real."""
+    global _BACKEND
+    _BACKEND = _backend_real
 
 
 def cerrar_workers():

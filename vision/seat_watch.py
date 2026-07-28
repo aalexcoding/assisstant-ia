@@ -29,7 +29,7 @@ puede probar sin portal, sin GTK y sin tesseract.
 """
 import hashlib
 
-import seat_map
+from vision import seat_map
 
 # Fraccion que se descarta por cada lado antes de hashear. El borde de la zona
 # del nameplate incluye tapete, avatar y la marca de bounty, que se animan.

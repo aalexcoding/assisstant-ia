@@ -11,8 +11,43 @@ RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"]
 RANK_INDEX = {r: i for i, r in enumerate(RANKS)}
 
 RANGES_PATH = os.path.join(os.path.dirname(__file__), "ranges.json")
-with open(RANGES_PATH) as f:
-    RANGES = json.load(f)
+
+# Los rangos se cargan LA PRIMERA VEZ QUE SE PIDEN, no al importar el modulo.
+# Antes el json.load estaba aqui arriba, al nivel del modulo, y eso tenia dos
+# consecuencias molestas: importar cualquier cosa que acabe en lookup (o sea, el
+# motor entero) fallaba si el fichero no estaba o estaba corrupto, y no habia
+# forma de meter unos rangos de prueba sin escribir en el fichero real.
+_RANGES = None
+
+
+def load_ranges(path=None, datos=None):
+    """Carga (o sustituye) la tabla de rangos y la devuelve.
+
+    Con `datos` se inyecta un diccionario ya montado, que es lo que hacen los
+    tests que quieren una tabla minima y controlada. Sin argumentos recarga de
+    RANGES_PATH."""
+    global _RANGES
+    if datos is not None:
+        _RANGES = datos
+    else:
+        with open(path or RANGES_PATH) as f:
+            _RANGES = json.load(f)
+    return _RANGES
+
+
+def ranges():
+    """La tabla de rangos, cargandola si hace falta. Dentro del modulo se usa
+    esto y no RANGES, porque el __getattr__ de abajo solo cubre el acceso desde
+    FUERA (PEP 562 no intercepta los nombres globales del propio modulo)."""
+    return _RANGES if _RANGES is not None else load_ranges()
+
+
+def __getattr__(nombre):
+    """`lookup.RANGES` sigue existiendo y se lee igual que siempre; lo unico que
+    cambia es CUANDO se carga (PEP 562)."""
+    if nombre == "RANGES":
+        return ranges()
+    raise AttributeError(f"module {__name__!r} has no attribute {nombre!r}")
 
 
 def normalize_hand(hero_cards):
@@ -42,7 +77,7 @@ def recommend(hero_cards, hero_position, stack_bb, facing="open_raise", vs_posit
     hand = normalize_hand(hero_cards)
     if hand is None:
         return None
-    stack_table = RANGES.get(facing)
+    stack_table = ranges().get(facing)
     if not stack_table:
         return None
 

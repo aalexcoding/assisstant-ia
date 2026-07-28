@@ -42,8 +42,8 @@ que filtre la de mas.
 import cv2
 import numpy as np
 
-import color_card_detector as ccd
-import color_rank_ocr as cro
+from vision import color_card_detector as ccd
+from vision import color_rank_ocr as cro
 
 # Correlacion minima para aceptar un pico como rango. OJO: NO es la misma
 # magnitud que cro.GLIFO_UMBRAL, y por eso no se puede heredar su 0.95. Alli se

@@ -36,9 +36,9 @@ longitud invalida, o un numero de rivales que no cabe en la mesa.
 """
 import numpy as np
 
-import hand_eval
-import hand_strength
-import opponent_ranges
+from decision import hand_eval
+from decision import hand_strength
+from decision import opponent_ranges
 
 DEFAULT_ITERATIONS = 10000
 MAX_OPPONENTS = 5          # mesa de 6 plazas
@@ -119,7 +119,7 @@ def _simular(hero, board, mazo, rangos, iteraciones, rng):
 
 
 def estimate_equity(player_hand, community_cards, player_position, remaining_players,
-                    *, opponent_positions=None, stack_bb=None,
+                    *, opponent_positions=None, opponent_hands=None, stack_bb=None,
                     iterations=DEFAULT_ITERATIONS, seed=None,
                     include_baselines=True, warnings=None):
     """Equity del hero postflop. Devuelve un dict, o None si no se puede
@@ -130,6 +130,21 @@ def estimate_equity(player_hand, community_cards, player_position, remaining_pla
     remaining_players: numero de RIVALES vivos (no incluye al hero).
     opponent_positions: lista opcional de posiciones de esos rivales; sin ella se
         usa un rango generico derivado igualmente de las tablas del usuario.
+    opponent_hands: lista opcional paralela a opponent_positions con la mano YA
+        VISTA de cada rival (2 codigos) o None si sigue tapada. Es lo que el
+        cliente enseña en un all-in o en el showdown.
+
+    UNA MANO VISTA ES UN RANGO DE UN SOLO COMBO, y por eso entra sin tocar el
+    simulador: donde antes habia 1.074 combos posibles ahora hay uno, y la
+    "estimacion" deja de estimar esa parte. Cambia la naturaleza del numero: con
+    todos los rivales vistos y el board completo ya no hay nada aleatorio y el
+    resultado es la respuesta, no un promedio.
+
+    Importa de verdad porque el supuesto que sostiene el rango -"el rival juega
+    como tu"- es justo el que se rompe en las manos que llegan a un all-in.
+    Medido en sesion-2026-07-28_012156/0075: rival con 6c 4c sobre 2c 5c 4s Qs
+    3c, o sea escalera de color; contra su rango la equity del hero salia 82,4%
+    y la real era cero.
     """
     hero = _cards_or_none(player_hand or [])
     if hero is None or len(hero) != 2:
@@ -154,6 +169,34 @@ def estimate_equity(player_hand, community_cards, player_position, remaining_pla
 
     avisos = []
     rng = np.random.default_rng(seed)
+
+    # --- manos ya vistas -----------------------------------------------------
+    # Se resuelven ANTES del mazo porque una carta vista deja de estar
+    # disponible: si no se quitara, la simulacion podria repartirsela a otro
+    # rival y contaria manos imposibles.
+    manos = list(opponent_hands or [])
+    manos += [None] * (remaining_players - len(manos))
+    manos = manos[:remaining_players]
+    vistas = []
+    for i, m in enumerate(manos):
+        if not m:
+            manos[i] = None
+            continue
+        ids = _cards_or_none(m)
+        if ids is None or len(ids) != 2 or len(np.unique(ids)) != 2:
+            manos[i] = None                 # lectura a medias: se trata como tapada
+            continue
+        if np.isin(ids, conocidas).any() or any(np.isin(ids, v).any() for v in vistas):
+            # la misma carta en dos sitios es una lectura mala, no una mano
+            avisos.append(f"equity: la mano vista {list(m)} repite una carta ya "
+                          f"vista; se ignora y se usa el rango")
+            manos[i] = None
+            continue
+        manos[i] = ids
+        vistas.append(ids)
+    if vistas:
+        conocidas = np.concatenate([conocidas] + vistas)
+
     mazo = np.setdiff1d(np.arange(52, dtype=np.int32), conocidas)
 
     # --- rangos de los rivales ---
@@ -162,7 +205,14 @@ def estimate_equity(player_hand, community_cards, player_position, remaining_pla
     posiciones = posiciones[:remaining_players]
 
     rangos, metas = [], []
-    for pos in posiciones:
+    for pos, vista in zip(posiciones, manos):
+        if vista is not None:
+            # un solo combo: no queda nada que suponer de este rival
+            rangos.append(vista.reshape(1, 2).astype(np.int32))
+            metas.append({"position": pos, "role": "vista", "combos": 1,
+                          "pct_of_all": 1 / 1326,
+                          "source": "cartas VISTAS en la mesa (all-in o showdown)"})
+            continue
         if pos is None and stack_bb is not None:
             combos, meta = opponent_ranges.generic_combos(stack_bb)
         else:
@@ -249,15 +299,31 @@ def estimate_equity(player_hand, community_cards, player_position, remaining_pla
                   "calibrar nada, asi que no se inventa un factor")
     positional["explanation"] = ". ".join(partes).capitalize() + "."
 
+    # Las suposiciones DEPENDEN de cuantas manos se han visto: las que hablan de
+    # rangos dejan de aplicar a los rivales cuyas cartas estan sobre la mesa, y
+    # con todos vistos no queda ninguna suposicion que hacer. Repetirlas
+    # igualmente seria advertir de un error que ya no se esta cometiendo, y el
+    # usuario dejaria de leerlas.
+    n_vistas = sum(1 for m in manos if m is not None)
     assumptions = [
         'equity "de all-in": supone que se ven todas las cartas sin mas apuestas; '
         "no mira el bote ni las apuestas por venir",
-        "cada rival tiene el rango con el que ENTRO al bote (preflop); ya han pasado "
-        "el flop, asi que su rango real es mas fuerte y este numero es tipicamente un TECHO",
-        "los rangos son los TUYOS (ranges.json): se supone que los rivales juegan como tu",
-        "las celdas de frecuencia mixta de ranges.json estan colapsadas a su accion "
-        "dominante, asi que los rangos son conjuntos duros, sin frecuencias",
     ]
+    if n_vistas:
+        assumptions.append(
+            f"{n_vistas} de {remaining_players} rival(es) enseñan sus cartas y se usan "
+            f"TAL CUAL, sin suponerles nada" +
+            (": no queda nada estimado sobre las manos rivales"
+             if n_vistas == remaining_players else ""))
+    if n_vistas < remaining_players:
+        assumptions += [
+            "de los rivales con las cartas tapadas se supone el rango con el que ENTRARON "
+            "al bote (preflop); ya han pasado el flop, asi que su rango real es mas fuerte "
+            "y para esa parte el numero es tipicamente un TECHO",
+            "esos rangos son los TUYOS (ranges.json): se supone que juegan como tu",
+            "las celdas de frecuencia mixta de ranges.json estan colapsadas a su accion "
+            "dominante, asi que los rangos son conjuntos duros, sin frecuencias",
+        ]
 
     street = {3: "flop", 4: "turn", 5: "river"}[len(board)]
     return {

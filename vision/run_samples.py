@@ -6,10 +6,8 @@ cobertura real. Uso: .venv/bin/python vision/run_samples.py
 import glob
 import json
 import os
-import sys
 
-sys.path.insert(0, os.path.dirname(__file__))
-from table_state import analyze
+from vision.table_state import analyze
 
 SAMPLES_DIR = os.path.join(os.path.dirname(__file__), "samples")
 OUT_PATH = os.path.join(os.path.dirname(__file__), "results.json")

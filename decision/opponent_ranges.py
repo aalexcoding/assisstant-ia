@@ -48,8 +48,9 @@ tipicamente un TECHO. Quien lo muestre tiene que decirlo.
 """
 import numpy as np
 
-import hand_eval
-from lookup import RANGES, _nearest_stack_key
+from decision import hand_eval
+from decision.preflop import lookup
+from decision.preflop.lookup import _nearest_stack_key
 
 # orden de rangos de la notacion de ranges.json ("AKs", "72o", "TT")
 _NOTACION = "AKQJT98765432"
@@ -84,7 +85,7 @@ def _no_fold(celda):
 def _celda(facing, stack_bb, position, vs_position=None):
     """Devuelve (manos, stack_key, avisos) o (None, stack_key, avisos)."""
     avisos = []
-    tabla = RANGES.get(facing)
+    tabla = lookup.RANGES.get(facing)
     if not tabla:
         return None, None, [f"no existe la familia de rangos {facing!r}"]
     key = _nearest_stack_key(stack_bb, tabla.keys())
@@ -137,7 +138,7 @@ def entering_combos(position, stack_bb, *, vs_position=None):
             # a 10bb la carpeta de origen 3BET-CALL/10BB/BB esta vacia de verdad
             # (documentado en prompt.md), asi que se busca la profundidad mas
             # cercana que SI tenga defensa de la BB
-            disponibles = [k for k in RANGES[facing] if "BB" in RANGES[facing][k]]
+            disponibles = [k for k in lookup.RANGES[facing] if "BB" in lookup.RANGES[facing][k]]
             if disponibles:
                 key2 = _nearest_stack_key(stack_bb, disponibles)
                 manos, key, avisos2 = _celda(facing, float(key2), "BB", vs_position)
@@ -165,7 +166,7 @@ def entering_combos(position, stack_bb, *, vs_position=None):
                        + (f"[vs {vs_position}]" if position == "BB" and vs_position else ""))
     # misma politica de honestidad que engine._stack_key_note: si la profundidad
     # real cae fuera de la rejilla digitalizada, el rango es una extrapolacion
-    rejilla = sorted(float(k) for k in RANGES[facing])
+    rejilla = sorted(float(k) for k in lookup.RANGES[facing])
     if key is not None and (stack_bb > rejilla[-1] + 0.25 or stack_bb < rejilla[0] - 0.25):
         meta["extrapolated"] = True
         meta["warnings"].append(
@@ -179,7 +180,7 @@ def generic_combos(stack_bb):
     las manos que aparecen en al menos la mitad de los rangos de entrada de esa
     profundidad. Sale de los datos del usuario, no de una tightness inventada; en
     la practica ronda la anchura de HJ/MP2."""
-    tabla = RANGES["open_raise"]
+    tabla = lookup.RANGES["open_raise"]
     key = _nearest_stack_key(stack_bb, tabla.keys())
     filas = [_no_fold(c) for c in tabla[key].values()]
     if not filas:

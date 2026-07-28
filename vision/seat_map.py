@@ -34,6 +34,8 @@ import re
 import cv2
 import numpy as np
 
+from vision import color_card_detector
+
 # posicion fraccionaria tipica del nucleo del tapete dentro del recuadro
 # capturado (medida sobre samples_layout/), usada solo como fallback si la
 # deteccion por contraste falla.
@@ -163,6 +165,16 @@ HERO_CARDS_ZONE = (0.34, 0.86, 0.64, 1.10)
 BOARD_ZONE = (0.26, 0.28, 0.78, 0.60)
 # el texto "Bote: N" se muestra mas abajo en preflop (sin cartas de board que
 # lo empujen hacia arriba) que en postflop; la zona cubre ambas alturas.
+#
+# EL TOTAL SALE DE AQUI Y DE NINGUN OTRO SITIO. Cuando hay un all-in el cliente
+# ademas PARTE el bote y dibuja cada trozo con sus fichas DEBAJO del board
+# ("29,6 BB" y "137,8 BB" en sesion-2026-07-28_012453/0485, que suman los 167,4
+# de esta etiqueta). Esos trozos no se leen: la etiqueta de encima del board ya
+# da el total, asi que sumarlos seria trabajo extra para llegar al mismo numero
+# con mas formas de equivocarse.
+#
+# La zona no llega a esa banda y por eso no se contaminan: medidos los trozos de
+# bote sobre frames reales, caen en fy 0,59..0,69, y esta zona acaba en 0,38.
 POT_ZONE = (0.34, 0.11, 0.66, 0.38)
 # cubre las 4 lineas de mensajes visibles del chat: el aviso "Los limites
 # suben: Ciegas .../..." va subiendo por el log segun llegan mensajes nuevos,
@@ -903,15 +915,77 @@ def card_back_fractions(bgr, ref):
 
 
 def detect_in_hand_seats(bgr, ref):
-    """Asientos rivales con cartas repartidas (dorso visible, del color que sea).
+    """Asientos rivales con cartas repartidas y TAPADAS (dorso visible).
 
-    LIMITACION que hay que tener presente: en un all-in o en el showdown el
-    cliente da la vuelta a las cartas, los dorsos desaparecen y el recuento BAJA.
-    Eso infla la equity del hero, que es la direccion peligrosa, asi que quien
-    consuma esto debe abstenerse cuando el recuento llegue a cero con el hero aun
-    con cartas, y calcular solo cuando sea el turno del hero."""
+    Solo ve dorsos, asi que por si sola se queda corta en cuanto el cliente gira
+    las cartas: para eso esta revealed_pair_seats, y quien quiera saber quien
+    esta en la mano tiene que unir las dos (lo hace table_state.analyze_layout)."""
     return {n for n, frac in card_back_fractions(bgr, ref).items()
             if frac >= CARD_BACK_MIN_AREA_FRAC}
+
+
+# --- quien esta en la mano cuando el cliente GIRA las cartas ---
+#
+# EL CASO QUE SE ESCAPABA. En un all-in el cliente da la vuelta a las manos
+# implicadas: los dorsos desaparecen y card_back_fractions deja de ver a
+# jugadores que SI estan en la mano. Infravalorar rivales INFLA la equity del
+# hero, que es la direccion peligrosa.
+#
+# Medido en sesion-2026-07-28_012453/0484-0487: arrepia69 iba con A(c) Q(d) por
+# delante -el cliente le pintaba "100 %"- y salia como retirado, asi que la
+# equity se calculo contra UN rival en vez de dos y dio 12,7% donde la pantalla
+# decia 0%. Y en el frame 0234, con TRES jugadores en all-in (71,4 / 12,1 /
+# 16,6 %) y el hero todavia por hablar -que es justo cuando el numero importa-,
+# se contaron dos.
+#
+# NO HACE FALTA GEOMETRIA NUEVA, y esa es la parte buena. Medido sobre 91 frames
+# de all-in (con el board leido como control del encuadre), las manos reveladas
+# caen dentro de las MISMAS zonas donde se buscan los dorsos:
+#
+#     asiento   centro medido (fx,fy)   centro de CARD_BACK_ZONES
+#     TOPC        0.501  -0.234            0.505  -0.22
+#     UL          0.016  -0.043            0.015  -0.025
+#     UR          0.970  -0.046            0.985  -0.025
+#     ML         -0.029   0.540           -0.020   0.60
+#     MR          1.001   0.590            1.030   0.60
+#
+# asi que basta con mirar las mismas cajas con el OTRO detector: donde no hay
+# dorso puede haber una mano boca arriba.
+#
+# El margen no es de cortesia. Las zonas estan calibradas para el BLOB del
+# dorso, que asoma por detras del nameplate y es mas pequeño que la carta
+# entera; con 0.04 la zona de TOPC cortaba las dos cartas por abajo y
+# find_card_boxes devolvia 0 (find_card_boxes recorta a la region, asi que una
+# carta a medias fuera pierde alto y no pasa el filtro de tamaño). Con 0.06
+# entran. Ensanchar mas no cambia el resultado -probado hasta 0.14- y a 0.06 la
+# zona no llega ni al board ni al asiento vecino.
+REVELADA_MARGEN = 0.06
+
+
+def revealed_zone_px(ref, seat, shape):
+    """La zona donde mirar la mano revelada de `seat`, en pixeles.
+
+    Es la del dorso ensanchada con REVELADA_MARGEN. Vive aparte para que el
+    margen este en UN sitio: lo usan el detector de aqui y quien luego va a leer
+    el rango de esas cartas (table_state), y si se separan se leerian cajas
+    distintas de las que se detectaron."""
+    x0, y0, x1, y1 = CARD_BACK_ZONES[seat]
+    m = REVELADA_MARGEN
+    return zone_to_px(ref, (x0 - m, y0 - m, x1 + m, y1 + m), shape)
+
+
+def revealed_pair_seats(bgr, ref):
+    """Asientos rivales que enseñan su mano BOCA ARRIBA (all-in o showdown).
+
+    Se exige un PAR y solo un par: una caja suelta es ruido de UI -un icono del
+    avatar, una ficha- y tres o mas no es una mano de Hold'em. Medido sobre tres
+    sesiones completas (9.865 zonas miradas con la referencia fijada de cada
+    sesion, como en vivo): salta en el 2,9% de las zonas de frames con all-in y
+    en el 0,2% del resto, y al mirar esas ultimas una a una resultaron ser
+    showdowns de verdad, no falsos positivos."""
+    return {nombre for nombre in CARD_BACK_ZONES
+            if len(color_card_detector.find_card_boxes(
+                bgr, revealed_zone_px(ref, nombre, bgr.shape))) == 2}
 
 
 # --- facing: que enfrenta el hero, segun los botones de accion ---
@@ -978,6 +1052,25 @@ def parse_to_call_bb(lines):
 # supera a la denominacion impresa en cada ficha, e ignora la marca de bounty
 # "0,31 €", que no es un entero). La zona del HERO arranca por debajo del borde
 # del ovalo para no tragarse las fichas de ante/bote del centro.
+#
+# LIMITACION CONOCIDA, medida y deliberadamente no arreglada: cuando el cliente
+# PARTE el bote (all-in), los trozos se dibujan debajo del board y uno puede caer
+# dentro de la zona de apuesta de un asiento. Pasa de verdad: en
+# sesion-2026-07-28_012453/0484-0488, ML aparece con bet=29,6 que no es su
+# apuesta sino el trozo izquierdo del bote (el bote entero valia 29,6 en el frame
+# 0480 y al partirse en 0484 reaparece ahi).
+#
+# NO SE PUEDE SEPARAR POR GEOMETRIA. Los trozos de bote se reparten segun cuantos
+# haya: medidos, caen en fx 0,225..0,762 y fy 0,59..0,69, justo por encima de las
+# apuestas reales de ML/MR (fx 0,162..0,229 y 0,742..0,816, fy 0,61..0,72). Las
+# dos poblaciones se tocan.
+#
+# Y NO HACE FALTA. El bote solo se parte cuando la ronda de apuestas esta CERRADA,
+# y entonces el hero no tiene que hablar. Comprobado sobre el corpus: de 80 frames
+# CON recomendacion, en 0 estaba el bote partido en pantalla; y de las 1.721
+# recomendaciones que ha dado la app, 0 tenian board -decide() se abstiene
+# postflop-. O sea que el fantasma ensucia player["bet"] en frames de showdown,
+# donde el motor ya esta callado, y no llega nunca a una decision.
 SEAT_BET_ZONES = {
     "TOPC": (0.48, -0.02, 0.72, 0.14),
     "UL":   (0.12, 0.16, 0.36, 0.34),

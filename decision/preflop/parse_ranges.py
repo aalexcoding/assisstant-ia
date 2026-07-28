@@ -40,13 +40,16 @@ from collections import Counter
 
 from PIL import Image
 
-import zerospoker_layout as zl
+from decision.preflop import zerospoker_layout as zl
 
 DATA_ROOT = "/mnt/qnap/Poker/CAPTURAS HERRAMIENTAS PREFLOP"
 OPEN_RAISE_DIR = os.path.join(DATA_ROOT, "OPEN RAISE")
 THREEBET_DIR = os.path.join(DATA_ROOT, "3BET-CALL")
 OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "ranges.json")
-OCR_WORKER_PATH = os.path.join(os.path.dirname(__file__), "ocr_worker.py")
+# Como en vision/ocr_client.py: por MODULO, no por ruta, porque hay dos
+# ocr_worker.py en el proyecto y el nombre suelto es ambiguo.
+OCR_WORKER_MODULE = "decision.preflop.ocr_worker"
+RAIZ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 MONTAGE_MIN_WIDTH = 3000
 COMBOS_BY_KIND = {"pair": 6, "suited": 4, "offsuit": 12}
@@ -91,7 +94,7 @@ class Digitizer:
             return []
         payload = json.dumps({"image": image_path, "boxes": boxes})
         proc = subprocess.run(
-            [sys.executable, OCR_WORKER_PATH],
+            [sys.executable, "-m", OCR_WORKER_MODULE], cwd=RAIZ,
             input=payload, capture_output=True, text=True,
         )
         if proc.returncode != 0:

@@ -3,6 +3,86 @@
 Ver [`prompt.md`](./prompt.md) para el objetivo, contexto, inventario de datos y las fases del proyecto,
 y [`docs/PENDIENTE.md`](./docs/PENDIENTE.md) para lo que queda por hacer y en qué orden.
 
+## Tests
+
+Todo el proyecto es un **paquete de Python**: los módulos se importan por su ruta
+completa (`from vision import seat_map`) y no hay ni un `sys.path.insert`. Eso
+tiene dos consecuencias prácticas:
+
+- Un módulo suelto **no se lanza por ruta**, se lanza con `-m` desde la raíz:
+  `python -m calibration.select_region`, `python -m decision.rag.pipeline`. Por
+  ruta fallaría al importar a sus hermanos. (Los dos `ocr_worker.py` — el de
+  `vision/` y el de `decision/preflop/` — comparten nombre a propósito y solo se
+  distinguen así.)
+- `pytest` desde la raíz encuentra y ejecuta todo, sin configurar nada.
+
+### Dos velocidades
+
+```bash
+pytest -m "not lento and not corpus"    # ~1.000 tests en 8 s
+pytest                                  # todo, ~8 min
+```
+
+La primera es la de después de cada cambio: toda la lógica de decisión, sin
+tesseract, sin cv2 pesado y sin tocar `testing/`. La segunda añade los tests de
+imagen, el E2E sobre frames reales y los invariantes sobre las 26 sesiones
+grabadas; es la de antes de commitear.
+
+Marcas (`pyproject.toml`): `lento` (segundos por test), `vision` (necesita
+opencv), `gtk` (necesita PyGObject), `corpus` (necesita `testing/`).
+
+### El corpus no se versiona
+
+Los tests marcados `corpus` trabajan sobre las sesiones que la app ya ha grabado
+jugando (`testing/`, ~9.200 frames, 14 GB). **No hay ni una imagen en el repo**:
+`tests/corpus.py` recalcula en cada ejecución una muestra estratificada por lo
+que cada frame tiene de interesante (board 0/3/4/5, cartas apagadas, multiway,
+bote dividido, cada motivo de abstención distinto...), así que 500 frames cubren
+el espacio de comportamiento en vez de cinco minutos seguidos de una partida.
+
+La selección va sembrada y se vuelca en `testing/_seleccion.local.json`, para
+poder repetir una ejecución que salió roja:
+
+```bash
+pytest --corpus-n 200                                  # muestra más pequeña
+pytest --corpus-semilla 42                             # reproducible
+pytest --corpus-seleccion testing/_seleccion.local.json  # exactamente la anterior
+```
+
+Sin `testing/` esos tests salen como **skipped** con el motivo, nunca como
+passed.
+
+### Cobertura
+
+```bash
+pytest --cov=decision --cov=core --cov=vision --cov-report=term-missing
+```
+
+Medido con la suite entera: **core 97,6 %**, **decision 93,7 %**, **vision
+86,4 %** (87 % total). El tope de `fail_under` está por debajo de eso, para
+proteger de que baje. Quedan fuera `capture/` (portal/PipeWire), `decision/rag/`
+(estudio offline) y las rutas de diagnóstico de `vision/` — ver el `omit` de
+`pyproject.toml`, donde está escrito el porqué de cada exclusión.
+
+## Herramientas de desarrollo
+
+```bash
+python replay.py testing/sesion-<fecha> --diff     # ¿mi cambio altera lo que la app dijo?
+python ver_frame.py testing/sesion-<fecha> 485     # ¿de DÓNDE sacó ese número?
+python vigilar_sesion.py                           # avisa en vivo de lo que merece mirarse
+```
+
+`replay.py` vuelve a pasar los PNG grabados por el mismo `core.Analizador`, sin
+portal ni GTK, y con `--diff` compara frame a frame contra lo que se calculó
+entonces. Es la prueba de que un refactor no cambió el comportamiento.
+
+`ver_frame.py` dibuja sobre la imagen las zonas que el algoritmo mira y las
+colorea según lo que encontró en cada una. **Ojo con la referencia del tapete**:
+se fija con la mediana de las primeras diez lecturas buenas de la sesión, así que
+un frame suelto se analiza en frío y puede colocar todas las zonas desplazadas —
+la herramienta avisa cuando eso pasa, y con una carpeta de sesión la calienta
+como en vivo.
+
 ## Modo testing
 
 La casilla **"Grabar sesión de testing"** de la GUI (se activa antes de darle a

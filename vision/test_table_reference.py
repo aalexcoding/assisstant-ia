@@ -1,5 +1,6 @@
 """
-Verificacion de la GUARDA DE REFERENCIA de table_state.analyze_layout().
+Verificacion de la GUARDA DE REFERENCIA de table_state.analyze_layout() y de las
+piezas que dependen de ella.
 
 Todas las zonas del reconocimiento (nameplates, cartas, bote, botones, chat) son
 fracciones del nucleo del tapete. Si el ovalo no se detecta, TODAS quedan
@@ -8,35 +9,20 @@ salida, porque parece un resultado. Antes se seguia adelante con la "posicion
 tipica" como fallback; medido sobre 999 frames de una sesion real, de los 21 que
 cayeron en fallback CERO dieron cartas, boton, posicion, stack o recomendacion.
 
-Aqui se fija que analyze_layout CORTA en ese caso, y que el aviso nombra las dos
-cosas que el usuario puede arreglar (el tema del tapete y la calibracion). El
-caso real que lo motivo: cambiar a un tapete gris oscuro (S=0, V=34) hizo fallar
-la deteccion en el 100% de los frames, frente al 98% de acierto con el verde
-(S=200, V=115), porque find_reference exige S>=45 y V>=60.
-
 Sin depender de capturas: las imagenes se generan aqui, porque testing/ y
 samples*/ estan fuera del repo.
-
-Uso: .venv/bin/python vision/test_table_reference.py
 """
-import os
-import sys
-import tempfile
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 import cv2
 import numpy as np
+import pytest
 
-import seat_map
-import table_state as ts
+from vision import color_rank_ocr as cro
+from vision import dealer_button, seat_map
+from vision import table_state as ts
+from vision.ocr_client import MAX_PROCS, OcrBatch
+from vision.rank_ocr import normalize_rank
 
-checks = []
-
-
-def check(desc, cond):
-    checks.append((desc, cond))
-    print(("OK  " if cond else "FAIL") + " " + desc)
+pytestmark = pytest.mark.vision
 
 
 def frame(color_tapete):
@@ -46,91 +32,27 @@ def frame(color_tapete):
     La PROPORCION importa: el nucleo del tapete real mide entre 2.12 y 2.36 de
     ancho/alto (medido sobre 687 frames de tres sesiones) y find_reference
     rechaza lo que baje de 2.0, porque por debajo de eso lo que ha detectado no
-    es el ovalo. El molde tiene que parecerse al cliente, no quedarse justo en
-    el limite."""
+    es el ovalo."""
     img = np.full((800, 1200, 3), 12, dtype=np.uint8)
     if color_tapete is not None:
         cv2.ellipse(img, (600, 400), (480, 215), 0, 0, 360, color_tapete, -1)
     return img
 
 
-def analizar(img):
-    ruta = os.path.join(tempfile.mkdtemp(prefix="test_ref_"), "f.png")
-    cv2.imwrite(ruta, img)
-    try:
+def fondo_claro():
+    """Tema de fondo olivo: pasa el umbral de brillo y se suelda con el tapete."""
+    img = np.full((800, 1200, 3), (60, 110, 90), dtype=np.uint8)
+    cv2.ellipse(img, (600, 400), (480, 215), 0, 0, 360, (40, 140, 60), -1)
+    return img
+
+
+@pytest.fixture
+def analizar(tmp_path):
+    def _analizar(img):
+        ruta = str(tmp_path / "f.png")
+        cv2.imwrite(ruta, img)
         return ts.analyze_layout(ruta)
-    finally:
-        try:
-            os.remove(ruta)
-        except OSError:
-            pass
-
-
-# --- un tapete CON COLOR se detecta ---------------------------------------
-print("# --- tapete con color ---")
-verde = frame((40, 120, 40))            # BGR: verde saturado, como el tema por defecto
-ref = seat_map.find_reference(verde)
-check("un tapete verde da referencia real, no fallback", ref[4] is False)
-check("y el ovalo detectado ocupa la mayor parte del frame",
-      ref[2] > 0.5 * verde.shape[1] and ref[3] > 0.3 * verde.shape[0])
-
-# --- un tapete GRIS/OSCURO no, y ahi esta el fallo real --------------------
-print("\n# --- tapete gris oscuro (el caso que rompio la app) ---")
-gris = frame((45, 45, 45))               # BGR gris: saturacion CERO
-ref_gris = seat_map.find_reference(gris)
-check("un tapete gris no se detecta: saturacion cero, no pasa S>=45",
-      ref_gris[4] is True)
-
-st = analizar(gris)
-check("analyze_layout CORTA en vez de analizar con las zonas desplazadas",
-      st["players"] == [] and st["hero_cards"] == [] and st["board"] == [])
-check("y no llega ni a hacer OCR (no hay lineas de chat)", st["chat_lines"] == [])
-aviso = " ".join(st["warnings"])
-check("el aviso dice que no se encuentra la mesa", "no se encuentra la mesa" in aviso)
-check("y nombra el tapete oscuro como causa", "OSCURO" in aviso or "oscuro" in aviso)
-check("y la recalibracion como la otra causa", "recalibra" in aviso)
-check("el esquema sigue siendo un GameState valido",
-      st["stack_unit"] == "bb" and "pot" in st and "to_call" in st)
-
-# --- sin tapete de ninguna clase ------------------------------------------
-print("\n# --- frame sin mesa (lobby, escritorio) ---")
-st = analizar(frame(None))
-check("un frame sin mesa tampoco inventa nada",
-      st["players"] == [] and any("no se encuentra la mesa" in w for w in st["warnings"]))
-
-# --- una imagen ilegible sigue avisando de lo suyo -------------------------
-print("\n# --- imagen ilegible ---")
-st = ts.analyze_layout("/no/existe/ninguna.png")
-check("una ruta que no existe da su propio aviso, no el de la mesa",
-      any("no se pudo leer la imagen" in w for w in st["warnings"]))
-
-# --- lecturas de OCR con VARIAS LINEAS -------------------------------------
-# El pip del palo de la esquina del recorte se cuela en el OCR (el trebol se
-# parece a un "4") y tesseract devuelve dos lineas. Antes se descartaba el texto
-# entero y la carta se perdia: el usuario lo cazo jugando ("hay un 2 trebol" en
-# un board que la app leia con solo 2 cartas). Como el pip esta ARRIBA del rango
-# y tesseract emite de arriba abajo, el rango real es la ultima linea valida.
-print("\n# --- OCR de rango con varias lineas ---")
-from rank_ocr import normalize_rank  # noqa: E402
-
-check("una lectura limpia sigue igual", normalize_rank("K") == "K")
-check("el 10 sigue teniendo su caso especial",
-      normalize_rank("10") == "10" and normalize_rank("1O") == "10")
-check("'4|2' (pip de trebol + rango) da 2, que era el caso real",
-      normalize_rank("4\n2") == "2")
-check("'4|8' y '4|Q' tambien", normalize_rank("4\n8") == "8" and normalize_rank("4\nQ") == "Q")
-check("un 4 de verdad sigue siendo un 4", normalize_rank("4") == "4")
-check("si la ultima linea es basura se coge la anterior valida",
-      normalize_rank("4\nX") == "4")
-check("y si no hay ninguna linea valida, None (no se inventa carta)",
-      normalize_rank("X\nZ") is None and normalize_rank("") is None)
-
-# --- ocupacion de asientos: lo que decide TODAS las posiciones --------------
-# Las posiciones salen del RECUENTO de asientos ocupados, asi que un asiento de
-# mas las desplaza todas y el rango elegido es el de otra posicion. Caso real:
-# en un torneo 3-Max la app veia 4 jugadores en el 34% de los frames y llego a
-# asignarle al hero la posicion CO, que en una mesa de 3 no existe.
-print("\n# --- ocupacion de asientos ---")
+    return _analizar
 
 
 def lineas(*textos):
@@ -138,85 +60,198 @@ def lineas(*textos):
             for t in textos]
 
 
-check("un importe en BB ocupa el asiento", ts._plate_occupied(lineas("69,3 BB")))
-check("un nick tambien", ts._plate_occupied(lineas("Dav6934")))
-check("y un verbo de accion", ts._plate_occupied(lineas("Igualar")))
-check("el 'No ir' del cliente, que va en dos palabras", ts._plate_occupied(lineas("No ir")))
-check("tapete vacio -> NO ocupado", ts._plate_occupied(lineas("")) is False)
-check("un ENTERO SUELTO ya no ocupa: era de la epoca de las fichas y la textura "
-      "de puntos del tapete se OCR-ea como un numero ('60668' en 60 de 60 frames)",
-      ts._plate_occupied(lineas("60668")) is False)
-check("ni con separador de miles", ts._plate_occupied(lineas("5.892")) is False)
+# --- un tapete CON COLOR se detecta -----------------------------------------
 
-# la fuerza de la evidencia, que es lo que decide cual se suelta si sobran
-f = ts._fuerza_ocupacion
-check("el hero nunca se suelta", f("HERO", {}, set(), None) == 4)
-check("ni el asiento del boton", f("MR", {}, set(), "MR") == 4)
-check("un dorso de carta pesa mas que un nombre",
-      f("MR", {}, {"MR"}, None) > f("MR", {"name": "pepe"}, set(), None))
-check("y un importe en BB tambien",
-      f("MR", {"stack": 44.5}, set(), None) > f("MR", {"name": "pepe"}, set(), None))
-check("lo mas debil es un asiento sin nada de eso",
-      f("MR", {}, set(), None) < f("MR", {"name": "pepe"}, set(), None))
+def test_un_tapete_verde_da_referencia_real_no_fallback():
+    ref = seat_map.find_reference(frame((40, 120, 40)))
+    assert ref[4] is False
+    assert ref[2] > 0.5 * 1200 and ref[3] > 0.3 * 800, "el ovalo ocupa casi el frame"
 
-# --- CACHE DE RANGOS (Fase 2) ----------------------------------------------
+
+# --- un tapete GRIS/OSCURO no, y ahi esta el fallo real ---------------------
+# El caso real: cambiar a un tapete gris oscuro (S=0, V=34) hizo fallar la
+# deteccion en el 100% de los frames, frente al 98% de acierto con el verde
+# (S=200, V=115), porque find_reference exige S>=45 y V>=60.
+
+def test_un_tapete_gris_no_se_detecta():
+    """Saturacion cero: no pasa S>=45."""
+    assert seat_map.find_reference(frame((45, 45, 45)))[4] is True
+
+
+@pytest.fixture
+def estado_gris(analizar):
+    return analizar(frame((45, 45, 45)))
+
+
+def test_analyze_layout_corta_en_vez_de_leer_zonas_desplazadas(estado_gris):
+    assert estado_gris["players"] == []
+    assert estado_gris["hero_cards"] == []
+    assert estado_gris["board"] == []
+
+
+def test_ni_llega_a_hacer_ocr(estado_gris):
+    assert estado_gris["chat_lines"] == []
+
+
+@pytest.mark.parametrize("trozo, que_es", [
+    ("no se encuentra la mesa", "el sintoma"),
+    ("oscuro", "el tema del tapete, que el usuario puede cambiar"),
+    ("recalibra", "la otra causa que el usuario puede arreglar"),
+])
+def test_el_aviso_nombra_lo_que_el_usuario_puede_arreglar(estado_gris, trozo, que_es):
+    aviso = " ".join(estado_gris["warnings"]).lower()
+    assert trozo.lower() in aviso, que_es
+
+
+def test_el_esquema_sigue_siendo_un_gamestate_valido(estado_gris):
+    assert estado_gris["stack_unit"] == "bb"
+    assert "pot" in estado_gris and "to_call" in estado_gris
+
+
+def test_un_frame_sin_mesa_tampoco_inventa_nada(analizar):
+    st = analizar(frame(None))
+    assert st["players"] == []
+    assert any("no se encuentra la mesa" in w for w in st["warnings"])
+
+
+def test_una_ruta_que_no_existe_da_su_propio_aviso():
+    st = ts.analyze_layout("/no/existe/ninguna.png")
+    assert any("no se pudo leer la imagen" in w for w in st["warnings"])
+
+
+# --- lecturas de OCR con VARIAS LINEAS --------------------------------------
+# El pip del palo de la esquina del recorte se cuela en el OCR (el trebol se
+# parece a un "4") y tesseract devuelve dos lineas. Antes se descartaba el texto
+# entero y la carta se perdia: el usuario lo cazo jugando ("hay un 2 trebol" en
+# un board que la app leia con solo 2 cartas). Como el pip esta ARRIBA del rango
+# y tesseract emite de arriba abajo, el rango real es la ultima linea valida.
+
+@pytest.mark.parametrize("crudo, esperado", [
+    ("K", "K"),
+    ("10", "10"),
+    ("1O", "10"),
+    ("4\n2", "2"),          # el caso real: pip de trebol + rango
+    ("4\n8", "8"),
+    ("4\nQ", "Q"),
+    ("4", "4"),             # un 4 de verdad sigue siendo un 4
+    ("4\nX", "4"),          # si la ultima linea es basura, la anterior valida
+    ("X\nZ", None),         # ninguna linea valida: no se inventa carta
+    ("", None),
+])
+def test_normalize_rank(crudo, esperado):
+    assert normalize_rank(crudo) == esperado
+
+
+# --- ocupacion de asientos: lo que decide TODAS las posiciones --------------
+# Las posiciones salen del RECUENTO de asientos ocupados, asi que un asiento de
+# mas las desplaza todas y el rango elegido es el de otra posicion. Caso real:
+# en un torneo 3-Max la app veia 4 jugadores en el 34% de los frames y llego a
+# asignarle al hero la posicion CO, que en una mesa de 3 no existe.
+
+@pytest.mark.parametrize("texto, ocupado, motivo", [
+    ("69,3 BB", True, "un importe en BB"),
+    ("Dav6934", True, "un nick"),
+    ("Igualar", True, "un verbo de accion"),
+    ("No ir", True, "el 'No ir' del cliente, que va en dos palabras"),
+    ("", False, "tapete vacio"),
+    ("60668", False, "un ENTERO SUELTO ya no ocupa: la textura de puntos del "
+                     "tapete se OCR-ea asi en 60 de 60 frames"),
+    ("5.892", False, "ni con separador de miles"),
+])
+def test_plate_occupied(texto, ocupado, motivo):
+    assert bool(ts._plate_occupied(lineas(texto))) is ocupado, motivo
+
+
+def test_la_fuerza_de_la_evidencia_decide_cual_se_suelta_si_sobran():
+    f = ts._fuerza_ocupacion
+    assert f("HERO", {}, set(), None) == 4, "el hero nunca se suelta"
+    assert f("MR", {}, set(), "MR") == 4, "ni el asiento del boton"
+    assert f("MR", {}, {"MR"}, None) > f("MR", {"name": "pepe"}, set(), None), \
+        "un dorso de carta pesa mas que un nombre"
+    assert f("MR", {"stack": 44.5}, set(), None) > f("MR", {"name": "pepe"}, set(), None), \
+        "y un importe en BB tambien"
+    assert f("MR", {}, set(), None) < f("MR", {"name": "pepe"}, set(), None), \
+        "lo mas debil es un asiento sin nada de eso"
+
+
+# --- CACHE DE RANGOS --------------------------------------------------------
 # El OCR de rango es el 86% del trabajo de un frame (90 de 105 jobs) y una carta
 # del board es la MISMA IMAGEN durante toda la calle. La clave es (palo, hash del
 # interior del recorte): el interior porque el borde trae tapete y fichas que se
 # animan -con el recorte entero solo coincide el 52% de las veces, quitando el
 # 15% de margen el 81%-, y el palo para que una colision exija la misma carta.
-print("\n# --- cache de rangos ---")
-import color_rank_ocr as cro  # noqa: E402
-
 
 def carta(valor_centro, valor_borde=0):
     """Recorte sintetico de 120x84: un centro que decide el rango y un borde que
-    se anima. El centro cubre HOLGADAMENTE el interior que hashea cache_key
-    (con margen 0,15 son las filas 18-101 y las columnas 12-71), para que el
-    unico cambio del caso "ruido en el borde" quede de verdad fuera."""
+    se anima. El centro cubre HOLGADAMENTE el interior que hashea cache_key."""
     img = np.full((120, 84, 3), valor_borde, dtype=np.uint8)
     img[16:104, 10:74] = valor_centro
     return img
 
 
-cro.reset_rank_cache()
-k1 = cro.cache_key(carta(200), "club")
-check("la misma carta da la misma clave", k1 == cro.cache_key(carta(200), "club"))
-check("otro palo, otra clave", k1 != cro.cache_key(carta(200), "heart"))
-check("otro centro (otro rango), otra clave", k1 != cro.cache_key(carta(150), "club"))
-check("RUIDO SOLO EN EL BORDE no cambia la clave: es justo lo que se anima",
-      k1 == cro.cache_key(carta(200, valor_borde=77), "club"))
-check("un recorte vacio no da clave", cro.cache_key(np.zeros((0, 0, 3), np.uint8), "club") is None)
+@pytest.fixture(autouse=True)
+def cache_limpia():
+    cro.reset_rank_cache()
+    yield
+    cro.reset_rank_cache()
 
-hay, r = cro.cached_rank(k1)
-check("una clave que no se ha guardado no esta en cache", hay is False)
-cro.store_rank(k1, "K")
-hay, r = cro.cached_rank(k1)
-check("guardar y recuperar", hay is True and r == "K")
-k2 = cro.cache_key(carta(150), "club")
-cro.store_rank(k2, None)
-hay, r = cro.cached_rank(k2)
-check("tambien se cachea el FALLO (rango None): el OCR es determinista, "
-      "reintentarlo daria el mismo None y es el caso mas caro",
-      hay is True and r is None)
-check("guardar None es distinto de no tener entrada",
-      cro.cached_rank(k2)[0] is True and cro.cached_rank(cro.cache_key(carta(99), "spade"))[0] is False)
 
-for i in range(cro.CACHE_MAX + 5):
-    cro.store_rank(("x", bytes([i % 256, i // 256])), "A")
-check("la cache esta acotada, no crece sin limite en una sesion larga",
-      len(cro._RANK_CACHE) <= cro.CACHE_MAX)
-cro.reset_rank_cache()
-check("reset la vacia", not cro._RANK_CACHE)
+def test_la_misma_carta_da_la_misma_clave():
+    assert cro.cache_key(carta(200), "club") == cro.cache_key(carta(200), "club")
 
-# --- REPARTO DE JOBS DE OCR POR IDIOMA -------------------------------------
+
+@pytest.mark.parametrize("otro, motivo", [
+    ((carta(200), "heart"), "otro palo"),
+    ((carta(150), "club"), "otro centro, o sea otro rango"),
+])
+def test_una_carta_distinta_da_otra_clave(otro, motivo):
+    assert cro.cache_key(carta(200), "club") != cro.cache_key(*otro), motivo
+
+
+def test_el_ruido_solo_en_el_borde_no_cambia_la_clave():
+    """Es justo lo que se anima: tapete y fichas alrededor de la carta."""
+    assert cro.cache_key(carta(200), "club") == cro.cache_key(carta(200, 77), "club")
+
+
+def test_un_recorte_vacio_no_da_clave():
+    assert cro.cache_key(np.zeros((0, 0, 3), np.uint8), "club") is None
+
+
+def test_guardar_y_recuperar():
+    k = cro.cache_key(carta(200), "club")
+    assert cro.cached_rank(k)[0] is False
+    cro.store_rank(k, "K")
+    assert cro.cached_rank(k) == (True, "K")
+
+
+def test_tambien_se_cachea_el_fallo():
+    """El OCR es determinista: reintentar un None daria el mismo None, y es el
+    caso mas caro."""
+    k = cro.cache_key(carta(150), "club")
+    cro.store_rank(k, None)
+    assert cro.cached_rank(k) == (True, None)
+    assert cro.cached_rank(cro.cache_key(carta(99), "spade"))[0] is False, \
+        "guardar None es distinto de no tener entrada"
+
+
+def test_la_cache_esta_acotada():
+    for i in range(cro.CACHE_MAX + 5):
+        cro.store_rank(("x", bytes([i % 256, i // 256])), "A")
+    assert len(cro._RANK_CACHE) <= cro.CACHE_MAX
+
+
+def test_reset_vacia_la_cache():
+    cro.store_rank(cro.cache_key(carta(200), "club"), "K")
+    cro.reset_rank_cache()
+    assert not cro._RANK_CACHE
+
+
+# --- REPARTO DE JOBS DE OCR POR IDIOMA --------------------------------------
 # Cargar el modelo espanol cuesta ~0,26 s y solo dos jobs del frame lo necesitan
 # (chat y botones). Con el reparto intercalado caian en procesos DISTINTOS y el
 # modelo se cargaba dos veces; juntandolos en un trozo propio, el lote baja de
 # 1,202 s a 0,888 s (-26%). Lo que NO puede cambiar es que cada job reciba su
 # propio resultado, en su propio sitio.
-print("\n# --- reparto de jobs de OCR ---")
-from ocr_client import OcrBatch, MAX_PROCS  # noqa: E402
 
 repartir = OcrBatch.__dict__["_repartir"].__func__
 
@@ -227,44 +262,78 @@ def pares(n_spa, n_eng):
     return list(enumerate(jobs))
 
 
-real = pares(2, 103)
-trozos = repartir(real)
-check("los jobs en espanol van TODOS en el mismo trozo",
-      sum(1 for t in trozos if any(j.get("lang") == "spa" for _i, j in t)) == 1)
-check("y ese trozo no lleva nada mas",
-      all(j.get("lang") == "spa" for t in trozos
-          for _i, j in t if any(x.get("lang") == "spa" for _y, x in t)))
-check("no se pasa del numero de procesos", len(trozos) <= MAX_PROCS)
-check("no se pierde ni se duplica ningun job",
-      sorted(i for t in trozos for i, _j in t) == list(range(len(real))))
+@pytest.fixture
+def reparto_real():
+    return pares(2, 103), repartir(pares(2, 103))
 
-solo_eng = repartir(pares(0, 50))
-check("sin jobs de idioma no se desperdicia un trozo",
-      len(solo_eng) == min(MAX_PROCS, 50)
-      and sorted(i for t in solo_eng for i, _j in t) == list(range(50)))
-uno = repartir(pares(0, 1))
-check("con un solo job, un solo trozo", len(uno) == 1 and len(uno[0]) == 1)
-solo_spa = repartir(pares(3, 0))
-check("solo jobs en espanol: un trozo con los tres",
-      len(solo_spa) == 1 and len(solo_spa[0]) == 3)
 
-# --- EL VERBO NO ES UN NOMBRE ----------------------------------------------
+def test_los_jobs_en_espanol_van_todos_en_el_mismo_trozo(reparto_real):
+    _real, trozos = reparto_real
+    con_spa = [t for t in trozos if any(j.get("lang") == "spa" for _i, j in t)]
+    assert len(con_spa) == 1
+
+
+def test_y_ese_trozo_no_lleva_nada_mas(reparto_real):
+    _real, trozos = reparto_real
+    for t in trozos:
+        if any(j.get("lang") == "spa" for _i, j in t):
+            assert all(j.get("lang") == "spa" for _i, j in t)
+
+
+def test_no_se_pasa_del_numero_de_procesos(reparto_real):
+    _real, trozos = reparto_real
+    assert len(trozos) <= MAX_PROCS
+
+
+def test_no_se_pierde_ni_se_duplica_ningun_job(reparto_real):
+    real, trozos = reparto_real
+    assert sorted(i for t in trozos for i, _j in t) == list(range(len(real)))
+
+
+def test_sin_jobs_de_idioma_no_se_desperdicia_un_trozo():
+    trozos = repartir(pares(0, 50))
+    assert len(trozos) == min(MAX_PROCS, 50)
+    assert sorted(i for t in trozos for i, _j in t) == list(range(50))
+
+
+def test_con_un_solo_job_un_solo_trozo():
+    trozos = repartir(pares(0, 1))
+    assert len(trozos) == 1 and len(trozos[0]) == 1
+
+
+def test_solo_jobs_en_espanol_un_trozo_con_todos():
+    trozos = repartir(pares(3, 0))
+    assert len(trozos) == 1 and len(trozos[0]) == 3
+
+
+# --- EL VERBO NO ES UN NOMBRE -----------------------------------------------
 # Cuando un jugador actua, el cliente le sustituye el nick por lo que ha hecho,
 # asi que leerlo como nombre le cambia el nombre justo cuando hace algo. Medido
 # sobre una sesion real: 362 de 6264 nombres leidos (6%) eran un verbo.
-print("\n# --- verbo de accion vs nombre ---")
-for t in ("Pasar", "Igualar", "Apostar", "Subir", "Ausente", "All-in", "all in", "No ir"):
-    check(f"{t!r} se reconoce como verbo, no como nombre", ts.es_verbo_de_accion(t))
-for t in ("BerniBeau", "over590", "makeao31", "44,5 BB", ""):
-    check(f"{t!r} NO es un verbo", ts.es_verbo_de_accion(t) is False)
 
-n, stk, acc = ts._seat_plate_name_stack(lineas("Dav6934", "69,3"))
-check("un nameplate normal da nombre y no accion", n == "Dav6934" and acc is None)
-n, stk, acc = ts._seat_plate_name_stack(lineas("Igualar"))
-check("un nameplate con el verbo NO devuelve nombre", n is None)
-check("y devuelve el verbo aparte, que es informacion util", acc == "Igualar")
-n, stk, acc = ts._seat_plate_name_stack(lineas("All-in"))
-check("'All-in' con guion tampoco se cuela como nombre", n is None and acc == "All-in")
+@pytest.mark.parametrize("texto", ["Pasar", "Igualar", "Apostar", "Subir",
+                                   "Ausente", "All-in", "all in", "No ir"])
+def test_los_verbos_se_reconocen_como_verbos(texto):
+    assert ts.es_verbo_de_accion(texto)
+
+
+@pytest.mark.parametrize("texto", ["BerniBeau", "over590", "makeao31", "44,5 BB", ""])
+def test_lo_que_no_es_un_verbo_no_lo_es(texto):
+    assert ts.es_verbo_de_accion(texto) is False
+
+
+def test_un_nameplate_normal_da_nombre_y_no_accion():
+    n, _stk, acc = ts._seat_plate_name_stack(lineas("Dav6934", "69,3"))
+    assert n == "Dav6934"
+    assert acc is None
+
+
+@pytest.mark.parametrize("verbo", ["Igualar", "All-in"])
+def test_un_nameplate_con_el_verbo_no_devuelve_nombre(verbo):
+    n, _stk, acc = ts._seat_plate_name_stack(lineas(verbo))
+    assert n is None
+    assert acc == verbo, "el verbo se devuelve aparte, que es informacion util"
+
 
 # --- ETIQUETAS DE POSICION SEGUN CUANTOS JUGADORES HAY ---------------------
 # La equivalencia es por CUANTOS JUGADORES QUEDAN DETRAS, no por el nombre del
@@ -273,9 +342,6 @@ check("'All-in' con guion tampoco se cuela como nombre", n is None and acc == "A
 # hablar, pero EP1 de una mesa de 9 tiene OCHO detras y el primero de una de 6
 # solo tiene CINCO. Medido a 20bb: se servia un 17,0% de las manos donde tocaba
 # un 25,0%, en todas las manos abiertas desde esa posicion.
-print("\n# --- etiquetas de posicion por numero de jugadores ---")
-CANON = seat_map.CANON9
-
 
 def orden_de_habla(n):
     """SEATING_BY_N empieza en el BOTON; preflop se habla empezando tras la BB."""
@@ -284,106 +350,134 @@ def orden_de_habla(n):
     return v[len(v) - corte:] + v[:len(v) - corte]
 
 
-for n in range(2, 10):
-    habla = orden_de_habla(n)
-    detras = [CANON.index("BB") - CANON.index(p) for p in habla]
-    check(f"con {n} jugadores, los que quedan detras son {list(range(n - 1, -1, -1))}",
-          detras == list(range(n - 1, -1, -1)))
+@pytest.mark.parametrize("n", range(2, 10))
+def test_los_que_quedan_detras_cuadran_con_el_numero_de_jugadores(n):
+    canon = seat_map.CANON9
+    detras = [canon.index("BB") - canon.index(p) for p in orden_de_habla(n)]
+    assert detras == list(range(n - 1, -1, -1))
 
-check("con 6 jugadores el primero en hablar es MP2, no EP1 "
-      "(EP1 tiene 8 detras; en una mesa de 6 solo hay 5)",
-      orden_de_habla(6)[0] == "MP2")
-check("con 7, MP1", orden_de_habla(7)[0] == "MP1")
-check("con 8, EP2", orden_de_habla(8)[0] == "EP2")
-check("con 9 si es EP1: es la mesa para la que estan digitalizados los rangos",
-      orden_de_habla(9)[0] == "EP1")
-check("heads-up: el boton ES la ciega pequeña, habla primero y tiene un rival "
-      "detras, igual que la SB de una mesa de 9",
-      orden_de_habla(2) == ["SB", "BB"])
 
-for n in (3, 4, 5, 9):
-    check(f"la fila de {n} jugadores, que ya era correcta, no cambia",
-          orden_de_habla(n)[-3:] == ["BTN", "SB", "BB"])
-check("todas las filas acaban en BTN SB BB",
-      all(orden_de_habla(n)[-3:] == ["BTN", "SB", "BB"] for n in range(3, 10)))
-check("y SEATING_BY_N empieza SIEMPRE por el asiento del boton",
-      all(seat_map.SEATING_BY_N[n][0] == "BTN" for n in range(3, 10)))
+@pytest.mark.parametrize("n, primero, motivo", [
+    (6, "MP2", "EP1 tiene 8 detras; en una mesa de 6 solo hay 5"),
+    (7, "MP1", ""),
+    (8, "EP2", ""),
+    (9, "EP1", "es la mesa para la que estan digitalizados los rangos"),
+])
+def test_quien_habla_primero_segun_cuantos_hay(n, primero, motivo):
+    assert orden_de_habla(n)[0] == primero, motivo
 
-import dealer_button  # noqa: E402
-check("dealer_button usa LA MISMA tabla, no una copia que pueda discrepar",
-      dealer_button.SEATING_BY_N is seat_map.SEATING_BY_N)
+
+def test_heads_up():
+    """El boton ES la ciega pequeña: habla primero y tiene un rival detras, igual
+    que la SB de una mesa de 9."""
+    assert orden_de_habla(2) == ["SB", "BB"]
+
+
+@pytest.mark.parametrize("n", range(3, 10))
+def test_todas_las_filas_acaban_en_btn_sb_bb(n):
+    assert orden_de_habla(n)[-3:] == ["BTN", "SB", "BB"]
+
+
+@pytest.mark.parametrize("n", range(3, 10))
+def test_seating_by_n_empieza_siempre_por_el_asiento_del_boton(n):
+    assert seat_map.SEATING_BY_N[n][0] == "BTN"
+
+
+def test_dealer_button_usa_la_misma_tabla():
+    """No una copia que pueda discrepar."""
+    assert dealer_button.SEATING_BY_N is seat_map.SEATING_BY_N
+
 
 # --- un FONDO CLARO se confunde con el tapete y hay que detectarlo ----------
-print("\n# --- fondo claro alrededor de la mesa ---")
 # Premisa rota: find_reference separa el ovalo del fondo "casi negro". Con un
 # tema de fondo olivo (H=44, S=80) pasa el 42% del frame y el mayor blob acaba
-# siendo fondo y tapete pegados: nucleo (192, 0, 980, 629), o sea tocando el
-# borde de arriba. Todas las zonas quedan desplazadas y -lo que lo destapo- los
-# dorsos caen fuera, asi que no se detecta ningun rival y la equity no se calcula
-# nunca.
-claro = np.full((800, 1200, 3), (60, 110, 90), dtype=np.uint8)   # fondo olivo
-cv2.ellipse(claro, (600, 400), (480, 215), 0, 0, 360, (40, 140, 60), -1)
-ref_claro = seat_map.find_reference(claro)
-check("con el fondo claro pegado al tapete NO se da una referencia real",
-      ref_claro[4] is True)
-st = analizar(claro)
-check("y analyze_layout corta el frame en vez de leer sitios equivocados",
-      any("no se encuentra la mesa" in w for w in st["warnings"]))
-check("el aviso nombra el fondo claro, que es lo que el usuario puede cambiar",
-      any("FONDO" in w and "claro" in w for w in st["warnings"]))
+# siendo fondo y tapete pegados: nucleo tocando el borde de arriba. Todas las
+# zonas quedan desplazadas y -lo que lo destapo- los dorsos caen fuera, asi que
+# no se detecta ningun rival y la equity no se calcula nunca.
 
-alto = np.full((800, 1200, 3), 12, dtype=np.uint8)
-cv2.ellipse(alto, (600, 400), (300, 380), 0, 0, 360, (40, 120, 40), -1)
-check("un blob demasiado alto para ser el ovalo tampoco vale",
-      seat_map.find_reference(alto)[4] is True)
+def test_con_el_fondo_claro_pegado_al_tapete_no_hay_referencia_real():
+    assert seat_map.find_reference(fondo_claro())[4] is True
 
-pegado = np.full((800, 1200, 3), 12, dtype=np.uint8)
-cv2.ellipse(pegado, (600, 300), (480, 310), 0, 0, 360, (40, 120, 40), -1)
-check("ni uno que llega al borde de arriba del frame",
-      seat_map.find_reference(pegado)[4] is True)
+
+def test_con_fondo_claro_analyze_layout_corta_y_nombra_la_causa(analizar):
+    st = analizar(fondo_claro())
+    assert any("no se encuentra la mesa" in w for w in st["warnings"])
+    assert any("FONDO" in w and "claro" in w for w in st["warnings"]), \
+        "es lo que el usuario puede cambiar"
+
+
+def test_un_blob_demasiado_alto_para_ser_el_ovalo_no_vale():
+    img = np.full((800, 1200, 3), 12, dtype=np.uint8)
+    cv2.ellipse(img, (600, 400), (300, 380), 0, 0, 360, (40, 120, 40), -1)
+    assert seat_map.find_reference(img)[4] is True
+
+
+def test_un_blob_que_llega_al_borde_de_arriba_tampoco():
+    img = np.full((800, 1200, 3), 12, dtype=np.uint8)
+    cv2.ellipse(img, (600, 300), (480, 310), 0, 0, 360, (40, 120, 40), -1)
+    assert seat_map.find_reference(img)[4] is True
+
 
 # --- la referencia se FIJA una vez y se reutiliza ---------------------------
-print("\n# --- referencia fijada por sesion ---")
 # El tapete no se mueve mientras juegas. Fijarlo rescata entero el tema de fondo
 # claro, donde el ovalo solo se detecta bien en el 14% de los frames: analizados
 # 19 -> 132 de 132, y la equity 0 -> 27.
-rf = seat_map.ReferenciaFijada()
-verde2 = frame((40, 120, 40))
-check("mientras no hay suficientes lecturas no hay nada fijado", rf.fijada is None)
-for _ in range(seat_map.REF_MIN_PARA_FIJAR):
-    rf.de(verde2)
-check(f"tras {seat_map.REF_MIN_PARA_FIJAR} lecturas buenas queda fijada", rf.fijada is not None)
 
-roto = np.full((800, 1200, 3), (60, 110, 90), dtype=np.uint8)   # fondo claro
-cv2.ellipse(roto, (600, 400), (480, 215), 0, 0, 360, (40, 140, 60), -1)
-check("un frame donde el ovalo NO se detecta ya no corta: se usa la fijada",
-      rf.de(roto)[4] is False)
-check("y la que se devuelve es la fijada, no una inventada",
-      tuple(rf.de(roto)[:4]) == rf.fijada)
+@pytest.fixture
+def fijada():
+    rf = seat_map.ReferenciaFijada()
+    verde = frame((40, 120, 40))
+    for _ in range(seat_map.REF_MIN_PARA_FIJAR):
+        rf.de(verde)
+    return rf
 
-antes = rf.fijada
-movido = np.full((800, 1200, 3), 12, dtype=np.uint8)
-cv2.ellipse(movido, (600, 300), (350, 155), 0, 0, 360, (40, 120, 40), -1)
-for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR - 1):
-    rf.de(movido)
-check("unas pocas lecturas discrepantes NO mueven la fijada (son ruido)",
-      rf.fijada == antes)
-rf.de(movido)
-check("pero si son sostenidas se vuelve a fijar: la ventana se ha movido",
-      rf.fijada != antes)
 
-rf2 = seat_map.ReferenciaFijada()
-for _ in range(seat_map.REF_MIN_PARA_FIJAR):
-    rf2.de(verde2)
-base = rf2.fijada
-casi = np.full((800, 1200, 3), 12, dtype=np.uint8)
-cv2.ellipse(casi, (600, 400), (475, 213), 0, 0, 360, (40, 120, 40), -1)   # ~1% menor
-for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR * 2):
-    rf2.de(casi)
-check("una variacion dentro de la tolerancia no re-fija nada: es el ruido "
-      "normal de la deteccion (0-4,5% medido)", rf2.fijada == base)
+def test_mientras_no_hay_suficientes_lecturas_no_hay_nada_fijado():
+    rf = seat_map.ReferenciaFijada()
+    assert rf.fijada is None
 
-# --- EL PUENTE DE PAPEL DE PARED, y por que se REPARA en vez de sustituir ----
+
+def test_tras_suficientes_lecturas_buenas_queda_fijada(fijada):
+    assert fijada.fijada is not None
+
+
+def test_un_frame_sin_ovalo_ya_no_corta_se_usa_la_fijada(fijada):
+    ref = fijada.de(fondo_claro())
+    assert ref[4] is False
+    assert tuple(ref[:4]) == fijada.fijada, "la que se devuelve es la fijada, no una inventada"
+
+
+def test_unas_pocas_lecturas_discrepantes_no_mueven_la_fijada(fijada):
+    """Son ruido de la deteccion."""
+    antes = fijada.fijada
+    movido = np.full((800, 1200, 3), 12, dtype=np.uint8)
+    cv2.ellipse(movido, (600, 300), (350, 155), 0, 0, 360, (40, 120, 40), -1)
+    for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR - 1):
+        fijada.de(movido)
+    assert fijada.fijada == antes
+
+
+def test_pero_si_son_sostenidas_se_vuelve_a_fijar(fijada):
+    """La ventana se ha movido."""
+    antes = fijada.fijada
+    movido = np.full((800, 1200, 3), 12, dtype=np.uint8)
+    cv2.ellipse(movido, (600, 300), (350, 155), 0, 0, 360, (40, 120, 40), -1)
+    for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR):
+        fijada.de(movido)
+    assert fijada.fijada != antes
+
+
+def test_una_variacion_dentro_de_la_tolerancia_no_refija_nada(fijada):
+    """Es el ruido normal de la deteccion (0-4,5% medido)."""
+    base = fijada.fijada
+    casi = np.full((800, 1200, 3), 12, dtype=np.uint8)
+    cv2.ellipse(casi, (600, 400), (475, 213), 0, 0, 360, (40, 120, 40), -1)   # ~1% menor
+    for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR * 2):
+        fijada.de(casi)
+    assert fijada.fijada == base
+
+
+# --- EL PUENTE DE PAPEL DE PARED, y por que se REPARA en vez de sustituir ---
 #
 # El papel de pared tiene una banda clara arriba que pasa el umbral de brillo.
 # Cuando el encuadre deja bastante margen por encima de la mesa, esa banda se
@@ -398,41 +492,52 @@ check("una variacion dentro de la tolerancia no re-fija nada: es el ruido "
 # mismo: cambiaban la caja TAMBIEN donde ya funcionaba, con desvios medianos del
 # 5% al 29%, y eso mueve el mapa de zonas entero.
 #
-# Esto solo se ejecuta cuando el bloque YA es implausible, o sea cuando hoy el
-# frame se pierde. Comprobado sobre 880 frames de 21 sesiones:
-#
+# Solo se ejecuta cuando el bloque YA es implausible, o sea cuando hoy el frame
+# se pierde. Comprobado sobre 880 frames de 21 sesiones:
 #     669 cajas IDENTICAS   90 recuperadas   121 siguen fallando
 #       0 perdidas            0 cambiadas
-print("\n# --- reparacion del puente con el papel de pared ---")
 
-alto, ancho = 900, 1400
-mesa = np.full((alto, ancho, 3), 12, dtype=np.uint8)
-cv2.ellipse(mesa, (700, 480), (520, 210), 0, 0, 360, (40, 120, 40), -1)
-solo = seat_map.find_reference(mesa)
-check("sin puente, el ovalo se detecta y no es fallback", not solo[4])
+@pytest.fixture
+def mesa_grande():
+    img = np.full((900, 1400, 3), 12, dtype=np.uint8)
+    cv2.ellipse(img, (700, 480), (520, 210), 0, 0, 360, (40, 120, 40), -1)
+    return img
 
-# el mismo frame con una lengua clara que sube desde el ovalo hasta y=0
-puente = mesa.copy()
-cv2.rectangle(puente, (820, 0), (1010, 300), (40, 120, 40), -1)
-con = seat_map.find_reference(puente)
-check("con puente, se sigue detectando (antes se perdia el frame entero)",
-      not con[4])
-check("y la caja reparada es practicamente la del ovalo limpio",
-      all(abs(a - b) <= 0.06 * max(solo[2], solo[3]) for a, b in zip(con[:4], solo[:4])))
-check("la caja reparada ya no toca el borde de arriba",
-      con[1] > seat_map.NUCLEO_MARGEN_BORDE)
 
-# GARANTIA ESTRUCTURAL: si el bloque ya era plausible, no se toca
-check("un frame que ya iba bien devuelve EXACTAMENTE lo mismo",
-      seat_map.find_reference(mesa)[:4] == solo[:4])
+def test_sin_puente_el_ovalo_se_detecta(mesa_grande):
+    assert not seat_map.find_reference(mesa_grande)[4]
 
-# y si el recorte no consigue despegarlo del borde, se sigue abstiendo
-todo = np.full((alto, ancho, 3), 12, dtype=np.uint8)
-cv2.rectangle(todo, (200, 0), (1200, 700), (40, 120, 40), -1)
-check("un bloque que no es un ovalo no se 'arregla' a la fuerza: fallback",
-      seat_map.find_reference(todo)[4])
 
-# --- SI NO HAY CAPSULA, NO HAY NADIE ------------------------------------------
+def test_con_puente_se_sigue_detectando(mesa_grande):
+    """Antes se perdia el frame entero."""
+    puente = mesa_grande.copy()
+    cv2.rectangle(puente, (820, 0), (1010, 300), (40, 120, 40), -1)
+    assert not seat_map.find_reference(puente)[4]
+
+
+def test_la_caja_reparada_es_practicamente_la_del_ovalo_limpio(mesa_grande):
+    solo = seat_map.find_reference(mesa_grande)
+    puente = mesa_grande.copy()
+    cv2.rectangle(puente, (820, 0), (1010, 300), (40, 120, 40), -1)
+    con = seat_map.find_reference(puente)
+    tol = 0.06 * max(solo[2], solo[3])
+    assert all(abs(a - b) <= tol for a, b in zip(con[:4], solo[:4]))
+    assert con[1] > seat_map.NUCLEO_MARGEN_BORDE, "ya no toca el borde de arriba"
+
+
+def test_un_frame_que_ya_iba_bien_devuelve_exactamente_lo_mismo(mesa_grande):
+    """GARANTIA ESTRUCTURAL: si el bloque ya era plausible, no se toca."""
+    a = seat_map.find_reference(mesa_grande)[:4]
+    assert seat_map.find_reference(mesa_grande)[:4] == a
+
+
+def test_un_bloque_que_no_es_un_ovalo_no_se_arregla_a_la_fuerza():
+    img = np.full((900, 1400, 3), 12, dtype=np.uint8)
+    cv2.rectangle(img, (200, 0), (1200, 700), (40, 120, 40), -1)
+    assert seat_map.find_reference(img)[4], "fallback, no una caja inventada"
+
+
+# --- SI NO HAY CAPSULA, NO HAY NADIE ---------------------------------------
 #
 # El usuario lo cazo jugando (28-07-2026, sesion 012453): la app listaba 6
 # jugadores con 5 en la mesa. El sobrante era "wwww584" leido en un asiento
@@ -441,47 +546,59 @@ check("un bloque que no es un ovalo no se 'arregla' a la fuerza: fallback",
 # BB a MP2 y le servia un rango de apertura donde tocaba la opcion de la ciega.
 # Su nota: "porque me dice fold si es call? hice ciega".
 #
-# Este modulo YA conocia la trampa por otra puerta: la textura del tapete se
-# OCR-eaba como '60668' y contaba como ocupado (ver _plate_occupied). Se tapo
-# quitando la señal numerica; ahora la misma zona entra por la del NOMBRE.
-#
 # Se descarto en su dia mirar solo el brillo, porque "las sillas granate son tan
 # oscuras como la capsula". Cierto, pero el granate esta SATURADO: pidiendo
 # oscuro Y sin color si se separan. Medido sobre 2.856 zonas de 15 sesiones y
 # seis temas de mesa, sale bimodal con hueco:
-#
 #     0.00-0.05   217 zonas    <- vacias (revisadas a ojo por muestreo)
 #     0.05-0.10     3 zonas    <- el hueco
 #     0.10-1.00  2636 zonas    <- con plate
-print("\n# --- veto de asiento vacio por ausencia de capsula ---")
 
-vacio = np.zeros((120, 380, 3), np.uint8)
-vacio[:, :] = (40, 90, 45)                       # tapete
-check("una zona de solo tapete no tiene capsula", not ts._hay_capsula(vacio))
+def zona_tapete():
+    z = np.zeros((120, 380, 3), np.uint8)
+    z[:, :] = (40, 90, 45)
+    return z
 
-papel = np.zeros((120, 380, 3), np.uint8)
-papel[:, :] = (35, 55, 40)                       # papel de pared verde oscuro
-check("el papel de pared tampoco", not ts._hay_capsula(papel))
 
-sillas = vacio.copy()
-cv2.rectangle(sillas, (60, 5), (150, 45), (60, 40, 110), -1)    # granate, SATURADO
-cv2.rectangle(sillas, (170, 5), (260, 45), (60, 40, 110), -1)
-check("las sillas granate NO cuentan como capsula: son oscuras pero con color "
-      "(es lo que tumbo el intento anterior de usar solo el brillo)",
-      not ts._hay_capsula(sillas))
+def zona_sillas():
+    z = zona_tapete()
+    cv2.rectangle(z, (60, 5), (150, 45), (60, 40, 110), -1)    # granate, SATURADO
+    cv2.rectangle(z, (170, 5), (260, 45), (60, 40, 110), -1)
+    return z
 
-plate = vacio.copy()
-cv2.rectangle(plate, (20, 25), (330, 95), (28, 28, 30), -1)     # capsula gris oscura
-check("un nameplate de verdad si la tiene", ts._hay_capsula(plate))
-check("y con las sillas encima tambien", ts._hay_capsula(
-    cv2.rectangle(sillas.copy(), (20, 25), (330, 95), (28, 28, 30), -1)))
 
-check("el umbral esta en el hueco medido, no pegado a un extremo",
-      0.05 < ts.CAPSULA_MIN_FRAC < 0.10)
-check("una zona vacia de tamaño nulo no veta nada (no se inventa un vacio)",
-      ts._hay_capsula(np.zeros((0, 0, 3), np.uint8)))
+def test_una_zona_de_solo_tapete_no_tiene_capsula():
+    assert not ts._hay_capsula(zona_tapete())
 
-n_fail = sum(1 for _, cond in checks if not cond)
-print(f"\n{len(checks) - n_fail}/{len(checks)} OK")
-if n_fail:
-    raise SystemExit(1)
+
+def test_el_papel_de_pared_tampoco():
+    papel = np.zeros((120, 380, 3), np.uint8)
+    papel[:, :] = (35, 55, 40)
+    assert not ts._hay_capsula(papel)
+
+
+def test_las_sillas_granate_no_cuentan_como_capsula():
+    """Son oscuras pero CON COLOR: es lo que tumbo el intento anterior de usar
+    solo el brillo."""
+    assert not ts._hay_capsula(zona_sillas())
+
+
+def test_un_nameplate_de_verdad_si_tiene_capsula():
+    plate = zona_tapete()
+    cv2.rectangle(plate, (20, 25), (330, 95), (28, 28, 30), -1)
+    assert ts._hay_capsula(plate)
+
+
+def test_y_con_las_sillas_encima_tambien():
+    z = cv2.rectangle(zona_sillas(), (20, 25), (330, 95), (28, 28, 30), -1)
+    assert ts._hay_capsula(z)
+
+
+def test_el_umbral_esta_en_el_hueco_medido():
+    """No pegado a un extremo."""
+    assert 0.05 < ts.CAPSULA_MIN_FRAC < 0.10
+
+
+def test_una_zona_de_tamaño_nulo_no_veta_nada():
+    """No se inventa un vacio donde no se ha podido mirar."""
+    assert ts._hay_capsula(np.zeros((0, 0, 3), np.uint8))

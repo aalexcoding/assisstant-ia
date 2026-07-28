@@ -16,3 +16,8 @@ decision/decisions.local.jsonl
 vision/samples_bb/
 vision/tessdata/
 testing/
+
+# artefactos de la suite de tests
+.coverage
+.pytest_cache/
+htmlcov/

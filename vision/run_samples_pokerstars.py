@@ -7,10 +7,8 @@ Uso: .venv/bin/python vision/run_samples_pokerstars.py
 import glob
 import json
 import os
-import sys
 
-sys.path.insert(0, os.path.dirname(__file__))
-from table_state import analyze_color_deck
+from vision.table_state import analyze_color_deck
 
 SAMPLES_DIR = os.path.join(os.path.dirname(__file__), "samples_pokerstars")
 OUT_PATH = os.path.join(os.path.dirname(__file__), "results_pokerstars.json")

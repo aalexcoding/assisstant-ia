@@ -1,110 +1,110 @@
 """
-Test suelto (sin pytest) de decision/hand_strength.py con casos conocidos a
-mano. Uso: .venv/bin/python decision/test_hand_strength.py
+decision/hand_strength.py con casos conocidos a mano: la mano formada y los
+proyectos que se enseñan en el HUD.
+
+Los porcentajes se comprueban EXACTOS (combinatoria) y ademas contra la regla
+del 2 y 4, porque son numeros distintos y el HUD enseña los dos: el dia que
+alguien "simplifique" usando solo la regla, el doble proyecto pasaria de 54% a
+60% y aqui saltaria.
 """
-import os
-import sys
+import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import hand_strength as hs
-
-fails = 0
+from decision import hand_strength as hs
 
 
-def check(desc, cond):
-    global fails
-    status = "OK  " if cond else "FAIL"
-    if not cond:
-        fails += 1
-    print(f"  [{status}] {desc}")
-
-
-def find_draw(res, needle):
+def proyecto(res, aguja):
+    """El proyecto cuyo nombre contiene `aguja`, o None."""
     for d in res["draws"]:
-        if needle.lower() in d["name"].lower():
+        if aguja.lower() in d["name"].lower():
             return d
     return None
 
 
-def show(title, hero, board):
-    res = hs.evaluate_hand(hero, board)
-    print(f"\n{title}: hero={hero} board={board}")
-    print(f"  mano: {res['made_name']}  ({res['made_category']}, {res['street']})")
-    for d in res["draws"]:
-        pr = f"~{d['pct_river']}% river" if d["pct_river"] is not None else "-"
-        print(f"    draw: {d['name']}: {d['outs']} outs, ~{d['pct_next']}% sig, {pr}"
-              f"  [regla 2/4: {d['pct_next_rule']}%/{d['pct_river_rule']}%]")
-    return res
+# --- mano formada ------------------------------------------------------------
+
+@pytest.mark.parametrize("hero, board, esperado", [
+    (["Ah", "Kh"], ["Ac", "Kc", "Qh"], "Doble pareja (Ases y Reyes)"),
+    (["As", "Kh"], ["Ah", "Ad", "Kc"], "Full de Ases con Reyes"),
+    (["Ts", "Jd"], ["9h", "8c", "7d", "2s"], "Escalera al Jota"),
+    (["8h", "8d"], ["8c", "8s", "Kd"], "Poker de Ochos"),
+])
+def test_nombre_de_la_mano_formada(hero, board, esperado):
+    assert hs.evaluate_hand(hero, board)["made_name"] == esperado
 
 
-print("=== Mano formada ===")
-r = show("Doble pareja", ["Ah", "Kh"], ["Ac", "Kc", "Qh"])
-check("nombre = 'Doble pareja (Ases y Reyes)'", r["made_name"] == "Doble pareja (Ases y Reyes)")
-check("sin proyectos", r["draws"] == [])
+def test_doble_pareja_no_tiene_proyectos():
+    assert hs.evaluate_hand(["Ah", "Kh"], ["Ac", "Kc", "Qh"])["draws"] == []
 
-r = show("Full house", ["As", "Kh"], ["Ah", "Ad", "Kc"])
-check("Full de Ases con Reyes", r["made_name"] == "Full de Ases con Reyes")
 
-r = show("Color", ["3h", "9c"], ["Ah", "7h", "2h", "Kh"])
-check("categoria = Color", r["made_category"] == "Color")
-check("Color de corazones", "Color de corazones" in r["made_name"])
+def test_color():
+    r = hs.evaluate_hand(["3h", "9c"], ["Ah", "7h", "2h", "Kh"])
+    assert r["made_category"] == "Color"
+    assert "Color de corazones" in r["made_name"]
 
-r = show("Escalera formada", ["Ts", "Jd"], ["9h", "8c", "7d", "2s"])
-check("Escalera al Jota", r["made_name"] == "Escalera al Jota")
 
-r = show("Poker", ["8h", "8d"], ["8c", "8s", "Kd"])
-check("Poker de Ochos", r["made_name"] == "Poker de Ochos")
+# --- preflop -----------------------------------------------------------------
 
-print("\n=== Preflop ===")
-r = show("Preflop suited", ["As", "Ks"], [])
-check("AK suited", r["made_name"] == "AK suited")
-r = show("Preflop offsuit", ["Ad", "Kc"], [])
-check("AK offsuit", r["made_name"] == "AK offsuit")
-r = show("Preflop par", ["8h", "8d"], [])
-check("Pareja de Ochos", r["made_name"] == "Pareja de Ochos")
+@pytest.mark.parametrize("hero, esperado", [
+    (["As", "Ks"], "AK suited"),
+    (["Ad", "Kc"], "AK offsuit"),
+    (["8h", "8d"], "Pareja de Ochos"),
+])
+def test_preflop(hero, esperado):
+    assert hs.evaluate_hand(hero, [])["made_name"] == esperado
 
-print("\n=== Proyectos ===")
-r = show("Proyecto de color (flop)", ["Ah", "Kh"], ["Th", "7h", "2c"])
-fd = find_draw(r, "color")
-check("proyecto de color detectado", fd is not None)
-check("9 outs", fd and fd["outs"] == 9)
-check("~35% al river (exacto)", fd and fd["pct_river"] == 35)
-check("regla del 4 = 36%", fd and fd["pct_river_rule"] == 36)
 
-r = show("Escalera abierta (OESD)", ["Ts", "Js"], ["9h", "8c", "2d"])
-sd = find_draw(r, "abierta")
-check("OESD detectada", sd is not None)
-check("8 outs", sd and sd["outs"] == 8)
+# --- proyectos ---------------------------------------------------------------
 
-r = show("Gutshot", ["Js", "Qd"], ["9h", "8c", "2d"])
-gs = find_draw(r, "gutshot")
-check("gutshot detectado", gs is not None)
-check("4 outs", gs and gs["outs"] == 4)
+def test_proyecto_de_color_en_flop():
+    r = hs.evaluate_hand(["Ah", "Kh"], ["Th", "7h", "2c"])
+    fd = proyecto(r, "color")
+    assert fd is not None, "proyecto de color detectado"
+    assert fd["outs"] == 9
+    assert fd["pct_river"] == 35, "exacto por combinatoria"
+    assert fd["pct_river_rule"] == 36, "regla del 4"
 
-r = show("Broadway = gutshot (no OESD)", ["Ah", "Kd"], ["Qs", "Jc", "2d"])
-gs = find_draw(r, "gutshot")
-check("broadway AKQJ es gutshot (4 outs a T)", gs is not None and gs["outs"] == 4)
 
-r = show("Doble proyecto (color + escalera)", ["Jh", "8h"], ["Th", "9h", "2c"])
-fd = find_draw(r, "color de")
-sd = find_draw(r, "abierta")
-combo = find_draw(r, "doble proyecto")
-check("proyecto de color (9 outs)", fd is not None and fd["outs"] == 9)
-check("escalera abierta (8 outs)", sd is not None and sd["outs"] == 8)
-check("doble proyecto = 15 outs limpios", combo is not None and combo["outs"] == 15)
-check("doble proyecto ~54% al river (exacto, no 60)", combo is not None and combo["pct_river"] == 54)
+def test_escalera_abierta():
+    sd = proyecto(hs.evaluate_hand(["Ts", "Js"], ["9h", "8c", "2d"]), "abierta")
+    assert sd is not None, "OESD detectada"
+    assert sd["outs"] == 8
 
-r = show("Turn: solo 1 carta por venir", ["Ah", "Kh"], ["Th", "7h", "2c", "3s"])
-fd = find_draw(r, "color")
-check("en turn pct_river es None", fd is not None and fd["pct_river"] is None)
-check("en turn ~20% (9/46) a la siguiente", fd is not None and fd["pct_next"] == 20)
 
-r = show("River: sin proyectos", ["Ah", "Kh"], ["Th", "7h", "2c", "3s", "9d"])
-check("river sin draws", r["draws"] == [])
+def test_gutshot():
+    gs = proyecto(hs.evaluate_hand(["Js", "Qd"], ["9h", "8c", "2d"]), "gutshot")
+    assert gs is not None
+    assert gs["outs"] == 4
 
-print("\n=== Robustez ===")
-check("hero vacio -> None", hs.evaluate_hand([], []) is None)
-check("hero incompleto -> None", hs.evaluate_hand(["Ah"], []) is None)
 
-print(f"\n{'TODOS OK' if fails == 0 else str(fails) + ' FALLOS'}")
-sys.exit(1 if fails else 0)
+def test_broadway_es_gutshot_no_escalera_abierta():
+    """AKQJ solo liga con una T: son 4 outs, no 8."""
+    gs = proyecto(hs.evaluate_hand(["Ah", "Kd"], ["Qs", "Jc", "2d"]), "gutshot")
+    assert gs is not None
+    assert gs["outs"] == 4
+
+
+def test_doble_proyecto_color_mas_escalera():
+    r = hs.evaluate_hand(["Jh", "8h"], ["Th", "9h", "2c"])
+    fd, sd, combo = proyecto(r, "color de"), proyecto(r, "abierta"), proyecto(r, "doble proyecto")
+    assert fd is not None and fd["outs"] == 9, "proyecto de color"
+    assert sd is not None and sd["outs"] == 8, "escalera abierta"
+    assert combo is not None and combo["outs"] == 15, "15 outs LIMPIOS (no 17: dos se solapan)"
+    assert combo["pct_river"] == 54, "exacto; la regla del 4 diria 60 y seria optimista"
+
+
+def test_en_turn_solo_queda_una_carta_por_venir():
+    fd = proyecto(hs.evaluate_hand(["Ah", "Kh"], ["Th", "7h", "2c", "3s"]), "color")
+    assert fd is not None
+    assert fd["pct_river"] is None, "en turn no hay 'al river': la siguiente ES el river"
+    assert fd["pct_next"] == 20, "9/46"
+
+
+def test_en_river_no_hay_proyectos():
+    assert hs.evaluate_hand(["Ah", "Kh"], ["Th", "7h", "2c", "3s", "9d"])["draws"] == []
+
+
+# --- robustez ----------------------------------------------------------------
+
+@pytest.mark.parametrize("hero", [[], ["Ah"]])
+def test_sin_las_dos_cartas_del_hero_devuelve_none(hero):
+    assert hs.evaluate_hand(hero, []) is None

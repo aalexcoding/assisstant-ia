@@ -29,7 +29,7 @@ import time
 
 import numpy as np
 
-from clean import clean_text
+from decision.rag.clean import clean_text
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TRANSCRIPTS_DIR = os.path.join(HERE, "transcripts")

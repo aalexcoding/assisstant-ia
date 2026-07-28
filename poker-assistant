@@ -6,10 +6,10 @@ cd "$(dirname "$0")"
 
 if [ "$1" == "--recalibrate" ]; then
     shift
-    .venv/bin/python calibration/select_region.py
+    .venv/bin/python -m calibration.select_region
 elif [ ! -f calibration/config.local.json ]; then
     echo "No hay recuadro calibrado todavia, calibrando..."
-    .venv/bin/python calibration/select_region.py
+    .venv/bin/python -m calibration.select_region
 fi
 
 .venv/bin/python alpha.py "$@"

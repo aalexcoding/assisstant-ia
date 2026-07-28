@@ -8,7 +8,7 @@ import argparse
 import os
 import subprocess
 
-import video_index as vi
+from decision.rag import video_index as vi
 
 AUDIO_DIR = os.path.join(os.path.dirname(__file__), "audio")
 SAMPLE_RATE = 16000

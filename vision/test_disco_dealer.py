@@ -18,29 +18,23 @@ Lo que de verdad protege:
 
 Las imagenes se generan aqui a partir de la plantilla real del repo, asi que el
 test no depende de tener las capturas.
-Uso: .venv/bin/python vision/test_disco_dealer.py
 """
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 import cv2
 import numpy as np
+import pytest
 
-import disco_dealer as dd
-import seat_map
+from vision import disco_dealer as dd
+from vision import seat_map
 
-checks = []
-
-
-def check(desc, cond):
-    checks.append((desc, cond))
-    print(("OK  " if cond else "FAIL") + " " + desc)
-
+pytestmark = pytest.mark.vision
 
 REF = (200, 180, 1000, 470)          # nucleo del tapete tipico
 ALTO, ANCHO = 960, 1400
+
+# seis tapetes medidos en sesiones reales (naranja, verde, verde claro, azul,
+# oliva y negro), en BGR aproximado
+TAPETES = [(40, 90, 200), (60, 120, 40), (90, 190, 120),
+           (150, 90, 40), (80, 140, 150), (35, 35, 35)]
 
 
 def mesa(fondo=(60, 120, 40)):
@@ -69,106 +63,121 @@ def ancla(seat):
     return int(REF[0] + fx * REF[2]), int(REF[1] + fy * REF[3])
 
 
-print("# --- caso 1: el disco se encuentra en cualquier asiento ---")
-malos = []
-for s in seat_map.SEATS:
-    img = pinta_disco(mesa(), ancla(s))
-    if dd.detectar(img, REF) != s:
-        malos.append((s, dd.detectar(img, REF)))
-check(f"los seis asientos se detectan (fallan: {malos})", not malos)
+def carta_roja(img):
+    cv2.rectangle(img, (600, 300), (680, 420), (40, 40, 200), -1)
+    return img
 
-print()
-print("# --- caso 2: da igual el color del tapete y el aspecto del disco ---")
-# seis tapetes medidos en sesiones reales (naranja, verde, verde claro, azul,
-# oliva y negro), en BGR aproximado
-TAPETES = [(40, 90, 200), (60, 120, 40), (90, 190, 120),
-           (150, 90, 40), (80, 140, 150), (35, 35, 35)]
-malos = []
-for i, f in enumerate(TAPETES):
-    img = pinta_disco(mesa(f), ancla("UR"))
-    if dd.detectar(img, REF) != "UR":
-        malos.append(("tapete", i, dd.detectar(img, REF)))
-check(f"seis tapetes distintos, mismo resultado (fallan: {malos})", not malos)
 
-# disco DORADO: cambia el cuerpo, no la pica
-img = pinta_disco(mesa(), ancla("ML"), cuerpo=(90, 200, 235))
-check("el disco dorado se detecta igual que el blanco", dd.detectar(img, REF) == "ML")
+# --- 1. el disco se encuentra en cualquier asiento --------------------------
 
-print()
-print("# --- caso 3: a medio camino entre dos asientos NO se adivina ---")
-# asignar mal el boton corre TODAS las posiciones; callarse es lo correcto
-a, b = ancla("UL"), ancla("TOPC")
-img = pinta_disco(mesa(), ((a[0] + b[0]) // 2, (a[1] + b[1]) // 2))
-check("disco justo entre dos anclas: se devuelve None", dd.detectar(img, REF) is None)
-check("pero el disco SI se encuentra (lo que falta es a quien asignarlo)",
-      dd.buscar_disco(img, REF) is not None
-      and dd.buscar_disco(img, REF)[2] >= dd.MIN_PICO)
+@pytest.mark.parametrize("seat", sorted(seat_map.SEATS))
+def test_el_disco_se_detecta_en_cada_asiento(seat):
+    assert dd.detectar(pinta_disco(mesa(), ancla(seat)), REF) == seat
 
-print()
-print("# --- caso 4: no se confunde con otras cosas rojas ---")
-img = mesa()
-cv2.rectangle(img, (600, 300), (680, 420), (40, 40, 200), -1)      # carta roja
-check("una carta roja no es un disco", dd.detectar(img, REF) is None)
-img = mesa()
-cv2.circle(img, (640, 360), 18, (40, 40, 210), -1)                 # ficha roja
-cv2.circle(img, (640, 360), 18, (255, 255, 255), 3)
-check("una ficha roja redonda tampoco", dd.detectar(img, REF) is None)
-img = mesa()
-check("un tapete vacio no da boton", dd.detectar(img, REF) is None)
 
-print()
-print("# --- caso 5: el disco gana aunque haya cartas rojas en la mesa ---")
-img = mesa()
-cv2.rectangle(img, (600, 300), (680, 420), (40, 40, 200), -1)
-pinta_disco(img, ancla("MR"))
-check("con una carta roja al lado, sigue eligiendo el disco",
-      dd.detectar(img, REF) == "MR")
+# --- 2. da igual el color del tapete y el aspecto del disco -----------------
 
-print()
-print("# --- caso 6: tolera que el disco no caiga exacto en el ancla ---")
-# es justo el motivo del modulo: el cliente no lo dibuja siempre en el mismo sitio
-malos = []
-for dx, dy in ((14, 0), (-14, 0), (0, 14), (0, -14), (10, 10)):
+@pytest.mark.parametrize("tapete", TAPETES)
+def test_seis_tapetes_distintos_mismo_resultado(tapete):
+    assert dd.detectar(pinta_disco(mesa(tapete), ancla("UR")), REF) == "UR"
+
+
+def test_el_disco_dorado_se_detecta_igual_que_el_blanco():
+    """Cambia el cuerpo, no la pica: la plantilla es lo unico constante."""
+    img = pinta_disco(mesa(), ancla("ML"), cuerpo=(90, 200, 235))
+    assert dd.detectar(img, REF) == "ML"
+
+
+# --- 3. a medio camino entre dos asientos NO se adivina ---------------------
+
+@pytest.fixture
+def entre_dos_anclas():
+    a, b = ancla("UL"), ancla("TOPC")
+    return pinta_disco(mesa(), ((a[0] + b[0]) // 2, (a[1] + b[1]) // 2))
+
+
+def test_un_disco_entre_dos_anclas_no_se_asigna(entre_dos_anclas):
+    """Asignarlo al azar corre TODAS las posiciones, que es el fallo mas caro de
+    esta app. Callarse es lo correcto."""
+    assert dd.detectar(entre_dos_anclas, REF) is None
+
+
+def test_pero_el_disco_si_se_encuentra(entre_dos_anclas):
+    """Lo que falta es a quien asignarlo, no la deteccion."""
+    hallado = dd.buscar_disco(entre_dos_anclas, REF)
+    assert hallado is not None
+    assert hallado[2] >= dd.MIN_PICO
+
+
+# --- 4. no se confunde con otras cosas rojas --------------------------------
+
+def test_una_carta_roja_no_es_un_disco():
+    assert dd.detectar(carta_roja(mesa()), REF) is None
+
+
+def test_una_ficha_roja_redonda_tampoco():
+    img = mesa()
+    cv2.circle(img, (640, 360), 18, (40, 40, 210), -1)
+    cv2.circle(img, (640, 360), 18, (255, 255, 255), 3)
+    assert dd.detectar(img, REF) is None
+
+
+def test_un_tapete_vacio_no_da_boton():
+    assert dd.detectar(mesa(), REF) is None
+
+
+def test_con_una_carta_roja_al_lado_sigue_eligiendo_el_disco():
+    img = pinta_disco(carta_roja(mesa()), ancla("MR"))
+    assert dd.detectar(img, REF) == "MR"
+
+
+# --- 5. tolera que el disco no caiga exacto en el ancla ---------------------
+
+@pytest.mark.parametrize("dx, dy", [(14, 0), (-14, 0), (0, 14), (0, -14), (10, 10)])
+def test_desplazado_hasta_catorce_pixeles_sigue_siendo_del_mismo_asiento(dx, dy):
+    """Es justo el motivo del modulo: el cliente no lo dibuja siempre en el mismo
+    sitio."""
     x, y = ancla("HERO")
-    img = pinta_disco(mesa(), (x + dx, y + dy))
-    if dd.detectar(img, REF) != "HERO":
-        malos.append(((dx, dy), dd.detectar(img, REF)))
-check(f"desplazado hasta 14 px sigue siendo del mismo asiento (fallan: {malos})",
-      not malos)
+    assert dd.detectar(pinta_disco(mesa(), (x + dx, y + dy)), REF) == "HERO"
 
-print()
-print("# --- caso 7: los umbrales estan donde los dejo la medicion ---")
-# Barridos contra el invariante "el boton avanza UN asiento por mano" sobre
-# 3.087 candidatos de 14 sesiones. De 0.60 a 0.75 el resultado es plano; se
-# eligio 0.70, en el centro de esa meseta.
-check("MIN_PICO dentro de la meseta medida", 0.60 <= dd.MIN_PICO <= 0.75)
-check("VENTAJA_MIN exige que el ganador este claramente mas cerca",
-      0.5 < dd.VENTAJA_MIN < 1.0)
 
-print()
-print("# --- caso 8: la plantilla del repo ---")
-t = dd._plantilla()
-check("la plantilla existe y no esta vacia", t.size > 0 and (t > 127).any())
-check("es binaria (mascara, no foto)", set(np.unique(t)) <= {0, 255})
-check("se carga una vez", dd._plantilla() is dd._plantilla())
-# forma de pica: se ensancha hasta pasada la mitad y luego se estrecha de golpe
-# en el pie. No se comprueba "mas arriba que abajo" -es falso, la estrella recorta
-# la parte de arriba- sino el perfil, que es lo que la distingue de un circulo.
-anchos = (t > 127).sum(axis=1)
-fila_ancha = int(np.argmax(anchos))
-check("la fila mas ancha cae pasada la mitad, como en una pica",
-      0.45 <= fila_ancha / t.shape[0] <= 0.75)
-check("y el pie es mucho mas estrecho que el cuerpo",
-      anchos[-1] < 0.5 * anchos[fila_ancha])
-check("lleva la estrella recortada: hay hueco dentro del contorno",
-      (t[2:fila_ancha] <= 127).any())
+# --- 6. los umbrales estan donde los dejo la medicion -----------------------
 
-print()
-ok = sum(1 for _d, c in checks if c)
-print(f"{ok}/{len(checks)} OK")
-if ok != len(checks):
-    print("FALLAN:")
-    for d, c in checks:
-        if not c:
-            print("  - " + d)
-    sys.exit(1)
+def test_min_pico_dentro_de_la_meseta_medida():
+    """Barridos contra el invariante "el boton avanza UN asiento por mano" sobre
+    3.087 candidatos de 14 sesiones. De 0.60 a 0.75 el resultado es plano; se
+    eligio 0.70, en el centro de esa meseta."""
+    assert 0.60 <= dd.MIN_PICO <= 0.75
+
+
+def test_ventaja_min_exige_que_el_ganador_este_claramente_mas_cerca():
+    assert 0.5 < dd.VENTAJA_MIN < 1.0
+
+
+# --- 7. la plantilla del repo -----------------------------------------------
+
+def test_la_plantilla_existe_y_no_esta_vacia():
+    t = dd._plantilla()
+    assert t.size > 0
+    assert (t > 127).any()
+
+
+def test_la_plantilla_es_binaria():
+    """Una mascara, no una foto."""
+    assert set(np.unique(dd._plantilla())) <= {0, 255}
+
+
+def test_la_plantilla_se_carga_una_sola_vez():
+    assert dd._plantilla() is dd._plantilla()
+
+
+def test_la_plantilla_tiene_forma_de_pica():
+    """Se ensancha hasta pasada la mitad y luego se estrecha de golpe en el pie.
+    No se comprueba "mas arriba que abajo" -es falso, la estrella recorta la
+    parte de arriba- sino el perfil, que es lo que la distingue de un circulo."""
+    t = dd._plantilla()
+    anchos = (t > 127).sum(axis=1)
+    fila_ancha = int(np.argmax(anchos))
+    assert 0.45 <= fila_ancha / t.shape[0] <= 0.75, "la fila mas ancha, pasada la mitad"
+    assert anchos[-1] < 0.5 * anchos[fila_ancha], "el pie es mucho mas estrecho"
+    assert (t[2:fila_ancha] <= 127).any(), "la estrella deja hueco dentro del contorno"
