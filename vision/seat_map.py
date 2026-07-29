@@ -273,7 +273,49 @@ HERO_CARDS_ZONE = (0.34, 0.86, 0.64, 1.10)
 # miden 119 px de alto (las que se cortaban median 105). Con 0.60 caben todas con
 # margen. Ampliando incluso hasta 0.68 NO aparecen cartas fantasma -las fichas del
 # bote no pasan el detector-, asi que el margen es gratis.
-BOARD_ZONE = (0.26, 0.28, 0.78, 0.60)
+# EL BORDE IZQUIERDO CORTABA, y por el mismo mecanismo que el de abajo: estaba en
+# 0.26 y la primera carta del board salia con la caja mordida, con lo que su
+# rango se leia mal. Lo destapo una nota del usuario ("falta en el board el
+# 4picas", frame 0036 de la sesion del 30-07 a las 00:29): el board era 4♠ 9♦ 4♣ y
+# la app leia ['9d','4c']. El 4♠ SI se detectaba, pero su caja media 67 px contra
+# los 82-83 de las otras dos y empezaba exactamente en el borde de la zona, que es
+# la firma de un recorte. Con la caja mordida el rango salia 'A' en vez de '4', o
+# sea que la carta no se pierde: se convierte en otra.
+#
+# Y NO ERA UN CASO SUELTO. Medido sobre 3.241 cartas de las 14 sesiones grabadas,
+# contando cajas cuyo ancho no llega al 85% de la mas ancha del frame:
+#
+#     x0 = 0.26 (lo que habia)   536 cajas cortadas de 3.241   (16,5%)
+#     x0 = 0.24 o menos            1
+#
+# Cuesta 3 cartas detectadas menos y 2 recuentos ilegales mas (30 -> 32), que es
+# nada al lado de 535 cartas que dejan de leerse mal.
+#
+# PERO EL VALOR NO ES 0.24, Y AQUI ESTA LO IMPORTANTE. El ancho del nucleo que
+# mide find_reference OSCILA entre frames de la MISMA mesa quieta: en esa sesion
+# da 904 px el 23,7% de las veces, 889 el 22,3%, 931 el 17,8% y 862 el 17,1%.
+# ReferenciaFijada se queda con uno de esos cuatro segun los primeros frames que
+# le tocaron, asi que la zona en pixeles cambia hasta 40 px de una sesion a otra
+# sin que nada este mal. Probando el frame de la nota con las CUATRO:
+#
+#     nucleo    x0=0.26        x0=0.24        x0=0.22
+#     862 px    67 px, mal     82 px, bien    82 px, bien
+#     889 px    60 px, mal     78 px, mal     82 px, bien
+#     904 px    56 px, mal     75 px, mal     82 px, bien
+#     931 px    solo 2 cajas   68 px, mal     82 px, bien
+#
+# 0.22 es el primer valor que aguanta las cuatro. Con 0.24 la carta seguia
+# cortada en la mitad de los arranques posibles, y el corpus no lo veia porque
+# alli la referencia se fijaba en otro modo. Sobre el corpus 0.22 da exactamente
+# las mismas cifras que 0.24, asi que el margen extra es gratis.
+#
+# LA CAUSA DE FONDO SIGUE ABIERTA: que la deteccion del nucleo no sea reproducible
+# frame a frame. Esto no la arregla, le pone margen suficiente para que no muerda.
+#
+# EL BORDE DERECHO NO CORTA: ensancharlo da exactamente las mismas cifras, asi que
+# se deja. Tiene sentido, porque el board crece hacia la derecha desde un punto
+# fijo y es la PRIMERA carta la que queda pegada al borde.
+BOARD_ZONE = (0.22, 0.28, 0.78, 0.60)
 # el texto "Bote: N" se muestra mas abajo en preflop (sin cartas de board que
 # lo empujen hacia arriba) que en postflop; la zona cubre ambas alturas.
 #

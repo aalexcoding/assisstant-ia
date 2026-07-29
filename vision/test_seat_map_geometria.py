@@ -357,3 +357,38 @@ def test_el_umbral_de_descarte_sale_de_un_valle_medido():
     donde dice?") que comparten formula pero no umbral."""
     assert seat_map.REF_TOLERANCIA < seat_map.REF_DESCARTE
     assert 0.15 <= seat_map.REF_DESCARTE <= 0.175
+
+
+# --- las zonas tienen que aguantar que la referencia baile -------------------
+
+def test_la_zona_del_BOARD_deja_margen_para_la_primera_carta():
+    """EL CASO, de una nota del usuario ("falta en el board el 4picas", frame 0036
+    de la sesion del 30-07 a las 00:29): el board era 4♠ 9♦ 4♣ y la app leia
+    ['9d','4c']. La carta SI se detectaba, pero con la caja mordida por el borde
+    izquierdo de la zona, y con la caja mordida su rango salia 'A' en vez de '4'.
+    O sea que la carta no se pierde: se convierte en otra.
+
+    Y no era un caso suelto: 536 de 3.241 cajas del corpus (16,5%) salian
+    estrechas.
+
+    POR QUE HACE FALTA MARGEN Y NO PRECISION. El ancho del nucleo que mide
+    find_reference oscila entre frames de la misma mesa quieta -en esa sesion da
+    904 px el 23,7% de las veces, 889 el 22,3%, 931 el 17,8% y 862 el 17,1%- y
+    ReferenciaFijada se queda con uno segun los primeros frames que le tocaron.
+    Asi que la zona en pixeles cambia hasta 40 px de un arranque a otro sin que
+    nada este mal, y el borde tiene que estar lo bastante lejos de la carta para
+    aguantarlo. Medido: 0.22 es el primer valor que sirve con las cuatro lecturas;
+    0.24 fallaba en dos de ellas."""
+    x0 = seat_map.BOARD_ZONE[0]
+    # la carta mas a la izquierda del board arranca sobre 0.26 del nucleo
+    assert x0 <= 0.22, (
+        f"el borde izquierdo del board esta en {x0}: muy pegado a la primera "
+        f"carta, que se cortara en cuanto la referencia se fije en un modo ancho")
+
+
+def test_el_board_cabe_entero_en_su_zona():
+    """Cinco cartas de ~0.09 del nucleo cada una, mas los huecos. Si la zona se
+    quedara estrecha por la derecha, el river se cortaria igual que se cortaba el
+    flop por la izquierda."""
+    x0, _y0, x1, _y1 = seat_map.BOARD_ZONE
+    assert x1 - x0 >= 5 * 0.09, f"la zona mide {x1 - x0:.2f} y el board ocupa ~0.45"
