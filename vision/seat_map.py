@@ -704,6 +704,37 @@ def detect_button_seat(bgr, ref, seats=None):
 # discrepan de forma sostenida y se vuelve a fijar. Se exigen varias seguidas
 # porque una sola discrepante es ruido -en una sesion llegan al 13,6%- y
 # re-fijar con ella seria peor que no fijar nada.
+# CUANTAS MUESTRAS: 10, y subirlo NO ayuda. Medido sobre 13 sesiones, error de la
+# mediana de las N primeras contra la mediana de las 250 primeras:
+#
+#     N = 10   3,6% de media, 14,9% en el peor caso
+#     N = 20   3,3%           14,9%
+#     N = 30   3,5%           14,9%
+#     N = 50   3,3%           14,9%
+#     N = 80   3,0%           14,9%
+#
+# O sea que el 3-4% que queda NO ES RUIDO DE MUESTREO, es la varianza propia del
+# detector, y promediar mas no la quita. Y los peores casos (12,9% y 14,9%) no son
+# ruido tampoco: ahi la ventana se movio a mitad de sesion, que es lo que
+# REF_SEGUIDAS_PARA_REFIJAR maneja.
+#
+# 3-4% de un nucleo de 900 px son 27-36 px, y eso es exactamente lo que estuvo
+# cortando la primera carta del board (ver BOARD_ZONE). LA ESTRATEGIA CORRECTA ES
+# MARGEN EN LAS ZONAS, NO PRECISION EN LA REFERENCIA, y esta medido por que:
+#
+#   - MAS MUESTRAS: la tabla de arriba. No mejora.
+#   - AFINAR CON EL COLOR DEL TAPETE, muestreado de dentro del ovalo ya encontrado
+#     para no romper la independencia de tema: PEOR. Desviacion del ancho 107-208
+#     px contra 48-66 del detector actual. El motivo se ve en las capturas: el
+#     fondo de alrededor de la mesa es un papel pintado VERDE del mismo tono que
+#     el tapete, asi que el blob de color se los come juntos y salen anchos de
+#     1.541 px.
+#   - Y antes de estos ya se habian probado tres estimadores del nucleo sin que
+#     ninguno ganara.
+#
+# Cinco intentos. Quien lo vuelva a intentar deberia empezar por otro sitio: no
+# por como se PROMEDIA la lectura, sino por que el propio find_reference tiene
+# cuatro modos separados 69 px en la misma mesa quieta.
 REF_MIN_PARA_FIJAR = 10
 REF_TOLERANCIA = 0.06
 REF_SEGUIDAS_PARA_REFIJAR = 15
