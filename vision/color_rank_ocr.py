@@ -227,8 +227,39 @@ def rango_grande_mask(card_bgr, deck="solid"):
         por componentes 24/25         6/6
 
     Aislar por componentes no depende de cuanta carta se vea, que es justo la
-    propiedad que hacia falta."""
-    return _fila_de_arriba(rank_mask(card_bgr, deck))
+    propiedad que hacia falta.
+
+    EN EL MAZO DE CARA BLANCA SE BUSCA SOLO DENTRO DEL INDICE, la esquina de
+    arriba a la izquierda. Sus figuras son un DIBUJO A TODO COLOR, y en las cartas
+    de tinta NEGRA -picas- el dibujo es del mismo negro que el rango, o sea que
+    para la mascara de tinta es indistinguible. _fila_de_arriba se queda entonces
+    con la masa del dibujo en vez de con la letra, y la letra desaparece del todo.
+    El caso lo anoto el usuario jugando ("se reconoce 4 de picas cuando es la K",
+    nota del 29-07 a las 08:17): board K♣ K♠ 2♦ 5♣ leido como Kc 4s 2d 5c.
+    Medido en ese frame, tamaño del rango aislado:
+
+        K♣  19x31   ->  19x31     tinta verde: el dibujo no compite, ya iba bien
+        K♠  59x54   ->  16x29     tinta negra: aislaba el REY, no la K
+        2♦  17x31   ->  17x31
+        5♣  17x31   ->  17x31
+
+    O sea que solo cambia la que estaba mal. El indice no lo alcanza ninguna
+    ilustracion -por eso el cliente lo pone ahi, para poder leer la carta en
+    abanico- y ya se usa con el mismo argumento para votar el palo (ver
+    glyph_card_detector.INDICE_ANCHO_FRAC, incluido por que se escala con el ANCHO
+    de la carta y no con su alto).
+
+    El mazo de fondo solido NO se toca: alli el rango va sobre color plano sin
+    ilustracion que compita, y _fila_de_arriba esta medido 40/40 tal cual."""
+    mask = rank_mask(card_bgr, deck)
+    if deck == "glyph":
+        alto, ancho = mask.shape
+        lh = min(alto, int(ancho * glyph_card_detector.INDICE_ALTO_FRAC))
+        lw = max(1, int(ancho * glyph_card_detector.INDICE_ANCHO_FRAC))
+        solo_indice = np.zeros_like(mask)
+        solo_indice[:lh, :lw] = mask[:lh, :lw]
+        mask = solo_indice
+    return _fila_de_arriba(mask)
 
 
 def _recortar(mask):

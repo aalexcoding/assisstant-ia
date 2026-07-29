@@ -59,9 +59,9 @@ def mesa(n_cartas, palos, cara=CARA_VIVA, alto=ALTO_CARTA):
     """Franja de tapete con n cartas pegadas (hueco de 7px, como el cliente).
 
     La carta se dibuja con la disposicion REAL, que es la que hace falta aislar:
-    rango pequeño arriba a la izquierda con su pip debajo, rango grande a la
-    derecha, y el pip grande DEBAJO del rango grande y casi igual de alto -que
-    es justo por lo que no se puede separar por tamaño-.
+    el INDICE arriba a la izquierda -rango y, debajo, su pip casi igual de alto,
+    que es justo por lo que no se pueden separar por tamaño- y el cuerpo de la
+    carta a la derecha y abajo, que en las figuras es una ilustracion.
 
     `alto` menor que ALTO_CARTA es la carta del HERO, a la que el cliente le tapa
     la mitad de abajo con su propio nameplate. Se modela TAPANDO, no encogiendo:
@@ -80,17 +80,27 @@ def mesa(n_cartas, palos, cara=CARA_VIVA, alto=ALTO_CARTA):
         t = TINTA[palos[i]]
         cv2.putText(c, "K", (34, int(ALTO_CARTA * 0.50)),               # rango grande
                     cv2.FONT_HERSHEY_SIMPLEX, ALTO_CARTA / 105.0, t, 4)
-        # El INDICE -rango pequeño y su pip- va en la esquina de arriba a la
-        # izquierda, que es de donde glyph_card_detector saca el palo. Su tinta
-        # esta MEDIDA en cartas reales (sesion del 29-07 a las 07:04, frame 275):
-        # el indice de una carta de 87x122 mide 28x40 px y lleva entre 311 y 498
-        # px de tinta, o sea el 40-65% de su area. La version anterior de este
-        # fixture dejaba 40 px -por debajo de TINTA_MIN_PX- y ponia el pip
-        # pequeño FUERA del indice.
-        cv2.putText(c, "K", (5, int(ALTO_CARTA * 0.22)),                # rango pequeño
-                    cv2.FONT_HERSHEY_SIMPLEX, ALTO_CARTA / 280.0, t, 3)
-        cv2.circle(c, (13, int(ALTO_CARTA * 0.29)),                     # pip pequeño
-                   max(3, ALTO_CARTA // 22), t, -1)
+        # EL INDICE: el rango y su pip, en la esquina de arriba a la izquierda. Es
+        # de donde salen LAS DOS lecturas -el palo (glyph_card_detector) y el
+        # rango (color_rank_ocr.rango_grande_mask)-, asi que sus proporciones son
+        # lo unico que este fixture tiene que clavar. Estan MEDIDAS sobre las 4
+        # cartas de la nota del 29-07 a las 08:17, en cartas de 87x122:
+        #
+        #     rango  x=5-7   y=4-5    16-19 x 29-31   area 235-393
+        #     pip    x=2-6   y=37-39  20-25 x 18-25   area 248-368
+        #
+        # Que el pip mida CASI LO MISMO que el rango es la razon de ser de
+        # _fila_de_arriba: por tamaño no se pueden separar, hay que ir por
+        # posicion. Un fixture con el pip diminuto haria pasar ese test sin
+        # ejercitarlo.
+        #
+        # La version anterior dibujaba el rango del indice a escala de miniatura
+        # -area 40 px- y el filtro de area de _rank_components lo descartaba, asi
+        # que la carta se quedaba sin rango que leer.
+        cv2.putText(c, "K", (5, int(ALTO_CARTA * 0.25)),                # rango del indice
+                    cv2.FONT_HERSHEY_SIMPLEX, ALTO_CARTA / 93.0, t, 3)
+        cv2.circle(c, (15, int(ALTO_CARTA * 0.40)),                     # pip del indice
+                   max(4, int(ALTO_CARTA * 0.10)), t, -1)
         cv2.circle(c, (52, int(ALTO_CARTA * 0.76)),                     # pip grande
                    max(5, ALTO_CARTA // 12), t, -1)
         img[40:40 + alto, x:x + ANCHO_CARTA] = c[:alto]                 # tapada por abajo
@@ -142,15 +152,22 @@ def test_una_figura_ilustrada_no_pierde_su_palo(palo):
     cuando el palo no es concluyente, asi que la carta desaparecia del board. Por
     eso J/Q/K eran el 3,6% de las cartas de esa sesion cuando tocan al 23%.
 
-    Aqui se le pinta a la carta un cuerpo con tinta de los otros tres palos, mas
-    del doble de la suya, dejando el indice limpio. Con el voto sobre la carta
-    entera esto no se resuelve; leyendo el indice, si."""
+    Aqui se le pinta a la carta un cuerpo con tinta de los otros tres palos,
+    dejando el indice limpio. Con el voto sobre la carta entera esto no se
+    resuelve; leyendo el indice, si.
+
+    EL DIBUJO VA ABAJO, que es donde esta: la ilustracion del rey de picas de esa
+    misma nota ocupa x=24-83, y=63-117 de una carta de 88x122. Pintarlo arriba
+    -como hacia la primera version de este test- no modela una figura sino una
+    carta tapada: se come las filas de cara blanca de la mitad superior,
+    _banda_de_filas se queda con un trozo de 61 px y la carta no se detecta por
+    proporcion, que es un fallo distinto del que aqui se quiere probar."""
     img = mesa(1, [palo])
     x, y = 60, 40
     ajenos = [c for p, c in TINTA.items() if p != palo]
     for k, color in enumerate(ajenos):        # el "vestido" de la figura
-        cv2.rectangle(img, (x + 30, y + 45 + k * 22),
-                      (x + ANCHO_CARTA - 6, y + 63 + k * 22), color, -1)
+        cv2.rectangle(img, (x + 24, y + 63 + k * 18),
+                      (x + ANCHO_CARTA - 6, y + 78 + k * 18), color, -1)
     cajas = glifo.find_card_boxes(img)
     assert len(cajas) == 1, "la figura no puede desaparecer del board"
     assert cajas[0]["suit"] == palo
@@ -1006,3 +1023,36 @@ def test_el_umbral_de_capsula_cae_en_el_VALLE_entre_las_dos_poblaciones():
     assert 0.05 <= ts.CAPSULA_MIN_FRAC <= 0.12
     assert ts.estado_asiento(0.02, False, False) == ts.HUECO
     assert ts.estado_asiento(0.13, False, False) == ts.SENTADO
+
+
+def test_una_figura_de_tinta_NEGRA_no_le_roba_el_rango_a_su_propia_letra():
+    """EL CASO, anotado por el usuario jugando: "se reconoce 4 de picas cuando es
+    la K" (nota del 29-07 a las 08:17). El board era K♣ K♠ 2♦ 5♣ y salia
+    Kc 4s 2d 5c.
+
+    Por que solo la de picas: rango_grande_mask aisla el rango por COMPONENTES de
+    la mascara de tinta, y en las figuras de este mazo la ilustracion es tinta
+    tambien. Cuando el palo es de color -la K de treboles, verde- el dibujo lleva
+    grises y verdes distintos y no compite; cuando es NEGRO, el dibujo es del
+    mismo negro que la letra y para la mascara son indistinguibles. Medido en ese
+    frame, tamaño del componente que se aislaba como "rango":
+
+        K♣  19x31   <- la letra, bien
+        K♠  59x54   <- el REY, no la letra: la K desaparecia entera
+
+    Buscando solo dentro del indice, la K♠ pasa a 16x29 y las otras tres no se
+    mueven. Aqui se reproduce con el peor caso posible: el cuerpo pintado con LA
+    MISMA tinta que el rango, que es exactamente lo que hace la carta real."""
+    img = mesa(1, ["spade"])
+    x, y = 60, 40
+    for k in range(3):                        # el "rey", en la tinta del propio palo
+        cv2.rectangle(img, (x + 24, y + 63 + k * 18),
+                      (x + ANCHO_CARTA - 6, y + 78 + k * 18), TINTA["spade"], -1)
+    carta = img[y:y + ALTO_CARTA, x:x + ANCHO_CARTA]
+    ys, xs = np.nonzero(color_rank_ocr.rango_grande_mask(carta, "glyph"))
+    assert len(xs), "el rango no puede quedarse vacio"
+    ancho, alto = xs.max() - xs.min() + 1, ys.max() - ys.min() + 1
+    # el rango del indice mide 16-19 x 29-31 en cartas reales de 87x122
+    assert ancho <= 26 and alto <= 34, (
+        f"se aislo un bloque de {ancho}x{alto}: eso es el dibujo, no la letra")
+    assert xs.max() < ANCHO_CARTA * 0.32, "el rango vive en el indice"
