@@ -355,6 +355,9 @@ class HandTracker:
         # ultimo nombre conocido de cada asiento, de manos ANTERIORES. Sobrevive a
         # _abrir a proposito; es el respaldo del voto de esta mano (ver _nombres).
         self._nombres_previos = {}
+        # buzon de nombres que deja el LAZO RAPIDO entre dos analisis. Se vacia
+        # en cada update(); ver observar_nombre para por que no votan directo.
+        self._pendientes_nombre = {}
         self._abrir(frozenset())
 
     def _abrir(self, motivos):
@@ -504,6 +507,8 @@ class HandTracker:
         for seat in leidos:
             self._veces[seat] = self._veces.get(seat, 0) + 1
 
+        self._nombres_pendientes()
+
         for p in state.get("players") or []:
             seat = p.get("seat")
             if not seat:
@@ -533,6 +538,43 @@ class HandTracker:
                 bet_leido=p.get("bet") if isinstance(p.get("bet"), (int, float)) else None)
 
         return self.resumen()
+
+    def observar_nombre(self, seat, nombre):
+        """Deposita un nombre visto por el LAZO RAPIDO, que no llama a update().
+
+        Cuesta cero: vigilar() ya OCR-ea la capsula que ha cambiado para sacarle
+        el verbo de la accion, y hasta ahora tiraba el nombre de la misma lectura.
+        Y el rapido mira las capsulas 1,6 veces mas que el lento, justo cuando
+        cambian, que es el instante en que el verbo se va y el nick vuelve.
+
+        SOLO VOTA EL NOMBRE. Nunca toca _veces, que es el voto de OCUPACION, y
+        esto no es una precaucion generica sino el candado que sostiene la
+        mayoria: asientos_estables() es {s : _veces[s]*2 >= _frames} y _frames
+        cuenta frames LENTOS. Si las observaciones rapidas incrementaran _veces,
+        cualquier asiento visto un par de veces por el rapido pasaria el umbral
+        y la mayoria degeneraria en la UNION, que esta medida en el 72,5% de
+        acierto frente al 89,2% de la mayoria.
+
+        El nombre se puede compartir porque NO ENTRA EN LA DECISION: solo se
+        pinta. Los votos se guardan aparte y se vuelcan al abrir el frame lento
+        siguiente, para que una racha de ticks no pueda ganarle a lo que el lento
+        lee: entre dos analisis caben varios ticks, y un nick mal leido repetido
+        en todos ellos ganaria la votacion por insistencia."""
+        if not seat or not nombre:
+            return
+        self._pendientes_nombre.setdefault(seat, {})
+        self._pendientes_nombre[seat][nombre] = \
+            self._pendientes_nombre[seat].get(nombre, 0) + 1
+
+    def _nombres_pendientes(self):
+        """Vuelca los votos del lazo rapido al voto de la mano, UNO por asiento y
+        volcado: el mas visto desde el ultimo analisis. Ver observar_nombre."""
+        for seat, cuentas in self._pendientes_nombre.items():
+            ganador = _mas_visto(cuentas)
+            if ganador:
+                self._nombres.setdefault(seat, {})
+                self._nombres[seat][ganador] = self._nombres[seat].get(ganador, 0) + 1
+        self._pendientes_nombre = {}
 
     def posiciones_asentadas(self):
         """False mientras el boton siga donde estaba en la mano anterior, o sea

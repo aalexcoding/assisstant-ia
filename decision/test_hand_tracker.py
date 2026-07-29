@@ -660,3 +660,67 @@ def test_el_comprometido_se_sigue_leyendo_de_players():
     calentar(tr, leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL"]))
     info = tr.update(leido({"HERO": 10.0, "UL": 15.0}, ["HERO", "UL"]))
     assert com(info, "UL") == 5.0
+
+
+# --- lo que el LAZO RAPIDO puede depositar y lo que no ----------------------
+
+def nombrado(seat, nombre):
+    st = estado({seat: 20.0})
+    st["players"][0]["name"] = nombre
+    return st
+
+
+def test_el_lazo_rapido_deposita_nombres_y_se_pintan():
+    """Es lo que la fase 4 viene a ganar: vigilar() ya OCR-ea la capsula que
+    cambia -para sacarle el verbo- y tiraba el nombre de la misma lectura."""
+    tr = ht.HandTracker()
+    tr.update(estado({"UL": 20.0}))
+    for _ in range(3):
+        tr.observar_nombre("UL", "pepito")
+    info = tr.update(estado({"UL": 20.0}))
+    assert info["asientos"]["UL"]["nombre"] == "pepito"
+
+
+def test_el_lazo_rapido_NO_vota_ocupacion():
+    """EL CANDADO. asientos_estables() es {s : _veces[s]*2 >= _frames} y _frames
+    cuenta frames LENTOS. Si los ticks incrementaran _veces, un asiento visto un
+    par de veces por el rapido pasaria el umbral y la mayoria degeneraria en la
+    UNION, medida en 72,5% de acierto frente al 89,2% de la mayoria."""
+    tr = ht.HandTracker()
+    for _ in range(10):
+        tr.update(estado({"UL": 20.0}))
+    for _ in range(50):                      # una racha larga de ticks
+        tr.observar_nombre("MR", "fulanito")
+    assert "MR" not in tr.asientos_estables(), "un tick no sienta a nadie en la mesa"
+
+
+def test_una_racha_de_ticks_no_le_gana_al_analisis_lento():
+    """Entre dos analisis caben varios ticks. Si cada uno votara directo, un nick
+    mal leido repetido en todos ellos ganaria por insistencia a lo que el lento
+    lee bien. Por eso el buzon se resume a UN voto por volcado."""
+    tr = ht.HandTracker()
+    tr.update(nombrado("UL", "correcto"))
+    for _ in range(30):                      # el rapido se equivoca 30 veces
+        tr.observar_nombre("UL", "MAL")
+    info = tr.update(nombrado("UL", "correcto"))
+    assert info["asientos"]["UL"]["nombre"] == "correcto"
+
+
+def test_el_buzon_se_vacia_en_cada_analisis():
+    """Si no se vaciara, los votos del rapido se contarian una vez por cada
+    analisis posterior y crecerian solos."""
+    tr = ht.HandTracker()
+    tr.update(estado({"UL": 20.0}))
+    tr.observar_nombre("UL", "unavez")
+    tr.update(estado({"UL": 20.0}))
+    assert tr._pendientes_nombre == {}
+
+
+def test_un_nombre_vacio_no_se_deposita():
+    tr = ht.HandTracker()
+    tr.update(estado({"UL": 20.0}))
+    tr.observar_nombre("UL", None)
+    tr.observar_nombre("UL", "")
+    tr.observar_nombre(None, "pepe")
+    info = tr.update(estado({"UL": 20.0}))
+    assert info["asientos"]["UL"]["nombre"] is None

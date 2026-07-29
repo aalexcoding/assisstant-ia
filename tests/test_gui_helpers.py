@@ -291,3 +291,29 @@ def test_el_resumen_dice_cuando_no_hubo_recomendacion():
 def test_el_resumen_de_un_frame_vacio_no_revienta():
     for datos in (None, {}, {"state": None}):
         assert isinstance(VENTANA._resumen_marcado(datos), str)
+
+
+def test_un_jugador_fuera_de_la_mano_se_pinta_APAGADO():
+    """La nota del usuario sobre el frame 254: en el HUD un retirado se veia
+    igual que uno que sigue jugando, y contra cuantos vas es de lo primero que se
+    mira. El cliente los distingue oscureciendo la tarjeta y quitando el reverso
+    de las cartas, y la app ya lo lee; era el HUD el que no lo pintaba."""
+    juega = gui.players_markup([{"name": "a", "stack": 5.0, "in_hand": True}])
+    fuera = gui.players_markup([{"name": "b", "stack": 5.0, "in_hand": False}])
+    assert "#7f8c8d" in fuera
+    assert "#7f8c8d" not in juega
+
+
+def test_se_apaga_la_fila_entera_no_solo_el_nombre():
+    """De un vistazo se quiere leer "estos cuentan y estos no", y un detalle
+    pequeño en un lado no se lee de un vistazo."""
+    m = gui.players_markup([{"name": "b", "stack": 5.0, "position": "BTN",
+                             "in_hand": False, "committed": 2.0}])
+    assert m.startswith('<span foreground="#7f8c8d">') and m.endswith("</span>")
+    assert "BTN" in m and "5 BB" in m
+
+
+def test_sin_el_campo_in_hand_se_pinta_normal():
+    """Las sesiones grabadas antes de que existiera el campo no lo traen; no se
+    les puede inventar que estaban fuera de la mano."""
+    assert "#7f8c8d" not in gui.players_markup([{"name": "c", "stack": 5.0}])

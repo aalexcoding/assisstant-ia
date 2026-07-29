@@ -112,8 +112,23 @@ def players_markup(players):
         if p.get("action"):
             accion = (f'  <span foreground="#f39c12">'
                       f'{GLib.markup_escape_text(str(p["action"]))}</span>')
-        lines.append(f"{name}{GLib.markup_escape_text(pos)}: "
-                     f"{GLib.markup_escape_text(str(stack))}{mark}{puesto}{accion}")
+        fila = (f"{name}{GLib.markup_escape_text(pos)}: "
+                f"{GLib.markup_escape_text(str(stack))}{mark}{puesto}{accion}")
+        # SENTADO PERO FUERA DE LA MANO SE PINTA APAGADO. Es la nota del usuario
+        # sobre el frame 254: en el HUD un jugador retirado se veia igual que uno
+        # que sigue jugando, y contra cuantos vas es de lo primero que se mira.
+        # El cliente los distingue con toda claridad -al que no juega le oscurece
+        # la tarjeta y le quita el reverso de las cartas- y la app ya lo lee
+        # (table_state.estado_asiento: SENTADO frente a EN_MANO_*), solo que el
+        # HUD no lo pintaba.
+        #
+        # Se apaga la fila ENTERA y no solo el nombre: lo que se quiere de un
+        # vistazo es "estos tres cuentan y estos dos no", y un detalle pequeño en
+        # un lado no se lee de un vistazo. Los frames viejos no traen `in_hand` y
+        # se pintan normales, que es lo que hacia antes.
+        if p.get("in_hand") is False:
+            fila = f'<span foreground="#7f8c8d">{fila}</span>'
+        lines.append(fila)
     return "\n".join(lines)
 
 

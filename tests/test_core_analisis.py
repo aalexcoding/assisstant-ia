@@ -478,3 +478,64 @@ def test_un_fallo_del_detector_no_tumba_el_lazo(an, monkeypatch):
     monkeypatch.setattr(ca.seat_map, "hay_botones",
                         lambda bgr, ref: (_ for _ in ()).throw(RuntimeError("boom")))
     assert an.tick(crop()) is None
+
+
+# --- EL CONTRATO ENTRE LOS DOS LAZOS ----------------------------------------
+#
+# Lo que el lazo rapido posee es IRREPRODUCIBLE EN FRIO: tick() solo lo llama
+# gui.py, y replay.py, alpha.py y toda la suite llaman unicamente a analizar().
+# Ni la regresion de oro ni replay --diff pueden volver a producirlo. Ese es el
+# limite exacto de lo que puede poseer, y por eso la linea que no puede cruzar
+# es la DECISION: si un tick pudiera moverla, la app tomaria en vivo decisiones
+# que ninguna herramienta puede reproducir despues para averiguar por que.
+#
+# El nombre si se comparte, y es seguro porque no entra en la decision: solo se
+# pinta (ver hand_tracker.observar_nombre).
+
+CAMPOS_QUE_DECIDEN = ("hero_position", "to_call", "facing", "hero_cards", "board")
+
+
+def test_los_ticks_NO_pueden_cambiar_la_decision(an, layout, monkeypatch):
+    """N ticks entre dos analisis tienen que dar exactamente el mismo estado que
+    cero ticks. Es la linea que separa "el rapido ayuda" de "el rapido manda"."""
+    an.watch = WatchFalso(["UL", "MR"])
+    an._ref = REF
+    sin_ticks = an.analizar(crop()).state
+
+    otro = ca.Analizador(seed_equity=1)
+    otro.watch = WatchFalso(["UL", "MR"])
+    otro._ref = REF
+    reloj = [1000.0]
+    monkeypatch.setattr(ca.time, "monotonic", lambda: reloj[0])
+    anterior = ocr_client.usar_backend(lambda jobs: [tsv("pepito")] * len(jobs))
+    try:
+        for _ in range(8):
+            reloj[0] += ca.VIGILANCIA_OCR_MIN_S * 2     # que ninguno se salte
+            otro.vigilar(crop())
+    finally:
+        ocr_client.usar_backend(anterior)
+    con_ticks = otro.analizar(crop()).state
+
+    for campo in CAMPOS_QUE_DECIDEN:
+        assert sin_ticks.get(campo) == con_ticks.get(campo), campo
+    assert len(sin_ticks.get("players") or []) == len(con_ticks.get("players") or [])
+
+
+def test_los_ticks_tampoco_sientan_a_nadie_en_la_mesa(an, layout, monkeypatch):
+    """El caso concreto que rompe la mayoria: asientos_estables() se calcula con
+    _frames, que cuenta frames LENTOS. Un asiento que solo ha visto el rapido no
+    puede entrar en el conjunto estable."""
+    an.watch = WatchFalso(["UL", "MR", "TOPC"])
+    an._ref = REF
+    an.analizar(crop())
+    antes = set(an.tracker.asientos_estables())
+    reloj = [1000.0]
+    monkeypatch.setattr(ca.time, "monotonic", lambda: reloj[0])
+    anterior = ocr_client.usar_backend(lambda jobs: [tsv("fulanito")] * len(jobs))
+    try:
+        for _ in range(20):
+            reloj[0] += ca.VIGILANCIA_OCR_MIN_S * 2
+            an.vigilar(crop())
+    finally:
+        ocr_client.usar_backend(anterior)
+    assert set(an.tracker.asientos_estables()) == antes

@@ -347,9 +347,23 @@ class Analizador:
             self.vigilancia.capsulas_ocr += len(cambiados)
             for seat, i in idx.items():
                 lineas = parse_tsv_lines(res[i])
-                _n, _s, accion = ts._seat_plate_name_stack(lineas)
+                nombre, _s, accion = ts._seat_plate_name_stack(lineas)
                 if accion:
                     self.action_log.observar(seat, accion, t=time.time())
+                # EL NOMBRE SALE GRATIS y hasta ahora se tiraba: esta lectura ya
+                # esta hecha y pagada, se hacia solo por el verbo. El rapido mira
+                # las capsulas 1,6 veces mas que el lento y justo cuando cambian,
+                # que es el instante en que el verbo se va y el nick vuelve.
+                #
+                # Va al voto de NOMBRE y a ningun otro sitio: ver
+                # HandTracker.observar_nombre, donde esta escrito por que tocar el
+                # voto de ocupacion desde aqui degeneraria la mayoria en la union
+                # (72,5% de acierto contra 89,2%).
+                #
+                # _seat_plate_name_stack ya devuelve el verbo APARTE, asi que lo
+                # que llega como nombre no puede ser un "Igualar" ni un "Pasar".
+                if nombre:
+                    self.tracker.observar_nombre(seat, nombre)
         except Exception:  # noqa: BLE001
             pass                       # vigilar es una ayuda, nunca tumba el lazo
 
