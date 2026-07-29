@@ -736,19 +736,26 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.calibrate_button = Gtk.Button(label="Recalibrar recuadro")
         self.calibrate_button.connect("clicked", self._on_calibrate)
 
-        # Tamaño de mesa. Las posiciones se derivan del RECUENTO de asientos
-        # ocupados, asi que un asiento fantasma (texto que el OCR saca del propio
-        # tapete) las desplaza TODAS y el rango elegido es el de otra posicion.
-        # Decir cuantos caben convierte eso en una contradiccion demostrable.
+        # Tamaño de mesa. Hace DOS cosas, y las dos importan: acota cuantos
+        # asientos puede haber -las posiciones salen del RECUENTO de ocupados,
+        # asi que un asiento fantasma las desplaza TODAS- y elige la GEOMETRIA,
+        # o sea DONDE estan (ver seat_map.zonas).
+        #
+        # YA NO HAY "auto", y lo pidio el usuario con razon: no detectaba nada.
+        # Solo queria decir "no acotes y usa la disposicion de 6", asi que en una
+        # mesa de 8 leia 4,69 asientos de 8 y 2 nicks de 10 sin avisar de nada.
+        # Una opcion que dice deducir algo y no lo deduce es peor que no tenerla:
+        # invita a dejarla puesta. Detectar la disposicion sola hara falta algun
+        # dia, y entonces volvera; mientras no exista, no se anuncia.
         mesa_label = Gtk.Label(label="Mesa")
         self.mesa_combo = Gtk.ComboBoxText()
-        for etiqueta in ("auto", "2 (heads-up)", "3-Max", "6-Max", "8-Max", "9 plazas"):
+        for etiqueta in ("2 (heads-up)", "3-Max", "6-Max", "8-Max", "9 plazas"):
             self.mesa_combo.append_text(etiqueta)
-        self.mesa_combo.set_active(0)
+        self.mesa_combo.set_active(self._MESA_OPCIONES.index(6))
         self.mesa_combo.set_tooltip_text(
-            "Cuantos jugadores caben en la mesa. Con 'auto' se deduce de lo que se ve; "
-            "si lo fijas, detectar mas asientos de los que caben se trata como un error "
-            "y se descarta la lectura mas debil en vez de desplazar las posiciones.")
+            "Cuantas plazas tiene la mesa. Elige la que estas jugando: ademas de "
+            "acotar el recuento, decide DONDE se buscan los asientos. Hay geometria "
+            "medida para 6 y para 8; 2, 3 y 9 usan la de 6, que es la que habia.")
 
         # EL RITMO SE VE, NO SE ELIGE. Antes habia aqui un spin de 0,25 a 10 s
         # cuyo numero no describia nada: 8 de sus 40 valores son fisicamente
@@ -870,11 +877,16 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
     # para el resto usa la de 6 (ver seat_map.zonas). En una mesa de 8 con la
     # tabla de 6 no es que falten dos asientos: los laterales caen en el hueco
     # entre los de verdad y se pierden DOS jugadores por lado.
-    _MESA_OPCIONES = (None, 2, 3, 6, 8, 9)
+    #
+    # SIN None: ya no hay "auto". Ver el combo para el porque.
+    _MESA_OPCIONES = (2, 3, 6, 8, 9)
 
     def _max_players(self):
+        """Las plazas de la mesa, siempre un numero: el combo ya no ofrece 'auto'.
+        Si GTK devolviera -1 (nada seleccionado, que no deberia pasar) se cae a 6,
+        que es la disposicion con todas las mediciones del proyecto detras."""
         i = self.mesa_combo.get_active()
-        return self._MESA_OPCIONES[i] if 0 <= i < len(self._MESA_OPCIONES) else None
+        return self._MESA_OPCIONES[i] if 0 <= i < len(self._MESA_OPCIONES) else 6
 
     def _on_calibrate(self, _btn):
         if self.running:

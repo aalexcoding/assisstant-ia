@@ -3,12 +3,18 @@
 Estado: **cableado y jugable**. Elige **8-Max** en el selector "Mesa" de la
 ventana antes de darle a Iniciar.
 
+Ese selector **ya no ofrece "auto"**, y lo pidió el usuario con razón: no
+detectaba nada. Solo quería decir "no acotes y usa la disposición de 6", así que
+en una mesa de 8 leía 4,69 asientos de 8 y 2 nicks de 10 sin avisar de nada. Una
+opción que dice deducir algo y no lo deduce invita a dejarla puesta. Arranca en
+6-Max, que es la disposición con todas las mediciones del proyecto detrás.
+
 Medido de punta a punta sobre dos sesiones reales de 8-max, reproduciendo los
 mismos frames con una disposición y con la otra.
 
 Sesión del 29-07 a las 20:12 (171 frames, ocho jugadores en la mesa):
 
-| | auto (=6) | **8-Max** |
+| | disposición de 6 | **8-Max** |
 |---|---|---|
 | asientos leídos por frame | 4,69 | **6,34** |
 | jugadores en mano | 1,01 | **3,81** |
