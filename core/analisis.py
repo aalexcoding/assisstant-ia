@@ -254,6 +254,18 @@ class Analizador:
 
     # --- lazo rapido ----------------------------------------------------------
     watch: sw.SeatWatch = field(default_factory=sw.SeatWatch)
+    # LA DISPOSICION DE LA MESA (6 u 8 plazas), derivada de max_players en
+    # __post_init__. Se guarda en el Analizador y no en un global de seat_map
+    # PORQUE HAY VARIOS A LA VEZ: la regresion de oro crea uno por sesion en el
+    # mismo proceso, asi que con un global una sesion de 8 contaminaria a la
+    # siguiente de 6 y el fallo saldria como una regresion fantasma.
+    seats: dict = field(init=False, default=None)
+
+    def __post_init__(self):
+        self.seats = seat_map.disposicion(self.max_players)
+        # el vigilante mira las mismas capsulas que el analisis, o se dedicaria a
+        # hashear tapete vacio mientras los asientos de verdad pasan sin mirar
+        self.watch = sw.SeatWatch(self.seats)
     # NO HAY FrameBuffer, y es una retirada deliberada. Existia un anillo de 10
     # frames que se llenaba en cada tick (0,23 ms de copia, 47 MB retenidos) y que
     # NADIE LEIA en produccion: su unico proposito declarado -mirar hacia atras
@@ -435,7 +447,7 @@ class Analizador:
             batch = OcrBatch()
             idx = {}
             for seat in cambiados:
-                x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.SEATS[seat]["plate"],
+                x0, y0, x1, y1 = seat_map.zone_to_px(ref, self.seats[seat]["plate"],
                                                      crop.shape)
                 idx[seat] = batch.add_tsv_job(crop[y0:y1, x0:x1], scale=3)
             res = batch.run()

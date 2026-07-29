@@ -137,11 +137,11 @@ MIN_PICO = 0.70
 VENTAJA_MIN = 0.75
 
 
-def asiento_mas_cercano(ref, punto):
+def asiento_mas_cercano(ref, punto, seats=None):
     """(asiento, distancia, distancia_al_segundo) midiendo al ANCLA de cada
     asiento, que es donde el cliente dibuja el disco de ese jugador."""
     ds = []
-    for s, info in seat_map.SEATS.items():
+    for s, info in (seats or seat_map.SEATS).items():
         fx, fy = info["button"]
         ax, ay = ref[0] + fx * ref[2], ref[1] + fy * ref[3]
         ds.append((math.hypot(punto[0] - ax, punto[1] - ay), s))
@@ -149,12 +149,12 @@ def asiento_mas_cercano(ref, punto):
     return ds[0][1], ds[0][0], ds[1][0]
 
 
-def detectar(bgr, ref):
+def detectar(bgr, ref, seats=None):
     """Asiento que tiene el boton, o None si no se ve claro."""
     d = buscar_disco(bgr, ref)
     if d is None or d[2] < MIN_PICO:
         return None
-    asiento, primera, segunda = asiento_mas_cercano(ref, (d[0], d[1]))
+    asiento, primera, segunda = asiento_mas_cercano(ref, (d[0], d[1]), seats)
     if segunda <= 0 or primera / segunda > VENTAJA_MIN:
         return None                    # a medio camino: no se sabe de quien es
     return asiento

@@ -608,3 +608,32 @@ def test_la_etiqueta_dice_las_tres_cifras_que_importan():
         r.anota(0.7)
     txt = r.etiqueta()
     assert "0.70 s/analisis" in txt and "p95" in txt and "Hz" in txt
+
+
+# --- la disposicion de la mesa viaja con el Analizador ----------------------
+
+def test_el_analizador_de_8_lleva_ocho_asientos():
+    a = ca.Analizador(max_players=8)
+    assert len(a.seats) == 8
+    assert "DL" in a.seats and "DR" in a.seats
+
+
+def test_el_vigilante_mira_las_MISMAS_capsulas_que_el_analisis():
+    """Si no, el lazo rapido se dedicaria a hashear tapete vacio mientras los
+    asientos de verdad pasan sin mirar."""
+    a = ca.Analizador(max_players=8)
+    assert set(a.watch._seats) == set(a.seats)
+
+
+def test_dos_analizadores_con_disposiciones_DISTINTAS_no_se_contaminan():
+    """EL MOTIVO de que la disposicion viva en el Analizador y no en un global de
+    seat_map: la regresion de oro crea uno por sesion en el mismo proceso."""
+    ocho = ca.Analizador(max_players=8)
+    seis = ca.Analizador(max_players=6)
+    assert len(ocho.seats) == 8 and len(seis.seats) == 6
+    assert len(ocho.watch._seats) == 8 and len(seis.watch._seats) == 6
+
+
+def test_sin_decir_nada_se_usa_la_de_6():
+    """Es la que tiene detras todas las mediciones del proyecto."""
+    assert len(ca.Analizador().seats) == 6

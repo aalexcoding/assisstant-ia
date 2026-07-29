@@ -108,7 +108,7 @@ CORE_OPEN_KERNEL = 41
 # boton pasa por los seis asientos y las seis quedan medidas. HERO era una pura
 # estimacion (0.66,0.90) y estaba mal: el disco del dealer del hero aparece
 # arriba-IZQUIERDA de sus cartas, en ~(0.368,0.872), no a su derecha.
-SEATS = {
+SEATS_6MAX = {
     "TOPC": {"plate": (0.36, -0.16, 0.69, 0.06), "button": (0.563, 0.142)},
     "UL":   {"plate": (-0.13, -0.02, 0.23, 0.22), "button": (0.104, 0.320)},
     "UR":   {"plate": (0.79, -0.02, 1.14, 0.22), "button": (0.901, 0.308)},
@@ -116,6 +116,65 @@ SEATS = {
     "MR":   {"plate": (0.81, 0.60, 1.14, 0.85), "button": (0.833, 0.803)},
     "HERO": {"plate": (0.37, 0.89, 0.74, 1.13), "button": (0.368, 0.872)},
 }
+
+# MESA DE 8: TRES POR CADA LADO Y DOS ENFRENTADOS, que es como la describe el
+# usuario y lo que la medicion reprodujo por su cuenta.
+#
+# LO QUE FALLABA no era que faltaran dos zonas: es que las que hay caen en el
+# sitio equivocado. En 8-max cada lateral tiene DOS asientos a media altura y
+# abajo (y = +0,44 y y = +0,94) y el mapa de 6 define UNO en y = +0,72, o sea
+# justo en el hueco entre los dos. Por eso ML y MR aterrizaban en tapete vacio y
+# se perdian DOS jugadores, no uno. Medido jugando: 4,62 asientos leidos por
+# frame habiendo 6-8 ocupados, 19% de frames con las cartas del hero, y pestañas
+# del cliente -"Manos", "Frases", "Mesav"- coladas como nicks.
+#
+# LAS OCHO ZONAS salen de barrer el tapete con una ventana del tamaño de un
+# nameplate sobre 349 frames de dos sesiones, y agrupar. Ver docs/MESA-DE-8.md
+# para el metodo y lo que no funciono (buscar manchas en la mascara: la capsula
+# se funde con las sillas y con la de al lado).
+#
+# LOS DOS DEL MEDIO SOBRESALEN -ML en -0,05 y MR en +1,07 frente a +0,04 y +0,95
+# de sus vecinos- y ese detalle es la mejor señal de que la medicion es real: es
+# la panza del ovalo. Unas posiciones inventadas habrian salido en columna.
+#
+# LAS ANCLAS DEL BOTON estan medidas aparte, acumulando la posicion del disco en
+# 670 frames (se ve en el 97%) y agrupando igual. Cada una queda 1,22x-1,98x mas
+# cerca de su asiento que del siguiente, que es el margen del que depende que
+# disco_dealer no le atribuya el boton al vecino.
+SEATS_8MAX = {
+    "TOPC": {"plate": (0.33, -0.28, 0.69, -0.04), "button": (0.558, 0.072)},
+    "UL":   {"plate": (-0.14, -0.12, 0.22, 0.11), "button": (0.168, 0.188)},
+    "UR":   {"plate": (0.77, -0.12, 1.13, 0.12), "button": (0.867, 0.210)},
+    "ML":   {"plate": (-0.23, 0.32, 0.13, 0.56), "button": (0.069, 0.291)},
+    "MR":   {"plate": (0.89, 0.32, 1.25, 0.56), "button": (0.932, 0.615)},
+    "DL":   {"plate": (-0.14, 0.81, 0.22, 1.05), "button": (0.218, 0.804)},
+    "DR":   {"plate": (0.77, 0.82, 1.13, 1.06), "button": (0.755, 0.788)},
+    "HERO": {"plate": (0.32, 1.01, 0.68, 1.25), "button": (0.358, 0.910)},
+}
+
+# La de 6 sigue siendo la de por defecto: es la que tiene detras todas las
+# mediciones del proyecto, y una mesa de 6 es lo que el usuario juega
+# habitualmente. SEATS se conserva como nombre para no reescribir los modulos
+# que solo leen la disposicion por defecto (herramientas de diagnostico y tests).
+SEATS = SEATS_6MAX
+
+DISPOSICIONES = {6: SEATS_6MAX, 8: SEATS_8MAX}
+
+
+def disposicion(max_players=None):
+    """Mapa de asientos para una mesa de `max_players` plazas.
+
+    Sin decirlo, o con un numero para el que no hay tabla, se usa la de 6. NO se
+    adivina: una disposicion equivocada no falla de forma visible, lee nombres de
+    donde no hay nadie y deja jugadores invisibles, y eso desplaza TODAS las
+    posiciones porque salen del recuento de asientos ocupados. Mas vale leer de
+    menos con la tabla conocida que leer de mas con una inventada.
+
+    Las mesas de 7 y 9 no tienen tabla todavia. La de 9 esta capturada en
+    docs/casos/ a la espera de medirla igual que se midio la de 8."""
+    return DISPOSICIONES.get(max_players, SEATS_6MAX)
+
+
 HERO_SEAT = "HERO"
 
 # Nameplate del hero anclado a la posicion de sus CARTAS, no a una fraccion
@@ -388,20 +447,20 @@ def hero_plate_from_cards(hero_boxes, shape):
     return x0, y0, x1, y1
 
 
-def seat_center_px(ref, seat_name):
+def seat_center_px(ref, seat_name, seats=None):
     """Centro (px) de la zona de nameplate de un asiento."""
-    fx0, fy0, fx1, fy1 = SEATS[seat_name]["plate"]
+    fx0, fy0, fx1, fy1 = (seats or SEATS)[seat_name]["plate"]
     rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
     cx = rx + (fx0 + fx1) / 2 * rw
     cy = ry + (fy0 + fy1) / 2 * rh
     return cx, cy
 
 
-def dealing_order(seat_names, ref):
+def dealing_order(seat_names, ref, seats=None):
     """Ordena asientos en orden de reparto (horario) por angulo alrededor del
     centro de los asientos, igual criterio que dealer_button.assign_positions
     (atan2 ascendente en coordenadas de imagen coincide con el orden real)."""
-    centers = {s: seat_center_px(ref, s) for s in seat_names}
+    centers = {s: seat_center_px(ref, s, seats) for s in seat_names}
     cx = sum(c[0] for c in centers.values()) / len(centers)
     cy = sum(c[1] for c in centers.values()) / len(centers)
     return sorted(seat_names, key=lambda s: math.atan2(centers[s][1] - cy, centers[s][0] - cx))
@@ -450,7 +509,7 @@ BUTTON_RED_MIN = 0.12
 BUTTON_WHITE_MIN = 0.12
 
 
-def detect_button_seat(bgr, ref):
+def detect_button_seat(bgr, ref, seats=None):
     """Devuelve el nombre del asiento que tiene el boton del dealer, o None.
     Enfoque por ancla-por-asiento: dentro de la zona-ancla de cada asiento
     busca el disco del boton (blanco+pica roja) como un blob compacto circular,
@@ -470,7 +529,7 @@ def detect_button_seat(bgr, ref):
     rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
     area_nucleo = max(1, rw * rh)   # el area del disco se juzga relativa a esto
     best, best_margin = None, -1
-    for name, cfg in SEATS.items():
+    for name, cfg in (seats or SEATS).items():
         fx, fy = cfg["button"]
         cx, cy = rx + fx * rw, ry + fy * rh
         x0 = max(0, int(cx - BUTTON_HALF_W * rw))
@@ -700,19 +759,19 @@ def _color_del_tapete(hsv, ref):
     return int(np.median(a[:, 0])), int(np.median(a[:, 1]))
 
 
-def button_shape_scores(bgr, ref):
+def button_shape_scores(bgr, ref, seats=None):
     """{asiento: area del mayor objeto AISLADO en su hueco / area del hueco}.
     Publico para poder auditar por que gano un hueco y no otro."""
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     felt = _color_del_tapete(hsv, ref)
     if felt is None:
-        return {name: 0.0 for name in SEATS}
+        return {name: 0.0 for name in (seats or SEATS)}
     h = hsv[:, :, 0].astype(np.int32)
     s = hsv[:, :, 1].astype(np.int32)
     rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
     area_nucleo = max(1, rw * rh)
     out = {}
-    for name, cfg in SEATS.items():
+    for name, cfg in (seats or SEATS).items():
         fx, fy = cfg["button"]
         cx, cy = rx + fx * rw, ry + fy * rh
         x0 = max(0, int(cx - BUTTON_HALF_W * rw))
@@ -741,10 +800,10 @@ def button_shape_scores(bgr, ref):
     return out
 
 
-def detect_button_seat_por_forma(bgr, ref):
+def detect_button_seat_por_forma(bgr, ref, seats=None):
     """El asiento cuyo hueco de boton tiene algo, cuando los demas no tienen
     nada. None si empatan o si no hay nada en ninguno."""
-    orden = sorted(button_shape_scores(bgr, ref).items(), key=lambda kv: -kv[1])
+    orden = sorted(button_shape_scores(bgr, ref, seats).items(), key=lambda kv: -kv[1])
     if not orden or orden[0][1] <= 0:
         return None
     if len(orden) > 1 and orden[1][1] > 0 and orden[0][1] < BOTON_FORMA_MARGEN * orden[1][1]:
@@ -752,7 +811,7 @@ def detect_button_seat_por_forma(bgr, ref):
     return orden[0][0]
 
 
-def detect_button_seat_union(bgr, ref, plantilla=None):
+def detect_button_seat_union(bgr, ref, plantilla=None, seats=None):
     """El boton por las tres vias, en orden de precision: color, forma y
     plantilla aprendida. Ninguna contradice a otra -0 desacuerdos en 438 y en
     1.027 comparaciones- asi que encadenarlas solo puede añadir cobertura.
@@ -760,13 +819,14 @@ def detect_button_seat_union(bgr, ref, plantilla=None):
     `plantilla` es un PlantillaBoton que el llamador mantiene entre frames; si no
     se pasa, se usan solo las dos primeras vias. Ademas se le da de comer cada
     respuesta segura, que es como aprende."""
-    seat = detect_button_seat(bgr, ref) or detect_button_seat_por_forma(bgr, ref)
+    seat = (detect_button_seat(bgr, ref, seats)
+            or detect_button_seat_por_forma(bgr, ref, seats))
     if plantilla is None:
         return seat
     if seat is not None:
-        plantilla.aprender(bgr, ref, seat)
+        plantilla.aprender(bgr, ref, seat, seats)
         return seat
-    return plantilla.buscar(bgr, ref)
+    return plantilla.buscar(bgr, ref, seats)
 
 
 # --- la plantilla del disco, aprendida de la propia mesa ---
@@ -808,9 +868,9 @@ PLANTILLA_MIN_SCORE = 0.55
 PLANTILLA_MARGEN = 0.10
 
 
-def _hueco_px(bgr, ref, seat):
+def _hueco_px(bgr, ref, seat, seats=None):
     rx, ry, rw, rh = ref[0], ref[1], ref[2], ref[3]
-    fx, fy = SEATS[seat]["button"]
+    fx, fy = (seats or SEATS)[seat]["button"]
     cx, cy = rx + fx * rw, ry + fy * rh
     return (max(0, int(cx - BUTTON_HALF_W * rw)),
             max(0, int(cy - BUTTON_HALF_H * rh)),
@@ -836,11 +896,11 @@ class PlantillaBoton:
     def lista(self):
         return self._tpl is not None
 
-    def aprender(self, bgr, ref, seat):
+    def aprender(self, bgr, ref, seat, seats=None):
         """Guarda el disco de un frame en que ya se sabe donde esta."""
         if seat is None or len(self._discos) >= PLANTILLA_MAX_DISCOS:
             return
-        d = self._recortar(bgr, ref, seat)
+        d = self._recortar(bgr, ref, seat, seats)
         if d is None:
             return
         self._discos.append(d)
@@ -849,11 +909,11 @@ class PlantillaBoton:
             # arrastrar la plantilla
             self._tpl = np.median(np.array(self._discos), axis=0).astype(np.uint8)
 
-    def _recortar(self, bgr, ref, seat):
-        puntos = button_shape_scores(bgr, ref)
+    def _recortar(self, bgr, ref, seat, seats=None):
+        puntos = button_shape_scores(bgr, ref, seats)
         if puntos.get(seat, 0) <= 0:
             return None
-        x0, y0, x1, y1 = _hueco_px(bgr, ref, seat)
+        x0, y0, x1, y1 = _hueco_px(bgr, ref, seat, seats)
         r = int(PLANTILLA_RADIO_FRAC * ref[2])
         if r < 4:
             return None
@@ -864,7 +924,7 @@ class PlantillaBoton:
         return cv2.resize(bgr[a:b, c:d], (PLANTILLA_LADO, PLANTILLA_LADO),
                           interpolation=cv2.INTER_AREA)
 
-    def buscar(self, bgr, ref):
+    def buscar(self, bgr, ref, seats=None):
         """Asiento cuyo hueco se parece mas a la plantilla, o None si ninguno
         llega al minimo o si dos empatan."""
         if self._tpl is None:
@@ -874,8 +934,8 @@ class PlantillaBoton:
             return None
         tpl = cv2.resize(self._tpl, None, fx=esc, fy=esc, interpolation=cv2.INTER_AREA)
         out = []
-        for seat in SEATS:
-            x0, y0, x1, y1 = _hueco_px(bgr, ref, seat)
+        for seat in (seats or SEATS):
+            x0, y0, x1, y1 = _hueco_px(bgr, ref, seat, seats)
             sub = bgr[y0:y1, x0:x1]
             if sub.shape[0] < tpl.shape[0] or sub.shape[1] < tpl.shape[1]:
                 continue
@@ -933,7 +993,7 @@ CARD_BACK_PERFILES = (
 )
 CARD_BACK_MIN_AREA_FRAC = 0.10   # area del mayor blob / area de la zona
 
-CARD_BACK_ZONES = {
+CARD_BACK_ZONES_6MAX = {
     "TOPC": (0.39, -0.30, 0.62, -0.14),
     "UL":   (-0.10, -0.10, 0.13, 0.05),
     "UR":   (0.87, -0.10, 1.10, 0.05),
@@ -941,8 +1001,42 @@ CARD_BACK_ZONES = {
     "MR":   (0.91, 0.51, 1.15, 0.69),
 }
 
+# LAS DE 8 SON DERIVADAS, NO MEDIDAS, y la diferencia importa. Las zonas de
+# nameplate y las anclas del boton se sacaron barriendo cientos de frames; estas
+# se calculan aplicando al asiento de 8 el desplazamiento que el mismo asiento
+# tiene en la mesa de 6. Se puede hacer porque ese desplazamiento es MUY estable:
+# en los cuatro laterales de la mesa de 6 el dorso esta exactamente 0,125 por
+# encima del centro del nameplate, con un tamaño de 0,23x0,16.
+#
+# VALIDADAS sobre 229 frames de las dos sesiones de 8, comparando la fraccion de
+# dorso en la zona contra la misma zona desplazada (que es tapete):
+#
+#     TOPC   0,482 contra 0,025    separa
+#     ML     0,388 (p90) contra 0  separa
+#     MR     0,368 (p90) contra 0  separa
+#     UL/UR  0,375-0,441 contra 0,085-0,097   separa, con menos margen
+#     DL/DR  0,348-0,388 (p90) contra 0,087-0,126   NO SE PUDO VALIDAR: la zona
+#            de control que se eligio para ellas cae sobre las de ML/MR, que
+#            tambien tienen dorsos, asi que la comparacion no dice nada.
+#
+# O sea que DL y DR entran SIN comprobar. Es aceptable porque el fallo degrada
+# hacia abajo -en el peor caso esos dos asientos se leen peor de lo que podrian,
+# que sigue siendo mejor que no verlos, que es lo que pasa hoy- pero hay que
+# medirlas con la primera sesion que se grabe jugando de verdad a 8.
+CARD_BACK_ZONES_8MAX = {
+    "TOPC": (0.38, -0.41, 0.60, -0.25),
+    "UL":   (-0.11, -0.21, 0.12, -0.06),
+    "UR":   (0.85, -0.20, 1.08, -0.05),
+    "ML":   (-0.23, 0.23, 0.01, 0.41),
+    "MR":   (1.00, 0.23, 1.25, 0.41),
+    "DL":   (-0.14, 0.72, 0.10, 0.90),
+    "DR":   (0.88, 0.72, 1.12, 0.90),
+}
 
-def card_back_fractions(bgr, ref):
+CARD_BACK_ZONES = CARD_BACK_ZONES_6MAX
+
+
+def card_back_fractions(bgr, ref, dorsos=None):
     """{asiento: fraccion del area de su zona ocupada por el mayor blob de dorso}.
 
     Se devuelve la metrica cruda y no solo el si/no para que el test pueda
@@ -961,7 +1055,7 @@ def card_back_fractions(bgr, ref):
                             cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
 
     out = {}
-    for name, zona in CARD_BACK_ZONES.items():
+    for name, zona in (dorsos or CARD_BACK_ZONES).items():
         x0, y0, x1, y1 = zone_to_px(ref, zona, bgr.shape)
         sub = mask[y0:y1, x0:x1]
         if sub.size == 0:
@@ -973,13 +1067,13 @@ def card_back_fractions(bgr, ref):
     return out
 
 
-def detect_in_hand_seats(bgr, ref):
+def detect_in_hand_seats(bgr, ref, dorsos=None):
     """Asientos rivales con cartas repartidas y TAPADAS (dorso visible).
 
     Solo ve dorsos, asi que por si sola se queda corta en cuanto el cliente gira
     las cartas: para eso esta revealed_pair_seats, y quien quiera saber quien
     esta en la mano tiene que unir las dos (lo hace table_state.analyze_layout)."""
-    return {n for n, frac in card_back_fractions(bgr, ref).items()
+    return {n for n, frac in card_back_fractions(bgr, ref, dorsos).items()
             if frac >= CARD_BACK_MIN_AREA_FRAC}
 
 
@@ -1021,19 +1115,19 @@ def detect_in_hand_seats(bgr, ref):
 REVELADA_MARGEN = 0.06
 
 
-def revealed_zone_px(ref, seat, shape):
+def revealed_zone_px(ref, seat, shape, dorsos=None):
     """La zona donde mirar la mano revelada de `seat`, en pixeles.
 
     Es la del dorso ensanchada con REVELADA_MARGEN. Vive aparte para que el
     margen este en UN sitio: lo usan el detector de aqui y quien luego va a leer
     el rango de esas cartas (table_state), y si se separan se leerian cajas
     distintas de las que se detectaron."""
-    x0, y0, x1, y1 = CARD_BACK_ZONES[seat]
+    x0, y0, x1, y1 = (dorsos or CARD_BACK_ZONES)[seat]
     m = REVELADA_MARGEN
     return zone_to_px(ref, (x0 - m, y0 - m, x1 + m, y1 + m), shape)
 
 
-def revealed_pair_seats(bgr, ref):
+def revealed_pair_seats(bgr, ref, dorsos=None):
     """Asientos rivales que enseñan su mano BOCA ARRIBA (all-in o showdown).
 
     Se exige un PAR y solo un par: una caja suelta es ruido de UI -un icono del
@@ -1042,9 +1136,9 @@ def revealed_pair_seats(bgr, ref):
     sesion, como en vivo): salta en el 2,9% de las zonas de frames con all-in y
     en el 0,2% del resto, y al mirar esas ultimas una a una resultaron ser
     showdowns de verdad, no falsos positivos."""
-    return {nombre for nombre in CARD_BACK_ZONES
+    return {nombre for nombre in (dorsos or CARD_BACK_ZONES)
             if len(color_card_detector.find_card_boxes(
-                bgr, revealed_zone_px(ref, nombre, bgr.shape))) == 2}
+                bgr, revealed_zone_px(ref, nombre, bgr.shape, dorsos))) == 2}
 
 
 # --- ¿ES MI TURNO? por pixeles, sin OCR ---
@@ -1177,7 +1271,7 @@ def parse_to_call_bb(lines):
 # recomendaciones que ha dado la app, 0 tenian board -decide() se abstiene
 # postflop-. O sea que el fantasma ensucia player["bet"] en frames de showdown,
 # donde el motor ya esta callado, y no llega nunca a una decision.
-SEAT_BET_ZONES = {
+SEAT_BET_ZONES_6MAX = {
     "TOPC": (0.48, -0.02, 0.72, 0.14),
     "UL":   (0.12, 0.16, 0.36, 0.34),
     "UR":   (0.62, 0.12, 0.88, 0.30),
@@ -1185,6 +1279,45 @@ SEAT_BET_ZONES = {
     "MR":   (0.70, 0.58, 0.86, 0.76),
     "HERO": (0.30, 0.68, 0.58, 0.87),
 }
+
+# DERIVADAS igual que las de dorso, y con menos fundamento todavia: el
+# desplazamiento de la zona de apuesta respecto al nameplate NO es tan estable
+# como el del dorso -va de (+0,19,+0,15) en UL a (-0,20,-0,06) en MR- porque
+# apunta al centro del tapete y cada asiento lo tiene en otra direccion. Se
+# aplica el del asiento de angulo mas parecido.
+#
+# ENTRAN SIN VALIDAR, y se puede asumir por como se usan: el importe leido aqui
+# NUNCA crea una subida, solo ATRIBUYE una que el boton "Igualar" ya ha
+# demostrado que existe (ver decision/engine). Una zona mal puesta hace que no se
+# atribuya, no que se invente. Ademas esta zona ya arrastra una limitacion
+# medida y aceptada -los botes partidos la contaminan- asi que no es la señal
+# de la que cuelga nada critico.
+SEAT_BET_ZONES_8MAX = {
+    "TOPC": (0.46, -0.13, 0.70, 0.03),
+    "UL":   (0.11, 0.05, 0.35, 0.23),
+    "UR":   (0.60, 0.02, 0.86, 0.20),
+    "ML":   (0.02, 0.40, 0.22, 0.58),
+    "MR":   (0.79, 0.38, 0.95, 0.56),
+    "DL":   (0.10, 0.79, 0.30, 0.96),
+    "DR":   (0.67, 0.79, 0.83, 0.97),
+    "HERO": (0.24, 0.80, 0.53, 0.99),
+}
+
+SEAT_BET_ZONES = SEAT_BET_ZONES_6MAX
+
+# Las tres tablas por asiento van juntas: pedir una disposicion tiene que dar las
+# TRES coherentes, o se leerian nameplates de una mesa y dorsos de otra.
+ZONAS_POR_DISPOSICION = {
+    6: {"seats": SEATS_6MAX, "dorsos": CARD_BACK_ZONES_6MAX,
+        "apuestas": SEAT_BET_ZONES_6MAX},
+    8: {"seats": SEATS_8MAX, "dorsos": CARD_BACK_ZONES_8MAX,
+        "apuestas": SEAT_BET_ZONES_8MAX},
+}
+
+
+def zonas(max_players=None):
+    """Las tres tablas por asiento de una disposicion. Ver disposicion()."""
+    return ZONAS_POR_DISPOSICION.get(max_players, ZONAS_POR_DISPOSICION[6])
 
 # El cliente muestra los importes en dos unidades segun la config del usuario:
 #   - FICHAS: enteros con separador de miles ("5.892", "1.900").

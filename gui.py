@@ -742,7 +742,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # Decir cuantos caben convierte eso en una contradiccion demostrable.
         mesa_label = Gtk.Label(label="Mesa")
         self.mesa_combo = Gtk.ComboBoxText()
-        for etiqueta in ("auto", "2 (heads-up)", "3-Max", "6-Max", "9 plazas"):
+        for etiqueta in ("auto", "2 (heads-up)", "3-Max", "6-Max", "8-Max", "9 plazas"):
             self.mesa_combo.append_text(etiqueta)
         self.mesa_combo.set_active(0)
         self.mesa_combo.set_tooltip_text(
@@ -865,7 +865,12 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                                          max_players=self._max_players())
             self.worker.start()
 
-    _MESA_OPCIONES = (None, 2, 3, 6, 9)      # mismo orden que el combo
+    # MISMO ORDEN QUE EL COMBO. Ademas de acotar cuantos asientos puede haber,
+    # esto elige la GEOMETRIA: seat_map tiene tabla medida para 6 y para 8, y
+    # para el resto usa la de 6 (ver seat_map.zonas). En una mesa de 8 con la
+    # tabla de 6 no es que falten dos asientos: los laterales caen en el hueco
+    # entre los de verdad y se pierden DOS jugadores por lado.
+    _MESA_OPCIONES = (None, 2, 3, 6, 8, 9)
 
     def _max_players(self):
         i = self.mesa_combo.get_active()

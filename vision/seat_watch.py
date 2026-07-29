@@ -74,11 +74,12 @@ def _hash_zona(bgr, caja):
     return hashlib.blake2b(interior.tobytes(), digest_size=8).digest()
 
 
-def huellas(bgr, ref):
+def huellas(bgr, ref, seats=None):
     """{asiento: hash} de las capsulas de nameplate de este frame."""
+    seats = seats or seat_map.SEATS
     out = {}
-    for name in seat_map.SEATS:
-        caja = seat_map.zone_to_px(ref, seat_map.SEATS[name]["plate"], bgr.shape)
+    for name in seats:
+        caja = seat_map.zone_to_px(ref, seats[name]["plate"], bgr.shape)
         h = _hash_zona(bgr, caja)
         if h is not None:
             out[name] = h
@@ -89,7 +90,11 @@ class SeatWatch:
     """Lleva la ultima huella conocida de cada asiento y dice cuales han
     cambiado. Un objeto por sesion de captura."""
 
-    def __init__(self):
+    def __init__(self, seats=None):
+        # la DISPOSICION de la mesa (6 o 8 plazas). Se fija al crear el objeto,
+        # que es una por sesion de captura: dentro de una sesion la mesa no
+        # cambia de tamaño, y si cambiara habria que empezar de cero igual.
+        self._seats = seats or seat_map.SEATS
         self._ultimas = {}
         self._pendientes = set()
 
@@ -99,7 +104,7 @@ class SeatWatch:
         La PRIMERA vez que se ve un asiento NO cuenta como cambio: no hay nada
         con que comparar, y darlo por cambiado haria OCR-ear los seis asientos en
         el primer frame de cada sesion sin ninguna razon."""
-        nuevas = huellas(bgr, ref)
+        nuevas = huellas(bgr, ref, self._seats)
         cambiados = [s for s, h in nuevas.items()
                      if s in self._pendientes
                      or (s in self._ultimas and self._ultimas[s] != h)]
@@ -121,7 +126,7 @@ class SeatWatch:
         cuenta como cambio, la mirada siguiente devolveria CERO asientos. Usar
         olvidar() para re-censar dejaria la mesa sin leer justo cuando mas falta
         hace."""
-        self._pendientes = set(seat_map.SEATS)
+        self._pendientes = set(self._seats)
 
     def olvidar(self):
         """Para empezar de cero: sesion nueva o recuadro recalibrado.

@@ -1,6 +1,17 @@
 # Mesa de 8: los ocho asientos, medidos
 
-Estado: **geometría medida, sin cablear**. La app sigue leyendo seis asientos.
+Estado: **cableado y jugable**. Elige **8-Max** en el selector "Mesa" de la
+ventana antes de darle a Iniciar.
+
+Medido de punta a punta sobre 160 frames de una sesión real de 8-max,
+reproduciendo los mismos frames con una disposición y con la otra:
+
+| | disposición de 6 | **disposición de 8** |
+|---|---|---|
+| asientos leídos por frame | 3,89 | **7,64** |
+| jugadores en mano | 1,02 | **3,71** |
+| recomendaciones | 16 | **33** |
+| nicks distintos | **1** (solo el hero) | **8** (todos) |
 
 ## Qué falla hoy
 
@@ -75,7 +86,7 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
 3. Acumular candidatos de cientos de frames y agrupar. Un frame suelto no basta:
    un asiento vacío no da cápsula.
 
-## Lo que falta antes de cablearlo
+## Lo que queda
 
 - **El barrido sobredetecta**: 7,83 candidatos por frame en la mesa de 8 y 9,12
   en una de 6, donde como mucho hay seis. Los falsos salen de la interfaz del
@@ -83,10 +94,19 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
   diluye al agrupar, pero para usarlo EN VIVO hay que limpiarlo. El filtro obvio
   y sin medir: exigir tapete alrededor, que es lo que un nameplate tiene y una
   pestaña no.
-- **Decidir qué disposición está en uso.** Con las dos tablas escritas, la de 6 y
-  la de 8, hay que elegir una por sesión. El barrido puede hacerlo: cuenta
-  cúmulos y mira si hay uno o dos por lateral.
-- **El GUI ofrece 2/3/6/9 y no 8** (`_MESA_OPCIONES`). Es una línea.
+- **La disposición la eliges tú en el selector "Mesa"**, no se detecta sola. Es
+  deliberado: una disposición equivocada no falla de forma visible -lee nombres
+  donde no hay nadie y deja jugadores invisibles- y eso desplaza TODAS las
+  posiciones, que salen del recuento de asientos ocupados. Detectarla sola queda
+  para cuando el barrido sea fiable frame a frame.
+- **Las mesas de 7 y 9 siguen sin tabla.** Caen a la de 6, que es lo que hacían
+  antes. La de 9 está capturada en `casos/` a la espera de medirla igual.
+- **Dos de las tres tablas de la disposición de 8 son DERIVADAS, no medidas**:
+  las zonas de dorso y las de apuesta se calculan aplicando al asiento de 8 el
+  desplazamiento que ese mismo asiento tiene en la de 6. Las de dorso se
+  validaron sobre 229 frames y separan bien salvo en DL y DR, donde la
+  comprobación no concluyó. Hay que medirlas con la primera sesión que se grabe
+  jugando a 8 **con esta disposición puesta**.
 - La parte de DECISIÓN ya lo soporta entero: `SEATING_BY_N[8]` da
   `BTN, SB, BB, EP2, MP1, MP2, HJ, CO`, derivado por cuánta gente habla después
   de ti contra los rangos de 9-max digitalizados.

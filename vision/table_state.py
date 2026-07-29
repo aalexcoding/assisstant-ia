@@ -703,6 +703,13 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
             "tapete; o el recuadro de captura no la encuadra (recalibra)")
         return state
 
+    # LA DISPOSICION DE LA MESA sale de max_players, que ya viajaba hasta aqui.
+    # Es coherente: ese parametro siempre ha querido decir "cuantos jugadores
+    # caben", y cuantos caben determina DONDE estan. Sin decirlo se usa la de 6,
+    # que es la que tiene detras todas las mediciones del proyecto; ver
+    # seat_map.zonas() para por que no se adivina.
+    ZONAS = seat_map.zonas(max_players)
+
     batch = OcrBatch()
 
     # cartas del hero y del board (deteccion por color dentro de su zona fija).
@@ -723,19 +730,19 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # (entre manos), cae a la fraccion fija del ovalo.
     seat_tsv = {}
     seat_plate_px = {}
-    for name in seat_map.SEATS:
+    for name in ZONAS["seats"]:
         if name == seat_map.HERO_SEAT and hero_plate_px is not None:
             x0, y0, x1, y1 = hero_plate_px
         else:
-            x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.SEATS[name]["plate"], bgr.shape)
+            x0, y0, x1, y1 = seat_map.zone_to_px(ref, ZONAS["seats"][name]["plate"], bgr.shape)
         seat_plate_px[name] = (x0, y0, x1, y1)
         seat_tsv[name] = batch.add_tsv_job(bgr[y0:y1, x0:x1], scale=3)
     # importe apostado por asiento (zona hacia el centro del tapete), para
     # inferir quien subio; se encola para todos y luego se lee solo en los
     # asientos ocupados.
     bet_tsv = {}
-    for name in seat_map.SEATS:
-        bx = seat_map.zone_to_px(ref, seat_map.SEAT_BET_ZONES[name], bgr.shape)
+    for name in ZONAS["seats"]:
+        bx = seat_map.zone_to_px(ref, ZONAS["apuestas"][name], bgr.shape)
         bet_tsv[name] = batch.add_tsv_job(bgr[bx[1]:bx[3], bx[0]:bx[2]], scale=3)
     # SEGUNDA LECTURA DEL STACK DEL HERO, solo su franja de abajo.
     #
@@ -800,8 +807,8 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     #
     # Se detecta y encola AQUI, antes de correr el lote, porque el rango va por
     # el mismo OCR que el board y el hero y asi viaja en el mismo viaje.
-    reveladas_px = {s: seat_map.revealed_zone_px(ref, s, bgr.shape)
-                    for s in seat_map.revealed_pair_seats(bgr, ref)}
+    reveladas_px = {s: seat_map.revealed_zone_px(ref, s, bgr.shape, ZONAS["dorsos"])
+                    for s in seat_map.revealed_pair_seats(bgr, ref, ZONAS["dorsos"])}
     reveladas_boxes = {s: _cajas_de_carta(bgr, px, esperadas=2)
                        for s, px in reveladas_px.items()}
     reveladas_jobs = {s: _encolar_cartas(batch, bgr, cajas)
@@ -823,10 +830,11 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # Van juntas en una sola tarea y no en dos porque el respaldo del disco
     # depende de que el barrido haya fallado: partirlo obligaria a sincronizar.
     def _vision_sin_ocr():
-        b = disco_dealer.detectar(bgr, ref)
+        b = disco_dealer.detectar(bgr, ref, ZONAS["seats"])
         if b is None:
-            b = seat_map.detect_button_seat_union(bgr, ref, plantilla_boton)
-        return b, seat_map.detect_in_hand_seats(bgr, ref)
+            b = seat_map.detect_button_seat_union(bgr, ref, plantilla_boton,
+                                                  ZONAS["seats"])
+        return b, seat_map.detect_in_hand_seats(bgr, ref, ZONAS["dorsos"])
 
     with ThreadPoolExecutor(max_workers=1) as ex:
         pendiente = ex.submit(_vision_sin_ocr)
@@ -858,7 +866,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # Los importes se leen SIEMPRE en big blinds: parse_amount_bb exige el sufijo
     # "BB" literal, asi que si el cliente no esta en ese modo no se lee nada y el
     # motor se abstiene. Nunca lee un numero en la unidad equivocada.
-    seat_lines = {name: parse_tsv_lines(results[seat_tsv[name]]) for name in seat_map.SEATS}
+    seat_lines = {name: parse_tsv_lines(results[seat_tsv[name]]) for name in ZONAS["seats"]}
 
     # `dorsos` y `button_seat` ya estan resueltos: se calcularon EN PARALELO con
     # el lote de OCR (ver _vision_sin_ocr). Tener cartas repartidas es la prueba
@@ -866,7 +874,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # por eso hacen falta antes de juzgar la ocupacion.
     occupied = {}
     estados = {}
-    for name in seat_map.SEATS:
+    for name in ZONAS["seats"]:
         lines = seat_lines[name]
         n, _stk_chips, accion = _seat_plate_name_stack(lines)
         stk = seat_map.parse_amount_bb(lines)
@@ -1017,7 +1025,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     elif button_seat is None:
         state["warnings"].append("no se detecto el boton del dealer; sin posiciones")
     else:
-        order = seat_map.dealing_order(list(occupied), ref)
+        order = seat_map.dealing_order(list(occupied), ref, ZONAS["seats"])
         n = len(order)
         if n in seat_map.SEATING_BY_N:
             bi = order.index(button_seat)
@@ -1078,7 +1086,8 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     if board_unresolved:
         state["warnings"].append(f"{board_unresolved} carta(s) de board detectada(s) pero sin rango legible")
 
-    for name in seat_map.dealing_order(list(occupied), ref) if occupied else []:
+    for name in (seat_map.dealing_order(list(occupied), ref, ZONAS["seats"])
+                 if occupied else []):
         info = occupied[name]
         es_hero = name == seat_map.HERO_SEAT
         player = {

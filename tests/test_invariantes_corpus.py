@@ -71,8 +71,28 @@ CONTRATO = (
 # Los dos que estan a CERO se quedan en percepcion y no pasan a contrato: son
 # fallos de OCR y pueden volver con otro tema de mesa o otro mazo. El techo se
 # deja bajo, no a cero.
+#
+# --- board_ilegal, re-medido al crecer el corpus a 9.908 frames --------------
+#
+# Sube de 1,96% a 3,29% y NO es una regresion: es el corpus incorporando dos
+# sesiones nuevas. El desglose lo deja claro y por eso se escribe entero:
+#
+#     2026-07-29_190557    17,89 %   <- la que dispara la media
+#     2026-07-29_070413     9,49 %
+#     2026-07-28_020242     7,89 %
+#     2026-07-28_210655     2,38 %
+#     2026-07-29_191755     1,63 %
+#     el resto            0,00-1,72 %
+#
+# En la del 19:05 el usuario tuvo abierto el dialogo "Temas de mesa" del cliente
+# TAPANDO la mesa durante un cuarto de la sesion, y ademas cambio el mazo a
+# mitad. No es un fallo de lectura: es que no habia mesa que leer, y esos frames
+# estan guardados en docs/casos/mesa8_sin_jugadores.png.
+#
+# LA MESA DE 8 NO ES LA CAUSA: la otra sesion de 8-max da 1,63%. El board se lee
+# del CENTRO del tapete, que no depende de donde esten los asientos.
 PERCEPCION = [
-    ("board_ilegal", 0.0196, 0.030),
+    ("board_ilegal", 0.0329, 0.045),
     ("board_repetido", 0.0027, 0.008),
     ("raiser_habla_despues", 0.0009, 0.005),
     ("carta_en_dos_sitios", 0.0000, 0.004),
