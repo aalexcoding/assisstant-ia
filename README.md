@@ -169,8 +169,30 @@ terminada leyendo el resultado del panel de chat (`vision/hand_result.py`: ganad
 mano ganadora, jugadores de showdown y si el hero ganó/perdió/**empató** el bote), un panel
 para **marcar una situación** rara y anotarla mientras juegas (fija el frame en el momento y
 la nota se le pega después, se tarde lo que se tarde en escribirla), y botones para
-iniciar/parar el análisis y relanzar la calibración del recuadro. El selector de intervalo baja
-hasta 0.25s ("analiza en cuanto pueda"; el ciclo real tarda ~2-4s por el OCR).
+iniciar/parar el análisis y relanzar la calibración del recuadro.
+
+### Cuánto tarda un ciclo
+
+**No hay un número: hay un rango, y se mide en cada sesión.** Medido sobre cinco sesiones
+reales, el ciclo va de **0,45 a 0,82 s de mediana** y de **0,83 a 1,15 s de p95** — depende del
+tamaño de ventana, del tema de mesa, del mazo, de cuántos asientos hay ocupados y de qué más
+esté haciendo la máquina. Cualquier cifra fija que se escriba aquí se queda vieja; de hecho el
+repo llegó a tener tres a la vez, y las tres estaban mal.
+
+Por eso cada frame graba su propio desglose (`state["tiempos"]`, ver
+`vision/table_state._Reloj`) y `testing_session.resumen()` da `ciclo_p50_s` / `ciclo_p95_s` por
+sesión. Para verlo sobre una sesión ya grabada:
+
+```bash
+python replay.py testing/sesion-<fecha> --hasta 200
+```
+
+**El OCR es ~90 % del ciclo.** El resto (disco del dealer 50 ms, dorsos 17, referencia 16) son
+migajas en comparación. Por eso el chat **no se lee en cada frame**: era el job más caro
+—264 ms medidos en un A/B sobre los mismos frames, el 26 % del ciclo— y lo que se saca de él
+(quién ganó la mano anterior y su número) cambia una vez por mano. Se lee al cerrarse una mano,
+en los primeros frames y como mucho cada `CHAT_MAX_S`; el último resumen se conserva, así que el
+panel "Mano anterior" no pierde ni un frame.
 
 ## Estructura
 

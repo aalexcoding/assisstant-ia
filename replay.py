@@ -106,6 +106,11 @@ def reproducir(directorio, desde=0, hasta=None, diff=False, max_players=None,
 
     resumen = {"frames": 0, "fallos": 0, "con_recomendacion": 0,
                "perdidas": 0, "ganancias": 0, "cambios": 0, "segundos": 0.0}
+    # DONDE SE VA EL TIEMPO, por etapa. Es lo que convierte "he optimizado algo"
+    # en un numero: sin el desglose solo se ve el total, y el total no dice si la
+    # mejora vino de donde se creia. Ver vision/table_state._Reloj.
+    etapas = {}
+    ciclos = []
     t0 = time.perf_counter()
     for n, png, grabado in lote:
         try:
@@ -116,6 +121,9 @@ def reproducir(directorio, desde=0, hasta=None, diff=False, max_players=None,
                 print(f"[FALLO] frame {n:04d}: {type(e).__name__}: {e}", flush=True)
             continue
         resumen["frames"] += 1
+        ciclos.append(res.duracion_analisis_s)
+        for etapa, seg in (res.state.get("tiempos") or {}).items():
+            etapas.setdefault(etapa, []).append(seg)
         if res.recommendation:
             resumen["con_recomendacion"] += 1
         if diff:
@@ -125,7 +133,17 @@ def reproducir(directorio, desde=0, hasta=None, diff=False, max_players=None,
                     print(f"[{clase.upper():9}] frame {n:04d} {campo}: "
                           f"{antes!r} -> {ahora!r}", flush=True)
     resumen["segundos"] = round(time.perf_counter() - t0, 2)
+    resumen["ciclo_p50_s"] = _p(ciclos, 50)
+    resumen["ciclo_p95_s"] = _p(ciclos, 95)
+    resumen["etapas_p50_s"] = {k: _p(v, 50) for k, v in sorted(etapas.items())}
     return resumen
+
+
+def _p(valores, q):
+    if not valores:
+        return None
+    orden = sorted(valores)
+    return round(orden[min(len(orden) - 1, int(len(orden) * q / 100))], 3)
 
 
 def main():
@@ -158,6 +176,15 @@ def main():
     print(f"\n{r['frames']} frames en {r['segundos']}s "
           f"({r['segundos'] / max(r['frames'], 1):.2f}s/frame), "
           f"{r['con_recomendacion']} con recomendacion, {r['fallos']} fallos")
+    if r["ciclo_p50_s"] is not None:
+        print(f"ciclo: p50 {r['ciclo_p50_s']}s  p95 {r['ciclo_p95_s']}s")
+    etapas = {k: v for k, v in (r["etapas_p50_s"] or {}).items() if k != "total"}
+    if etapas:
+        # ordenadas por coste: lo primero de la lista es donde mirar
+        total = r["etapas_p50_s"].get("total") or sum(etapas.values())
+        print("donde se va el tiempo (mediana):")
+        for k, v in sorted(etapas.items(), key=lambda kv: -kv[1]):
+            print(f"   {k:18} {1000 * v:7.1f} ms  {100 * v / max(total, 1e-9):5.1f}%")
     if args.diff:
         print(f"diferencias: {r['perdidas']} perdidas, {r['ganancias']} ganancias, "
               f"{r['cambios']} cambios")

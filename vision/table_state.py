@@ -12,6 +12,8 @@ patron de pot/ciegas/jugador+stack, el campo queda vacio/omitido y se anota
 en "warnings" en vez de adivinar.
 """
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import cv2
 
@@ -344,6 +346,33 @@ CAPSULA_S_MAX, CAPSULA_V_MAX = 70, 70
 CAPSULA_MIN_FRAC = 0.07
 
 
+class _Reloj:
+    """Cronometro por etapas del ciclo de reconocimiento.
+
+    Se lleva aqui y no fuera porque las etapas son de analyze_layout: quien mira
+    el ciclo desde arriba (core/analisis.py) solo ve el total, y el total no dice
+    DONDE se va el tiempo. Sin este desglose, cualquier optimizacion es a ciegas:
+    fue asi como se descubrio que el job de OCR del chat costaba 281 ms de 875,
+    o sea el 32% del ciclo, cuando la suposicion escrita era que apenas pesaba.
+
+    Las etapas no suman el total a proposito: 'resto' recoge lo que no se marco,
+    y que ese hueco crezca es informacion (algo nuevo esta costando)."""
+
+    def __init__(self):
+        self._t0 = self._ultimo = time.perf_counter()
+        self.etapas = {}
+
+    def marca(self, nombre):
+        ahora = time.perf_counter()
+        self.etapas[nombre] = round(ahora - self._ultimo, 4)
+        self._ultimo = ahora
+
+    def a_dict(self):
+        total = time.perf_counter() - self._t0
+        return dict(self.etapas, resto=round(total - sum(self.etapas.values()), 4),
+                    total=round(total, 4))
+
+
 def _capsula_frac(plate_bgr):
     """Fraccion de la zona ocupada por pixeles de capsula, o None si no hay zona
     que mirar (el asiento cae fuera del encuadre).
@@ -553,7 +582,8 @@ def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
 
 
 def analyze_layout(image_path, max_players=None, asientos_estables=None,
-                   plantilla_boton=None, referencia=None, escala_glifo=None):
+                   plantilla_boton=None, referencia=None, escala_glifo=None,
+                   leer_chat=True):
     """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
     produccion para el cliente real de PokerStars capturado limpio. Ancla una
     referencia independiente del color (nucleo del tapete por contraste) y lee
@@ -585,6 +615,20 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     segmentar. Medido sobre 300 frames: 167 -> 177 frames con las dos cartas,
     sin una sola contradiccion entre los dos caminos.
 
+    leer_chat: si se OCR-ea la zona del chat en ESTE frame. Es lo mas caro que
+    hay: medido, 281 ms de un ciclo de 875, o sea el 32%. Y no hace falta en cada
+    frame, porque lo unico que sale de ahi -quien gano la mano anterior y su
+    numero- cambia UNA VEZ POR MANO, no diez veces por segundo.
+
+    Aqui solo esta el interruptor; la politica de CUANDO vive en
+    core/analisis.py, que es quien tiene el estado entre frames y sabe cuando
+    acaba una mano. Por defecto True para que las rutas de diagnostico y los
+    tests que llaman directamente sigan viendo lo de siempre.
+
+    Con leer_chat=False, state["chat_lines"] queda vacio. La frontera de mano NO
+    se resiente: hand_tracker corta por {board_vacio, boton}, y el numero de mano
+    del chat solo se EXPONE (se midio que cortar con el metia 71 manos falsas).
+
     TODOS LOS IMPORTES EN BIG BLINDS. Requiere el cliente de PokerStars
     configurado para mostrarlos asi; si no lo esta, no se leen y la app se
     abstiene (ver el bloque "LA APP ES BB-ONLY" mas arriba). Por eso ya no hay
@@ -613,6 +657,20 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         state["warnings"].append("no se pudo leer la imagen")
         return state
 
+    # RELOJ POR ETAPAS. Va dentro del GameState y por tanto al JSON grabado, asi
+    # que cada sesion futura lleva su propio perfil y se puede comparar un cambio
+    # contra lo que la maquina hacia ANTES, en vez de contra una cifra escrita a
+    # mano en un comentario.
+    #
+    # Hacia falta porque las tres cifras que conviven en el repo estaban las tres
+    # mal, cada una de una manera: el README dice "2-4 s", gui.py dice "0,7 s" y
+    # seat_watch.py "~950 ms". Medido de verdad sobre cinco sesiones, el ciclo va
+    # de 0,45 a 0,82 s de mediana y de 0,83 a 1,15 s de p95 SEGUN LA SESION, asi
+    # que ningun numero unico es cierto y lo que hay que hacer es medir siempre.
+    #
+    # Coste: ~50 ns por marca. Es ruido frente a los 600-900 ms del ciclo.
+    reloj = _Reloj()
+
     # SIN REFERENCIA NO SE ANALIZA NADA. Todas las zonas (nameplates, cartas,
     # bote, botones, chat) son fracciones del nucleo del tapete, asi que si el
     # ovalo no se detecta y se cae al fallback, TODAS quedan desplazadas y lo que
@@ -631,15 +689,18 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # V=115) se detecta en el 98% de los frames y uno gris oscuro (S=0, V=34) en
     # el 0%. Por eso el aviso nombra las dos cosas que el usuario puede arreglar.
     ref = referencia.de(bgr) if referencia is not None else seat_map.find_reference(bgr)
+    reloj.marca("referencia")
     if ref[4]:
         state["warnings"].append(
-            "no se encuentra la mesa: no se detecto el ovalo del tapete. Sin esa "
-            "referencia TODAS las zonas quedan desplazadas, asi que no se analiza el "
-            "frame en vez de dar lecturas de sitios equivocados. Causas tipicas: el "
-            "tapete es de un tema OSCURO o gris (hace falta uno con color, p.ej. el "
-            "verde); el FONDO de alrededor de la mesa es claro y se confunde con el "
-            "tapete (hace falta un tema de fondo oscuro); hay otra ventana tapando la "
-            "mesa; o el recuadro de captura no la encuadra (recalibra)")
+            "no se encuentra la mesa en este frame: el ovalo del tapete no aparece, o "
+            "aparece donde no estaba. Sin esa referencia TODAS las zonas quedan "
+            "desplazadas, asi que no se analiza el frame en vez de dar lecturas de "
+            "sitios equivocados. Lo mas frecuente y menos preocupante: has abierto algo "
+            "ENCIMA de la mesa (el panel de progreso de fichas, el chat, otra ventana) y "
+            "estos frames se descartan solos mientras dure. Si pasa SIEMPRE, entonces si "
+            "hay que mirar: el tapete es de un tema OSCURO o gris (hace falta uno con "
+            "color, p.ej. el verde); el FONDO de alrededor es claro y se confunde con el "
+            "tapete; o el recuadro de captura no la encuadra (recalibra)")
         return state
 
     batch = OcrBatch()
@@ -655,6 +716,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     hero_boxes = _cajas_de_carta(bgr, hero_px, esperadas=2)
     board_boxes = _cajas_de_carta(bgr, board_px)
     hero_plate_px = seat_map.hero_plate_from_cards(hero_boxes, bgr.shape)
+    reloj.marca("cartas")
 
     # texto por zona (nameplates, bote, chat, botones de accion). El nameplate
     # del hero se ancla a sus cartas (hero_plate_px); si no las hay ese frame
@@ -675,6 +737,37 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     for name in seat_map.SEATS:
         bx = seat_map.zone_to_px(ref, seat_map.SEAT_BET_ZONES[name], bgr.shape)
         bet_tsv[name] = batch.add_tsv_job(bgr[bx[1]:bx[3], bx[0]:bx[2]], scale=3)
+    # SEGUNDA LECTURA DEL STACK DEL HERO, solo su franja de abajo.
+    #
+    # EL BADGE DE TORNEO. Cuando el usuario va entre los tres primeros, PokerStars
+    # le pone una insignia (oro/plata/bronce) que vuelve CLARA la franja del
+    # stack, mientras la del nombre sigue oscura. El nameplate del hero se ancla a
+    # sus cartas (hero_plate_from_cards), asi que sale un recorte ajustado con las
+    # dos mitades de polaridad OPUESTA pegadas, y ahi tesseract pierde la clara.
+    #
+    # Medido sobre la sesion del 28-07 a las 21:06, 730 frames con el usuario
+    # subiendo hasta el 2.o puesto:
+    #
+    #     franja del stack      stack leido    NO leido
+    #     clara (con badge)               0         101
+    #     oscura (normal)               135          24
+    #
+    # CERO de 101. No es que fallara a veces: con el badge puesto no lo leia
+    # NUNCA, y sin stack no hay profundidad, asi que decide() se abstenia en el
+    # 55% de los frames en que el hero tenia cartas vivas.
+    #
+    # No es un problema de polaridad -invertir el recorte entero lo empeora- sino
+    # de mezclar las dos. Aislada, la franja se lee perfecta ("199,9 BB"). A los
+    # RIVALES no les pasa: con franja clara se les lee el 66% y con oscura el 70%,
+    # o sea lo mismo; sus zonas son las fracciones fijas del ovalo, mas holgadas.
+    #
+    # Va como job aparte y no como sustituto porque el lote se resuelve en
+    # paralelo: un job mas no cuesta una pasada mas.
+    hero_stack_tsv = None
+    if hero_plate_px is not None:
+        hx0, hy0, hx1, hy1 = hero_plate_px
+        hero_stack_tsv = batch.add_tsv_job(bgr[hy0 + (hy1 - hy0) // 2:hy1, hx0:hx1], scale=3)
+
     px = seat_map.zone_to_px(ref, seat_map.POT_ZONE, bgr.shape)
     pot_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=3)
     # chat y botones de accion en ESPANOL: son las dos unicas zonas con prosa
@@ -682,8 +775,14 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # y no contienen nicks, asi que el modelo espanol solo aporta aqui. Los
     # nameplates se quedan en ingles a proposito: ahi el espanol destroza los
     # nicks. Ver el docstring de ocr_worker.py para las mediciones.
-    px = seat_map.zone_to_px(ref, seat_map.CHAT_ZONE, bgr.shape)
-    chat_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2, lang="spa")
+    #
+    # EL CHAT SOLO CUANDO SE PIDE. Es el job mas caro del frame -281 ms de 875,
+    # el 32%- y lo unico que se saca de el (quien gano la mano anterior y su
+    # numero) cambia una vez por mano. Ver `leer_chat` en el docstring.
+    chat_idx = None
+    if leer_chat:
+        px = seat_map.zone_to_px(ref, seat_map.CHAT_ZONE, bgr.shape)
+        chat_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2, lang="spa")
     px = seat_map.zone_to_px(ref, seat_map.ACTION_ZONE, bgr.shape)
     action_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=2, lang="spa")
 
@@ -708,7 +807,33 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     reveladas_jobs = {s: _encolar_cartas(batch, bgr, cajas)
                       for s, cajas in reveladas_boxes.items()}
 
-    results = batch.run()
+    # LA VISION QUE NO NECESITA EL OCR, EN PARALELO CON EL.
+    #
+    # Mientras batch.run() espera a los subprocesos de tesseract, este hilo esta
+    # BLOQUEADO sin hacer nada. Y hay tres piezas de OpenCV puro que no dependen
+    # de una sola letra de ese OCR y que hasta ahora corrian en serie DESPUES:
+    #
+    #     disco del dealer (+ respaldo por anclas)   50 ms
+    #     dorsos de carta                            17 ms
+    #
+    # Lanzadas aqui salen practicamente gratis. Un hilo mas no compite de verdad:
+    # los trozos de OCR estan en SUBPROCESOS, asi que el GIL de este proceso lo
+    # tiene libre quien haga trabajo de numpy/OpenCV, que ademas lo suelta.
+    #
+    # Van juntas en una sola tarea y no en dos porque el respaldo del disco
+    # depende de que el barrido haya fallado: partirlo obligaria a sincronizar.
+    def _vision_sin_ocr():
+        b = disco_dealer.detectar(bgr, ref)
+        if b is None:
+            b = seat_map.detect_button_seat_union(bgr, ref, plantilla_boton)
+        return b, seat_map.detect_in_hand_seats(bgr, ref)
+
+    with ThreadPoolExecutor(max_workers=1) as ex:
+        pendiente = ex.submit(_vision_sin_ocr)
+        results = batch.run()
+        reloj.marca("ocr")
+        button_seat, dorsos = pendiente.result()
+    reloj.marca("vision_paralela")
 
     # {asiento: ['6c','4c']} solo cuando se resuelven LAS DOS. Una sola carta no
     # sirve para nada -no se puede evaluar media mano- y media lectura seria peor
@@ -735,18 +860,21 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # motor se abstiene. Nunca lee un numero en la unidad equivocada.
     seat_lines = {name: parse_tsv_lines(results[seat_tsv[name]]) for name in seat_map.SEATS}
 
-    # Los DORSOS se resuelven aqui arriba, antes de juzgar la ocupacion, porque
-    # tener cartas repartidas es la prueba mas fuerte que hay de estar sentado:
-    # a una silla vacia no se le reparte. Antes se miraban despues y solo servian
-    # para emitir un aviso de "asiento fantasma" que no cambiaba el recuento.
-    dorsos = seat_map.detect_in_hand_seats(bgr, ref)
-
+    # `dorsos` y `button_seat` ya estan resueltos: se calcularon EN PARALELO con
+    # el lote de OCR (ver _vision_sin_ocr). Tener cartas repartidas es la prueba
+    # mas fuerte que hay de estar sentado -a una silla vacia no se le reparte- y
+    # por eso hacen falta antes de juzgar la ocupacion.
     occupied = {}
     estados = {}
     for name in seat_map.SEATS:
         lines = seat_lines[name]
         n, _stk_chips, accion = _seat_plate_name_stack(lines)
         stk = seat_map.parse_amount_bb(lines)
+        # el badge de torneo tapa el stack del hero al OCR del plate entero; ver
+        # arriba. Solo entra si el primer camino no saco nada, asi que no puede
+        # empeorar lo que ya funcionaba.
+        if stk is None and name == seat_map.HERO_SEAT and hero_stack_tsv is not None:
+            stk = seat_map.parse_amount_bb(parse_tsv_lines(results[hero_stack_tsv]))
         z = seat_plate_px[name]
         estados[name] = e = estado_asiento(_capsula_frac(bgr[z[1]:z[3], z[0]:z[2]]),
                                            name in dorsos, name in reveladas_px)
@@ -777,22 +905,44 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # larga de 261 frames seguidos (unos 3 minutos con un asiento inventado).
     state["asientos_leidos"] = sorted(occupied)
 
-    # los asientos que el rastreador da por estables MANDAN sobre la lectura de
-    # este frame (ver el docstring). El hero nunca se suelta: es nuestro asiento.
+    # LOS ASIENTOS ESTABLES MANDAN, PERO NO CONTRA LO QUE SE ESTA VIENDO.
     #
-    # NI SIQUIERA LA MEMORIA BORRA UN ASIENTO CON CARTAS DELANTE. A una silla
-    # vacia no se le reparte, asi que si en ESTE frame se le ven cartas, esta
-    # ocupado y no hay recuerdo que valga: borrarlo seria preferir lo que se creia
-    # hace veinte frames sobre lo que se esta viendo.
+    # El conjunto estable es de la mano EN CURSO segun el rastreador, y en el
+    # frame de frontera todavia es el de la mano ANTERIOR: analizar() pide
+    # asientos_estables() antes de que tracker.update() abra la mano nueva. En
+    # Zoom, donde el cliente te cambia de mesa entre manos, eso es pintar la mesa
+    # vieja encima de la nueva. Medido sobre 246 fronteras: 61 (25%) con players
+    # distinto de asientos_leidos, 44 asientos AÑADIDOS y 35 BORRADOS por memoria.
+    # Es la nota que dejo el usuario jugando ("hay que actualizar los jugadores al
+    # comienzo de cada mano").
+    #
+    # Asi que la memoria sigue mandando sobre el RUIDO de lectura -que es para lo
+    # que se hizo- pero no sobre la EVIDENCIA de este frame. Tres excepciones, las
+    # tres con la evidencia que _fuerza_ocupacion ya clasifica:
+    #
+    #   no se BORRA quien tiene CARTAS delante. A una silla vacia no se le
+    #   reparte, asi que borrarlo seria preferir lo que se creia hace veinte
+    #   frames sobre lo que se esta viendo.
+    #
+    #   no se BORRA quien tiene un IMPORTE EN BB en su nameplate. parse_amount_bb
+    #   exige el sufijo "BB" literal, y eso no lo produce el tapete: si esta ahi,
+    #   hay una capsula con un stack dentro.
+    #
+    #   no se AÑADE por memoria quien este frame se ve HUECO. Es la conclusion del
+    #   commit 69a4949: si no hay capsula de nameplate, no hay nadie sentado. La
+    #   fraccion ya esta calculada en el bucle de arriba, asi que cuesta 0 ms.
     con_cartas = dorsos | set(reveladas_px)
     if asientos_estables:
         for name in asientos_estables:
+            if estados.get(name) == HUECO and name != seat_map.HERO_SEAT:
+                continue
             occupied.setdefault(name, {"name": None, "stack": None,
                                        "bet": None, "action": None})
         for name in list(occupied):
             if (name not in asientos_estables
                     and name != seat_map.HERO_SEAT
-                    and name not in con_cartas):
+                    and name not in con_cartas
+                    and occupied[name].get("stack") is None):
                 del occupied[name]
 
     # quien sigue en la mano. Se resuelve AQUI, antes de cerrar la ocupacion,
@@ -827,9 +977,6 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     #
     # El de anclas se queda de RESPALDO y no se retira: cuando el barrido no ve
     # nada, sigue aportando frames.
-    button_seat = disco_dealer.detectar(bgr, ref)
-    if button_seat is None:
-        button_seat = seat_map.detect_button_seat_union(bgr, ref, plantilla_boton)
     if button_seat is not None and button_seat not in occupied:
         # el dealer es siempre un jugador sentado: si el boton se detecto en ese
         # asiento pero el OCR no leyo su nameplate, esta ocupado igual.
@@ -925,6 +1072,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     if state["hero_cards_dimmed"]:
         state["warnings"].append("tus cartas salen apagadas: ya no estas en esta mano")
     state["board"], board_unresolved = _resolve_zone_cards(bgr, board_px, results, board_jobs)
+    reloj.marca("resolver_cartas")
     if hero_unresolved:
         state["warnings"].append(f"{hero_unresolved} carta(s) del hero detectada(s) pero sin rango legible")
     if board_unresolved:
@@ -989,15 +1137,18 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # interpretaria como separador de miles (x10/x100). Ver find_pot_bb.
     pot_lines = parse_tsv_lines(results[pot_idx])
     state["pot"] = find_pot_bb(pot_lines)
-    # Las lineas del chat se EXPONEN en el GameState, y ahora son la unica razon
-    # por la que se OCR-ea esa zona: alimentan el panel "Mano anterior" y, sobre
-    # todo, el NUMERO DE MANO, que es la señal de frontera mas fiable que tiene
-    # el rastreador (decision/hand_tracker.py). Antes se OCR-eaba dos veces por
-    # frame -aqui para las ciegas y otra vez en hand_result.read_chat_lines()-,
-    # con un segundo subproceso y un segundo arranque de tesseract: 571 ms de un
-    # ciclo de 3,9 s. Se guardan con posicion (no solo el texto) porque
-    # parse_hand_result las necesita para reconstruir el orden de lectura.
-    state["chat_lines"] = parse_tsv_lines(results[chat_idx])
+    # Las lineas del chat se EXPONEN en el GameState, y son la unica razon por la
+    # que se OCR-ea esa zona: alimentan el panel "Mano anterior", el estudio
+    # post-mano y el numero de mano. Antes se OCR-eaba dos veces por frame -aqui
+    # para las ciegas y otra vez en hand_result.read_chat_lines()-, con un segundo
+    # subproceso y un segundo arranque de tesseract: 571 ms de un ciclo de 3,9 s.
+    # Se guardan con posicion (no solo el texto) porque parse_hand_result las
+    # necesita para reconstruir el orden de lectura.
+    #
+    # Lista vacia cuando no toca leerlo (leer_chat=False). Es lo mismo que
+    # devolvia un frame cuyo chat no se leyo bien, asi que aguas abajo no cambia
+    # nada: parse_hand_result ya devuelve None con lineas vacias.
+    state["chat_lines"] = parse_tsv_lines(results[chat_idx]) if chat_idx is not None else []
     action_lines = parse_tsv_lines(results[action_idx])
     state["facing"] = seat_map.parse_facing(" ".join(ln["text"] for ln in action_lines))
     # importe que pide el boton "Igualar": evidencia INDEPENDIENTE de que hay una
@@ -1022,6 +1173,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     if not occupied:
         state["warnings"].append("ningun asiento ocupado detectado")
 
+    state["tiempos"] = reloj.a_dict()
     return state
 
 

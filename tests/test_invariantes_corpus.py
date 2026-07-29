@@ -1,6 +1,6 @@
 """
 Los invariantes de core/invariantes.py, aplicados a TODO lo que la app ha
-grabado jugando de verdad: ~9.200 frames de 26 sesiones.
+grabado jugando de verdad: 7.760 frames de las sesiones que haya en testing/.
 
 Aqui no se muestrea. Se leen los JSON enteros -60 MB, sin abrir una sola
 imagen-, asi que la pasada completa cuesta segundos y cubre el corpus entero en
@@ -19,7 +19,7 @@ DOS NIVELES DE EXIGENCIA, y la diferencia es deliberada:
   y queda escrito cual era.
 
 LA ASERCION MAS FUERTE es test_ninguna_recomendacion_sale_de_un_estado_
-contradictorio: de los 1.721 frames en que la app le dijo algo al usuario, CERO
+contradictorio: de los 1.672 frames en que la app le dijo algo al usuario, CERO
 tenian un estado que se contradijera a si mismo. Que el reconocimiento falle a
 veces es tolerable; que falle JUSTO cuando se da una orden, no.
 """
@@ -31,8 +31,8 @@ from core import invariantes as inv
 
 pytestmark = pytest.mark.corpus
 
-# Invariantes de CONTRATO: cero tolerancia. Medido sobre 8.314 frames con mesa
-# detectada, hoy los siete estan a 0.
+# Invariantes de CONTRATO: cero tolerancia. Medido sobre 7.758 frames con mesa
+# detectada (re-medido el 29-07-2026), hoy los diez estan a 0.
 CONTRATO = (
     "recomienda_sobre_mano_abandonada",
     "recomienda_sin_unidad",
@@ -53,17 +53,47 @@ CONTRATO = (
 # Invariantes de PERCEPCION: (clave, tasa medida hoy, techo). El techo va con
 # margen sobre lo medido, para que el test cace una regresion sin saltar por el
 # ruido normal de una sesion distinta.
+#
+# RE-MEDIDO el 29-07-2026 sobre el corpus ACTUAL (7.758 frames con mesa). Las
+# cifras anteriores eran de un corpus de 9.200 frames que ya no existe -se
+# borro para recuperar los 14 GB-, asi que no se podian seguir citando.
+#
+# La percepcion MEJORO en todo, y los techos bajan con ella: un techo muy por
+# encima de lo medido no protege de nada.
+#
+#     board_ilegal          3,58% -> 1,96%
+#     carta_en_dos_sitios   0,54% -> 0%
+#     hero_repetida         0,28% -> 0%
+#     board_repetido        0,37% -> 0,27%
+#     raiser_habla_despues  0,37% -> 0,09%
+#
+# Los dos que estan a CERO se quedan en percepcion y no pasan a contrato: son
+# fallos de OCR y pueden volver con otro tema de mesa o otro mazo. El techo se
+# deja bajo, no a cero.
 PERCEPCION = [
-    ("board_ilegal", 0.0358, 0.055),
-    ("carta_en_dos_sitios", 0.0054, 0.012),
-    ("raiser_habla_despues", 0.0037, 0.010),
-    ("board_repetido", 0.0037, 0.010),
-    ("hero_repetida", 0.0028, 0.008),
+    ("board_ilegal", 0.0196, 0.030),
+    ("board_repetido", 0.0027, 0.008),
+    ("raiser_habla_despues", 0.0009, 0.005),
+    ("carta_en_dos_sitios", 0.0000, 0.004),
+    ("hero_repetida", 0.0000, 0.003),
 ]
 
+# LOS DE SERIE HAN EMPEORADO, y es un intercambio deliberado, no una regresion
+# sorpresa. El commit 89ee297 quito el candado del rastreador -que votaba sobre
+# su propia salida y por eso el conjunto de asientos no podia cambiar dentro de
+# una mano- a cambio de que la ocupacion deje de contar tapete pelado como
+# jugador (precision 64,8% -> 87,9%, recall 99,0% -> 99,8%).
+#
+#     jugadores_cambian   0,19% -> 1,87%
+#     posicion_cambia     0,48% -> 1,28%
+#
+# El techo sube a lo medido con margen para que la suite vuelva a proteger, PERO
+# es un techo provisional: la fase 3a del plan (que el override no contradiga la
+# evidencia del frame) existe para bajarlo. Si dentro de unos commits sigue
+# aqui, es que esa fase no se hizo.
 SERIE = [
-    ("posicion_cambia", 0.0048, 0.012),
-    ("jugadores_cambian", 0.0019, 0.006),
+    ("jugadores_cambian", 0.0187, 0.028),
+    ("posicion_cambia", 0.0128, 0.020),
 ]
 
 
@@ -109,7 +139,7 @@ def test_ninguna_recomendacion_sale_de_un_estado_contradictorio(con_mesa):
     """Que el reconocimiento falle a veces es tolerable; que falle JUSTO cuando
     la app le dice al usuario lo que tiene que hacer, no.
 
-    Medido: 1.721 frames con recomendacion, CERO con el estado contradiciendose."""
+    Medido: 1.672 frames con recomendacion, CERO con el estado contradiciendose."""
     con_rec = [f for f in con_mesa if f.recommendation]
     assert con_rec, "ningun frame con recomendacion; el test no probaria nada"
     malos = []

@@ -539,6 +539,23 @@ REF_MIN_PARA_FIJAR = 10
 REF_TOLERANCIA = 0.06
 REF_SEGUIDAS_PARA_REFIJAR = 15
 
+# DESCARTAR EL FRAME es otra decision, y necesita otro umbral. Reutilizar el 6%
+# de arriba tiraba el 40% de los frames por puro temblor del detector: son dos
+# preguntas distintas -"¿me creo esta lectura para re-fijar?" y "¿esta la mesa
+# donde dice?"- y comparten formula pero no umbral.
+#
+# Medido sobre 1.423 frames de las cinco sesiones del 28-29, el desvio de la
+# lectura cruda respecto a la fijada sale con un valle limpio:
+#
+#     0,000-0,150   1.352 frames   <- el temblor normal de find_reference
+#     0,150-0,175       0          <- el valle
+#     0,175-0,400      71          <- la mesa tapada, o la ventana movida
+#
+# Con 0,16 se descarta el 5,0% de los frames, que es la tasa a la que el usuario
+# abre paneles encima de la mesa. Y arregla de paso el detector de "es mi turno":
+# en la sesion 224318, los frames en la banda dudosa pasan del 49,1% al 0%.
+REF_DESCARTE = 0.16
+
 
 def _desvio_relativo(a, b):
     """Cuanto se separan dos nucleos, en fraccion del fijado."""
@@ -564,8 +581,33 @@ class ReferenciaFijada:
         return self._fija
 
     def de(self, bgr):
-        """Referencia a usar para este frame. Mientras no haya suficientes
-        lecturas buenas devuelve la del frame; despues, la fijada."""
+        """Referencia a usar para este frame, y si HAY QUE FIARSE de este frame.
+
+        Devuelve (x, y, w, h, no_fiarse). Mientras no haya suficientes lecturas
+        buenas devuelve la del propio frame; despues, la fijada.
+
+        EL QUINTO ELEMENTO ES UNA GUARDA, no un detalle. Antes esta funcion
+        devolvia SIEMPRE `fija + (False,)` una vez fijada, o sea "fiate" pasara lo
+        que pasara en este frame. Consecuencia, cazada por el usuario revisando el
+        frame 0446 de sesion-2026-07-28_210655: abrio el panel de progreso de
+        fichas, que TAPA LA MITAD DERECHA de la mesa; el ovalo se detecto en
+        825x374 en vez de 1163x491 (un 29% mas pequeño), pero como la referencia
+        fijada se devolvia igual, se siguio leyendo cada zona en su sitio de
+        siempre. Resultado: un jugador INVENTADO en el asiento UR llamado
+        "Ciegas" -una palabra del panel- que corrio el recuento de asientos y con
+        el TODAS las posiciones. La app dijo HJ donde no lo era.
+
+        La regla es del usuario y es la correcta: "cuando no veas una mesa en un
+        frame, descarta ese frame, siempre y cuando hayas detectado una antes. Si
+        ningun frame detecta la mesa, entonces si tendriamos un problema". Aqui se
+        implementa el "siempre y cuando": con referencia ya fijada, un frame cuyo
+        ovalo no aparece -o aparece donde no toca- se marca para descartar. Sin
+        ella no hay nada con que comparar y se sigue como antes.
+
+        Lo que NO cambia: una ventana que se mueve de verdad. Ahi el desvio se
+        repite, y a las REF_SEGUIDAS_PARA_REFIJAR se re-fija y se vuelve a
+        trabajar. Se pierden esos frames de transicion, que es exactamente lo que
+        se quiere: durante la mudanza las zonas no estan donde dicen."""
         cruda = find_reference(bgr)
         if self._fija is None:
             if not cruda[4]:
@@ -574,18 +616,35 @@ class ReferenciaFijada:
                     a = np.array(self._muestras)
                     self._fija = tuple(int(x) for x in np.median(a, axis=0))
             return cruda
-        if not cruda[4]:
-            c = tuple(int(x) for x in cruda[:4])
-            if _desvio_relativo(c, self._fija) > REF_TOLERANCIA:
-                self._discrepantes.append(c)
-                if len(self._discrepantes) >= REF_SEGUIDAS_PARA_REFIJAR:
-                    a = np.array(self._discrepantes)
-                    self._fija = tuple(int(x) for x in np.median(a, axis=0))
-                    self._muestras = list(self._discrepantes)
-                    self._discrepantes = []
-            else:
+
+        # QUE NO SE ENCUENTRE EL OVALO NO ES MOTIVO PARA DESCARTAR, y esto se
+        # midio antes de decidirlo: pasa en el 26% de los frames, y en casi todos
+        # la mesa sigue exactamente donde estaba -es el detector el que tiene un
+        # mal momento-. Para eso existe la referencia fijada. Descartarlos dejaria
+        # muda una cuarta parte de la sesion sin ninguna razon.
+        if cruda[4]:
+            return self._fija + (False,)
+
+        c = tuple(int(x) for x in cruda[:4])
+        if _desvio_relativo(c, self._fija) <= REF_DESCARTE:
+            if _desvio_relativo(c, self._fija) <= REF_TOLERANCIA:
                 self._discrepantes = []
-        return self._fija + (False,)
+            return self._fija + (False,)
+
+        # EL OVALO ESTA, PERO NO DONDE ESTABA. Esa es la señal de verdad: algo lo
+        # tapa (el panel de progreso de fichas, el de manos, otra ventana) o la
+        # ventana se ha movido. En los dos casos las zonas no estan donde dicen y
+        # leerlas produce lecturas de sitios equivocados -en el frame 0446 de
+        # sesion-2026-07-28_210655 salio un jugador INVENTADO llamado "Ciegas",
+        # que es una palabra del panel, y corrio todas las posiciones-.
+        self._discrepantes.append(c)
+        if len(self._discrepantes) >= REF_SEGUIDAS_PARA_REFIJAR:
+            a = np.array(self._discrepantes)
+            self._fija = tuple(int(x) for x in np.median(a, axis=0))
+            self._muestras = list(self._discrepantes)
+            self._discrepantes = []
+            return self._fija + (False,)     # la ventana se movio: re-fijada
+        return self._fija + (True,)
 
 
 # --- el boton SIN MIRAR COLOR: gana el hueco donde hay algo ---
@@ -986,6 +1045,53 @@ def revealed_pair_seats(bgr, ref):
     return {nombre for nombre in CARD_BACK_ZONES
             if len(color_card_detector.find_card_boxes(
                 bgr, revealed_zone_px(ref, nombre, bgr.shape))) == 2}
+
+
+# --- ¿ES MI TURNO? por pixeles, sin OCR ---
+#
+# La idea es del usuario: "si hay botones tambien es una buena manera de saber
+# que es mi turno". Y es mejor que buena, porque los botones SOLO existen cuando
+# le toca al hero, que es exactamente el instante en que la decision importa.
+#
+# El cliente los pinta como rectangulos ROJOS grandes ("No ir", "Igualar N BB",
+# "Subir a N BB"), y el tapete de detras no tiene nada parecido. Medido sobre
+# 1.011 frames de sesion-2026-07-28_210655, la fraccion de rojo de la zona sale
+# BIMODAL con un valle de tres observaciones en total:
+#
+#     0,00-0,08   791 frames    <- no es su turno
+#     0,08-0,25     3           <- el valle
+#     0,25-0,92   217           <- botones en pantalla
+#
+# LO QUE DESTAPA, y es la razon de que esto exista: de los 216 frames con
+# botones, el OCR solo lee `facing` en 89. La app se pierde el 59% de los turnos
+# del hero. Y al reves, en 40 frames dice que enfrenta algo sin haber botones.
+# El OCR de esa zona es una lectura cara y poco fiable para una pregunta que se
+# responde mirando el color.
+#
+# Coste: 0,26 ms. Cabe en el lazo rapido de 0,1 s sin despeinarse.
+#
+# OJO: esto depende de que la referencia sea buena. Con la mesa tapada la zona
+# cae desplazada y el valor se queda a medias -es lo que pasaba en la sesion
+# 224318, con el 49% de los frames en el valle-, asi que hay que llamarlo solo
+# con una referencia en la que se confie (ver ReferenciaFijada.de).
+BOTONES_ROJO_MIN = 0.15         # en el valle, mas cerca del lado vacio: un falso
+                                # positivo cuesta un analisis de mas, y un falso
+                                # negativo cuesta la decision entera
+
+
+def hay_botones(bgr, ref):
+    """True si el cliente esta mostrando los botones de accion, o sea si es el
+    turno del hero. Sin OCR."""
+    x0, y0, x1, y1 = zone_to_px(ref, ACTION_ZONE, bgr.shape)
+    z = bgr[y0:y1, x0:x1]
+    if z.size == 0:
+        return False
+    hsv = cv2.cvtColor(z, cv2.COLOR_BGR2HSV)
+    h = hsv[:, :, 0].astype(np.int32)
+    s = hsv[:, :, 1].astype(np.int32)
+    v = hsv[:, :, 2].astype(np.int32)
+    rojo = ((h <= 8) | (h >= 172)) & (s > 120) & (v > 80)
+    return float(rojo.mean()) >= BOTONES_ROJO_MIN
 
 
 # --- facing: que enfrenta el hero, segun los botones de accion ---

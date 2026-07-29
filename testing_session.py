@@ -201,6 +201,7 @@ def resumen(directorio):
     acciones_max = {}
     vigilancia = {}
     ciclos = []
+    etapas = {}
     for nombre in frames:
         try:
             with open(os.path.join(directorio, nombre)) as fh:
@@ -228,6 +229,12 @@ def resumen(directorio):
                           "nota": d["nota"]})
         if d.get("duracion_analisis_s"):
             ciclos.append(d["duracion_analisis_s"])
+        # desglose por etapa (ver table_state._Reloj). Se acumula por etapa para
+        # poder decir DONDE se va el tiempo, que es lo unico que permite juzgar
+        # una optimizacion. Las sesiones grabadas antes de que existiera el reloj
+        # no traen la clave y simplemente no aportan.
+        for etapa, seg in (st.get("tiempos") or {}).items():
+            etapas.setdefault(etapa, []).append(seg)
         mano = st.get("mano_seguida")
         if mano is not None:
             manos.add(mano)
@@ -256,4 +263,24 @@ def resumen(directorio):
                               if acciones_max else None),
         "vigilancia": vigilancia,
         "ciclo_medio_s": round(sum(ciclos) / len(ciclos), 2) if ciclos else None,
+        # LA MEDIANA NO BASTA. El hueco entre analisis es donde vive el lazo
+        # rapido, y lo que decide si cabe es el p95, no el p50: medido sobre
+        # cinco sesiones, el p95 va de 1,4x a 2,1x la mediana. Con el p50 la
+        # mitad de los frames se queda sin hueco.
+        "ciclo_p50_s": _percentil(ciclos, 50),
+        "ciclo_p95_s": _percentil(ciclos, 95),
+        # donde se va el tiempo, por etapa (ver table_state._Reloj)
+        "etapas_p50_s": {k: _percentil(v, 50) for k, v in sorted(etapas.items())},
     }
+
+
+def _percentil(valores, q):
+    """Percentil por interpolacion nula (el elemento, no una media entre dos).
+
+    Sin numpy a proposito: este modulo lo importa la GUI y no tiene por que
+    arrastrar la dependencia solo para esto."""
+    if not valores:
+        return None
+    orden = sorted(valores)
+    i = min(len(orden) - 1, int(len(orden) * q / 100))
+    return round(orden[i], 3)

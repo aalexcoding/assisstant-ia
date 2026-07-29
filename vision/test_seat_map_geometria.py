@@ -222,3 +222,138 @@ def test_LIMITACION_las_zonas_de_apuesta_SI_alcanzan_esa_banda():
                 if solapan(z, BANDA_BOTES_PARTIDOS)]
     assert sorted(alcanzan) == ["HERO", "ML", "MR"], \
         f"el solape medido ha cambiado: ahora alcanzan {sorted(alcanzan)}"
+
+
+# --- ¿es mi turno? por pixeles, sin OCR --------------------------------------
+#
+# La idea es del usuario: los botones de accion SOLO existen cuando le toca al
+# hero, asi que verlos es saber que es su turno. Y es la pregunta que peor
+# responde el OCR: medido sobre 1.011 frames, el hero tenia botones en 216 y
+# `facing` solo se leyo en 89 -o sea que la app se pierde el 59% de sus propios
+# turnos- y ademas en 40 frames dijo que enfrentaba algo SIN haber botones.
+
+def zona_de_botones(ref, forma, color, fondo=(40, 90, 40)):
+    """Tapete con la zona de botones pintada de un color."""
+    import numpy as np
+    img = np.full(forma, fondo, dtype=np.uint8)
+    x0, y0, x1, y1 = seat_map.zone_to_px(ref, seat_map.ACTION_ZONE, forma)
+    img[y0:y1, x0:x1] = color
+    return img
+
+
+FORMA = (900, 1600, 3)
+REF_BTN = (200, 100, 1000, 400, False)
+
+
+def test_los_botones_rojos_del_cliente_se_ven():
+    """(0,0,200) BGR = el rojo con el que PokerStars pinta No ir / Igualar."""
+    assert seat_map.hay_botones(zona_de_botones(REF_BTN, FORMA, (0, 0, 200)), REF_BTN)
+
+
+def test_el_tapete_pelado_no_es_un_turno():
+    import numpy as np
+    assert not seat_map.hay_botones(np.full(FORMA, (40, 90, 40), dtype=np.uint8), REF_BTN)
+
+
+@pytest.mark.parametrize("color, desc", [
+    ((40, 90, 40), "verde del tapete"),
+    ((0, 0, 0), "negro"),
+    ((200, 200, 200), "gris claro"),
+    ((0, 150, 0), "verde vivo"),
+    ((180, 0, 0), "azul"),
+])
+def test_ningun_otro_color_se_toma_por_un_boton(color, desc):
+    assert not seat_map.hay_botones(zona_de_botones(REF_BTN, FORMA, color), REF_BTN), desc
+
+
+def test_un_rojo_oscuro_o_apagado_tampoco():
+    """El rail de la mesa y las sillas tiran a granate: saturados pero oscuros."""
+    assert not seat_map.hay_botones(zona_de_botones(REF_BTN, FORMA, (30, 30, 70)), REF_BTN)
+
+
+def test_el_umbral_cae_en_el_VALLE_y_del_lado_seguro():
+    """Medido: 791 frames bajo 0,08, tres en 0,08-0,25, y 217 por encima. El
+    umbral va dentro del valle pero MAS CERCA DEL LADO VACIO a proposito: un
+    falso positivo cuesta un analisis de mas, y un falso negativo cuesta la
+    decision entera."""
+    assert 0.08 < seat_map.BOTONES_ROJO_MIN < 0.25
+    assert seat_map.BOTONES_ROJO_MIN <= 0.17, "mas arriba se pierden turnos"
+
+
+def test_una_zona_fuera_del_encuadre_no_inventa_un_turno():
+    import numpy as np
+    fuera = (200, 100, 1000, 4000, False)     # la zona se sale por abajo
+    assert not seat_map.hay_botones(np.full(FORMA, (0, 0, 200), dtype=np.uint8), fuera)
+
+
+# --- la guarda: con la mesa tapada, este frame no vale -----------------------
+#
+# Cazado por el usuario revisando el frame 0446 de sesion-2026-07-28_210655:
+# abrio el panel de progreso de fichas, que tapa la mitad derecha de la mesa. El
+# ovalo se detecto en 825x374 en vez de 1163x491, pero como la referencia fijada
+# se devolvia igual, se siguio leyendo cada zona en su sitio de siempre. Salio un
+# jugador INVENTADO en UR llamado "Ciegas" -una palabra del panel- que corrio el
+# recuento de asientos y con el todas las posiciones.
+
+def fijar(rc, ref4):
+    """Fija la referencia dandole las lecturas buenas que hacen falta."""
+    for _ in range(seat_map.REF_MIN_PARA_FIJAR):
+        rc._muestras.append(ref4)
+    rc._fija = ref4
+    return rc
+
+
+def test_mientras_no_haya_referencia_fijada_no_se_descarta_nada():
+    """Sin nada con que comparar no se puede juzgar. Es el "siempre y cuando
+    hayas detectado una antes" de la regla."""
+    rc = seat_map.ReferenciaFijada()
+    assert rc.fijada is None
+
+
+def test_el_ovalo_donde_no_tocaba_marca_el_frame_para_descartar(monkeypatch):
+    rc = fijar(seat_map.ReferenciaFijada(), (266, 175, 1163, 494))
+    # el caso real del frame 0446: mucho mas pequeño
+    monkeypatch.setattr(seat_map, "find_reference", lambda bgr: (266, 296, 825, 374, False))
+    assert rc.de(None)[4] is True
+
+
+def test_un_temblor_normal_del_detector_NO_descarta(monkeypatch):
+    """find_reference oscila entre valores discretos todo el rato: medido, el
+    desvio mediano es 0,05 y el p95 0,14. Descartar ahi tiraba el 40% de los
+    frames por nada."""
+    rc = fijar(seat_map.ReferenciaFijada(), (266, 175, 1163, 494))
+    monkeypatch.setattr(seat_map, "find_reference", lambda bgr: (294, 178, 1135, 490, False))
+    assert rc.de(None)[4] is False
+
+
+def test_que_no_se_encuentre_el_ovalo_NO_es_motivo_para_descartar(monkeypatch):
+    """Pasa en el 26% de los frames y casi siempre la mesa sigue donde estaba: es
+    el detector el que tiene un mal momento. Para eso existe la referencia
+    fijada; descartarlos dejaria muda una cuarta parte de la sesion."""
+    rc = fijar(seat_map.ReferenciaFijada(), (266, 175, 1163, 494))
+    monkeypatch.setattr(seat_map, "find_reference", lambda bgr: (0, 0, 10, 10, True))
+    ref = rc.de(None)
+    assert ref[4] is False
+    assert ref[:4] == (266, 175, 1163, 494), "se sigue usando la fijada"
+
+
+def test_si_la_ventana_se_MUEVE_de_verdad_se_vuelve_a_fijar(monkeypatch):
+    """Un desvio sostenido no es un panel: es una mudanza. Se pierden los frames
+    de la transicion, que es lo correcto -durante la mudanza las zonas no estan
+    donde dicen- y luego se sigue trabajando."""
+    rc = fijar(seat_map.ReferenciaFijada(), (266, 175, 1163, 494))
+    nueva = (400, 300, 900, 380)
+    monkeypatch.setattr(seat_map, "find_reference", lambda bgr: nueva + (False,))
+    descartados = sum(1 for _ in range(seat_map.REF_SEGUIDAS_PARA_REFIJAR)
+                      if rc.de(None)[4])
+    assert descartados == seat_map.REF_SEGUIDAS_PARA_REFIJAR - 1
+    assert rc.fijada == nueva
+    assert rc.de(None)[4] is False, "ya re-fijada, se vuelve a trabajar"
+
+
+def test_el_umbral_de_descarte_sale_de_un_valle_medido():
+    """0,150-0,175 no tiene NI UNA observacion en 1.423 frames. Y es distinto del
+    de re-fijar: son dos preguntas ("¿me creo esta lectura?" y "¿esta la mesa
+    donde dice?") que comparten formula pero no umbral."""
+    assert seat_map.REF_TOLERANCIA < seat_map.REF_DESCARTE
+    assert 0.15 <= seat_map.REF_DESCARTE <= 0.175

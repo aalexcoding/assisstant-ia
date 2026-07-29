@@ -212,11 +212,26 @@ class AnalysisWorker(threading.Thread):
         GLib.idle_add(self.win.on_status, "Stream activo.")
         try:
             # EL LAZO RAPIDO ES EL PRIMARIO. Se captura cada VIGILANCIA_PERIODO_S
-            # y de cada frame solo se comprueba si alguna capsula de nameplate ha
-            # cambiado (0,8 ms); el analisis completo (~1 s) se lanza cuando toca
-            # segun el intervalo elegido. Asi el cartel de accion de un rival, que
-            # dura menos de 1,5 s, no se pierde entre dos analisis.
-            proximo_analisis = 0.0
+            # y de cada frame solo se hacen cosas baratas (~1,3 ms): mirar si
+            # alguna capsula de nameplate ha cambiado, y si el cliente esta
+            # mostrando los botones de accion. Asi el cartel de accion de un
+            # rival, que dura menos de 1,5 s, no se pierde entre dos analisis.
+            #
+            # EL ANALISIS COMPLETO SE DISPARA POR SUCESOS, no por reloj. La idea
+            # es del usuario: lo que importa para recomendar es que TE TOQUE A
+            # TI, y eso se ve por los botones. Analizar cada N segundos "por si
+            # acaso" gastaba ciclos en frames donde no habia nada que decidir y,
+            # peor, casi nunca caia en el turno del hero: medido sobre 1.011
+            # frames, tenia botones en 216 y la app solo leia `facing` en 89.
+            #
+            # El intervalo se queda como LATIDO de fondo, no como ritmo: cubre
+            # todo lo que el lazo rapido no ve (que crezca el board, que acabe la
+            # mano) y garantiza que el HUD no se congele si el detector de turno
+            # se equivoca. Se cuenta DESDE QUE TERMINA el analisis, no desde que
+            # empieza: contandolo desde el principio, un ciclo mas largo que el
+            # intervalo se lo comia entero y el lazo rapido no corria NUNCA
+            # (medido: 1,36 capturas rapidas por analisis en vez de las ~5).
+            proximo_latido = 0.0
             while not self._stop.is_set():
                 tick = time.monotonic()
                 frame = stream.read(timeout_s=5.0)
@@ -225,8 +240,8 @@ class AnalysisWorker(threading.Thread):
                     if err:
                         GLib.idle_add(self.win.on_error, err)
                     else:
-                        self.analizador.tick(crop)
-                        if time.monotonic() >= proximo_analisis:
+                        motivo = self.analizador.tick(crop)
+                        if motivo or time.monotonic() >= proximo_latido:
                             try:
                                 self._analyze_and_publish(crop)
                             except Exception as e:  # noqa: BLE001
@@ -235,15 +250,7 @@ class AnalysisWorker(threading.Thread):
                                 # muda: se reporta y se sigue con el siguiente.
                                 GLib.idle_add(self.win.on_error,
                                               f"Fallo analizando el frame: {e}")
-                            # El intervalo se cuenta DESDE QUE TERMINA el analisis,
-                            # no desde que empieza: es el hueco de VIGILANCIA entre
-                            # dos analisis. Contandolo desde el principio, un ciclo
-                            # mas largo que el intervalo se lo comia entero y el
-                            # lazo rapido no llegaba a correr NUNCA. Medido en una
-                            # sesion real con intervalo 0,5 s y ciclo 0,61 s: 367
-                            # capturas rapidas para 270 analisis, o sea 1,36 por
-                            # analisis en vez de las ~5 que tocarian.
-                            proximo_analisis = time.monotonic() + self.interval
+                            proximo_latido = time.monotonic() + self.interval
                 # el periodo de VIGILANCIA es un periodo, no una pausa: se espera
                 # solo lo que falte. Si el analisis se ha comido el tick entero,
                 # no se espera nada y se vuelve a capturar de inmediato.

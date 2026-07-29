@@ -68,6 +68,25 @@ VIGILANCIA_PERIODO_S = 0.1
 # y aun asi el vigilante se queda muy por debajo de un nucleo.
 VIGILANCIA_OCR_MIN_S = 0.12
 
+# Cada cuanto se lee el CHAT como muy tarde, aunque el rastreador no haya visto
+# ninguna frontera de mano.
+#
+# El chat es el job de OCR mas caro del frame: medido, 281 ms de un ciclo de 875,
+# o sea el 32%. Y lo unico que se saca de ahi -quien gano la mano anterior y su
+# numero- cambia UNA VEZ POR MANO. Leerlo en cada frame era pagar el 32% del
+# ciclo por un dato que no se mueve.
+#
+# Esto es el guardarrail, no la regla: lo normal es que se lea al cerrarse una
+# mano. Existe por si el detector de frontera enmudece -una mesa parada, un
+# tapete que deja de reconocerse- para que el panel no se quede congelado sin
+# que nadie se entere. Una mano tipica dura 21-45 frames de mediana, asi que 30 s
+# deja pasar varias manos antes de forzar una lectura: es un suelo, no un ritmo.
+CHAT_MAX_S = 30.0
+
+# Frames del arranque en los que SI se lee el chat, para que el panel "Mano
+# anterior" no salga vacio mientras se juega la primera mano.
+CHAT_FRAMES_INICIALES = 3
+
 
 @dataclass
 class Analisis:
@@ -140,12 +159,32 @@ class Analizador:
 
     # --- lazo rapido ----------------------------------------------------------
     watch: sw.SeatWatch = field(default_factory=sw.SeatWatch)
-    buffer: sw.FrameBuffer = field(default_factory=sw.FrameBuffer)
+    # NO HAY FrameBuffer, y es una retirada deliberada. Existia un anillo de 10
+    # frames que se llenaba en cada tick (0,23 ms de copia, 47 MB retenidos) y que
+    # NADIE LEIA en produccion: su unico proposito declarado -mirar hacia atras
+    # cuando la frontera de mano se detecta tarde- nunca se llego a cablear.
+    # Guardar por si acaso no es una funcionalidad. Vuelve el dia que haya un
+    # consumidor concreto, y entonces se medira lo que aporta.
     vigilancia: Vigilancia = field(default_factory=Vigilancia)
 
     _mano_vista: int | None = None
     _ref: tuple | None = None       # referencia del tapete del ultimo analisis
     _ultimo_ocr: float = 0.0
+    # ¿habia botones en la ultima mirada rapida? Sirve para detectar el FLANCO
+    # (empieza el turno del hero), que es lo que dispara el analisis completo.
+    _turno: bool = False
+
+    # --- lectura espaciada del chat (ver CHAT_MAX_S) ---------------------------
+    # Empieza en True: el primer frame lo lee, para no arrancar con el panel en
+    # blanco. Lo vuelve a poner a True el cierre de una mano.
+    _leer_chat: bool = True
+    _frames_analizados: int = 0
+    _ultimo_chat: float = 0.0
+    # El ultimo resumen de mano leido, que se devuelve en TODOS los frames aunque
+    # ese frame no haya mirado el chat. Si no, el panel "Mano anterior" se
+    # vaciaria entre lecturas y parpadearia una vez por mano en vez de
+    # actualizarse: peor que antes, y por una optimizacion.
+    _ultimo_resultado: dict | None = None
 
     # ------------------------------------------------------------------ analisis
     def analizar(self, frame):
@@ -157,31 +196,63 @@ class Analizador:
         t0 = time.perf_counter()
         ruta, bgr = self._como_ruta_y_array(frame)
 
+        # ¿toca leer el chat en este frame? Ver CHAT_MAX_S: es el job mas caro
+        # (32% del ciclo) y lo que se saca de el cambia una vez por mano.
+        ahora = time.monotonic()
+        leer_chat = (self._leer_chat
+                     or self._frames_analizados < CHAT_FRAMES_INICIALES
+                     or ahora - self._ultimo_chat >= CHAT_MAX_S)
+        self._frames_analizados += 1
+
         # los asientos estables de la mano en curso se realimentan al
         # reconocimiento: ver table_state.analyze_layout
         state = ts.analyze_layout(ruta, max_players=self.max_players,
                                   asientos_estables=self.tracker.asientos_estables(),
                                   plantilla_boton=self.plantilla_boton,
                                   referencia=self.referencia,
-                                  escala_glifo=self.escala_glifo)
+                                  escala_glifo=self.escala_glifo,
+                                  leer_chat=leer_chat)
+        if leer_chat:
+            self._leer_chat = False
+            self._ultimo_chat = ahora
 
-        # la referencia del tapete se guarda para el lazo rapido, que no puede
-        # permitirse recalcularla (29 ms) diez veces por segundo
-        try:
-            ref = seat_map.find_reference(bgr)
-            self._ref = None if ref[4] else ref
-        except Exception:  # noqa: BLE001
-            self._ref = None
+        # La referencia del tapete se guarda para el lazo rapido, que no puede
+        # permitirse recalcularla (17 ms medidos) diez veces por segundo.
+        #
+        # SE TOMA LA FIJADA, no una lectura propia, y son dos arreglos en uno:
+        #
+        #   1. Antes se llamaba a find_reference AQUI ademas de dentro de
+        #      referencia.de(), o sea DOS VECES POR FRAME. 17 ms tirados.
+        #   2. Y lo importante: las dos no daban lo mismo. analyze_layout usa la
+        #      referencia FIJADA (mediana de las primeras lecturas buenas) y esto
+        #      usaba la CRUDA de este frame, asi que el lazo rapido hasheaba y
+        #      OCR-eaba cajas distintas de las que el lento juzgaba. Los dos
+        #      lazos tienen que mirar lo mismo o el nombre que lee uno no es del
+        #      asiento que cuenta el otro.
+        #
+        # Mientras no haya suficientes lecturas buenas, `fijada` es None y el
+        # lazo rapido no mira nada: es lo correcto, porque sin referencia fiable
+        # las zonas estan desplazadas.
+        fijada = self.referencia.fijada if self.referencia is not None else None
+        self._ref = (tuple(fijada) + (False,)) if fijada is not None else None
 
         # resumen de la mano anterior. Se parsean las lineas de chat que
         # analyze_layout YA ha OCR-eado: antes esto hacia una segunda pasada de
         # OCR sobre la misma zona, con otro subproceso y otro arranque de
         # tesseract, y costaba 571 ms de un ciclo de 3,9 s. Un fallo aqui no debe
         # tumbar el analisis principal.
-        try:
-            resultado = hr.parse_hand_result(state.get("chat_lines"))
-        except Exception:  # noqa: BLE001
-            resultado = None
+        # Solo se vuelve a parsear cuando este frame ha mirado el chat; el resto
+        # conserva el ultimo resumen. Un frame sin lectura NO significa "no hay
+        # mano anterior", significa "no se ha vuelto a mirar", y son cosas
+        # distintas: tratarlas igual dejaria el panel en blanco entre manos.
+        if leer_chat:
+            try:
+                nuevo = hr.parse_hand_result(state.get("chat_lines"))
+            except Exception:  # noqa: BLE001
+                nuevo = None
+            if nuevo:
+                self._ultimo_resultado = nuevo
+        resultado = self._ultimo_resultado
 
         # ANTES de decidir: cuanto lleva puesto cada asiento, deducido de su
         # bajada de stack. El numero de mano del chat es la señal de frontera mas
@@ -192,6 +263,20 @@ class Analizador:
             if info["mano"] != self._mano_vista:
                 self._mano_vista = info["mano"]
                 self.action_log.nueva_mano()
+                # SE PIDE EL CHAT PARA EL FRAME SIGUIENTE, no para este. La
+                # frontera se detecta AQUI, cuando analyze_layout ya ha corrido,
+                # asi que este frame ya no puede leerlo. Y da igual: la linea
+                # "X gana el bote" tarda en aparecer, o sea que leerla un frame
+                # despues es incluso mejor que leerla en el mismo.
+                self._leer_chat = True
+                # RE-CENSO. Entre manos cambia quien esta sentado: en Zoom el
+                # cliente te cambia de mesa, asi que el ocupante de un asiento
+                # puede ser OTRA PERSONA con la capsula igual de oscura. El
+                # vigilante rapido solo mira lo que cambia de un frame al
+                # siguiente, y eso no lo ve; hay que pedirle expresamente que
+                # vuelva a leer los seis. Ver SeatWatch.re_censar (y por que
+                # olvidar() haria justo lo contrario).
+                self.watch.re_censar()
             self.action_log.observar_estado(state, t=time.time())
             state["acciones"] = self.action_log.acciones()
             state["vigilancia"] = self.vigilancia.a_dict()
@@ -269,7 +354,36 @@ class Analizador:
             pass                       # vigilar es una ayuda, nunca tumba el lazo
 
     def tick(self, crop):
-        """Un frame del lazo rapido: al buffer, y a vigilar."""
+        """Un frame del lazo rapido. Devuelve el MOTIVO por el que conviene hacer
+        un analisis completo ahora, o None si no hay ninguno.
+
+        Quien lleva el lazo (gui.py) decide si obedece, pero la POLITICA vive
+        aqui, que es donde esta el estado entre frames. Es lo mismo que se hizo
+        con la lectura del chat: vision/ mira, core/ decide cuando.
+
+        EL DISPARO POR TURNO es la idea del usuario, y le da la vuelta al diseño:
+        en vez de analizar cada N segundos por si acaso, se analiza CUANDO PASA
+        ALGO. Y lo que pasa, para una app que recomienda, es que te toque a ti.
+
+        Por que importa tanto: los botones de accion solo estan en pantalla en el
+        turno del hero, y de ellos salen `facing` y `to_call`, que es lo que
+        distingue "abro el bote" de "defiendo una subida". Medido sobre 1.011
+        frames, el hero tiene botones en 216 y la app hoy solo lee `facing` en 89:
+        se pierde el 59% de sus propios turnos, y decide a ciegas en ellos. Con el
+        disparo por turno, el analisis cae SIEMPRE con los botones delante."""
         self.vigilancia.ticks += 1
-        self.buffer.añadir(crop, t=time.time())
         self.vigilar(crop)
+
+        # sin referencia de confianza no se mira nada: la zona de botones caeria
+        # desplazada y el detector diria cualquier cosa (ver ReferenciaFijada.de)
+        if self._ref is None:
+            return None
+        try:
+            turno = seat_map.hay_botones(crop, self._ref)
+        except Exception:  # noqa: BLE001
+            return None
+        anterior, self._turno = self._turno, turno
+        # EL FLANCO, no el estado. Mientras dure el turno los botones siguen ahi,
+        # y re-analizar cada 0,1 s seria peor que lo de ahora: lo que interesa es
+        # el INSTANTE en que aparecen.
+        return "turno" if turno and not anterior else None

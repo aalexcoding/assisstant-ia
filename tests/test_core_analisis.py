@@ -248,27 +248,21 @@ def test_varias_capsulas_cambiadas_se_resuelven_en_UNA_pasada(an):
 
 # --- tick: el frame del lazo rapido ------------------------------------------
 
-def test_un_tick_cuenta_guarda_el_frame_y_vigila(an):
+def test_un_tick_cuenta_y_vigila(an):
     an.watch = WatchFalso([])
     an._ref = REF
-    img = crop()
-    an.tick(img)
-    assert an.vigilancia.ticks == 1
-    assert an.watch.llamadas == 1
-    guardado = an.buffer.ultimo()
-    assert guardado is not None and guardado["t"] is not None
-    assert guardado["frame"] is not img, "el buffer guarda COPIAS: el stream reescribe el suyo"
-
-
-def test_el_frame_se_guarda_aunque_no_haya_referencia(an):
-    """El buffer sirve para mirar hacia atras cuando algo se detecta tarde, asi
-    que tiene que llenarse desde el primer frame, antes de que la referencia
-    exista."""
-    an.watch = WatchFalso(["UL"])
-    an._ref = None
     an.tick(crop())
     assert an.vigilancia.ticks == 1
-    assert an.buffer.ultimo() is not None
+    assert an.watch.llamadas == 1
+
+
+def test_sin_referencia_el_tick_no_dispara_nada(an):
+    """Con la mesa tapada o sin fijar todavia, la zona de botones cae desplazada
+    y el detector diria cualquier cosa. Mejor no mirar."""
+    an.watch = WatchFalso(["UL"])
+    an._ref = None
+    assert an.tick(crop()) is None
+    assert an.vigilancia.ticks == 1
 
 
 def test_los_ticks_se_acumulan(an):
@@ -278,3 +272,209 @@ def test_los_ticks_se_acumulan(an):
         an.tick(crop())
     assert an.vigilancia.ticks == 5
     assert an.vigilancia.a_dict()["ticks"] == 5
+
+
+# --- el chat se lee ESPACIADO, no en cada frame ------------------------------
+#
+# Es el job de OCR mas caro del ciclo: medido con un A/B sobre los mismos 60
+# frames de sesion-2026-07-29_003632, ciclo p50 1,003 s -> 0,739 s, o sea
+# -264 ms por frame (26%), con las MISMAS 24 recomendaciones y cero diferencias
+# en los campos comparados por replay.py sobre 200 frames.
+#
+# Y lo que se saca del chat -quien gano la mano anterior y su numero- cambia UNA
+# VEZ POR MANO, no diez veces por segundo. Sobre 300 frames: se pasa de leer el
+# chat en 298 a leerlo en 15, y los frames que llevan hand_result siguen siendo
+# 299 de 299, porque el ultimo resumen se conserva.
+
+
+class LayoutFalso:
+    """Doble de table_state.analyze_layout: apunta con que leer_chat se le llamo."""
+
+    def __init__(self):
+        self.llamadas = []
+
+    def __call__(self, ruta, **kw):
+        self.llamadas.append(kw.get("leer_chat"))
+        return {"hero_cards": [], "board": [], "players": [], "warnings": [],
+                "stack_unit": "bb", "chat_lines": []}
+
+
+@pytest.fixture
+def layout(monkeypatch):
+    doble = LayoutFalso()
+    monkeypatch.setattr(ca.ts, "analyze_layout", doble)
+    return doble
+
+
+def test_los_primeros_frames_SI_leen_el_chat(an, layout, tmp_path):
+    """Para que el panel "Mano anterior" no arranque en blanco."""
+    import cv2
+    p = str(tmp_path / "f.png")
+    cv2.imwrite(p, crop())
+    for _ in range(ca.CHAT_FRAMES_INICIALES):
+        an.analizar(p)
+    assert all(layout.llamadas), layout.llamadas
+
+
+def test_despues_deja_de_leerlo_en_cada_frame(an, layout, tmp_path):
+    import cv2
+    p = str(tmp_path / "f.png")
+    cv2.imwrite(p, crop())
+    for _ in range(ca.CHAT_FRAMES_INICIALES + 6):
+        an.analizar(p)
+    assert layout.llamadas[-1] is False
+    assert sum(1 for x in layout.llamadas if x) <= ca.CHAT_FRAMES_INICIALES + 1
+
+
+def test_al_cerrarse_una_mano_se_pide_el_chat_PARA_EL_SIGUIENTE(an, layout, tmp_path):
+    """La frontera se detecta DESPUES de analyze_layout, asi que este frame ya no
+    puede leerlo. Y da igual: la linea "X gana el bote" tarda en aparecer."""
+    import cv2
+    p = str(tmp_path / "f.png")
+    cv2.imwrite(p, crop())
+    for _ in range(ca.CHAT_FRAMES_INICIALES + 3):
+        an.analizar(p)
+    assert layout.llamadas[-1] is False
+    an._mano_vista = 999            # simula que el rastreador abre otra mano
+    an.analizar(p)
+    assert layout.llamadas[-1] is False, "el frame de la frontera NO lo lee"
+    an.analizar(p)
+    assert layout.llamadas[-1] is True, "el siguiente SI"
+
+
+def test_el_guardarrail_lo_fuerza_aunque_no_haya_frontera(an, layout, tmp_path, monkeypatch):
+    """Por si el detector de frontera enmudece -mesa parada, tapete que deja de
+    reconocerse-: el panel no puede quedarse congelado sin que nadie se entere."""
+    import cv2
+    p = str(tmp_path / "f.png")
+    cv2.imwrite(p, crop())
+    reloj = [1000.0]
+    monkeypatch.setattr(ca.time, "monotonic", lambda: reloj[0])
+    for _ in range(ca.CHAT_FRAMES_INICIALES + 3):
+        an.analizar(p)
+    assert layout.llamadas[-1] is False
+    reloj[0] += ca.CHAT_MAX_S + 1
+    an.analizar(p)
+    assert layout.llamadas[-1] is True
+
+
+def test_el_ultimo_resumen_de_mano_se_conserva_entre_lecturas(an, monkeypatch, tmp_path):
+    """Un frame sin lectura NO significa "no hay mano anterior", significa "no se
+    ha vuelto a mirar". Tratarlos igual dejaria el panel en blanco entre manos."""
+    import cv2
+    p = str(tmp_path / "f.png")
+    cv2.imwrite(p, crop())
+    monkeypatch.setattr(ca.ts, "analyze_layout", LayoutFalso())
+    monkeypatch.setattr(ca.hr, "parse_hand_result",
+                        lambda lineas: {"winner": "pepe", "hand_number": "123"})
+    primero = an.analizar(p)
+    assert primero.hand_result["winner"] == "pepe"
+    monkeypatch.setattr(ca.hr, "parse_hand_result", lambda lineas: None)
+    for _ in range(8):
+        res = an.analizar(p)
+    assert res.hand_result is not None, "el panel se habria vaciado"
+    assert res.hand_result["winner"] == "pepe"
+
+
+# --- la referencia del tapete: UNA sola, y la MISMA para los dos lazos -------
+#
+# Dos arreglos en uno, y el segundo es el que importa:
+#
+#   1. find_reference se llamaba DOS VECES por frame -aqui y dentro de
+#      referencia.de() en analyze_layout-. 17 ms medidos, tirados.
+#   2. Y no daban lo mismo: analyze_layout usa la referencia FIJADA (mediana de
+#      las primeras lecturas buenas) y esto usaba la CRUDA de este frame, asi que
+#      el lazo rapido hasheaba y OCR-eaba cajas DISTINTAS de las que el lento
+#      juzgaba. El nombre que leia uno no era del asiento que contaba el otro.
+
+def test_el_lazo_rapido_usa_la_referencia_FIJADA_del_lento(an, monkeypatch, tmp_path):
+    import cv2
+    p = str(tmp_path / "f.png")
+    cv2.imwrite(p, crop())
+    monkeypatch.setattr(ca.ts, "analyze_layout", LayoutFalso())
+    an.referencia._fija = (11, 22, 333, 444)
+    an.analizar(p)
+    assert an._ref == (11, 22, 333, 444, False)
+
+
+def test_sin_referencia_fijada_todavia_el_rapido_no_mira(an, monkeypatch, tmp_path):
+    """Mientras no haya suficientes lecturas buenas no hay donde mirar, y mirar
+    en el sitio equivocado es peor que no mirar: las zonas estarian desplazadas y
+    el verbo leido seria de otro asiento."""
+    import cv2
+    p = str(tmp_path / "f.png")
+    cv2.imwrite(p, crop())
+    monkeypatch.setattr(ca.ts, "analyze_layout", LayoutFalso())
+    assert an.referencia.fijada is None
+    an.analizar(p)
+    assert an._ref is None
+
+
+def test_analizar_no_vuelve_a_buscar_la_referencia_por_su_cuenta(an, monkeypatch, tmp_path):
+    """La busca analyze_layout, a traves de ReferenciaFijada. Una segunda llamada
+    aqui son 17 ms por frame y ademas abre la puerta a que se descuadren."""
+    import cv2
+    p = str(tmp_path / "f.png")
+    cv2.imwrite(p, crop())
+    monkeypatch.setattr(ca.ts, "analyze_layout", LayoutFalso())
+    llamadas = []
+    monkeypatch.setattr(ca.seat_map, "find_reference",
+                        lambda bgr: llamadas.append(1) or (0, 0, 1, 1, True))
+    an.analizar(p)
+    assert llamadas == [], "analizar() no debe llamar a find_reference"
+
+
+# --- el disparo por TURNO -----------------------------------------------------
+#
+# La idea es del usuario: lo que importa para recomendar es que le toque a el, y
+# eso se ve porque el cliente pinta los botones de accion. Antes se analizaba
+# cada N segundos "por si acaso", lo que gastaba ciclos en frames sin nada que
+# decidir y casi nunca caia en el turno del hero: medido sobre 1.011 frames,
+# tenia botones en 216 y la app solo leia `facing` en 89. O sea que decidia a
+# ciegas en el 59% de sus propios turnos.
+
+def test_cuando_aparecen_los_botones_se_pide_analizar(an, monkeypatch):
+    an.watch = WatchFalso([])
+    an._ref = REF
+    monkeypatch.setattr(ca.seat_map, "hay_botones", lambda bgr, ref: True)
+    assert an.tick(crop()) == "turno"
+
+
+def test_mientras_DURA_el_turno_no_se_vuelve_a_pedir(an, monkeypatch):
+    """Se dispara por FLANCO, no por estado. Los botones siguen en pantalla todo
+    el turno, y re-analizar cada 0,1 s seria peor que analizar por reloj."""
+    an.watch = WatchFalso([])
+    an._ref = REF
+    monkeypatch.setattr(ca.seat_map, "hay_botones", lambda bgr, ref: True)
+    assert an.tick(crop()) == "turno"
+    assert an.tick(crop()) is None
+    assert an.tick(crop()) is None
+
+
+def test_al_acabar_el_turno_y_volver_se_pide_otra_vez(an, monkeypatch):
+    an.watch = WatchFalso([])
+    an._ref = REF
+    hay = [True]
+    monkeypatch.setattr(ca.seat_map, "hay_botones", lambda bgr, ref: hay[0])
+    assert an.tick(crop()) == "turno"
+    hay[0] = False
+    assert an.tick(crop()) is None
+    hay[0] = True
+    assert an.tick(crop()) == "turno", "la siguiente vez que te toque"
+
+
+def test_sin_botones_no_se_pide_nada(an, monkeypatch):
+    an.watch = WatchFalso([])
+    an._ref = REF
+    monkeypatch.setattr(ca.seat_map, "hay_botones", lambda bgr, ref: False)
+    assert an.tick(crop()) is None
+
+
+def test_un_fallo_del_detector_no_tumba_el_lazo(an, monkeypatch):
+    """El lazo rapido es una ayuda: si el detector revienta, se pierde un disparo,
+    no la sesion. El latido de fondo sigue cubriendo."""
+    an.watch = WatchFalso([])
+    an._ref = REF
+    monkeypatch.setattr(ca.seat_map, "hay_botones",
+                        lambda bgr, ref: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert an.tick(crop()) is None

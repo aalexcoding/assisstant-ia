@@ -85,6 +85,7 @@ class SeatWatch:
 
     def __init__(self):
         self._ultimas = {}
+        self._pendientes = set()
 
     def cambios(self, bgr, ref):
         """Asientos cuya capsula ha cambiado respecto a la ultima vez.
@@ -94,13 +95,36 @@ class SeatWatch:
         el primer frame de cada sesion sin ninguna razon."""
         nuevas = huellas(bgr, ref)
         cambiados = [s for s, h in nuevas.items()
-                     if s in self._ultimas and self._ultimas[s] != h]
+                     if s in self._pendientes
+                     or (s in self._ultimas and self._ultimas[s] != h)]
         self._ultimas.update(nuevas)
+        self._pendientes.clear()
         return cambiados
 
+    def re_censar(self):
+        """Marca las seis capsulas como PENDIENTES: la proxima mirada las devuelve
+        TODAS, hayan cambiado un pixel o no.
+
+        Para el arranque de una mano. Entre manos cambia quien esta sentado -en
+        Zoom el cliente te cambia de mesa, asi que el ocupante de un asiento puede
+        ser otra persona- y hay que volver a leer los seis nombres aunque la
+        imagen se parezca.
+
+        NO CONFUNDIR CON olvidar(), que hace lo CONTRARIO y por eso no vale aqui:
+        olvidar borra las huellas, y como la primera vez que se ve un asiento no
+        cuenta como cambio, la mirada siguiente devolveria CERO asientos. Usar
+        olvidar() para re-censar dejaria la mesa sin leer justo cuando mas falta
+        hace."""
+        self._pendientes = set(seat_map.SEATS)
+
     def olvidar(self):
-        """Para empezar de cero (sesion nueva, o recalibrado el recuadro)."""
+        """Para empezar de cero: sesion nueva o recuadro recalibrado.
+
+        Es lo correcto ahi y solo ahi: si el encuadre cambia, las huellas viejas
+        son de otras cajas y compararlas no significa nada. Para el arranque de
+        una mano lo que se quiere es re_censar()."""
         self._ultimas.clear()
+        self._pendientes.clear()
 
 
 class FrameBuffer:

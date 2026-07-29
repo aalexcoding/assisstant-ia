@@ -5,6 +5,14 @@ pendiente está en [`PENDIENTE.md`](PENDIENTE.md) y el protocolo para revisar un
 partida grabada en [`REVISAR-PARTIDA.md`](REVISAR-PARTIDA.md); esto es el mapa de
 arriba: qué está hecho, qué toca ahora y qué depende de ti.
 
+> **Lo que se está haciendo ahora (29-07-2026)**:
+> [`CICLO-Y-CARTAS.md`](CICLO-Y-CARTAS.md) — ritmo medido, censo de mesa y
+> reconocimiento de cartas. Ese documento manda sobre lo que diga éste de
+> tiempos de ciclo: al medirlo resultó que **las tres cifras que había en el
+> repo estaban mal**, y de paso aparecieron un `find_reference` duplicado, el
+> conjunto de asientos caducado en la frontera de mano, y un `FrameBuffer` que
+> nadie lee. Fases 0 y 1 hechas; el ciclo baja un 26 %.
+
 ---
 
 ## Lo primero, si vuelves después de un tiempo

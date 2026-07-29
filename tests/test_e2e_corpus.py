@@ -222,3 +222,56 @@ def test_no_se_pierden_recomendaciones(al_dia):
     antes = sum(1 for fr, _res in al_dia if fr.recommendation)
     ahora = sum(1 for _fr, res in al_dia if res.recommendation)
     assert ahora >= antes, f"se recomendaba en {antes} frames y ahora en {ahora}"
+
+
+# --- el badge de torneo tapaba el stack del hero ----------------------------
+
+# Suelo de frames con las 2 cartas del hero vivas en los que SI se le lee el
+# stack. Sin stack no hay profundidad y decide() se abstiene, asi que esta tasa
+# es, casi literalmente, cuantas veces la app puede hablar.
+TASA_STACK_HERO_MIN = 0.70
+
+
+def test_al_hero_se_le_lee_el_stack_casi_siempre(reanalizados):
+    """EL CASO, anotado por el usuario mientras jugaba: "no se ve mi stack porque
+    mi badge es dorado, plateado o bronce".
+
+    Cuando va entre los tres primeros del torneo, PokerStars le pone una insignia
+    que vuelve CLARA la franja del stack mientras la del nombre sigue oscura. El
+    nameplate del hero se ancla a sus cartas, asi que sale un recorte ajustado con
+    las dos mitades de polaridad OPUESTA pegadas, y ahi tesseract perdia la clara.
+    No era polaridad -invertir el recorte entero lo empeora- sino mezclar las dos:
+    aislada, la franja se lee perfecta.
+
+    Medido sobre sesion-2026-07-28_210655 (730 frames, el usuario subiendo hasta
+    el 2.o puesto), antes y despues de leer la franja aparte:
+
+        franja del stack      antes    despues
+        clara (con badge)      0/101    la lee
+        oscura (normal)      135/159
+
+        stack leido, en total   54%        89%
+        frames con recomendacion 197       290
+
+    A los RIVALES no les pasaba: con franja clara se les lee el 66% y con oscura
+    el 70%, o sea lo mismo. Sus zonas son las fracciones fijas del ovalo, mas
+    holgadas, y no meten el contraste partido dentro del mismo recorte."""
+    vivas = leidos = 0
+    for _fr, res, _t in reanalizados:
+        if isinstance(res, Exception):
+            continue
+        st = res.state
+        if len(st.get("hero_cards") or []) != 2 or st.get("hero_cards_dimmed"):
+            continue
+        hero = next((p for p in st.get("players") or [] if p.get("is_hero")), None)
+        if hero is None:
+            continue
+        vivas += 1
+        leidos += hero.get("stack") is not None
+    if vivas < 20:
+        pytest.skip("la muestra no trae suficientes frames con el hero en mano")
+    tasa = leidos / vivas
+    assert tasa >= TASA_STACK_HERO_MIN, (
+        f"solo se lee el stack del hero en {100*tasa:.0f}% de los {vivas} frames "
+        f"con sus cartas vivas ({leidos}); sin stack no hay profundidad y el motor "
+        f"se calla")
