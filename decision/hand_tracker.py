@@ -392,6 +392,29 @@ class HandTracker:
         # Se acota a UNA mano, no mas: el respaldo hace mucho trabajo -medido
         # sobre 3.198 filas de una sesion, rellena 767 (24%)- asi que tirarlo
         # antes de tiempo devolveria los "(?)" que este mecanismo vino a quitar.
+        #
+        # CADUCAR TAMBIEN POR DISCONTINUIDAD DE STACK: PROBADO Y DESCARTADO.
+        # La ausencia no cubre el caso de Zoom, donde el asiento SI se ve pero es
+        # otra persona, asi que se penso mirar el salto de stack entre la ultima
+        # lectura de la mano H y la primera de H+1. Medido sobre las 6 sesiones
+        # grabadas: 1.153 fronteras con el mismo nick y 86 con nick distinto
+        # (las variantes de OCR del mismo nick cuentan como el mismo jugador).
+        #
+        #     salto relativo    mismo nick   nick distinto
+        #     < 0,02               61,6%          27,9%
+        #     > 1,00                7,3%          17,4%
+        #
+        # LAS DOS POBLACIONES NO SEPARAN: no hay valle donde poner el umbral, y
+        # el que menos daño hace (0,35) sigue caducando 174 respaldos buenos para
+        # acertar 39 de los 86 cambios. Barrido entero, respaldos tirados por cada
+        # cambio acertado: 5,5 / 4,9 / 4,5 / 4,7 / 4,7 / 5,6 / 5,2 para umbrales
+        # de 0,10 a 2,00. Nunca baja de 4,5.
+        #
+        # El motivo de fondo es la BASE: las fronteras con el mismo jugador
+        # superan 13 a 1 a las de cambio, asi que un separador imperfecto ahoga
+        # los aciertos en falsos positivos por pura aritmetica. Haria falta una
+        # señal que no sea el stack -el asiento vacio un instante, o el avatar-
+        # y ninguna esta medida todavia.
         if getattr(self, "_veces", None) is not None:
             vistos = {s for s, n in self._veces.items() if n}
             self._nombres_previos = {s: n for s, n in self._nombres_previos.items()

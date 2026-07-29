@@ -604,3 +604,28 @@ def test_las_cartas_vistas_del_rival_llegan_al_calculo():
     r = engine.postflop_equity(st, iterations=500, seed=1)
     assert r["win_probability"] == 0.0, "escalera de color contra escalera: iba muerto"
     assert r["positional_adjustment"]["opponent_ranges"][0]["combos"] == 1
+
+
+def test_el_stack_cacheado_NO_cruza_la_frontera_de_mano():
+    """Dentro de una mano el stack casi no se mueve; entre manos si -has ganado o
+    perdido el bote, o han subido las ciegas-. Medido sobre las 6 sesiones
+    grabadas, la cache de una mano anterior se equivoca en mas del 15% el 62,3%
+    de las veces, contra el 33,6% de la cache de la misma mano. Y un 15% a 25bb
+    basta para servir la tabla preflop de otra profundidad."""
+    engine.reset_state()
+    hero = {"stack": 25.0}
+    assert engine._cached_hero_stack(hero, mano=7) == (25.0, False)
+    # mismo numero de mano: la cache vale
+    assert engine._cached_hero_stack({}, mano=7) == (25.0, True)
+    # mano siguiente: no vale, aunque el TTL siga vivo
+    assert engine._cached_hero_stack({}, mano=8) == (None, False)
+
+
+def test_sin_numero_de_mano_la_cache_se_comporta_como_antes():
+    """No se puede saber si se cruzo la frontera, asi que manda solo el TTL. Pasa
+    en los tests que arman un GameState a mano, no en produccion, donde
+    analyze_layout siempre trae mano_seguida."""
+    engine.reset_state()
+    assert engine._cached_hero_stack({"stack": 12.0}) == (12.0, False)
+    assert engine._cached_hero_stack({}) == (12.0, True)
+    assert engine._cached_hero_stack({}, mano=3) == (12.0, True)

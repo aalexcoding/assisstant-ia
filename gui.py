@@ -81,7 +81,18 @@ def players_markup(players):
         # el nick puede venir REPUESTO por el rastreador: el cliente lo tapa con
         # el verbo de la accion justo cuando ese jugador actua (ver
         # table_state.es_verbo_de_accion). Lo que hizo se muestra aparte.
-        name = p["name"] if p.get("name") else "(?)"
+        name = GLib.markup_escape_text(str(p["name"] if p.get("name") else "(?)"))
+        # EN CURSIVA CUANDO EL NOMBRE ES DE UNA MANO ANTERIOR. El respaldo hace
+        # mucho trabajo -rellena el 24% de las filas- pero no todo lo que rellena
+        # sigue siendo verdad: medido sobre 859 mano-asiento sostenidos por el
+        # respaldo, 106 resultaron ser OTRA PERSONA (Conexi6n -> anaes,
+        # Mig070883 -> bated; no son variantes de OCR del mismo nick). El dato
+        # viajaba en el state desde hacia tiempo y el HUD lo ignoraba, o sea que
+        # pintaba con la misma confianza lo leido ahora y lo recordado de antes.
+        # No se puede distinguir cual de los dos es: lo que si se puede es dejar
+        # de afirmarlo, que es lo que hace la cursiva.
+        if p.get("name_de_mano_anterior"):
+            name = f"<i>{name}</i>"
         pos = f" [{p['position']}]" if p.get("position") else ""
         # con unidad: los importes son big blinds, y verlo evita confundir un
         # stack de 44,5 BB con 44,5 fichas de un vistazo
@@ -101,7 +112,7 @@ def players_markup(players):
         if p.get("action"):
             accion = (f'  <span foreground="#f39c12">'
                       f'{GLib.markup_escape_text(str(p["action"]))}</span>')
-        lines.append(f"{GLib.markup_escape_text(str(name))}{GLib.markup_escape_text(pos)}: "
+        lines.append(f"{name}{GLib.markup_escape_text(pos)}: "
                      f"{GLib.markup_escape_text(str(stack))}{mark}{puesto}{accion}")
     return "\n".join(lines)
 
@@ -1103,7 +1114,13 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.prev_coach_label.set_markup(
             '<span size="small" foreground="#95a5a6"><i>buscando videos sobre '
             'situaciones parecidas...</i></span>')
-        board = list(self._ultimo_board)
+        # SE VACIA AL CONSUMIRLO. Es el board de la mano que acaba de terminar y
+        # solo sirve para este estudio; si se queda puesto, la siguiente mano que
+        # termine sin haber llegado a leer board -todos se retiran preflop, que es
+        # lo normal- estudiaria el board de la mano ANTERIOR y lo presentaria como
+        # suyo. Al abrir mano no se vacia nada: el board de la mano que se cierra
+        # hace falta justo aqui, despues de la frontera.
+        board, self._ultimo_board = list(self._ultimo_board), []
         ganadora = result.get("winning_hand")
         showdown = bool(result.get("showdown"))
         threading.Thread(target=self._buscar_estudio, args=(board, ganadora, showdown),

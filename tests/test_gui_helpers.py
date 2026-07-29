@@ -93,6 +93,27 @@ def test_un_nombre_que_no_se_leyo_sale_como_interrogante():
     assert "(?)" in gui.players_markup([{"name": None, "stack": 5.0}])
 
 
+def test_un_nombre_de_una_mano_ANTERIOR_se_pinta_en_cursiva():
+    """El respaldo de nombres rellena el 24% de las filas del HUD, pero no todo
+    lo que rellena sigue siendo verdad: de 859 mano-asiento sostenidos por el
+    respaldo, 106 resultaron ser otra persona. El HUD no puede saber cual es
+    cual, pero si puede dejar de afirmarlo con la misma confianza que una lectura
+    de este frame."""
+    ahora = gui.players_markup([{"name": "pepe", "stack": 5.0}])
+    antes = gui.players_markup([{"name": "pepe", "stack": 5.0,
+                                 "name_de_mano_anterior": True}])
+    assert "<i>pepe</i>" in antes
+    assert "<i>" not in ahora
+
+
+def test_el_nombre_se_escapa_una_sola_vez_aunque_vaya_en_cursiva():
+    """La cursiva envuelve al nombre YA escapado. Escapar despues convertiria el
+    propio <i> en texto, y escapar dos veces dejaria un &amp;lt; a la vista."""
+    m = gui.players_markup([{"name": "a<b>&c", "stack": 1.0,
+                             "name_de_mano_anterior": True}])
+    assert "<i>a&lt;b&gt;&amp;c</i>" in m
+
+
 def test_lo_comprometido_se_pinta_como_COTA_INFERIOR():
     """Es una cota inferior porque si la mano ya habia empezado cuando se vio al
     jugador por primera vez, se pierde lo que puso antes. El simbolo lo dice."""

@@ -104,6 +104,38 @@ def test_olvidar_vuelve_al_estado_inicial(watch, base):
     assert watch.cambios(base, REF) == []
 
 
+def test_re_censar_devuelve_LOS_SEIS_aunque_no_haya_cambiado_nada(watch, base):
+    """Al abrir mano hay que releer los seis nombres aunque la imagen sea
+    identica: entre manos puede haber cambiado quien esta sentado -en Zoom el
+    cliente te cambia de mesa- y la capsula del que se fue se parece mucho a la
+    del que llega."""
+    watch.cambios(base, REF)
+    watch.re_censar()
+    assert sorted(watch.cambios(base, REF)) == sorted(seat_map.SEATS)
+
+
+def test_re_censar_se_gasta_en_una_sola_mirada(watch, base):
+    """Si no se gastara, la vigilancia OCR-earia los seis asientos en cada tick
+    hasta el final de la mano, que es lo que este mecanismo existe para evitar."""
+    watch.cambios(base, REF)
+    watch.re_censar()
+    watch.cambios(base, REF)
+    assert watch.cambios(base, REF) == []
+
+
+def test_olvidar_NO_sirve_para_re_censar(watch, base):
+    """La trampa que hay que dejar clavada: olvidar() borra las huellas, y como
+    la PRIMERA vez que se ve un asiento no cuenta como cambio, la mirada
+    siguiente devuelve CERO. Usarlo al abrir mano dejaria la mesa sin releer
+    justo cuando mas falta hace: es lo CONTRARIO de re-censar."""
+    watch.cambios(base, REF)
+    watch.olvidar()
+    assert watch.cambios(base, REF) == []
+    watch.cambios(base, REF)
+    watch.re_censar()
+    assert sorted(watch.cambios(base, REF)) == sorted(seat_map.SEATS)
+
+
 # --- huellas -----------------------------------------------------------------
 
 def test_hay_una_huella_por_asiento_del_mapa(base):

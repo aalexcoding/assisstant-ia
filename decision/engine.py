@@ -76,9 +76,13 @@ de mostrar el numero de fichas y muestra la accion ("Igualar X", "All-in",
 pantalla justo en el momento en que se quiere recomendar. Se cachea el
 ultimo stack leido (visible unos frames antes, cuando aun no era el turno)
 y se reutiliza si el frame actual no lo trae, mientras sea reciente
-(_HERO_STACK_TTL_S). Es una aproximacion (el stack efectivo baja al meter
-fichas), pero para elegir el rango preflop por profundidad es suficiente y
-es mucho mejor que no recomendar. Se anota en el reasoning cuando se usa.
+(_HERO_STACK_TTL_S) Y SEA DE LA MISMA MANO. Dentro de una mano es una
+aproximacion buena -el stack casi no se mueve, lo que cambia es lo puesto en el
+bote- y para elegir el rango preflop por profundidad basta. Cruzando la frontera
+de mano no: ahi has ganado o perdido el bote, o han subido las ciegas, y medido
+sobre las 6 sesiones grabadas la cache de una mano anterior se equivoca en mas
+del 15% el 62,3% de las veces (la de la misma mano, el 33,6%). Se anota en el
+reasoning cuando se usa; ver _cached_hero_stack.
 """
 import json
 import os
@@ -101,7 +105,7 @@ _DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.j
 _LOG_ACTIVO = os.environ.get("POKER_DECISIONS_LOG", "1") != "0"
 
 _HERO_STACK_TTL_S = 90.0
-_last_hero_stack = {"value": None, "t": 0.0}
+_last_hero_stack = {"value": None, "t": 0.0, "mano": None}
 
 
 def reset_state():
@@ -112,7 +116,7 @@ def reset_state():
     -decide() lo reutilizaria como si fuera de este frame- y la suite pasa a
     depender del orden. En produccion no se llama: la cache es justo lo que salva
     la recomendacion cuando el nameplate del hero se tapa con los botones."""
-    _last_hero_stack.update(value=None, t=0.0)
+    _last_hero_stack.update(value=None, t=0.0, mano=None)
 
 # La ciega grande vale 1 POR DEFINICION: los importes vienen en big blinds. Se
 # nombra en vez de escribir 1 suelto para que se lea que es una unidad, no una
@@ -139,19 +143,47 @@ _STACK_KEY_EXACT_TOL = 0.25
 # Ahora el juicio se hace contra la rejilla REAL de cada familia (_stack_grid).
 
 
-def _cached_hero_stack(hero):
+def _cached_hero_stack(hero, mano=None):
     """Stack del hero en bb, con cache reciente: cuando es su turno el nameplate
     deja de mostrar el numero (muestra la accion, o lo tapan los botones), o sea
     que el stack desaparece de pantalla JUSTO en el momento en que hace falta
-    recomendar. Devuelve (valor, cacheado)."""
+    recomendar. Devuelve (valor, cacheado).
+
+    LA CACHE NO CRUZA LA FRONTERA DE MANO. En una mano el stack casi no se mueve
+    -lo que cambia es lo que has puesto en el bote- pero ENTRE manos si: has
+    ganado el bote, lo has perdido, o han subido las ciegas y con ellas la unidad
+    en la que se cuenta todo. Medido sobre las 6 sesiones grabadas, comparando lo
+    que la cache habria servido contra la siguiente lectura de verdad:
+
+        cache de ESTA mano       n=1.926   error p50  1,8%   se pasa del 15%: 33,6%
+        cache de mano ANTERIOR   n=1.257   error p50 18,4%   se pasa del 15%: 62,3%
+
+    O sea que cruzando la frontera MIENTE LA MAYORIA DE LAS VECES. Y no miente en
+    algo cosmetico: la profundidad elige la tabla preflop, y sus claves van de 5
+    en 5 bb, asi que un 15% de error a 25bb basta para servir el grafico de otra
+    profundidad con toda la confianza. Callar es mejor que eso.
+
+    EL PLAN PEDIA OTRA COSA y se cambio con el dato delante: decia caducar "solo
+    si no baja el numero de recomendaciones". Baja -el 9,3% de los frames tiran
+    de cache de una mano anterior- pero ese criterio media lo que no era. Una
+    recomendacion calculada sobre una profundidad que ya no existe no es una
+    recomendacion ganada, es una equivocada.
+
+    Si no hay numero de mano (`mano is None`) no se puede saber si se cruzo la
+    frontera y solo manda el TTL, que es como se comportaba antes. Pasa en los
+    tests que llaman a decide() con un GameState a mano, no en produccion."""
     val = hero.get("stack") if hero else None
     if val is not None:
-        _last_hero_stack.update(value=val, t=time.monotonic())
+        _last_hero_stack.update(value=val, t=time.monotonic(), mano=mano)
         return val, False
-    if (_last_hero_stack["value"] is not None
-            and time.monotonic() - _last_hero_stack["t"] <= _HERO_STACK_TTL_S):
-        return _last_hero_stack["value"], True
-    return None, False
+    if _last_hero_stack["value"] is None:
+        return None, False
+    if time.monotonic() - _last_hero_stack["t"] > _HERO_STACK_TTL_S:
+        return None, False
+    if (mano is not None and _last_hero_stack["mano"] is not None
+            and mano != _last_hero_stack["mano"]):
+        return None, False
+    return _last_hero_stack["value"], True
 
 
 # ver seat_map.BB_POSTED_MAX_MULT: la apuesta del asiento BB es ciega + ante
@@ -549,7 +581,7 @@ def postflop_equity(state, iterations=None, seed=None):
     stack_bb = None
     hero = _hero_player(state)
     if state.get("stack_unit") == "bb":
-        stack_bb, _cacheado = _cached_hero_stack(hero)
+        stack_bb, _cacheado = _cached_hero_stack(hero, state.get("mano_seguida"))
 
     resultado = equity.estimate_equity(
         state.get("hero_cards"), board, state.get("hero_position"), len(rivales),
@@ -633,7 +665,7 @@ def decide(state):
                        "table_state.analyze_layout(); configura PokerStars para mostrar "
                        "los importes en big blinds")
 
-    stack_bb, stack_cacheado = _cached_hero_stack(hero)
+    stack_bb, stack_cacheado = _cached_hero_stack(hero, state.get("mano_seguida"))
     if stack_bb is None:
         return abstain("no se encontro el stack del hero en BB (ni reciente en cache); "
                        "no se puede calcular la profundidad")
