@@ -183,18 +183,57 @@ Reproduciendo los 209 frames de esa sesión con una disposición y con la otra:
 
 Los nueve asientos se leen en 204-209 de los 209 frames.
 
-Las recomendaciones bajan de 51 a 46. Queda anotado sin interpretar: la sesión
-son **dos manos**, así que no hay con qué decidir si significa algo.
+### Las recomendaciones bajan, y es una mejora
+
+Con la sesión larga (1.885 frames) el patrón se repite y ya se puede explicar:
+**64 → 56 recomendaciones**. Los motivos de abstención son idénticos en las dos
+disposiciones; lo que cambia es la POSICIÓN que se te asigna. Mirando frame a
+frame: **17 recomendaciones se pierden y 9 se ganan.**
+
+Y las que se pierden son las que había que perder. En los frames 0046-0051:
+
+| | te cree | dice |
+|---|---|---|
+| disposición de 6 | SB | **OPEN RAISE ALL IN** |
+| disposición de 9 | BB | se abstiene: *"lo último que se vio en la mesa fue a un rival"* |
+
+En `casos/mesa9_reco_equivocada_con_la_de_6.png` se ve ese frame: el disco está
+junto a golfker, un asiento dice **"Subir"**, el hero tiene **J♥ 3♠** y los
+botones piden **Igualar 5,13 BB**. O sea que el hero enfrenta una subida y con la
+disposición de 6 la app le decía que abriera all-in con J3 desparejado.
+
+Recomendar una APERTURA enfrentando una subida es, en palabras del propio
+`decision/engine`, *"el peor fallo posible en esta app"*. Con 4 de 9 asientos
+leídos el anillo de posiciones no puede estar bien, y esas 17 recomendaciones
+salían de ahí.
 
 ## Lo que NO está medido, y hay que saberlo
 
-- **Las anclas del botón son DERIVADAS.** Esa sesión son dos manos, así que el
-  disco solo pasó por 2 de los 9 asientos. Se calculan tirando de cada asiento un
-  30 % hacia el centro del tapete, y ese 30 % está **calibrado con las 2 anclas
-  que sí se midieron** (error medio 0,062, el mejor de las fracciones probadas).
-  Las nueve quedan bien asignadas, cada una entre 1,59× y 2,63× más cerca de su
-  asiento que del siguiente, por encima del 1,2× que se exigió en la de 8. Con
-  una sesión larga hay que medirlas de verdad.
-- **Las zonas de dorso y de apuesta son derivadas y sin validar**, igual que
-  entraron las de la mesa de 8. Las de la de 8 se validaron después con una
-  sesión real y salieron bien; estas están a la espera de lo mismo.
+- **Ocho de las nueve anclas del botón están MEDIDAS** (disco visto en 1.157
+  frames de dos sesiones largas). La primera versión las derivaba y se equivocaba
+  una media de 0,083 del núcleo, hasta 0,158 en HERO y 0,144 en MR — y el disco se
+  atribuye al ancla más cercana, así que a esa distancia el botón se le puede dar
+  al vecino. **`ML` sigue derivada**: el disco no pasó por ese asiento en ninguna
+  de las dos sesiones.
+- **Las zonas de dorso están validadas** sobre 381 frames. Siete de las ocho
+  salieron bien a la primera (p90 entre 0,234 y 0,393 contra un umbral de 0,10);
+  **DR se quedaba en 0,123** y se re-midió barriendo su entorno hasta 0,369.
+- **Las zonas de apuesta siguen derivadas y sin validar.** Se asume por cómo se
+  usan: el importe leído ahí nunca crea una subida, solo atribuye una que el botón
+  "Igualar" ya ha demostrado.
+
+### Lo que se aprendió sobre derivar zonas
+
+Derivar el desplazamiento del asiento equivalente de la mesa de 6 **funciona
+arriba y en los lados, y se queda corto ABAJO**. Cuatro asientos entre las dos
+mesas lo dicen:
+
+    mesa    asiento   p90 derivado   p90 re-medido   se movió
+    9       DR            0,123          0,369       (-0,13, -0,10)
+    8       DL            0,191          0,341       (+0,10, -0,06)
+    8       DR            0,232          0,342       (-0,10, -0,06)
+
+Los tres se van **hacia dentro y hacia arriba**, en cantidades simétricas: ahí el
+cliente dibuja la carta más pegada al nameplate, seguramente porque no tiene
+sitio. No son suficientes para llamarlo regla, pero sí para saber que los
+asientos de abajo hay que comprobarlos uno a uno.

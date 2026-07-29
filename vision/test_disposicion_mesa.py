@@ -75,18 +75,52 @@ def test_cada_asiento_de_8_tiene_ancla_de_boton():
         assert "button" in cfg, s
 
 
-def test_las_anclas_de_8_no_se_pisan():
-    """Cada una tiene que quedar mas cerca de SU asiento que de cualquier otro, o
-    el boton saltaria de sitio. Medido: el margen real va de 1,22x a 1,98x."""
+# Separacion minima entre dos anclas del mismo mapa. ES EL CRITERIO QUE DE VERDAD
+# USA EL CODIGO: disco_dealer mide del disco encontrado a cada ANCLA y se queda
+# con la mas cercana, exigiendo que sea <= 0,75x la segunda o se abstiene. Lo que
+# importa entonces es que las anclas esten separadas entre SI.
+#
+# La primera version de estos tests comprobaba otra cosa -que cada ancla estuviera
+# mas cerca de SU asiento que de los demas- y era un criterio inventado: las
+# anclas viven sobre el tapete, hacia dentro, asi que naturalmente caen entre dos
+# asientos. Se descubrio al medir las anclas de la mesa de 9 de verdad: la de UL
+# quedaba a 1,03x de dos asientos y el test se puso rojo sin que nada estuviera
+# mal.
+#
+# EL UMBRAL SALE DE LAS TRES TABLAS, no de una estimacion (que ya falle una vez
+# aqui mismo: dije 0,233 para la mesa de 8 sin medirlo y son 0,143):
+#
+#     mesa de 6   minima 0,250 (ML-UL)    2a 0,377
+#     mesa de 8   minima 0,143 (ML-UL)    2a 0,176
+#     mesa de 9   minima 0,159 (DL-HERO)  2a 0,221
+#
+# 0,12 deja pasar las tres con margen y sigue cazando dos anclas que se junten de
+# verdad. Cuanto mas juntas, mas veces se calla disco_dealer -exige que la primera
+# sea <= 0,75x la segunda- y en el limite le da el boton al vecino. Que la mesa de
+# 8 sea la mas apretada es coherente con que sus anclas son DERIVADAS.
+ANCLAS_SEPARACION_MIN = 0.12
+
+
+def _separacion_minima(seats):
+    """La distancia entre las dos anclas mas juntas del mapa."""
     import math
-    seats = seat_map.zonas(8)["seats"]
-    for s, cfg in seats.items():
-        ax, ay = cfg["button"]
-        ds = sorted((math.hypot(ax - (o["plate"][0] + o["plate"][2]) / 2,
-                                ay - (o["plate"][1] + o["plate"][3]) / 2), n)
-                    for n, o in seats.items())
-        assert ds[0][1] == s, f"el ancla de {s} cae mas cerca de {ds[0][1]}"
-        assert ds[1][0] / ds[0][0] >= 1.2, f"{s}: margen {ds[1][0] / ds[0][0]:.2f}x"
+    anclas = {s: cfg["button"] for s, cfg in seats.items()}
+    return min(math.hypot(ax - bx, ay - by)
+               for a, (ax, ay) in anclas.items()
+               for b, (bx, by) in anclas.items() if a != b)
+
+
+def test_las_anclas_de_8_estan_separadas_entre_si():
+    """Si dos anclas se juntan, un disco entre ellas no se puede atribuir: la
+    primera no llega a ser 0,75x la segunda y disco_dealer se calla. Peor aun si
+    se cruzan, porque entonces se le da el boton al vecino."""
+    assert _separacion_minima(seat_map.zonas(8)["seats"]) >= ANCLAS_SEPARACION_MIN
+
+
+def test_cada_ancla_de_8_es_de_UN_asiento():
+    """Dos asientos no pueden compartir ancla: seria el mismo sitio de la mesa."""
+    anclas = [tuple(c["button"]) for c in seat_map.zonas(8)["seats"].values()]
+    assert len(set(anclas)) == len(anclas)
 
 
 def test_una_disposicion_desconocida_cae_a_la_de_6():
@@ -139,16 +173,13 @@ def test_la_de_9_NO_tiene_TOPC_y_la_de_6_y_8_SI():
     assert {"TL", "TR"} <= set(seat_map.zonas(9)["seats"])
 
 
-def test_las_anclas_de_9_no_se_pisan():
-    """Son DERIVADAS -la sesion de 9 son dos manos y el disco solo paso por 2 de
-    los 9 asientos- asi que comprobar que cada una gana a su asiento es lo unico
-    que las sostiene. Medido: entre 1,59x y 2,63x."""
-    import math
-    seats = seat_map.zonas(9)["seats"]
-    for s, cfg in seats.items():
-        ax, ay = cfg["button"]
-        ds = sorted((math.hypot(ax - (o["plate"][0] + o["plate"][2]) / 2,
-                                ay - (o["plate"][1] + o["plate"][3]) / 2), n)
-                    for n, o in seats.items())
-        assert ds[0][1] == s, f"el ancla de {s} cae mas cerca de {ds[0][1]}"
-        assert ds[1][0] / ds[0][0] >= 1.2, f"{s}: margen {ds[1][0] / ds[0][0]:.2f}x"
+def test_las_anclas_de_9_estan_separadas_entre_si():
+    """OCHO de las nueve estan MEDIDAS (disco visto en 1.157 frames de dos
+    sesiones largas); ML sigue derivada porque el disco no paso nunca por ese
+    asiento. Separacion minima medida: 0,159, entre HERO y DL."""
+    assert _separacion_minima(seat_map.zonas(9)["seats"]) >= ANCLAS_SEPARACION_MIN
+
+
+def test_cada_ancla_de_9_es_de_UN_asiento():
+    anclas = [tuple(c["button"]) for c in seat_map.zonas(9)["seats"].values()]
+    assert len(set(anclas)) == len(anclas)

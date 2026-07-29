@@ -163,23 +163,46 @@ SEATS_8MAX = {
 # en el 96-100% de los frames, y ninguno falso. Verificado a ojo en
 # docs/casos/mesa9_nueve_localizados.png.
 #
-# LAS ANCLAS DEL BOTON SON DERIVADAS, no medidas, y hay que saberlo: esa sesion
-# son dos manos, asi que el disco solo paso por 2 de los 9 asientos. Se calculan
-# tirando de cada asiento un 30% hacia el centro del tapete, y ese 30% esta
-# CALIBRADO con las 2 anclas que si se midieron (error medio 0,062, el mejor de
-# las fracciones probadas). Las nueve quedan bien asignadas, cada una entre 1,59x
-# y 2,63x mas cerca de su asiento que del siguiente, por encima del 1,2x que se
-# exigio en la mesa de 8. Con una sesion larga habria que medirlas de verdad.
+# LAS POSICIONES SE RE-MIDIERON con 1.291 frames de dos sesiones largas y salen
+# iguales que con los 74 primeros, dentro de 0,02 en las nueve. Confirmadas.
+#
+# LAS ANCLAS DEL BOTON SI CAMBIARON, y por eso hubo que medirlas. La primera
+# version las derivaba tirando de cada asiento un 30% hacia el centro, calibrado
+# con las 2 unicas anclas que habia entonces. Con el disco visto en 1.157 frames
+# aparecen OCHO cumulos, y la derivacion se equivocaba una media de 0,083 del
+# nucleo, hasta 0,158 en HERO y 0,144 en MR. No es un error inocente: el disco se
+# atribuye al ancla MAS CERCANA, asi que a esa distancia el boton se le puede dar
+# al vecino.
+#
+#     asiento   derivada      medida        error
+#     UR        0.913,0.199   0.912,0.219   0.020
+#     DL        0.178,0.815   0.218,0.834   0.044
+#     TR        0.668,0.045   0.685,0.099   0.057
+#     DR        0.829,0.829   0.772,0.802   0.063
+#     TL        0.332,0.024   0.259,0.057   0.080
+#     UL        0.094,0.199   0.049,0.289   0.101
+#     MR        0.913,0.500   0.940,0.641   0.144
+#     HERO      0.507,0.962   0.359,0.907   0.158
+#
+# ML SIGUE DERIVADA: el disco no paso por ese asiento en ninguna de las dos
+# sesiones, asi que no hay nada que medir. Queda como la unica de las nueve sin
+# comprobar, y se nota porque es la que menos separacion tiene de su vecina
+# (0,221 de UL).
+#
+# La separacion minima entre anclas es 0,159 (HERO y DL). disco_dealer exige que
+# la primera sea <= 0,75x la segunda o se abstiene, asi que con esa separacion un
+# disco a medio camino no se atribuye a nadie en vez de atribuirse mal, que es el
+# reparto de errores correcto.
 SEATS_9MAX = {
-    "TL":   {"plate": (0.08, -0.30, 0.44, -0.06), "button": (0.332, 0.024)},
-    "TR":   {"plate": (0.56, -0.27, 0.92, -0.03), "button": (0.668, 0.045)},
-    "UL":   {"plate": (-0.26, -0.05, 0.10, 0.19), "button": (0.094, 0.199)},
-    "UR":   {"plate": (0.91, -0.05, 1.27, 0.19), "button": (0.913, 0.199)},
+    "TL":   {"plate": (0.08, -0.30, 0.44, -0.06), "button": (0.259, 0.057)},
+    "TR":   {"plate": (0.56, -0.27, 0.92, -0.03), "button": (0.685, 0.099)},
+    "UL":   {"plate": (-0.26, -0.05, 0.10, 0.19), "button": (0.049, 0.289)},
+    "UR":   {"plate": (0.91, -0.05, 1.27, 0.19), "button": (0.912, 0.219)},
     "ML":   {"plate": (-0.27, 0.39, 0.09, 0.63), "button": (0.087, 0.507)},
-    "MR":   {"plate": (0.91, 0.38, 1.27, 0.62), "button": (0.913, 0.500)},
-    "DL":   {"plate": (-0.14, 0.83, 0.22, 1.07), "button": (0.178, 0.815)},
-    "DR":   {"plate": (0.79, 0.85, 1.15, 1.09), "button": (0.829, 0.829)},
-    "HERO": {"plate": (0.33, 1.04, 0.69, 1.28), "button": (0.507, 0.962)},
+    "MR":   {"plate": (0.91, 0.38, 1.27, 0.62), "button": (0.940, 0.641)},
+    "DL":   {"plate": (-0.14, 0.83, 0.22, 1.07), "button": (0.218, 0.834)},
+    "DR":   {"plate": (0.79, 0.85, 1.15, 1.09), "button": (0.772, 0.802)},
+    "HERO": {"plate": (0.33, 1.04, 0.69, 1.28), "button": (0.359, 0.907)},
 }
 
 # La de 6 sigue siendo la de por defecto: es la que tiene detras todas las
@@ -1058,12 +1081,42 @@ CARD_BACK_ZONES_8MAX = {
     "UR":   (0.85, -0.20, 1.08, -0.05),
     "ML":   (-0.23, 0.23, 0.01, 0.41),
     "MR":   (1.00, 0.23, 1.25, 0.41),
-    "DL":   (-0.14, 0.72, 0.10, 0.90),
-    "DR":   (0.88, 0.72, 1.12, 0.90),
+    "DL":   (-0.04, 0.66, 0.20, 0.84),
+    "DR":   (0.78, 0.66, 1.02, 0.84),
 }
 
-# Derivadas igual que las de la mesa de 8, con el mismo desplazamiento por
-# asiento. Sin validar todavia: la sesion de 9 que hay son dos manos.
+# DL y DR SE RE-MIDIERON el 30-07-2026 y se movieron. Entraron derivadas y con
+# menos margen que las demas (p90 0,191 y 0,232 contra un umbral de 0,10, cuando
+# las de arriba y de los lados andan por 0,29-0,36), y al medir la mesa de 9
+# aparecio el mismo sintoma en su DR. Barriendo el entorno sobre 339 frames de la
+# sesion del 29-07 a las 20:12:
+#
+#     DL   p90 0,191  ->  0,341   moviendola (+0,10, -0,06)
+#     DR   p90 0,232  ->  0,342   moviendola (-0,10, -0,06)
+#
+# Los dos se van HACIA DENTRO Y HACIA ARRIBA, y en cantidades simetricas. O sea
+# que derivar el desplazamiento del asiento equivalente de la mesa de 6 funciona
+# arriba y en los lados y se queda corto ABAJO: ahi el cliente dibuja la carta mas
+# pegada al nameplate, seguramente porque no tiene sitio. No esta medido como
+# regla -son cuatro asientos entre las dos mesas- pero es suficiente para saber
+# que los de abajo hay que comprobarlos uno a uno y no darlos por derivados.
+
+# Derivadas del desplazamiento que cada asiento tiene en la mesa de 6, y luego
+# VALIDADAS sobre 381 frames de la sesion del 29-07 a las 23:05. Siete de las
+# ocho salieron bien a la primera: bimodales -p50 = 0 cuando no hay cartas- y con
+# p90 entre 0,234 y 0,393 contra un umbral de 0,10.
+#
+# DR NO. Se quedaba en p90 = 0,123, o sea 1,2x el umbral: cualquier variacion la
+# pierde. Se barrio su entorno y el gradiente era limpio y monotono hacia arriba
+# y a la izquierda, con el optimo en (-0,13, -0,10) del sitio derivado y p90
+# 0,369, en linea con las otras siete. Esa es la que esta escrita.
+#
+# Es lo mismo que ya paso con DL y DR en la mesa de 8, donde entraron con menos
+# margen que las demas (1,9x el umbral frente a 2,9x): derivar el desplazamiento
+# funciona en los asientos de arriba y de los lados, y se queda corto en los de
+# ABAJO. Tiene sentido -ahi la carta se dibuja mas cerca del nameplate porque no
+# hay sitio- pero no esta medido como regla, asi que los de abajo hay que
+# comprobarlos uno a uno.
 CARD_BACK_ZONES_9MAX = {
     "TL":   (0.12, -0.43, 0.36, -0.27),
     "TR":   (0.65, -0.40, 0.88, -0.24),
@@ -1072,7 +1125,7 @@ CARD_BACK_ZONES_9MAX = {
     "ML":   (-0.27, 0.30, -0.03, 0.47),
     "MR":   (1.02, 0.29, 1.27, 0.46),
     "DL":   (-0.14, 0.73, 0.10, 0.91),
-    "DR":   (0.90, 0.76, 1.15, 0.93),
+    "DR":   (0.77, 0.66, 1.02, 0.83),
 }
 
 CARD_BACK_ZONES = CARD_BACK_ZONES_6MAX
