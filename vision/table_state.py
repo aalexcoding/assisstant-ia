@@ -498,8 +498,15 @@ def _fuerza_ocupacion(seat, info, en_mano, button_seat):
     return 1              # solo un verbo de accion, o texto que parecia un nick
 
 
-def _cajas_de_carta(bgr, zona_px, esperadas=None):
+def _cajas_de_carta(bgr, zona_px, esperadas=None, mazo=None):
     """Cartas de una zona con CUALQUIERA de los dos mazos de 4 colores.
+
+    `mazo` FIJA cual, en vez de dejar que compitan. Lo pidio el usuario -"añade
+    una opcion en la GUI para que yo te diga que mazo estoy usando, asi vas
+    directo al tema"- y el dato le da la razon: en la sesion del 29-07 a las
+    20:12 la competicion elegia "solid" en cartas del otro mazo, el calco solo
+    acertaba 24 de 177 y el 8 salia al 1,3% cuando le toca el 7,7%. Cuando el
+    usuario sabe lo que ha configurado, adivinarlo solo puede salir peor.
 
     El usuario cambia el mazo desde las opciones del cliente y la app no se
     entera, asi que no se puede fijar uno: el 26-07-2026 paso del mazo de fondo
@@ -524,10 +531,19 @@ def _cajas_de_carta(bgr, zona_px, esperadas=None):
 
     En el mazo de cara blanca la regla no cambia nada: alli el de fondo solido
     encuentra 0 y el de glifo 2-5, asi que sigue ganando el mismo."""
-    glifo = glyph_card_detector.find_card_boxes(bgr, zona_px, esperadas)
-    solido = [dict(b, deck="solid", dimmed=False)
-              for b in sorted(color_card_detector.find_card_boxes(bgr, zona_px),
-                              key=lambda b: b["x"])]
+    def _glifo():
+        return glyph_card_detector.find_card_boxes(bgr, zona_px, esperadas)
+
+    def _solido():
+        return [dict(b, deck="solid", dimmed=False)
+                for b in sorted(color_card_detector.find_card_boxes(bgr, zona_px),
+                                key=lambda b: b["x"])]
+
+    if mazo == "glyph":
+        return _glifo()
+    if mazo == "solid":
+        return _solido()
+    glifo, solido = _glifo(), _solido()
     return glifo if len(glifo) >= len(solido) else solido
 
 
@@ -583,7 +599,7 @@ def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
 
 def analyze_layout(image_path, max_players=None, asientos_estables=None,
                    plantilla_boton=None, referencia=None, escala_glifo=None,
-                   leer_chat=True):
+                   leer_chat=True, mazo=None):
     """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
     produccion para el cliente real de PokerStars capturado limpio. Ancla una
     referencia independiente del color (nucleo del tapete por contraste) y lee
@@ -720,8 +736,8 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     board_px = seat_map.zone_to_px(ref, seat_map.BOARD_ZONE, bgr.shape)
     # la mano del hero son 2 cartas SIEMPRE, y se dibujan pegadas sin hueco:
     # sin decirlo salen como un bloque unico que el filtro de forma tira entero.
-    hero_boxes = _cajas_de_carta(bgr, hero_px, esperadas=2)
-    board_boxes = _cajas_de_carta(bgr, board_px)
+    hero_boxes = _cajas_de_carta(bgr, hero_px, esperadas=2, mazo=mazo)
+    board_boxes = _cajas_de_carta(bgr, board_px, mazo=mazo)
     hero_plate_px = seat_map.hero_plate_from_cards(hero_boxes, bgr.shape)
     reloj.marca("cartas")
 
@@ -809,7 +825,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # el mismo OCR que el board y el hero y asi viaja en el mismo viaje.
     reveladas_px = {s: seat_map.revealed_zone_px(ref, s, bgr.shape, ZONAS["dorsos"])
                     for s in seat_map.revealed_pair_seats(bgr, ref, ZONAS["dorsos"])}
-    reveladas_boxes = {s: _cajas_de_carta(bgr, px, esperadas=2)
+    reveladas_boxes = {s: _cajas_de_carta(bgr, px, esperadas=2, mazo=mazo)
                        for s, px in reveladas_px.items()}
     reveladas_jobs = {s: _encolar_cartas(batch, bgr, cajas)
                       for s, cajas in reveladas_boxes.items()}

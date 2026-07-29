@@ -232,6 +232,10 @@ class Analizador:
         directamente -lo que hace el replay- este fichero no se toca.
     """
     max_players: int | None = None
+    # MAZO de cartas configurado en el cliente: "glyph" (cara blanca, rango
+    # de color), "solid" (fondo de color, rango blanco) o None para que
+    # compitan los dos detectores, que es lo que se hacia siempre.
+    mazo: str | None = None
     seed_equity: int | None = None
     tmp_frame: str = "/tmp/poker_frame_analisis.png"
 
@@ -314,6 +318,7 @@ class Analizador:
         # los asientos estables de la mano en curso se realimentan al
         # reconocimiento: ver table_state.analyze_layout
         state = ts.analyze_layout(ruta, max_players=self.max_players,
+                                  mazo=self.mazo,
                                   asientos_estables=self.tracker.asientos_estables(),
                                   plantilla_boton=self.plantilla_boton,
                                   referencia=self.referencia,

@@ -140,7 +140,7 @@ class AnalysisWorker(threading.Thread):
     """Hilo de analisis: abre el stream, lee frames, recorta, analiza y
     manda cada resultado a la ventana via GLib.idle_add. No toca widgets."""
 
-    def __init__(self, win, interval, sesion=None, max_players=None):
+    def __init__(self, win, interval, sesion=None, max_players=None, mazo=None):
         super().__init__(daemon=True)
         self.win = win
         # EL LATIDO SE MIDE. `interval` ya no es el periodo sino la salida de
@@ -156,7 +156,7 @@ class AnalysisWorker(threading.Thread):
         # max_players (3-Max, 6-Max...) sirve de red: las posiciones salen del
         # RECUENTO de asientos ocupados, asi que un asiento fantasma las desplaza
         # todas.
-        self.analizador = Analizador(max_players=max_players,
+        self.analizador = Analizador(max_players=max_players, mazo=mazo,
                                      tmp_frame=TMP_FRAME_PATH)
         # TestingSession o None. Lo pone el hilo principal antes de arrancar y no
         # se toca despues: la grabacion se decide al iniciar el analisis, no a
@@ -769,6 +769,28 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             "mesa); el latido es solo el suelo, para que el HUD no se congele. "
             "Se puede fijar con --interval para reproducir una sesion vieja.")
 
+        # MAZO. Lo pidio el usuario: "añade una opcion en la GUI para que yo te
+        # diga que mazo estoy usando, asi vas directo al tema". Y el dato le da la
+        # razon: cuando los dos detectores compiten se equivocan, y no de forma
+        # visible. En la sesion del 29-07 a las 20:12 elegian "fondo de color" en
+        # cartas del otro mazo, el calco de plantillas solo acertaba 24 de 177 y
+        # el 8 salia al 1,3% de las lecturas cuando le toca el 7,7%.
+        #
+        # Se deja "Auto" y ademas es lo que arranca, al reves que en el selector
+        # de mesa: aqui la deteccion SI funciona -gana el que encuentra mas
+        # cartas, y esta medido- y ademas cubre el caso de cambiar de mazo a
+        # mitad de sesion, que el usuario hace. Fijarlo es para cuando se sabe.
+        mazo_label = Gtk.Label(label="Mazo")
+        self.mazo_combo = Gtk.ComboBoxText()
+        for etiqueta in ("Mazo: auto", "Cara blanca", "Fondo de color"):
+            self.mazo_combo.append_text(etiqueta)
+        self.mazo_combo.set_active(0)
+        self.mazo_combo.set_tooltip_text(
+            "Que baraja tienes puesta en el cliente. 'Cara blanca' es la de fondo "
+            "blanco con el numero en el color del palo; 'Fondo de color' la de "
+            "fondo pintado con el numero en blanco. Con auto se prueban las dos y "
+            "gana la que encuentre mas cartas.")
+
         # Modo testing: graba cada frame junto con todo lo que se calculo de el,
         # emparejados por nombre, en testing/sesion-<fecha>/. Es un CheckButton y
         # no un boton aparte a proposito: la grabacion acompaña al analisis (se
@@ -785,6 +807,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         box.append(self.calibrate_button)
         box.append(mesa_label)
         box.append(self.mesa_combo)
+        box.append(mazo_label)
+        box.append(self.mazo_combo)
         box.append(self.ritmo_label)
         box.append(self.testing_check)
         return box
@@ -840,6 +864,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.calibrate_button.set_sensitive(False)
             self.testing_check.set_sensitive(False)
             self.mesa_combo.set_sensitive(False)
+            self.mazo_combo.set_sensitive(False)
             self.status_label.set_markup("Iniciando...")
             intervalo = self.default_interval
 
@@ -869,7 +894,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                         f'testing: {GLib.markup_escape_text(str(e))}</span>')
 
             self.worker = AnalysisWorker(self, intervalo, sesion=self.sesion,
-                                         max_players=self._max_players())
+                                         max_players=self._max_players(),
+                                         mazo=self._mazo())
             self.worker.start()
 
     # MISMO ORDEN QUE EL COMBO. Ademas de acotar cuantos asientos puede haber,
@@ -880,6 +906,13 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
     #
     # SIN None: ya no hay "auto". Ver el combo para el porque.
     _MESA_OPCIONES = (2, 3, 6, 8, 9)
+
+    # mismo orden que el combo de mazo; None = que compitan los dos detectores
+    _MAZO_OPCIONES = (None, "glyph", "solid")
+
+    def _mazo(self):
+        i = self.mazo_combo.get_active()
+        return self._MAZO_OPCIONES[i] if 0 <= i < len(self._MAZO_OPCIONES) else None
 
     def _max_players(self):
         """Las plazas de la mesa, siempre un numero: el combo ya no ofrece 'auto'.
@@ -934,6 +967,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.calibrate_button.set_sensitive(True)
         self.testing_check.set_sensitive(True)
         self.mesa_combo.set_sensitive(True)
+        self.mazo_combo.set_sensitive(True)
         if self.sesion is not None:
             carpeta = self.sesion.cerrar()
             n, errores = self.sesion.n, self.sesion.errores

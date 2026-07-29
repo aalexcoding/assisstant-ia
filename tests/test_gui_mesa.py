@@ -70,3 +70,39 @@ def test_cada_opcion_da_una_geometria_coherente(ventana):
         ventana.mesa_combo.set_active(i)
         n = len(seat_map.zonas(ventana._max_players())["seats"])
         assert n == esperado[plazas], f"{plazas} plazas -> {n} asientos"
+
+
+# --- el selector de MAZO ----------------------------------------------------
+
+def test_el_selector_de_mazo_tiene_los_tres_caminos(ventana):
+    """Lo pidio el usuario: "añade una opcion en la GUI para que yo te diga que
+    mazo estoy usando". Auto sigue existiendo -y arranca- porque aqui la
+    deteccion SI funciona: gana el que encuentra mas cartas, esta medido, y
+    ademas cubre cambiar de mazo a mitad de sesion."""
+    assert gui.PokerAssistantWindow._MAZO_OPCIONES == (None, "glyph", "solid")
+    assert ventana._mazo() is None
+    for i, mazo in enumerate(gui.PokerAssistantWindow._MAZO_OPCIONES):
+        ventana.mazo_combo.set_active(i)
+        assert ventana._mazo() == mazo
+
+
+def test_el_mazo_elegido_llega_al_detector():
+    """Fijarlo tiene que SALTARSE la competicion, no solo anotarse."""
+    import numpy as np
+    from vision import table_state as ts
+    zona = (10, 10, 300, 200)
+    img = np.zeros((300, 400, 3), np.uint8)
+    llamados = []
+    class Falso:
+        def __init__(self, nombre): self.nombre = nombre
+        def find_card_boxes(self, *a, **k):
+            llamados.append(self.nombre); return []
+    import unittest.mock as mock
+    with mock.patch.object(ts, "glyph_card_detector", Falso("glyph")), \
+         mock.patch.object(ts, "color_card_detector", Falso("solid")):
+        llamados.clear(); ts._cajas_de_carta(img, zona, mazo="glyph")
+        assert llamados == ["glyph"], llamados
+        llamados.clear(); ts._cajas_de_carta(img, zona, mazo="solid")
+        assert llamados == ["solid"], llamados
+        llamados.clear(); ts._cajas_de_carta(img, zona)
+        assert sorted(llamados) == ["glyph", "solid"], "sin fijar, compiten los dos"

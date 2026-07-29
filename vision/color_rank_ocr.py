@@ -82,6 +82,14 @@ PSM_SCALE_VARIANTS = [
     ("SINGLE_BLOCK", 14),
 ]
 
+# Cuanto se amplia la CARTA antes de sacarle la mascara del rango. Lo pidio el
+# usuario, y el motivo que dio es el bueno: "confundes varias veces los 3 con los
+# 8". Un 3 y un 8 comparten las dos panzas de la derecha y se distinguen SOLO por
+# si el lado izquierdo esta cerrado, que con el glifo a 30 px de ancho son dos o
+# tres pixeles. Ver add_rank_jobs para por que se amplia ANTES de binarizar y no
+# despues, que es lo que ya se hacia y no es lo mismo.
+RANGO_ZOOM = 3
+
 # la mascara de carta completa (metodo probado) se ancla con doble voto; la
 # vista "close" solo desempata/corrige confusiones de glifos redondos.
 FULL_VOTE_WEIGHT = 2
@@ -542,6 +550,25 @@ def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ", deck="solid"):
              el rango aislado por posicion, que no se equivoca nunca, y la
              mascara completa solo desempata: 40/40."""
     start = batch.job_count()
+    # SE AMPLIA LA CARTA ANTES DE SACAR LA MASCARA, no despues.
+    #
+    # Ya se ampliaba, pero al final del todo: la mascara se construia sobre el
+    # recorte original -donde el glifo mide unos 30x33 px- y solo la imagen ya
+    # binarizada se pasaba por cv2.resize camino de tesseract. Eso amplia los
+    # ESCALONES del borde, no el trazo: lo que se decidio con 30 px de ancho
+    # sigue decidido, y un pixel que quedo fuera del umbral no vuelve.
+    #
+    # Ampliando ANTES, el umbral de color se aplica sobre el triple de muestras y
+    # el trazo se define con su curvatura, que es lo que distingue un 3 de un 8:
+    # los dos tienen dos panzas a la derecha y solo se diferencian en si el lado
+    # izquierdo esta cerrado. Con 30 px de ancho esa union son dos o tres pixeles.
+    #
+    # INTER_CUBIC y no NEAREST porque aqui se amplia la CARTA EN COLOR, todavia
+    # sin binarizar: la interpolacion reconstruye el degradado del borde del
+    # glifo, y es de ese degradado de donde el umbral saca los pixeles nuevos.
+    # Sobre una mascara ya binaria no habria nada que interpolar.
+    card_bgr = cv2.resize(card_bgr, None, fx=RANGO_ZOOM, fy=RANGO_ZOOM,
+                          interpolation=cv2.INTER_CUBIC)
     # LA MASCARA SE RECORTA AL GLIFO en los dos mazos. Sin recortar, el rango
     # queda pequeño dentro de un recuadro casi vacio y tesseract ni lo encuentra:
     # en un 9 real de board, 5 de las 9 variantes devolvian CADENA VACIA y las
