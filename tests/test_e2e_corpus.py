@@ -200,7 +200,16 @@ def al_dia():
 
     pares = []
     for _ses, fs in sorted(por_sesion.items()):
-        an = Analizador(seed_equity=1, tmp_frame="/tmp/poker_oro_frame.png")
+        # CON LA MISMA CONFIGURACION CON LA QUE SE GRABO. max_players no es solo
+        # un tope de asientos: desde que hay tablas de 8 y 9 plazas ELIGE LA
+        # GEOMETRIA, asi que reproducir una sesion de 9 con la disposicion de 6
+        # no compara la app contra si misma sino dos apps distintas. Paso en
+        # cuanto se grabo la primera sesion de 9: 4 tests rojos sin que nada
+        # estuviera mal.
+        meta = corpus.meta_de_sesion(fs[0].carpeta)
+        an = Analizador(seed_equity=1, tmp_frame="/tmp/poker_oro_frame.png",
+                        max_players=meta.get("max_players"),
+                        mazo=meta.get("mazo"))
         for fr in sorted(fs, key=lambda f: f.n):
             try:
                 pares.append((fr, an.analizar(fr.png)))

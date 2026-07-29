@@ -882,6 +882,11 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                     # sesion despues, saber si estaba en auto o en 3-Max explica
                     # la mitad de lo que se vea (ver revisar_sesion.py)
                     self.sesion.meta["max_players"] = self._max_players()
+                    # EL MAZO TAMBIEN VA A LA META, por el mismo motivo que las
+                    # plazas: sin el, reproducir la sesion despues no la reproduce
+                    # -deja que compitan los dos detectores donde el usuario habia
+                    # fijado uno- y la regresion de oro compara dos apps distintas.
+                    self.sesion.meta["mazo"] = self._mazo()
                     self.sesion.meta["vigilancia_periodo_s"] = VIGILANCIA_PERIODO_S
                     self.testing_label.set_markup(
                         f'<span foreground="#3498db">Grabando en '

@@ -109,3 +109,20 @@ def test_el_mazo_elegido_llega_al_detector():
         assert llamados == ["solid"], llamados
         llamados.clear(); ts._cajas_de_carta(img, zona)
         assert sorted(llamados) == ["glyph", "solid"], "sin fijar, compiten los dos"
+
+
+def test_la_sesion_grabada_anota_MESA_Y_MAZO(ventana, tmp_path, monkeypatch):
+    """Sin esos dos en la meta, reproducir la sesion despues no la reproduce:
+    max_players elige la geometria y el mazo se salta la competicion de
+    detectores. Es lo que rompio la regresion de oro en cuanto se grabo la
+    primera sesion de 9 -4 tests rojos sin que nada estuviera mal- y lo que
+    tests/corpus.meta_de_sesion existe para leer."""
+    import testing_session as tss
+    monkeypatch.setattr(tss, "TESTING_DIR", str(tmp_path))
+    ventana.mesa_combo.set_active(gui.PokerAssistantWindow._MESA_OPCIONES.index(9))
+    ventana.mazo_combo.set_active(gui.PokerAssistantWindow._MAZO_OPCIONES.index("solid"))
+    ses = tss.TestingSession(root=str(tmp_path))
+    ses.meta["max_players"] = ventana._max_players()
+    ses.meta["mazo"] = ventana._mazo()
+    assert ses.meta["max_players"] == 9
+    assert ses.meta["mazo"] == "solid"

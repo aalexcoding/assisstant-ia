@@ -43,6 +43,10 @@ class Frame:
     ruta_json: str
     datos: dict
     commit: str | None = None      # con que version del codigo se grabo
+    # LA CARPETA, para poder leer su _sesion.json. Hace falta porque reproducir
+    # el frame necesita la MISMA disposicion de mesa con la que se grabo: desde
+    # que hay tablas de 8 y 9 plazas, max_players elige la geometria.
+    carpeta: str = ""
 
     @property
     def state(self):
@@ -67,20 +71,32 @@ def commit_actual():
         return None
 
 
-def _commit_de_sesion(carpeta, _cache={}):
-    """El commit con el que se grabo una sesion, de su _sesion.json.
+def meta_de_sesion(carpeta, _cache={}):
+    """El _sesion.json de una sesion: commit, max_players, recuadro, intervalo.
+
+    HACE FALTA PARA REPRODUCIRLA. `max_players` no es solo un tope de asientos:
+    desde que hay tablas de 8 y 9 plazas, ELIGE LA GEOMETRIA (seat_map.zonas).
+    Reproducir una sesion de 9 con la disposicion de 6 no compara la app contra
+    si misma, compara dos apps distintas, y eso es lo que rompio la regresion de
+    oro en cuanto se grabo la primera sesion de 9: 4 tests rojos sin que nada
+    estuviera mal."""
+    if carpeta not in _cache:
+        try:
+            with open(os.path.join(carpeta, "_sesion.json")) as f:
+                _cache[carpeta] = json.load(f) or {}
+        except (OSError, ValueError):
+            _cache[carpeta] = {}
+    return _cache[carpeta]
+
+
+def _commit_de_sesion(carpeta):
+    """El commit con el que se grabo una sesion.
 
     Sirve para separar lo que se puede comparar CAMPO A CAMPO -las sesiones
     grabadas con este mismo codigo- de lo que no: una sesion de hace tres
     commits difiere legitimamente y compararla seria un test que falla por haber
     arreglado algo."""
-    if carpeta not in _cache:
-        try:
-            with open(os.path.join(carpeta, "_sesion.json")) as f:
-                _cache[carpeta] = json.load(f).get("commit")
-        except (OSError, ValueError):
-            _cache[carpeta] = None
-    return _cache[carpeta]
+    return meta_de_sesion(carpeta).get("commit")
 
 
 def sesiones(raiz=RAIZ):
@@ -126,7 +142,7 @@ def _cargar(ruta_json, exigir_png=True):
             datos = json.load(f)
     except (OSError, ValueError):
         return None            # se estaba escribiendo, o quedo truncado
-    return Frame(sesion=os.path.basename(carpeta), n=n, png=png,
+    return Frame(sesion=os.path.basename(carpeta), n=n, png=png, carpeta=carpeta,
                  ruta_json=ruta_json, datos=datos,
                  commit=_commit_de_sesion(carpeta))
 
