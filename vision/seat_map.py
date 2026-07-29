@@ -129,7 +129,7 @@ SEATS_6MAX = {
 # del cliente -"Manos", "Frases", "Mesav"- coladas como nicks.
 #
 # LAS OCHO ZONAS salen de barrer el tapete con una ventana del tamaño de un
-# nameplate sobre 349 frames de dos sesiones, y agrupar. Ver docs/MESA-DE-8.md
+# nameplate sobre 349 frames de dos sesiones, y agrupar. Ver docs/MESAS-DE-8-Y-9.md
 # para el metodo y lo que no funciono (buscar manchas en la mascara: la capsula
 # se funde con las sillas y con la de al lado).
 #
@@ -152,6 +152,36 @@ SEATS_8MAX = {
     "HERO": {"plate": (0.32, 1.01, 0.68, 1.25), "button": (0.358, 0.910)},
 }
 
+# MESA DE 9: CUATRO POR CADA LADO Y NADIE EN FRENTE, que es como la describe el
+# usuario -"si tenemos como referencia al hero que soy yo abajo, 4 andan a mi
+# izquierda y otro 4 a la derecha, nadie en frente"- y lo que la medicion
+# reprodujo por su cuenta. No hay TOPC: los dos asientos de arriba estan a los
+# LADOS del centro (+0,26 y +0,74), no en el.
+#
+# Medido sobre la sesion del 29-07 a las 21:35, barriendo el tapete con una
+# ventana del tamaño de un nameplate y agrupando: salen NUEVE cumulos, cada uno
+# en el 96-100% de los frames, y ninguno falso. Verificado a ojo en
+# docs/casos/mesa9_nueve_localizados.png.
+#
+# LAS ANCLAS DEL BOTON SON DERIVADAS, no medidas, y hay que saberlo: esa sesion
+# son dos manos, asi que el disco solo paso por 2 de los 9 asientos. Se calculan
+# tirando de cada asiento un 30% hacia el centro del tapete, y ese 30% esta
+# CALIBRADO con las 2 anclas que si se midieron (error medio 0,062, el mejor de
+# las fracciones probadas). Las nueve quedan bien asignadas, cada una entre 1,59x
+# y 2,63x mas cerca de su asiento que del siguiente, por encima del 1,2x que se
+# exigio en la mesa de 8. Con una sesion larga habria que medirlas de verdad.
+SEATS_9MAX = {
+    "TL":   {"plate": (0.08, -0.30, 0.44, -0.06), "button": (0.332, 0.024)},
+    "TR":   {"plate": (0.56, -0.27, 0.92, -0.03), "button": (0.668, 0.045)},
+    "UL":   {"plate": (-0.26, -0.05, 0.10, 0.19), "button": (0.094, 0.199)},
+    "UR":   {"plate": (0.91, -0.05, 1.27, 0.19), "button": (0.913, 0.199)},
+    "ML":   {"plate": (-0.27, 0.39, 0.09, 0.63), "button": (0.087, 0.507)},
+    "MR":   {"plate": (0.91, 0.38, 1.27, 0.62), "button": (0.913, 0.500)},
+    "DL":   {"plate": (-0.14, 0.83, 0.22, 1.07), "button": (0.178, 0.815)},
+    "DR":   {"plate": (0.79, 0.85, 1.15, 1.09), "button": (0.829, 0.829)},
+    "HERO": {"plate": (0.33, 1.04, 0.69, 1.28), "button": (0.507, 0.962)},
+}
+
 # La de 6 sigue siendo la de por defecto: es la que tiene detras todas las
 # mediciones del proyecto, y una mesa de 6 es lo que el usuario juega
 # habitualmente. SEATS se conserva como nombre para no reescribir los modulos
@@ -170,8 +200,7 @@ def disposicion(max_players=None):
     posiciones porque salen del recuento de asientos ocupados. Mas vale leer de
     menos con la tabla conocida que leer de mas con una inventada.
 
-    Las mesas de 7 y 9 no tienen tabla todavia. La de 9 esta capturada en
-    docs/casos/ a la espera de medirla igual que se midio la de 8."""
+    La mesa de 7 no tiene tabla todavia y cae a la de 6."""
     return DISPOSICIONES.get(max_players, SEATS_6MAX)
 
 
@@ -1033,6 +1062,19 @@ CARD_BACK_ZONES_8MAX = {
     "DR":   (0.88, 0.72, 1.12, 0.90),
 }
 
+# Derivadas igual que las de la mesa de 8, con el mismo desplazamiento por
+# asiento. Sin validar todavia: la sesion de 9 que hay son dos manos.
+CARD_BACK_ZONES_9MAX = {
+    "TL":   (0.12, -0.43, 0.36, -0.27),
+    "TR":   (0.65, -0.40, 0.88, -0.24),
+    "UL":   (-0.23, -0.13, 0.00, 0.02),
+    "UR":   (1.00, -0.13, 1.23, 0.02),
+    "ML":   (-0.27, 0.30, -0.03, 0.47),
+    "MR":   (1.02, 0.29, 1.27, 0.46),
+    "DL":   (-0.14, 0.73, 0.10, 0.91),
+    "DR":   (0.90, 0.76, 1.15, 0.93),
+}
+
 CARD_BACK_ZONES = CARD_BACK_ZONES_6MAX
 
 
@@ -1303,6 +1345,18 @@ SEAT_BET_ZONES_8MAX = {
     "HERO": (0.24, 0.80, 0.53, 0.99),
 }
 
+SEAT_BET_ZONES_9MAX = {
+    "TL":   (0.24, -0.13, 0.48, 0.03),
+    "TR":   (0.52, -0.10, 0.76, 0.06),
+    "UL":   (-0.01, 0.13, 0.23, 0.31),
+    "UR":   (0.75, 0.09, 1.01, 0.27),
+    "ML":   (-0.02, 0.44, 0.18, 0.62),
+    "MR":   (0.81, 0.43, 0.97, 0.61),
+    "DL":   (0.10, 0.80, 0.30, 0.98),
+    "DR":   (0.69, 0.82, 0.85, 1.00),
+    "HERO": (0.26, 0.83, 0.54, 1.02),
+}
+
 SEAT_BET_ZONES = SEAT_BET_ZONES_6MAX
 
 # Las tres tablas por asiento van juntas: pedir una disposicion tiene que dar las
@@ -1312,6 +1366,8 @@ ZONAS_POR_DISPOSICION = {
         "apuestas": SEAT_BET_ZONES_6MAX},
     8: {"seats": SEATS_8MAX, "dorsos": CARD_BACK_ZONES_8MAX,
         "apuestas": SEAT_BET_ZONES_8MAX},
+    9: {"seats": SEATS_9MAX, "dorsos": CARD_BACK_ZONES_9MAX,
+        "apuestas": SEAT_BET_ZONES_9MAX},
 }
 
 

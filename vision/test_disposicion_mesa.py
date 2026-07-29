@@ -6,7 +6,7 @@ de 6. En una de 8 no faltan dos zonas: las que hay caen en el sitio equivocado.
 Cada lateral de una mesa de 8 tiene DOS asientos (y = +0,44 y y = +0,94) y el
 mapa de 6 define UNO en y = +0,72, o sea justo en el hueco entre los dos, asi
 que se pierden DOS jugadores por lado y no uno. Medido jugando: 4,62 asientos
-leidos por frame habiendo 6-8 ocupados. Ver docs/MESA-DE-8.md.
+leidos por frame habiendo 6-8 ocupados. Ver docs/MESAS-DE-8-Y-9.md.
 """
 import pytest
 
@@ -62,7 +62,7 @@ def test_los_laterales_de_8_NO_estan_donde_los_de_6():
 def test_las_tres_tablas_de_una_disposicion_hablan_de_los_MISMOS_asientos():
     """Pedir una disposicion tiene que dar las tres coherentes, o se leerian
     nameplates de una mesa y dorsos de otra."""
-    for n in (6, 8):
+    for n in (6, 8, 9):
         z = seat_map.zonas(n)
         assert set(z["apuestas"]) == set(z["seats"]), n
         # los dorsos no incluyen al hero: sus cartas se leen boca arriba
@@ -93,7 +93,7 @@ def test_una_disposicion_desconocida_cae_a_la_de_6():
     """NO se adivina. Una disposicion equivocada no falla de forma visible: lee
     nombres donde no hay nadie y deja jugadores invisibles, y eso desplaza TODAS
     las posiciones, que salen del recuento de asientos ocupados."""
-    for n in (None, 3, 7, 9, 99):
+    for n in (None, 3, 7, 99):
         assert seat_map.zonas(n)["seats"] is seat_map.SEATS_6MAX, n
 
 
@@ -105,3 +105,50 @@ def test_elegir_disposicion_NO_toca_el_global():
     seat_map.zonas(8)
     assert seat_map.SEATS == antes
     assert seat_map.SEATS is seat_map.SEATS_6MAX
+
+
+# --- la mesa de 9 -----------------------------------------------------------
+
+def test_la_mesa_de_9_tiene_nueve_asientos():
+    assert len(seat_map.zonas(9)["seats"]) == 9
+
+
+def test_son_CUATRO_POR_LADO_Y_NADIE_EN_FRENTE():
+    """Como lo describe el usuario: "si tenemos como referencia al hero que soy
+    yo abajo, 4 andan a mi izquierda y otro 4 a la derecha, nadie en frente"."""
+    seats = seat_map.zonas(9)["seats"]
+    c = {s: ((z["plate"][0] + z["plate"][2]) / 2,
+             (z["plate"][1] + z["plate"][3]) / 2) for s, z in seats.items()}
+    hero = c[seat_map.HERO_SEAT]
+    izq = [s for s, (x, _y) in c.items() if x < hero[0] - 0.1]
+    der = [s for s, (x, _y) in c.items() if x > hero[0] + 0.1]
+    assert len(izq) == 4, izq
+    assert len(der) == 4, der
+    # NADIE EN FRENTE: ningun asiento a la altura de arriba y centrado en x
+    enfrente = [s for s, (x, y) in c.items()
+                if abs(x - hero[0]) <= 0.1 and y < 0.0]
+    assert not enfrente, f"la mesa de 9 no tiene asiento en frente: {enfrente}"
+
+
+def test_la_de_9_NO_tiene_TOPC_y_la_de_6_y_8_SI():
+    """El asiento de enfrente existe en 6 y en 8 y no en 9. Si alguien copiara
+    una tabla de otra, esto se pone rojo."""
+    assert "TOPC" in seat_map.zonas(6)["seats"]
+    assert "TOPC" in seat_map.zonas(8)["seats"]
+    assert "TOPC" not in seat_map.zonas(9)["seats"]
+    assert {"TL", "TR"} <= set(seat_map.zonas(9)["seats"])
+
+
+def test_las_anclas_de_9_no_se_pisan():
+    """Son DERIVADAS -la sesion de 9 son dos manos y el disco solo paso por 2 de
+    los 9 asientos- asi que comprobar que cada una gana a su asiento es lo unico
+    que las sostiene. Medido: entre 1,59x y 2,63x."""
+    import math
+    seats = seat_map.zonas(9)["seats"]
+    for s, cfg in seats.items():
+        ax, ay = cfg["button"]
+        ds = sorted((math.hypot(ax - (o["plate"][0] + o["plate"][2]) / 2,
+                                ay - (o["plate"][1] + o["plate"][3]) / 2), n)
+                    for n, o in seats.items())
+        assert ds[0][1] == s, f"el ancla de {s} cae mas cerca de {ds[0][1]}"
+        assert ds[1][0] / ds[0][0] >= 1.2, f"{s}: margen {ds[1][0] / ds[0][0]:.2f}x"

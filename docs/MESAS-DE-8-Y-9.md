@@ -1,4 +1,4 @@
-# Mesa de 8: los ocho asientos, medidos
+# Mesas de 8 y de 9: los asientos, medidos
 
 Estado: **cableado y jugable**. Elige **8-Max** en el selector "Mesa" de la
 ventana antes de darle a Iniciar.
@@ -116,8 +116,7 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
   donde no hay nadie y deja jugadores invisibles- y eso desplaza TODAS las
   posiciones, que salen del recuento de asientos ocupados. Detectarla sola queda
   para cuando el barrido sea fiable frame a frame.
-- **Las mesas de 7 y 9 siguen sin tabla.** Caen a la de 6, que es lo que hacían
-  antes. La de 9 está capturada en `casos/` a la espera de medirla igual.
+- **La mesa de 7 sigue sin tabla.** Cae a la de 6, que es lo que hacía antes.
 - **Las zonas de APUESTA siguen siendo derivadas y sin validar.** Se asume por
   cómo se usan: el importe leído ahí nunca crea una subida, solo atribuye una que
   el botón "Igualar" ya ha demostrado que existe, así que una zona mal puesta
@@ -139,3 +138,63 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
 - La parte de DECISIÓN ya lo soporta entero: `SEATING_BY_N[8]` da
   `BTN, SB, BB, EP2, MP1, MP2, HJ, CO`, derivado por cuánta gente habla después
   de ti contra los rangos de 9-max digitalizados.
+
+
+---
+
+# Mesa de 9: cuatro por cada lado y nadie en frente
+
+Estado: **cableada y jugable**. Elige **9 plazas** en el selector "Mesa".
+
+Lo describe el usuario así: *"si tenemos como referencia al hero que soy yo
+abajo, 4 andan a mi izquierda y otro 4 a la derecha, nadie en frente"*. La
+medición lo reprodujo por su cuenta.
+
+**No hay asiento de enfrente.** Los dos de arriba están a los LADOS del centro
+(+0,26 y +0,74), no en él, y por eso la tabla de 9 no tiene `TOPC` sino `TL` y
+`TR`. Es la diferencia estructural con la de 6 y la de 8, que sí lo tienen.
+
+## Los nueve asientos
+
+Medidos sobre la sesión del 29-07 a las 21:35 barriendo el tapete: salen **nueve
+cúmulos, cada uno en el 96-100 % de los frames, y ninguno falso**. Verificado a
+ojo en `casos/mesa9_nueve_localizados.png`.
+
+    lado           asiento   centro (fracción del núcleo)
+    izquierda      TL        (+0.26, -0.18)
+                   UL        (-0.08, +0.07)
+                   ML        (-0.09, +0.51)
+                   DL        (+0.04, +0.95)
+    derecha        TR        (+0.74, -0.15)
+                   UR        (+1.09, +0.07)
+                   MR        (+1.09, +0.50)
+                   DR        (+0.97, +0.97)
+    enfrentado     HERO      (+0.51, +1.16)
+
+## Lo que gana, medido
+
+Reproduciendo los 209 frames de esa sesión con una disposición y con la otra:
+
+| | disposición de 6 | **9 plazas** |
+|---|---|---|
+| asientos leídos por frame | 2,46 | **6,72** |
+| jugadores en mano | 0,93 | **3,62** |
+| nicks distintos | 4 | **14** (≈10 reales + variantes de OCR) |
+
+Los nueve asientos se leen en 204-209 de los 209 frames.
+
+Las recomendaciones bajan de 51 a 46. Queda anotado sin interpretar: la sesión
+son **dos manos**, así que no hay con qué decidir si significa algo.
+
+## Lo que NO está medido, y hay que saberlo
+
+- **Las anclas del botón son DERIVADAS.** Esa sesión son dos manos, así que el
+  disco solo pasó por 2 de los 9 asientos. Se calculan tirando de cada asiento un
+  30 % hacia el centro del tapete, y ese 30 % está **calibrado con las 2 anclas
+  que sí se midieron** (error medio 0,062, el mejor de las fracciones probadas).
+  Las nueve quedan bien asignadas, cada una entre 1,59× y 2,63× más cerca de su
+  asiento que del siguiente, por encima del 1,2× que se exigió en la de 8. Con
+  una sesión larga hay que medirlas de verdad.
+- **Las zonas de dorso y de apuesta son derivadas y sin validar**, igual que
+  entraron las de la mesa de 8. Las de la de 8 se validaron después con una
+  sesión real y salieron bien; estas están a la espera de lo mismo.

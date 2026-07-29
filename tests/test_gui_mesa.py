@@ -63,9 +63,12 @@ def test_estan_las_cinco_mesas_y_en_el_orden_del_combo(ventana):
 
 
 def test_cada_opcion_da_una_geometria_coherente(ventana):
-    """8-Max tiene que dar ocho asientos y el resto seis, que es lo que hay
-    medido. Une el combo con seat_map, que es donde se podria desincronizar."""
-    esperado = {2: 6, 3: 6, 6: 6, 8: 8, 9: 6}
+    """Cada opcion tiene que dar la geometria que le toca: 8 y 9 las suyas, y el
+    resto la de 6, que es lo que hay medido. Une el combo con seat_map, que es
+    donde se podria desincronizar sin que se note: elegir 9 plazas y recibir la
+    geometria de otra mesa no falla de forma visible, lee nombres donde no hay
+    nadie."""
+    esperado = {2: 6, 3: 6, 6: 6, 8: 8, 9: 9}
     for i, plazas in enumerate(gui.PokerAssistantWindow._MESA_OPCIONES):
         ventana.mesa_combo.set_active(i)
         n = len(seat_map.zonas(ventana._max_players())["seats"])
