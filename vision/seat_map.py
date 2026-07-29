@@ -315,7 +315,21 @@ HERO_CARDS_ZONE = (0.34, 0.86, 0.64, 1.10)
 # EL BORDE DERECHO NO CORTA: ensancharlo da exactamente las mismas cifras, asi que
 # se deja. Tiene sentido, porque el board crece hacia la derecha desde un punto
 # fijo y es la PRIMERA carta la que queda pegada al borde.
-BOARD_ZONE = (0.22, 0.28, 0.78, 0.60)
+# EL BORDE DE ARRIBA TAMBIEN CORTABA, y se encontro buscando la misma firma en
+# todas las zonas despues de arreglar el izquierdo: el 127% de las cartas de board
+# tocaban el borde superior (mas del 100% porque hay varias por frame). Estaba en
+# 0.28 y nadie lo habia mirado; el de abajo si se habia arreglado en su dia.
+#
+# Subirlo a 0.24 devuelve 5 px de alto a cada carta -mediana de 112 a 117- y por
+# encima de 0.24 no cambia nada, o sea que ahi la carta ya cabe entera. Y esos 5
+# px son los de ARRIBA, donde vive el rango:
+#
+#     y0 = 0.28    567 cartas, 97,9% con rango, 12 sin el, J/Q/K 25,9%
+#     y0 = 0.24    565 cartas, 98,8% con rango,  7 sin el, J/Q/K 23,5%
+#
+# Las dos señales mejoran a la vez, y el 23,5% es casi el 23,1% que toca en un
+# mazo justo.
+BOARD_ZONE = (0.22, 0.24, 0.78, 0.60)
 # el texto "Bote: N" se muestra mas abajo en preflop (sin cartas de board que
 # lo empujen hacia arriba) que en postflop; la zona cubre ambas alturas.
 #
