@@ -1,0 +1,145 @@
+{
+  "n": 7,
+  "t": 1785344771.0954015,
+  "hora": "19:06:11",
+  "png": "0007.png",
+  "duracion_analisis_s": 0.373,
+  "state": {
+    "image": "poker_gui_frame.png",
+    "hero_cards": [
+      "As",
+      "4h"
+    ],
+    "board": [],
+    "pot": null,
+    "players": [
+      {
+        "seat": "UL",
+        "name": null,
+        "action": null,
+        "stack": 60.4,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "BTN",
+        "committed": 0.0,
+        "committed_calle": 0.0,
+        "committed_acuerdo": "solo_derivado"
+      },
+      {
+        "seat": "TOPC",
+        "name": null,
+        "action": null,
+        "stack": null,
+        "bet": 0.5,
+        "is_hero": false,
+        "in_hand": true,
+        "revealed": false,
+        "cards": null,
+        "position": "SB",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "solo_leido"
+      },
+      {
+        "seat": "UR",
+        "name": "Saree",
+        "action": null,
+        "stack": null,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "BB",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "ninguno"
+      },
+      {
+        "seat": "MR",
+        "name": null,
+        "action": null,
+        "stack": null,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "HJ",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "ninguno"
+      },
+      {
+        "seat": "HERO",
+        "name": "alex_delg",
+        "action": null,
+        "stack": 66.5,
+        "bet": null,
+        "is_hero": true,
+        "in_hand": true,
+        "revealed": false,
+        "cards": null,
+        "position": "CO",
+        "committed": 0.0,
+        "committed_calle": 0.0,
+        "committed_acuerdo": "solo_derivado"
+      }
+    ],
+    "hero_position": "CO",
+    "facing": null,
+    "vs_position": null,
+    "stack_unit": "bb",
+    "to_call": 2.0,
+    "chat_lines": [],
+    "warnings": [
+      "no se encontro texto de pot",
+      "el boton pide 2 BB para igualar, o sea que el bote NO esta sin abrir, pero no se ha podido atribuir la subida a ningun asiento (nadie_lo_explica); sin defensa fiable. No se recomienda como si nadie hubiera subido"
+    ],
+    "asientos_leidos": [
+      "HERO",
+      "MR",
+      "TOPC",
+      "UL",
+      "UR"
+    ],
+    "hero_cards_dimmed": false,
+    "tiempos": {
+      "referencia": 0.0109,
+      "cartas": 0.0018,
+      "ocr": 0.3208,
+      "vision_paralela": 0.0001,
+      "resolver_cartas": 0.0014,
+      "resto": 0.0001,
+      "total": 0.3351
+    },
+    "mano_seguida": 1,
+    "calle_seguida": "preflop",
+    "posiciones_asentadas": true,
+    "acciones": {
+      "mano": 1,
+      "completo": false,
+      "acciones": []
+    },
+    "vigilancia": {
+      "ticks": 97,
+      "capsulas_ocr": 0,
+      "saltadas": 0,
+      "periodo_s": 0.1
+    }
+  },
+  "recommendation": null,
+  "hand": {
+    "street": "preflop",
+    "cards_to_come": 5,
+    "made_category": "Preflop",
+    "made_name": "A4 offsuit",
+    "made_explain": "As y Cuatro de distinto palo (offsuit)",
+    "draws": []
+  },
+  "equity": null,
+  "hand_result": null
+}

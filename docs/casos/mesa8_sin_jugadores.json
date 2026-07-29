@@ -1,0 +1,69 @@
+{
+  "n": 66,
+  "t": 1785344878.7621179,
+  "hora": "19:07:58",
+  "png": "0066.png",
+  "duracion_analisis_s": 0.046,
+  "state": {
+    "image": "poker_gui_frame.png",
+    "hero_cards": [],
+    "board": [],
+    "pot": null,
+    "players": [],
+    "hero_position": null,
+    "facing": null,
+    "vs_position": null,
+    "stack_unit": "bb",
+    "to_call": null,
+    "chat_lines": [],
+    "warnings": [
+      "no se encuentra la mesa en este frame: el ovalo del tapete no aparece, o aparece donde no estaba. Sin esa referencia TODAS las zonas quedan desplazadas, asi que no se analiza el frame en vez de dar lecturas de sitios equivocados. Lo mas frecuente y menos preocupante: has abierto algo ENCIMA de la mesa (el panel de progreso de fichas, el chat, otra ventana) y estos frames se descartan solos mientras dure. Si pasa SIEMPRE, entonces si hay que mirar: el tapete es de un tema OSCURO o gris (hace falta uno con color, p.ej. el verde); el FONDO de alrededor es claro y se confunde con el tapete; o el recuadro de captura no la encuadra (recalibra)",
+      "faltan las 2 cartas del hero; no se puede recomendar"
+    ],
+    "mano_seguida": 2,
+    "calle_seguida": "river",
+    "posiciones_asentadas": true,
+    "acciones": {
+      "mano": 2,
+      "completo": false,
+      "acciones": [
+        {
+          "orden": 1,
+          "seat": "HERO",
+          "position": "MP2",
+          "accion": "post",
+          "verbo": "Ante",
+          "t": 1785344839.704845
+        },
+        {
+          "orden": 2,
+          "seat": "HERO",
+          "position": null,
+          "accion": "fold",
+          "verbo": "Noir",
+          "t": 1785344846.3048062
+        }
+      ]
+    },
+    "vigilancia": {
+      "ticks": 830,
+      "capsulas_ocr": 385,
+      "saltadas": 88,
+      "periodo_s": 0.1
+    }
+  },
+  "recommendation": null,
+  "hand": null,
+  "equity": null,
+  "hand_result": {
+    "hand_number": null,
+    "winner": "redol420",
+    "winners": [
+      "redol420"
+    ],
+    "split": false,
+    "amount": "1.163",
+    "winning_hand": null,
+    "showdown": []
+  }
+}
