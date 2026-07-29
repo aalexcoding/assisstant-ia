@@ -305,3 +305,47 @@ De `testing/sesion-2026-07-28_210655` y `sesion-2026-07-28_224318`:
 | 210655/2109 | *"el as de picas no aparece en el board"* | **fases 6/7** |
 | 224318/0860 | *"el board es un 5♠ no J♠"* | **fases 6/7** |
 | 224318/1531 | *"mesas de 7 puede haber, examina el frame"* | **sin plan todavía**: `seat_map.SEATS` define **seis** asientos, así que hoy hay uno que la app no puede ver siquiera |
+
+---
+
+## Estado al 29-07-2026 (fin de la campaña en frío)
+
+Hecho y commiteado:
+
+| | commit | lo que mide |
+|---|---|---|
+| Fases 0-2 | `e9ce22f` | ciclo 1,00 → 0,59 s; turno por botones, 0 falsos positivos en 183 frames |
+| Palo en el índice | `9166b3a` | Q rescatada; recuentos ilegales de board 67 → 0 en la sesión del mazo nuevo |
+| Rango en el índice | `0dbb427` | la K♠ se leía 4♠; J/Q/K 3,6 % → 20,2 % |
+| Fase 3 | `69acd6b` | stack cacheado no cruza de mano (mentía el 62,3 % de las veces) |
+| Regresión de oro | `a7e0c94` | deja de comparar trozos sueltos, que no son reproducibles |
+| Fase 6 | `6307359` | `herramientas/score_cartas.py` + 2 invariantes de cartas + tests de `_cajas_de_carta` y `_encolar_cartas` |
+| Fase 4 (frío) | `19a3640` | el nombre gratis del lazo rápido; HUD que distingue quién juega |
+| Fase 5 | `e9981f1` | ritmo medido, fuera el selector |
+
+**Descartado con datos, no por olvido:** caducar el respaldo de nombres por
+discontinuidad de stack. Las dos poblaciones no separan y ningún umbral baja de
+4,5 respaldos buenos tirados por cada cambio acertado (ver `hand_tracker`).
+
+### Lo que falta, y por qué no se puede hacer en frío
+
+`tick()` solo lo llama `gui.py`. `replay.py`, `alpha.py` y toda la suite llaman
+únicamente a `analizar()`, así que **nada de lo que produce el lazo rápido existe
+sin jugar**. Eso bloquea:
+
+- **La métrica de la fase 4**: cuántas de las 234 mano-asiento que hoy no leen
+  nombre en toda la mano pasan a leerlo.
+- **`TICKS_MIN_ENTRE_ANALISIS`** (fase 5): el plan dice barrer el hueco y coger la
+  rodilla de `acciones_por_mano`. Está puesto a 5 y marcado como provisional.
+- **La regresión de oro**: necesita una sesión grabada con el commit actual.
+- **Confirmar los arreglos de cartas**: `board_pierde_carta` está medido en 0,97 %
+  sobre sesiones grabadas ANTES de ellos, y la del mazo nuevo es la peor (1,48 %).
+  Con una sesión nueva tiene que bajar; si no baja, los arreglos no valen lo que
+  dicen sus mediciones.
+
+### Pendiente sin tocar
+
+- **Mesas de 9**: `seat_map.SEATS` define seis asientos. En la sesión del torneo
+  la app leyó doce nombres distintos en lo que creía una mesa de seis y asignó el
+  asiento `HERO` a un rival. Capturas en `docs/casos/`.
+- **Fase 7**: el rango a OCR de verdad, con los dos mazos vivos.
