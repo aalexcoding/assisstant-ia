@@ -27,18 +27,30 @@ Medido sobre la sesión del 29-07 a las 19:05 (381 frames) y las 19:17 (430):
 
 ## Los ocho asientos
 
+**TRES POR CADA LADO Y DOS ENFRENTADOS**, que es como lo describe el usuario y es
+lo que la medición reprodujo por su cuenta, sin saberlo de antemano.
+
 Zonas de nameplate en fracciones del núcleo del tapete `(x0, y0, x1, y1)`,
 sacadas de 349 frames. El nameplate mide 0,36 × 0,24 del núcleo, igual que en la
 mesa de 6.
 
-    TOPC  (+0.33, -0.28, +0.69, -0.04)    98 % de los frames
-    UL    (-0.14, -0.12, +0.22, +0.11)    82 %
-    UR    (+0.77, -0.12, +1.13, +0.12)    93 %
-    ML    (-0.23, +0.32, +0.13, +0.56)    93 %
-    MR    (+0.89, +0.32, +1.25, +0.56)    98 %
-    DL    (-0.14, +0.81, +0.22, +1.05)    52 %
-    DR    (+0.77, +0.82, +1.13, +1.06)    90 %
-    HERO  (+0.32, +1.01, +0.68, +1.25)    96 %
+                        (x0, y0, x1, y1)                centro      visto
+    ENFRENTADOS
+      TOPC     (+0.33, -0.28, +0.69, -0.04)      (+0.51, -0.16)      98 %
+      HERO     (+0.32, +1.01, +0.68, +1.25)      (+0.50, +1.13)      96 %
+    LADO IZQUIERDO
+      UL       (-0.14, -0.12, +0.22, +0.11)      (+0.04, -0.01)      82 %
+      ML       (-0.23, +0.32, +0.13, +0.56)      (-0.05, +0.44)      93 %
+      DL       (-0.14, +0.81, +0.22, +1.05)      (+0.04, +0.93)      52 %
+    LADO DERECHO
+      UR       (+0.77, -0.12, +1.13, +0.12)      (+0.95, +0.00)      93 %
+      MR       (+0.89, +0.32, +1.25, +0.56)      (+1.07, +0.44)      98 %
+      DR       (+0.77, +0.82, +1.13, +1.06)      (+0.95, +0.94)      90 %
+
+LOS DOS DEL MEDIO SOBRESALEN, y ese detalle es la mejor señal de que la medición
+es real y no ruido ajustado: ML está en -0,05 y MR en +1,07, mientras sus vecinos
+de arriba y abajo están en +0,04 y +0,95. Es la panza del óvalo. Unas posiciones
+inventadas habrían salido alineadas en columna.
 
 `DL` sale en el 52 % y no en el 90 % porque ese asiento estuvo vacío buena parte
 de las dos sesiones, no porque se lea peor.
