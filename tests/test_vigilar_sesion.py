@@ -117,9 +117,14 @@ def test_el_mismo_fallo_en_frames_seguidos_se_avisa_UNA_vez():
 
 
 def test_al_cambiar_el_motivo_se_vuelve_a_avisar():
+    # Los dos boards van en MANOS DISTINTAS, que es lo que serian en la realidad:
+    # dentro de una mano el board solo añade cartas, asi que pasar de 2c 2c 9d a
+    # Ah 3c 9d sin cambiar de mano es imposible y saltaria board_pierde_carta,
+    # mezclando ese hallazgo con el que aqui se quiere probar.
     m = memoria()
     vs.hallazgos(abstiene(1, "hay board", board=["2c", "2c", "9d"]), m)
-    otro = vs.hallazgos(abstiene(2, "hay board", board=["Ah", "3c", "9d"]), m)
+    otro = vs.hallazgos(abstiene(2, "hay board", board=["Ah", "3c", "9d"],
+                                 mano_seguida=2), m)
     assert len(otro) == 1, "ahora una carta del hero esta en el board: otra cosa"
     assert "board" in otro[0][1] or "carta tuya" in otro[0][1]
 
@@ -130,9 +135,11 @@ def test_tras_frames_limpios_el_mismo_fallo_vuelve_a_avisarse():
     m = memoria()
     malo = dict(board=["2c", "2c", "9d"], motivo="hay board")
     assert len(vs.hallazgos(abstiene(1, **malo), m)) == 1
+    # los frames limpios van sin board, o sea en otra mano: un board no se vacia
+    # a mitad de mano (board_vacio es justo lo que corta la mano)
     for n in (2, 3, 4):
-        assert vs.hallazgos(frame(n), m) == []
-    assert len(vs.hallazgos(abstiene(5, **malo), m)) == 1
+        assert vs.hallazgos(frame(n, mano_seguida=2), m) == []
+    assert len(vs.hallazgos(abstiene(5, mano_seguida=3, **malo), m)) == 1
 
 
 # --- YA VISTO: no se repite dentro de la misma sesion ------------------------

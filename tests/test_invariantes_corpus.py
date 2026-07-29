@@ -28,6 +28,7 @@ from collections import Counter
 import pytest
 
 from core import invariantes as inv
+from tests import corpus
 
 pytestmark = pytest.mark.corpus
 
@@ -91,9 +92,27 @@ PERCEPCION = [
 # es un techo provisional: la fase 3a del plan (que el override no contradiga la
 # evidencia del frame) existe para bajarlo. Si dentro de unos commits sigue
 # aqui, es que esa fase no se hizo.
+#
+# LOS DOS DE CARTAS son la vara con la que se juzga el reconocimiento sin tener
+# etiquetas: no dependen de saber QUE carta es, solo de que la lectura no se
+# contradiga a si misma. Medidos el 29-07-2026 sobre los 8.904 pares
+# consecutivos del corpus:
+#
+#     board_pierde_carta      0,97%   (0,47% - 1,48% segun sesion)
+#     hero_cambia_de_cartas   0,24%
+#
+# OJO AL LEER ESTAS CIFRAS: salen de los JSON grabados, o sea del codigo que
+# habia cuando se grabaron, y las sesiones del mazo nuevo son ANTERIORES a los
+# arreglos del indice (commits 9166b3a y 0dbb427). Justamente la del 29-07 a las
+# 07:04 es la que peor sale en board_pierde_carta, 1,48%, porque alli las figuras
+# desaparecian del board. Con la primera sesion que se grabe a partir de ahora
+# esto tiene que BAJAR; si no baja, los arreglos no valian lo que dicen sus
+# mediciones.
 SERIE = [
     ("jugadores_cambian", 0.0187, 0.028),
     ("posicion_cambia", 0.0128, 0.020),
+    ("board_pierde_carta", 0.0097, 0.016),
+    ("hero_cambia_de_cartas", 0.0024, 0.006),
 ]
 
 
@@ -201,3 +220,25 @@ def test_el_corpus_cubre_los_casos_que_importan(corpus_completo):
 def test_hay_material_de_sobra(corpus_completo):
     assert len(corpus_completo) > 1000, \
         f"solo {len(corpus_completo)} frames grabados: el corpus se ha quedado corto"
+
+
+def test_las_sesiones_de_verdad_empiezan_en_la_mano_1_y_los_trozos_no(corpus_completo):
+    """El criterio con el que la regresion de oro decide que puede reproducir.
+
+    Reproducir una sesion entera en frio es la misma cuenta que la original: el
+    Analizador arranca vacio igual que arranco alli. Reproducir un TROZO no lo
+    es, y por eso la regresion tiene que dejarlos fuera; si no, falla siempre y
+    acaba tapando una regresion de verdad (paso con notas-2026-07-29_081737:
+    hero_position 'SB' grabado contra 'BTN' reproducido)."""
+    por_sesion = {}
+    for fr in corpus_completo:
+        por_sesion.setdefault(fr.sesion, []).append(fr)
+    assert por_sesion, "sin corpus no hay nada que comprobar"
+    for ses, fs in por_sesion.items():
+        primero = min(fs, key=lambda f: f.n)
+        mano = (primero.state or {}).get("mano_seguida")
+        if corpus.es_fragmento(fs):
+            assert mano and mano > 1, f"{ses}: marcado fragmento con mano {mano!r}"
+            assert len(fs) < 5, f"{ses}: un fragmento de {len(fs)} frames es sospechoso"
+        elif mano is not None:
+            assert mano == 1, f"{ses}: sesion entera que no empieza en la mano 1"

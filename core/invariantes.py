@@ -137,4 +137,32 @@ def de_serie(previo, actual):
     if hp_p and hp_a and hp_p != hp_a:
         fallos.append(("posicion_cambia",
                        f"tu posicion cambia dentro de la mano: {hp_p} -> {hp_a}"))
+
+    # EL BOARD NO PIERDE CARTAS. Dentro de una mano el reparto solo añade: lo que
+    # se vio en el flop sigue ahi en el turn y en el river. Que una carta ya vista
+    # desaparezca o cambie de identidad no puede pasar en el juego, o sea que es
+    # siempre un fallo de lectura, y es la señal mas util que hay para juzgar el
+    # reconocimiento de cartas sin tener etiquetas: no depende de saber QUE carta
+    # es, solo de que no se contradiga a si misma.
+    #
+    # Se compara por CONJUNTO y no por prefijo. Parece equivalente -el board crece
+    # por el final- y no lo es: las cartas se ordenan por su posicion en la mesa,
+    # asi que una que se recupera en un frame posterior se INSERTA en su sitio.
+    # Visto al reproducir la sesion del 29-07 con las figuras ya arregladas:
+    # ['6s','As','Kd','3c'] -> ['6s','As','Kd','Jc','3c']. Por prefijo eso seria
+    # una mutacion; por conjunto es lo que es, una carta que aparece.
+    b_p, b_a = st_p.get("board") or [], st_a.get("board") or []
+    perdidas = set(b_p) - set(b_a)
+    if perdidas:
+        fallos.append(("board_pierde_carta",
+                       f"cartas que estaban en el board y ya no: "
+                       f"{sorted(perdidas)} ({b_p} -> {b_a})"))
+
+    # TUS CARTAS NO CAMBIAN DENTRO DE UNA MANO. Solo se comparan cuando las dos
+    # lecturas traen algo: que no se lean en un frame es normal -el nameplate las
+    # tapa a medias- y no es una contradiccion.
+    h_p, h_a = st_p.get("hero_cards") or [], st_a.get("hero_cards") or []
+    if h_p and h_a and set(h_p) != set(h_a):
+        fallos.append(("hero_cambia_de_cartas",
+                       f"tus cartas cambian dentro de la mano: {h_p} -> {h_a}"))
     return fallos
