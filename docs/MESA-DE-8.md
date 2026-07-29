@@ -3,8 +3,19 @@
 Estado: **cableado y jugable**. Elige **8-Max** en el selector "Mesa" de la
 ventana antes de darle a Iniciar.
 
-Medido de punta a punta sobre 160 frames de una sesión real de 8-max,
-reproduciendo los mismos frames con una disposición y con la otra:
+Medido de punta a punta sobre dos sesiones reales de 8-max, reproduciendo los
+mismos frames con una disposición y con la otra.
+
+Sesión del 29-07 a las 20:12 (171 frames, ocho jugadores en la mesa):
+
+| | auto (=6) | **8-Max** |
+|---|---|---|
+| asientos leídos por frame | 4,69 | **6,34** |
+| jugadores en mano | 1,01 | **3,81** |
+| recomendaciones | 94 | **111** |
+| nicks distintos | **2** | **10** (8 reales + 2 variantes de OCR) |
+
+Sesión del 29-07 a las 19:17 (160 frames):
 
 | | disposición de 6 | **disposición de 8** |
 |---|---|---|
@@ -101,12 +112,24 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
   para cuando el barrido sea fiable frame a frame.
 - **Las mesas de 7 y 9 siguen sin tabla.** Caen a la de 6, que es lo que hacían
   antes. La de 9 está capturada en `casos/` a la espera de medirla igual.
-- **Dos de las tres tablas de la disposición de 8 son DERIVADAS, no medidas**:
-  las zonas de dorso y las de apuesta se calculan aplicando al asiento de 8 el
-  desplazamiento que ese mismo asiento tiene en la de 6. Las de dorso se
-  validaron sobre 229 frames y separan bien salvo en DL y DR, donde la
-  comprobación no concluyó. Hay que medirlas con la primera sesión que se grabe
-  jugando a 8 **con esta disposición puesta**.
+- **Las zonas de APUESTA siguen siendo derivadas y sin validar.** Se asume por
+  cómo se usan: el importe leído ahí nunca crea una subida, solo atribuye una que
+  el botón "Igualar" ya ha demostrado que existe, así que una zona mal puesta
+  hace que no se atribuya, no que se invente.
+- **Las zonas de DORSO ya están validadas** (sesión del 29-07 a las 20:12, 162
+  frames de una mesa de 8 real). DL y DR, que entraron derivadas y sin
+  comprobar, se comportan como las medidas:
+
+        asiento   p50    p90    % sobre el umbral (0,10)
+        UL       0,286  0,286        57 %
+        UR       0,359  0,359        57 %
+        DL       0,187  0,191        51 %   <- era la dudosa
+        DR       0,232  0,232        58 %   <- era la dudosa
+
+  Bimodales igual que las demás -0 cuando no hay cartas- y por encima del
+  umbral. Tienen MENOS MARGEN que las medidas (1,9× el umbral frente a 2,9×), o
+  sea que se pueden centrar mejor; funcionan, pero son la primera candidata si
+  algún día se afinan.
 - La parte de DECISIÓN ya lo soporta entero: `SEATING_BY_N[8]` da
   `BTN, SB, BB, EP2, MP1, MP2, HJ, CO`, derivado por cuánta gente habla después
   de ti contra los rangos de 9-max digitalizados.
