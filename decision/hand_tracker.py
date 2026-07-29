@@ -50,9 +50,21 @@ puede inventarse un raiser: si el boton no pide nada, no se mira. Y si lo pide,
 se exige ademas un unico candidato, igual que ya hace detect_raiser.
 
 FRONTERAS DE MANO. La base hay que olvidarla al empezar mano nueva, o el
-comprometido se dispara en cuanto alguien gana un bote. Se cortan por dos
-señales, elegidas midiendo (ver motivos_de_frontera); el board y las subidas de
-stack se descartaron con datos.
+comprometido se dispara en cuanto alguien gana un bote. Se cortan por DOS
+señales, elegidas midiendo (ver motivos_de_frontera): el board que se vacia y se
+SOSTIENE, y el boton que se mueve. El board que cambia, las subidas de stack y
+que te vuelvan a repartir se descartaron con datos.
+
+COMO SE MIDE SI UNA MANO ESTA BIEN CORTADA, que es lo que permitio afinar el
+board: una mano contiene UN reparto, y dos manos consecutivas no comparten board.
+Dos repartos en una mano son dos manos contadas como una; el mismo board en dos
+manos seguidas es una mano partida en dos.
+
+LAS DOS VARAS SOLO VALEN MIENTRAS NO SE CORTE CON ELLAS. Es facil olvidarlo: al
+probar el corte por reparto, puntuarlo con "una mano contiene un reparto" daba
+88,1% -> 98,7% y el numero era CIRCULAR, porque cortando en cada reparto ninguna
+mano puede contener dos. Sobre las señales que el cambio no tocaba, empeoraba.
+Ver MOTIVOS_DE_CORTE.
 
 Vive en decision/ y no en vision/ porque no mira pixeles: consume GameStates ya
 resueltos y lo que produce -cuanto ha metido cada jugador- es una entrada de la
@@ -125,7 +137,9 @@ def motivos_de_frontera(previo, actual):
                     de repartir, o sea que empieza una mano. NO se puede
                     encadenar con la mano anterior porque entre manos las cartas
                     siempre se recogen. Medido: 35 de 52 cortes reales, CERO
-                    disparos sin respaldo.
+                    disparos sin respaldo. NO CORTA, y no por descuido: ver
+                    MOTIVOS_DE_CORTE, donde esta el experimento y por que la
+                    forma obvia de puntuarlo sale circular.
       "cartas"      las cartas del hero son otras de un frame al siguiente.
                     PARECIA la señal mas fuerte -que salgan las mismas dos en dos
                     manos seguidas es 1 entre 1326- y medida es de las peores: en
@@ -272,6 +286,37 @@ def motivos_de_frontera(previo, actual):
 # usando en el panel "Mano anterior", que es donde una lectura suelta no hace
 # daño; lo que ya no hace es cortar.
 MOTIVOS_DE_CORTE = frozenset({"board_vacio", "boton"})
+
+# CORTAR TAMBIEN POR "TE HAN REPARTIDO": PROBADO EL 29-07-2026 Y DESCARTADO.
+#
+# La idea es del usuario y es la definicion del juego: "si ves que me vuelven a
+# repartir mano, ahi es partida nueva". La señal ademas es limpia: medido, el
+# reparto se ve UNA vez por mano.
+#
+# NO ENTRA PORQUE EL CORTE QUE YA HAY CAE ENCIMA. Entre que la app abre la mano y
+# ve las dos cartas del hero pasa 1 frame de mediana y 4 como maximo, o sea que
+# board_vacio ya corta practicamente en el reparto. Añadirlo solo mete un segundo
+# corte donde ya hubo uno.
+#
+# Y CUIDADO CON COMO SE MIDE, que es la parte que casi me cuela el cambio. Parece
+# natural puntuarlo con "una mano bien cortada contiene un reparto", y da 88,1%
+# -> 98,7%. Ese numero es CIRCULAR: si se corta en cada reparto, ninguna mano
+# puede contener dos por construccion. Sobre las señales que no dependen del
+# cambio, empeora:
+#
+#                                    hoy    cortando por reparto
+#     manos partidas                   0            3
+#     010221 (el chat nombra 22)      22           24
+#     180052 (el chat nombra 17)      16           18
+#
+# Se probo tambien como RED -cortar solo si la mano lleva ya N frames abierta, o
+# sea cuando ninguna otra señal la corto- barriendo N de 5 a 40, y todas las
+# variantes empeoran esas dos señales igual.
+#
+# LO QUE SI SE QUEDA de esta idea es la VARA: el reparto sirve para juzgar el
+# corte MIENTRAS NO SE CORTE CON EL. Dos repartos en una mano son dos manos
+# contadas como una; y dos manos consecutivas con el mismo board son una mano
+# partida. Con las dos se afino BOARD_VACIO_FRAMES.
 
 # Frames minimos que tiene que durar una mano antes de poder cortarla otra vez.
 #
