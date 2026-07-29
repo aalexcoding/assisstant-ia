@@ -184,10 +184,12 @@ SEATS_8MAX = {
 #     MR        0.913,0.500   0.940,0.641   0.144
 #     HERO      0.507,0.962   0.359,0.907   0.158
 #
-# ML SIGUE DERIVADA: el disco no paso por ese asiento en ninguna de las dos
-# sesiones, asi que no hay nada que medir. Queda como la unica de las nueve sin
-# comprobar, y se nota porque es la que menos separacion tiene de su vecina
-# (0,221 de UL).
+# ML SIGUE DERIVADA y ya no es por falta de datos: se volvio a buscar con 4.469
+# discos de TRES sesiones, sin muestrear, y ese asiento no aparece. Los otros
+# ocho se confirman dentro de 0,01, y el unico cumulo nuevo (108 muestras, el
+# 2,4%) cae entre TR y UR, que es el disco pillado a medio deslizarse de un
+# asiento al siguiente. En esas mesas el asiento medio-izquierda estuvo vacio casi
+# siempre y el boton lo saltaba. Queda como la unica de las nueve sin comprobar.
 #
 # La separacion minima entre anclas es 0,159 (HERO y DL). disco_dealer exige que
 # la primera sea <= 0,75x la segunda o se abstiene, asi que con esa separacion un

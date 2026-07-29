@@ -113,12 +113,30 @@ CHAT_MAX_S = 30.0
 # mediana a 1,076 de p95, y el cociente p95/p50 va de 1,4 a 2,1 segun sesion: esa
 # dispersion es justo lo que un p50 se comeria.
 #
-# TICKS_MIN_ENTRE_ANALISIS ES PROVISIONAL y esta escrito para que se note. El
-# plan dice medirlo barriendo el hueco y cogiendo la rodilla de acciones_por_mano,
-# y ese barrido necesita ticks de verdad: tick() solo lo llama gui.py, asi que en
-# frio no hay nada que barrer. 5 ticks son 0,5 s de vigilancia entre analisis,
-# que es el orden de lo que ya se observaba (1,36 capturas rapidas por analisis
-# antes de arreglar el conteo, ~5 despues).
+# TICKS_MIN_ENTRE_ANALISIS: BARRIDO INTENTADO Y SIN CONCLUSION, y se queda en 5.
+#
+# El plan decia medirlo cogiendo la rodilla de acciones_por_mano. Con 14 sesiones
+# grabadas se puede mirar, y lo que sale es que ESTE NUMERO NO ES EL QUE MANDA: el
+# hueco real entre analisis va de 7,4 a 13,2 ticks, siempre por encima de los 5
+# reservados. Sale de la formula del latido (p95 del ciclo + 5 ticks), no del
+# minimo.
+#
+# acciones_por_mano SI sube con el hueco, y de forma monotona en las sesiones
+# comparables (6-max jugando):
+#
+#     ticks/analisis   7,44   8,60   9,34   9,61  11,17
+#     acciones/mano   13,39  14,93  16,35  18,59  20,56
+#
+# Pero no hay rodilla: sigue subiendo en el extremo del rango observado. Y el lado
+# que se pagaria no da ninguna señal: recomendaciones por mano 7,4 / 5,1 / 7,3 /
+# 9,3 / 4,7 / 4,1 para esos mismos huecos, sin tendencia, y "manos con al menos
+# una recomendacion" va del 36% al 94% con huecos casi iguales. Las sesiones se
+# diferencian mucho mas por el tamaño de mesa, el mazo y cuanto jugo el usuario
+# que por el hueco.
+#
+# Asi que mover el numero seria seguir una correlacion espuria. Se queda en 5, que
+# ademas no es el limite efectivo: mientras la formula del latido sea esta, este
+# minimo no se alcanza nunca y afinarlo no cambia nada.
 PERIODO_MIN_S = 0.5
 TICKS_MIN_ENTRE_ANALISIS = 5
 RITMO_MUESTRAS = 30      # ciclos recientes con los que se estima el p95
