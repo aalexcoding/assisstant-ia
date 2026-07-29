@@ -61,21 +61,39 @@ def mesa(n_cartas, palos, cara=CARA_VIVA, alto=ALTO_CARTA):
     La carta se dibuja con la disposicion REAL, que es la que hace falta aislar:
     rango pequeño arriba a la izquierda con su pip debajo, rango grande a la
     derecha, y el pip grande DEBAJO del rango grande y casi igual de alto -que
-    es justo por lo que no se puede separar por tamaño-."""
+    es justo por lo que no se puede separar por tamaño-.
+
+    `alto` menor que ALTO_CARTA es la carta del HERO, a la que el cliente le tapa
+    la mitad de abajo con su propio nameplate. Se modela TAPANDO, no encogiendo:
+    la carta se dibuja entera y se recorta el sobrante. Encogerla seria dibujar
+    una carta que el cliente no dibuja nunca -con el indice a escala reducida- y
+    ademas escondería el error que este fixture tiene que poder ver: el indice
+    mide lo mismo en las dos, y por eso glyph_card_detector lo escala con el
+    ANCHO de la carta y no con su alto (ver INDICE_ANCHO_FRAC alli)."""
     img = np.full((alto + 80, 60 + n_cartas * (ANCHO_CARTA + HUECO) + 60, 3),
                   TAPETE, dtype=np.uint8)
+    entera = np.full((ALTO_CARTA, ANCHO_CARTA, 3), TAPETE, dtype=np.uint8)
     for i in range(n_cartas):
         x = 60 + i * (ANCHO_CARTA + HUECO)
-        cv2.rectangle(img, (x, 40), (x + ANCHO_CARTA - 1, 40 + alto - 1), cara, -1)
+        c = entera.copy()
+        cv2.rectangle(c, (0, 0), (ANCHO_CARTA - 1, ALTO_CARTA - 1), cara, -1)
         t = TINTA[palos[i]]
-        cv2.putText(img, "K", (x + 34, 40 + int(alto * 0.50)),          # rango grande
-                    cv2.FONT_HERSHEY_SIMPLEX, alto / 105.0, t, 4)
-        cv2.putText(img, "K", (x + 5, 40 + int(alto * 0.22)),           # rango pequeño
-                    cv2.FONT_HERSHEY_SIMPLEX, alto / 280.0, t, 2)
-        cv2.circle(img, (x + 13, 40 + int(alto * 0.37)),                # pip pequeño
-                   max(3, alto // 30), t, -1)
-        cv2.circle(img, (x + 52, 40 + int(alto * 0.76)),                # pip grande
-                   max(5, alto // 12), t, -1)
+        cv2.putText(c, "K", (34, int(ALTO_CARTA * 0.50)),               # rango grande
+                    cv2.FONT_HERSHEY_SIMPLEX, ALTO_CARTA / 105.0, t, 4)
+        # El INDICE -rango pequeño y su pip- va en la esquina de arriba a la
+        # izquierda, que es de donde glyph_card_detector saca el palo. Su tinta
+        # esta MEDIDA en cartas reales (sesion del 29-07 a las 07:04, frame 275):
+        # el indice de una carta de 87x122 mide 28x40 px y lleva entre 311 y 498
+        # px de tinta, o sea el 40-65% de su area. La version anterior de este
+        # fixture dejaba 40 px -por debajo de TINTA_MIN_PX- y ponia el pip
+        # pequeño FUERA del indice.
+        cv2.putText(c, "K", (5, int(ALTO_CARTA * 0.22)),                # rango pequeño
+                    cv2.FONT_HERSHEY_SIMPLEX, ALTO_CARTA / 280.0, t, 3)
+        cv2.circle(c, (13, int(ALTO_CARTA * 0.29)),                     # pip pequeño
+                   max(3, ALTO_CARTA // 22), t, -1)
+        cv2.circle(c, (52, int(ALTO_CARTA * 0.76)),                     # pip grande
+                   max(5, ALTO_CARTA // 12), t, -1)
+        img[40:40 + alto, x:x + ANCHO_CARTA] = c[:alto]                 # tapada por abajo
     return img
 
 
@@ -110,6 +128,45 @@ def test_una_carta_sobre_cara_blanca_se_lee_por_su_tinta(palo):
     cajas = glifo.find_card_boxes(mesa(1, [palo]))
     assert len(cajas) == 1
     assert cajas[0]["suit"] == palo
+
+
+@pytest.mark.parametrize("palo", PALOS)
+def test_una_figura_ilustrada_no_pierde_su_palo(palo):
+    """J, Q y K de este mazo son un DIBUJO A TODO COLOR, no un glifo sobre
+    blanco, y ese dibujo es tinta que entra en el voto del palo.
+
+    Es un fallo real y medido: en el board 10♥ 9♣ 2♥ Q♦ 8♦ (sesion del 29-07 a
+    las 07:04, frame 275) la dama sacaba 899 votos de diamante contra 452 de
+    picas -los trazos oscuros de su vestido-, o sea 1,99 contra un VENTAJA_MIN
+    de 2,0. No es que se leyera mal: find_card_boxes DESCARTA LA CAJA ENTERA
+    cuando el palo no es concluyente, asi que la carta desaparecia del board. Por
+    eso J/Q/K eran el 3,6% de las cartas de esa sesion cuando tocan al 23%.
+
+    Aqui se le pinta a la carta un cuerpo con tinta de los otros tres palos, mas
+    del doble de la suya, dejando el indice limpio. Con el voto sobre la carta
+    entera esto no se resuelve; leyendo el indice, si."""
+    img = mesa(1, [palo])
+    x, y = 60, 40
+    ajenos = [c for p, c in TINTA.items() if p != palo]
+    for k, color in enumerate(ajenos):        # el "vestido" de la figura
+        cv2.rectangle(img, (x + 30, y + 45 + k * 22),
+                      (x + ANCHO_CARTA - 6, y + 63 + k * 22), color, -1)
+    cajas = glifo.find_card_boxes(img)
+    assert len(cajas) == 1, "la figura no puede desaparecer del board"
+    assert cajas[0]["suit"] == palo
+
+
+def test_el_indice_se_escala_con_el_ancho_no_con_el_alto():
+    """A la carta del hero el cliente le tapa la mitad de abajo con su nameplate,
+    asi que mide 87x73 en vez de 87x122. Su INDICE no encoge -lo tapado es el
+    borde de abajo, no la esquina de arriba-, y si se escalara con el alto
+    visible se quedaria en 24 px, por debajo de TINTA_MIN_PX: la app dejaria de
+    leer las cartas del propio hero, que es de lo que depende todo lo demas."""
+    entera = glifo.find_card_boxes(mesa(1, ["heart"]))
+    tapada = glifo.find_card_boxes(mesa(1, ["heart"], alto=73), esperadas=1)
+    assert len(entera) == 1 and len(tapada) == 1
+    assert entera[0]["suit"] == tapada[0]["suit"] == "heart"
+    assert tapada[0]["h"] < entera[0]["h"], "la del hero va cortada de verdad"
 
 
 def test_el_verde_del_tapete_no_vota_trebol():

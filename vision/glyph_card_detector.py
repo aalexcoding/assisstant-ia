@@ -74,6 +74,62 @@ TINTA_MIN_PX = 60
 MARGEN_TINTA = 0.10   # se descarta el borde: trae tapete y la carta de al lado
 VENTAJA_MIN = 2.0     # el palo ganador tiene que doblar al segundo
 
+# El palo se vota SOLO en el INDICE de la carta -la esquina de arriba a la
+# izquierda, donde van el rango pequeño y el pip pequeño-, no en la carta
+# entera.
+#
+# POR QUE. El mazo trae FIGURAS ILUSTRADAS: la J, la Q y la K no son un glifo
+# sobre blanco sino un dibujo a todo color. Esa ilustracion es tinta, y entra en
+# el voto. Medido en el board 10♥ 9♣ 2♥ Q♦ 8♦ (sesion del 29-07 a las 07:04,
+# frame 275), votando sobre la carta entera:
+#
+#     10♥  heart 1903  segundo    0     ratio 1903    ok
+#     9♣   club  1682  segundo    0     ratio 1682    ok
+#     2♥   heart  729  segundo    0     ratio  729    ok
+#     Q♦   diam   899  spade    452     ratio 1.99    None  <- pierde por 0,01
+#     8♦   diam  1648  segundo    0     ratio 1648    ok
+#
+# Los 452 votos de picas son los trazos oscuros del vestido de la dama. La carta
+# no se lee mal: se DESCARTA ENTERA, porque find_card_boxes tira la caja cuando
+# el palo no es concluyente. Por eso la J/Q/K eran el 3,6% de las cartas de
+# board de esa sesion cuando en un mazo justo son el 23%.
+#
+# NO se baja VENTAJA_MIN, que seria colar a la dama por los pelos y debilitar de
+# paso las otras 51 cartas. Se quita el estorbo: en el indice hay rango y pip,
+# los dos del color del palo, y no hay ilustracion. La misma dama pasa a ganar
+# por 11x.
+#
+# MEDIDO sobre 5.571 frames de las 6 sesiones grabadas, comparando carta entera
+# contra este indice:
+#
+#                                cartas encontradas   frames con recuento ilegal
+#     sesion del mazo nuevo         1.557 -> 1.750            67 -> 0
+#     las 5 del mazo solido         1.096 ->    33           663 -> 32
+#
+# El segundo bloque tambien es ganancia, aunque parezca perdida: en esas
+# sesiones el mazo es el otro, asi que esas 1.096 cajas eran ruido -663 de ellas
+# daban un board de tamaño imposible- y _cajas_de_carta se queda con EL QUE MAS
+# ENCUENTRA, o sea que ese ruido podia tapar la lectura buena del otro detector.
+#
+# Y no cambia ningun palo ya resuelto: de 1.033 cartas que los dos criterios
+# resuelven, coinciden en 1.028; las 5 discrepancias son cajas basura de
+# sesiones del mazo solido. En la sesion del mazo nuevo: 757 iguales, 103
+# rescatadas, 0 discrepancias.
+#
+# EL INDICE SE MIDE CONTRA EL ANCHO DE LA CARTA, NO CONTRA SU ALTO, y esto no es
+# un detalle: a las cartas del hero el cliente les tapa la mitad de abajo con su
+# propio nameplate, asi que miden 87x73 en vez de 87x122. El indice sigue estando
+# entero -lo que se recorta es el borde de abajo, no la esquina de arriba- y
+# sigue midiendo 40 px, pero como fraccion del alto VISIBLE pasaria de 0,33 a
+# 0,55. Con la regla por alto, el indice del hero encogeria a 24 px y se quedaria
+# por debajo de TINTA_MIN_PX: la app dejaria de leer TUS PROPIAS CARTAS, que es
+# la lectura de la que depende todo lo demas. El ancho no lo recorta nadie.
+#
+#     medido en el board (carta de 87x122): indice de 28 x 40 px
+#     = 0,32 del ancho x 0,33 del alto  = 0,32 del ancho x 0,46 del ancho
+INDICE_ANCHO_FRAC = 0.32
+INDICE_ALTO_FRAC = 0.46   # tambien del ANCHO; ver arriba
+
 HUE = {
     "heart": (0, 12, 168, 180),      # rojo, a caballo del origen del tono
     "club": (50, 88, None, None),    # verde
@@ -145,8 +201,14 @@ def suit_votes(hsv_card, cara_card):
 
 
 def _palo(hsv_card, cara_card):
-    """Palo de una carta, o None si la tinta no es concluyente."""
+    """Palo de una carta, o None si la tinta no es concluyente.
+
+    Solo mira el INDICE de la esquina de arriba a la izquierda; ver
+    INDICE_ANCHO_FRAC para el porque y la medicion."""
     alto, ancho = cara_card.shape
+    alto = max(1, min(alto, int(ancho * INDICE_ALTO_FRAC)))
+    ancho = max(1, int(ancho * INDICE_ANCHO_FRAC))
+    hsv_card, cara_card = hsv_card[:alto, :ancho], cara_card[:alto, :ancho]
     dy, dx = int(alto * MARGEN_TINTA), int(ancho * MARGEN_TINTA)
     if alto - 2 * dy <= 0 or ancho - 2 * dx <= 0:
         return None

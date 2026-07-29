@@ -1,0 +1,230 @@
+{
+  "n": 117,
+  "t": 1785301661.7128642,
+  "hora": "07:07:41",
+  "png": "0117.png",
+  "duracion_analisis_s": 0.671,
+  "state": {
+    "image": "poker_gui_frame.png",
+    "hero_cards": [],
+    "board": [
+      "8d",
+      "3d",
+      "Td",
+      "2s"
+    ],
+    "pot": 7.09,
+    "players": [
+      {
+        "seat": "UL",
+        "name": "Marieta1182",
+        "action": null,
+        "stack": 13.2,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": true,
+        "revealed": false,
+        "cards": null,
+        "position": "CO",
+        "committed": 3.5,
+        "committed_calle": 0.0,
+        "committed_acuerdo": "solo_derivado"
+      },
+      {
+        "seat": "TOPC",
+        "name": "Xalod",
+        "action": null,
+        "stack": null,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "BTN",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "ninguno",
+        "name_repuesto": true,
+        "name_de_mano_anterior": true
+      },
+      {
+        "seat": "UR",
+        "name": "aegis",
+        "action": null,
+        "stack": 11.9,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": true,
+        "revealed": false,
+        "cards": null,
+        "position": "SB",
+        "committed": 3.3,
+        "committed_calle": 0.0,
+        "committed_acuerdo": "solo_derivado",
+        "name_repuesto": true
+      },
+      {
+        "seat": "MR",
+        "name": "meaner",
+        "action": null,
+        "stack": null,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "BB",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "ninguno",
+        "name_repuesto": true,
+        "name_de_mano_anterior": true
+      },
+      {
+        "seat": "HERO",
+        "name": "ferhat0309",
+        "action": null,
+        "stack": null,
+        "bet": null,
+        "is_hero": true,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "HJ",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "ninguno"
+      }
+    ],
+    "hero_position": "HJ",
+    "facing": null,
+    "vs_position": null,
+    "stack_unit": "bb",
+    "to_call": null,
+    "chat_lines": [],
+    "warnings": [
+      "no se detectaron las cartas del hero",
+      "hay board: no se recomienda accion postflop (no hay rango postflop digitalizado). La probabilidad de ganar SI se calcula y sale en el panel de equity",
+      "equity: no se ven tus 2 cartas"
+    ],
+    "asientos_leidos": [
+      "HERO",
+      "MR",
+      "TOPC",
+      "UL",
+      "UR"
+    ],
+    "hero_cards_dimmed": false,
+    "tiempos": {
+      "referencia": 0.0199,
+      "cartas": 0.004,
+      "ocr": 0.5919,
+      "vision_paralela": 0.0001,
+      "resolver_cartas": 0.0025,
+      "resto": 0.0002,
+      "total": 0.6186
+    },
+    "mano_seguida": 4,
+    "calle_seguida": "turn",
+    "posiciones_asentadas": true,
+    "acciones": {
+      "mano": 4,
+      "completo": false,
+      "acciones": [
+        {
+          "orden": 1,
+          "seat": "UL",
+          "position": null,
+          "accion": "post",
+          "verbo": "Ante",
+          "t": 1785301585.2282975
+        },
+        {
+          "orden": 2,
+          "seat": "UR",
+          "position": null,
+          "accion": "post",
+          "verbo": "Ante",
+          "t": 1785301585.2283986
+        },
+        {
+          "orden": 3,
+          "seat": "UR",
+          "position": null,
+          "accion": "post",
+          "verbo": "Poner",
+          "t": 1785301585.7138052
+        },
+        {
+          "orden": 4,
+          "seat": "UL",
+          "position": null,
+          "accion": "call",
+          "verbo": "Igualar",
+          "t": 1785301597.3345702
+        },
+        {
+          "orden": 5,
+          "seat": "UR",
+          "position": null,
+          "accion": "call",
+          "verbo": "Igualar >",
+          "t": 1785301612.7885036
+        },
+        {
+          "orden": 6,
+          "seat": "UR",
+          "position": null,
+          "accion": "call",
+          "verbo": "Igualar",
+          "t": 1785301613.7522585
+        },
+        {
+          "orden": 7,
+          "seat": "UR",
+          "position": null,
+          "accion": "check",
+          "verbo": "Pasar",
+          "t": 1785301619.8593304
+        },
+        {
+          "orden": 8,
+          "seat": "UL",
+          "position": null,
+          "accion": "check",
+          "verbo": "Pasar",
+          "t": 1785301641.1783345
+        },
+        {
+          "orden": 9,
+          "seat": "UR",
+          "position": null,
+          "accion": "check",
+          "verbo": "Pasar",
+          "t": 1785301643.5627983
+        }
+      ]
+    },
+    "vigilancia": {
+      "ticks": 931,
+      "capsulas_ocr": 774,
+      "saltadas": 51,
+      "periodo_s": 0.1
+    }
+  },
+  "recommendation": null,
+  "hand": null,
+  "equity": null,
+  "hand_result": {
+    "hand_number": "261578636270",
+    "winner": "REPLICANTE6",
+    "winners": [
+      "REPLICANTE6"
+    ],
+    "split": false,
+    "amount": "5.320",
+    "winning_hand": null,
+    "showdown": []
+  },
+  "nota": "está mesa es de 9, nuevo!"
+}

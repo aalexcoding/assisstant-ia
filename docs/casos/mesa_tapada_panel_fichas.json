@@ -1,0 +1,236 @@
+{
+  "n": 446,
+  "t": 1785266428.7633834,
+  "hora": "21:20:28",
+  "png": "0446.png",
+  "duracion_analisis_s": 0.405,
+  "state": {
+    "image": "poker_gui_frame.png",
+    "hero_cards": [
+      "Jc",
+      "2s"
+    ],
+    "board": [],
+    "pot": 2.25,
+    "players": [
+      {
+        "seat": "UL",
+        "name": "calimero7373",
+        "action": null,
+        "stack": 57.1,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": true,
+        "revealed": false,
+        "cards": null,
+        "position": "BTN",
+        "committed": 0.0,
+        "committed_calle": 0.0,
+        "committed_acuerdo": "solo_derivado"
+      },
+      {
+        "seat": "TOPC",
+        "name": "anaes",
+        "action": null,
+        "stack": null,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "SB",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "ninguno",
+        "name_repuesto": true,
+        "name_de_mano_anterior": true
+      },
+      {
+        "seat": "UR",
+        "name": "Ciegas",
+        "action": null,
+        "stack": null,
+        "bet": 227.2,
+        "is_hero": false,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "BB",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "solo_leido"
+      },
+      {
+        "seat": "MR",
+        "name": "Mig070883",
+        "action": null,
+        "stack": null,
+        "bet": 3.7,
+        "is_hero": false,
+        "in_hand": false,
+        "revealed": false,
+        "cards": null,
+        "position": "MP2",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "solo_leido",
+        "name_repuesto": true,
+        "name_de_mano_anterior": true
+      },
+      {
+        "seat": "HERO",
+        "name": "alex_delg",
+        "action": null,
+        "stack": null,
+        "bet": null,
+        "is_hero": true,
+        "in_hand": true,
+        "revealed": false,
+        "cards": null,
+        "position": "HJ",
+        "committed": null,
+        "committed_calle": null,
+        "committed_acuerdo": "ninguno"
+      },
+      {
+        "seat": "ML",
+        "name": "ArTiKZHD",
+        "action": null,
+        "stack": 55.2,
+        "bet": null,
+        "is_hero": false,
+        "in_hand": true,
+        "revealed": false,
+        "cards": null,
+        "position": "CO",
+        "committed": 0.0,
+        "committed_calle": 0.0,
+        "committed_acuerdo": "solo_derivado"
+      }
+    ],
+    "hero_position": "HJ",
+    "facing": "bet",
+    "vs_position": null,
+    "stack_unit": "bb",
+    "to_call": 1.0,
+    "chat_lines": [
+      {
+        "text": "idor: alex_delg, es tu turno. Tienes 7 segundos para actuar",
+        "left": 0,
+        "top": 41,
+        "right": 842,
+        "bottom": 76,
+        "cx": 421.0,
+        "cy": 58.5
+      },
+      {
+        "text": "idor: calimero7373, es tu turno. Tienes 7 segundos para actuar",
+        "left": 0,
+        "top": 85,
+        "right": 897,
+        "bottom": 119,
+        "cx": 448.5,
+        "cy": 102.0
+      },
+      {
+        "text": "idor: calimero7373, es tu turno. Tienes 7 segundos para actuar",
+        "left": 0,
+        "top": 130,
+        "right": 897,
+        "bottom": 165,
+        "cx": 448.5,
+        "cy": 147.5
+      },
+      {
+        "text": "idor: Mano n.* 261573977752: calimero7373 gana el bote (375)",
+        "left": 0,
+        "top": 173,
+        "right": 896,
+        "bottom": 208,
+        "cx": 448.0,
+        "cy": 190.5
+      },
+      {
+        "text": "o Q",
+        "left": 1147,
+        "top": 258,
+        "right": 1293,
+        "bottom": 314,
+        "cx": 1220.0,
+        "cy": 286.0
+      }
+    ],
+    "warnings": [
+      "no se encontro el stack del hero en BB (ni reciente en cache); no se puede calcular la profundidad"
+    ],
+    "asientos_leidos": [
+      "HERO",
+      "ML",
+      "MR",
+      "TOPC",
+      "UL",
+      "UR"
+    ],
+    "hero_cards_dimmed": false,
+    "mano_seguida": 17,
+    "calle_seguida": "preflop",
+    "posiciones_asentadas": true,
+    "acciones": {
+      "mano": 17,
+      "completo": false,
+      "acciones": [
+        {
+          "orden": 1,
+          "seat": "UL",
+          "position": "BTN",
+          "accion": "post",
+          "verbo": "Ante",
+          "t": 1785266427.2696416
+        },
+        {
+          "orden": 2,
+          "seat": "HERO",
+          "position": "HJ",
+          "accion": "post",
+          "verbo": "Ante",
+          "t": 1785266427.2696416
+        },
+        {
+          "orden": 3,
+          "seat": "ML",
+          "position": "CO",
+          "accion": "post",
+          "verbo": "Ante",
+          "t": 1785266427.2696416
+        }
+      ]
+    },
+    "vigilancia": {
+      "ticks": 4193,
+      "capsulas_ocr": 3589,
+      "saltadas": 1065,
+      "periodo_s": 0.1
+    }
+  },
+  "recommendation": null,
+  "hand": {
+    "street": "preflop",
+    "cards_to_come": 5,
+    "made_category": "Preflop",
+    "made_name": "J2 offsuit",
+    "made_explain": "Jota y Dos de distinto palo (offsuit)",
+    "draws": []
+  },
+  "equity": null,
+  "hand_result": {
+    "hand_number": "261573977752",
+    "winner": "calimero7373",
+    "winners": [
+      "calimero7373"
+    ],
+    "split": false,
+    "amount": "375",
+    "winning_hand": null,
+    "showdown": []
+  }
+}
