@@ -83,6 +83,101 @@ VIGILANCIA_OCR_MIN_S = 0.12
 # deja pasar varias manos antes de forzar una lectura: es un suelo, no un ritmo.
 CHAT_MAX_S = 30.0
 
+# --- el LATIDO, que se mide en vez de elegirse ------------------------------
+#
+# El analisis se dispara por SUCESOS (que te toque a ti, que se vea el disco).
+# El latido es el suelo: lo que cubre lo que el lazo rapido no ve -que crezca el
+# board, que acabe la mano- y lo que garantiza que el HUD no se congele si el
+# detector de turno se equivoca.
+#
+# HASTA AHORA LO ELEGIA EL USUARIO EN LA VENTANA, con un spin de 0,25 a 10 s, y
+# ese numero no describia nada:
+#
+#   - 8 de sus 40 valores son fisicamente imposibles: el ciclo tarda 0,72 s de
+#     mediana, asi que pedir 0,25 s no acelera nada, solo hace que el latido
+#     venza siempre y el analisis encadene sin parar.
+#   - el periodo real nunca fue el elegido, porque se cuenta desde que TERMINA
+#     el analisis: pidiendo 1,0 s la app analizaba cada 1,6-1,9 s.
+#   - y el repo decia tres cosas distintas del ciclo -"2-4 s" en el README,
+#     "0,7 s" en gui.py, "~950 ms" en seat_watch.py-, ninguna medida.
+#
+# Ahora se mide en caliente y se enseña. El ciclo depende del tamaño de ventana,
+# del tema de mesa, del mazo y de que mas este haciendo la maquina, asi que un
+# numero guardado en disco se quedaria viejo EXACTAMENTE IGUAL que esos tres.
+#
+#     latido = max(PERIODO_MIN_S, p95_del_ciclo + TICKS_MIN * VIGILANCIA_PERIODO_S)
+#
+# P95 Y NO P50 porque el suelo natural es el propio ciclo: con un p50, la mitad
+# de los analisis no cabe en su hueco y el lazo rapido se queda sin correr.
+# Medido sobre las 6 sesiones grabadas (8.908 frames), el ciclo va de 0,717 s de
+# mediana a 1,076 de p95, y el cociente p95/p50 va de 1,4 a 2,1 segun sesion: esa
+# dispersion es justo lo que un p50 se comeria.
+#
+# TICKS_MIN_ENTRE_ANALISIS ES PROVISIONAL y esta escrito para que se note. El
+# plan dice medirlo barriendo el hueco y cogiendo la rodilla de acciones_por_mano,
+# y ese barrido necesita ticks de verdad: tick() solo lo llama gui.py, asi que en
+# frio no hay nada que barrer. 5 ticks son 0,5 s de vigilancia entre analisis,
+# que es el orden de lo que ya se observaba (1,36 capturas rapidas por analisis
+# antes de arreglar el conteo, ~5 despues).
+PERIODO_MIN_S = 0.5
+TICKS_MIN_ENTRE_ANALISIS = 5
+RITMO_MUESTRAS = 30      # ciclos recientes con los que se estima el p95
+
+
+class Ritmo:
+    """Mide el ciclo y dice cada cuanto conviene latir.
+
+    Se queda con los ultimos RITMO_MUESTRAS ciclos y no con todos: si la ventana
+    cambia de tamaño o el cliente se pone a tirar animaciones, el ritmo tiene que
+    seguirlo, y una media de toda la sesion tardaria en enterarse."""
+
+    def __init__(self, fijo=None):
+        self._muestras = []
+        self._fijo = fijo          # --interval, para reproducir una cadencia vieja
+        self.total = 0
+
+    def anota(self, duracion_s):
+        if not isinstance(duracion_s, (int, float)) or duracion_s <= 0:
+            return
+        self.total += 1
+        self._muestras.append(float(duracion_s))
+        if len(self._muestras) > RITMO_MUESTRAS:
+            del self._muestras[0]
+
+    def _p(self, q):
+        if not self._muestras:
+            return None
+        v = sorted(self._muestras)
+        return v[min(len(v) - 1, int(q * len(v)))]
+
+    @property
+    def periodo_s(self):
+        """El latido. Mientras no haya medidas se usa PERIODO_MIN_S, que es el
+        suelo: arrancar latiendo rapido no hace daño porque los primeros ciclos
+        son justo los que hay que medir."""
+        if self._fijo:
+            return self._fijo
+        p95 = self._p(0.95)
+        if p95 is None:
+            return PERIODO_MIN_S
+        return max(PERIODO_MIN_S,
+                   p95 + TICKS_MIN_ENTRE_ANALISIS * VIGILANCIA_PERIODO_S)
+
+    def a_dict(self):
+        return {"ciclo_p50_s": self._p(0.50), "ciclo_p95_s": self._p(0.95),
+                "periodo_s": self.periodo_s, "muestras": len(self._muestras),
+                "fijo": self._fijo}
+
+    def etiqueta(self):
+        """Lo que se pinta en la ventana, en vez del selector que habia."""
+        p50, p95 = self._p(0.50), self._p(0.95)
+        if p50 is None:
+            return "Ritmo: midiendo..."
+        fijo = " (latido fijo)" if self._fijo else ""
+        return (f"Ritmo: {p50:.2f} s/analisis (p95 {p95:.2f}) · "
+                f"latido {self.periodo_s:.1f} s · "
+                f"vigilancia {1 / VIGILANCIA_PERIODO_S:.0f} Hz{fijo}")
+
 # Frames del arranque en los que SI se lee el chat, para que el panel "Mano
 # anterior" no salga vacio mientras se juega la primera mano.
 CHAT_FRAMES_INICIALES = 3

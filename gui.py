@@ -14,6 +14,9 @@ ya no hay panel de ciegas: con los stacks en bb, el nivel no hace falta.
 recarga el recuadro al volver.
 
 Uso: .venv/bin/python gui.py [--interval SEGUNDOS] [--self-test]
+
+El ritmo de analisis NO se elige: se mide en caliente y se enseña. --interval
+lo fija a la fuerza, solo para reproducir la cadencia de una sesion vieja.
 """
 import argparse
 import json
@@ -28,6 +31,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 import cv2
 
 from core import VIGILANCIA_PERIODO_S, Analizador
+from core.analisis import Ritmo
 from decision.rag import postmano
 from vision import hand_result as hr
 from vision.ocr_client import cerrar_workers
@@ -139,7 +143,10 @@ class AnalysisWorker(threading.Thread):
     def __init__(self, win, interval, sesion=None, max_players=None):
         super().__init__(daemon=True)
         self.win = win
-        self.interval = interval
+        # EL LATIDO SE MIDE. `interval` ya no es el periodo sino la salida de
+        # emergencia de --interval: si viene, manda sobre lo medido, para poder
+        # reproducir la cadencia de una sesion vieja. Ver core.analisis.Ritmo.
+        self.ritmo = Ritmo(fijo=interval)
         # EL ANALISIS, con toda su memoria entre frames (referencia del tapete,
         # plantilla del boton, escala del glifo, rastreador, registro de
         # acciones). Se crea uno por ejecucion: parar y volver a iniciar empieza
@@ -198,6 +205,8 @@ class AnalysisWorker(threading.Thread):
         replay.py y la suite, y si viviera dentro de este metodo cada uno tendria
         que reconstruir la secuencia por su cuenta."""
         res = self.analizador.analizar(crop)
+        self.ritmo.anota(res.duracion_analisis_s)
+        GLib.idle_add(self.win.on_ritmo, self.ritmo.etiqueta())
         state, recommendation = res.state, res.recommendation
         GLib.idle_add(self.win.on_result, state, recommendation, res.hand)
         GLib.idle_add(self.win.on_hand_result, res.hand_result)
@@ -276,7 +285,7 @@ class AnalysisWorker(threading.Thread):
                                 # muda: se reporta y se sigue con el siguiente.
                                 GLib.idle_add(self.win.on_error,
                                               f"Fallo analizando el frame: {e}")
-                            proximo_latido = time.monotonic() + self.interval
+                            proximo_latido = time.monotonic() + self.ritmo.periodo_s
                 # el periodo de VIGILANCIA es un periodo, no una pausa: se espera
                 # solo lo que falte. Si el analisis se ha comido el tick entero,
                 # no se espera nada y se vuelve a capturar de inmediato.
@@ -439,6 +448,13 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.equity_frame = frame
         frame.set_visible(False)
         return frame
+
+    def on_ritmo(self, texto):
+        """Lo que esta tardando de verdad, en la ventana. Sustituye al selector de
+        intervalo: el usuario deja de elegir un numero que no describia nada y
+        pasa a VER el que hay. Ver core.analisis.Ritmo."""
+        self.ritmo_label.set_text(texto)
+        return False
 
     def on_equity(self, eq):
         """Pinta la equity. Nunca mas digitos de los que soporta std_error_pp: el
@@ -604,7 +620,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         if self.sesion_notas is None:
             try:
                 self.sesion_notas = ts_session.TestingSession(
-                    interval=self.interval_spin.get_value(), prefix="notas")
+                    interval=self.default_interval, prefix="notas")
             except OSError as e:
                 return None, str(e)
         return self.sesion_notas, None
@@ -734,10 +750,17 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             "si lo fijas, detectar mas asientos de los que caben se trata como un error "
             "y se descarta la lectura mas debil en vez de desplazar las posiciones.")
 
-        interval_label = Gtk.Label(label="Intervalo (s)")
-        self.interval_spin = Gtk.SpinButton.new_with_range(0.25, 10.0, 0.25)
-        self.interval_spin.set_digits(2)
-        self.interval_spin.set_value(self.default_interval)
+        # EL RITMO SE VE, NO SE ELIGE. Antes habia aqui un spin de 0,25 a 10 s
+        # cuyo numero no describia nada: 8 de sus 40 valores son fisicamente
+        # imposibles -el ciclo tarda 0,72 s de mediana- y el periodo real nunca
+        # fue el elegido, porque se cuenta desde que TERMINA el analisis (pidiendo
+        # 1,0 s la app analizaba cada 1,6-1,9 s). Ver core.analisis.Ritmo.
+        self.ritmo_label = Gtk.Label(label="Ritmo: sin analizar")
+        self.ritmo_label.set_tooltip_text(
+            "Lo que esta tardando de verdad, medido sobre los ultimos analisis. "
+            "El analisis se dispara cuando pasa algo (te toca a ti, cambia la "
+            "mesa); el latido es solo el suelo, para que el HUD no se congele. "
+            "Se puede fijar con --interval para reproducir una sesion vieja.")
 
         # Modo testing: graba cada frame junto con todo lo que se calculo de el,
         # emparejados por nombre, en testing/sesion-<fecha>/. Es un CheckButton y
@@ -755,8 +778,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         box.append(self.calibrate_button)
         box.append(mesa_label)
         box.append(self.mesa_combo)
-        box.append(interval_label)
-        box.append(self.interval_spin)
+        box.append(self.ritmo_label)
         box.append(self.testing_check)
         return box
 
@@ -809,11 +831,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.running = True
             self.start_button.set_label("Parar analisis")
             self.calibrate_button.set_sensitive(False)
-            self.interval_spin.set_sensitive(False)
             self.testing_check.set_sensitive(False)
             self.mesa_combo.set_sensitive(False)
             self.status_label.set_markup("Iniciando...")
-            intervalo = self.interval_spin.get_value()
+            intervalo = self.default_interval
 
             self.sesion = None
             if self.testing_check.get_active():
@@ -894,7 +915,6 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.start_button.set_label("Iniciar analisis")
         self.start_button.set_sensitive(True)
         self.calibrate_button.set_sensitive(True)
-        self.interval_spin.set_sensitive(True)
         self.testing_check.set_sensitive(True)
         self.mesa_combo.set_sensitive(True)
         if self.sesion is not None:
@@ -1190,10 +1210,14 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
 def main():
     parser = argparse.ArgumentParser()
-    # 1 s: el ciclo de reconocimiento va por 0,7 s, asi que a 1 s el lazo va
-    # holgado y sin dejar hueco. El 3,0 de antes era de cuando un frame costaba
-    # 3,9 s. Se sigue pudiendo cambiar en la ventana o con --interval.
-    parser.add_argument("--interval", type=float, default=1.0, help="segundos entre analisis")
+    # POR DEFECTO NO HAY INTERVALO: el latido se mide en caliente y se enseña en
+    # la ventana (ver core.analisis.Ritmo). Esta opcion es la salida de
+    # emergencia, para reproducir la cadencia de una sesion vieja; no esta en la
+    # ventana a proposito, porque volver a ponerla ahi seria volver a pedirle al
+    # usuario un numero que no puede saber.
+    parser.add_argument("--interval", type=float, default=None,
+                        help="fija el latido en segundos en vez de medirlo "
+                             "(para reproducir una sesion grabada con otra cadencia)")
     parser.add_argument("--self-test", action="store_true",
                         help="construye la ventana y sale (verifica que los widgets se crean)")
     args = parser.parse_args()

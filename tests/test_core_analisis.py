@@ -539,3 +539,72 @@ def test_los_ticks_tampoco_sientan_a_nadie_en_la_mesa(an, layout, monkeypatch):
     finally:
         ocr_client.usar_backend(anterior)
     assert set(an.tracker.asientos_estables()) == antes
+
+
+# --- el LATIDO se mide, no se elige -----------------------------------------
+
+def test_sin_medidas_el_latido_es_el_suelo():
+    """Arrancar latiendo rapido no hace daño: los primeros ciclos son justo los
+    que hay que medir."""
+    r = ca.Ritmo()
+    assert r.periodo_s == ca.PERIODO_MIN_S
+    assert "midiendo" in r.etiqueta()
+
+
+def test_el_latido_deja_hueco_al_ciclo_Y_a_la_vigilancia():
+    """El suelo natural del latido es el propio ciclo; encima se reservan unos
+    ticks, que es lo unico que justifica que el lazo rapido exista."""
+    r = ca.Ritmo()
+    for _ in range(20):
+        r.anota(0.8)
+    assert r.periodo_s == pytest.approx(
+        0.8 + ca.TICKS_MIN_ENTRE_ANALISIS * ca.VIGILANCIA_PERIODO_S)
+
+
+def test_manda_el_p95_y_no_el_p50():
+    """Con un p50, la mitad de los analisis no cabe en su hueco y el lazo rapido
+    se queda sin correr. Medido sobre las sesiones grabadas, p95/p50 va de 1,4 a
+    2,1: esa dispersion es justo lo que un p50 se comeria."""
+    r = ca.Ritmo()
+    for _ in range(19):
+        r.anota(0.5)
+    r.anota(2.0)                       # un ciclo lento de cada veinte
+    assert r.periodo_s > 0.5 + ca.TICKS_MIN_ENTRE_ANALISIS * ca.VIGILANCIA_PERIODO_S
+
+
+def test_solo_cuentan_los_ciclos_RECIENTES():
+    """Si la ventana cambia de tamaño o la maquina se carga, el ritmo tiene que
+    seguirlo; una media de toda la sesion tardaria en enterarse."""
+    r = ca.Ritmo()
+    for _ in range(ca.RITMO_MUESTRAS * 2):
+        r.anota(3.0)
+    lento = r.periodo_s
+    for _ in range(ca.RITMO_MUESTRAS):
+        r.anota(0.4)
+    assert r.periodo_s < lento
+    assert r.total == ca.RITMO_MUESTRAS * 3, "se cuentan todos aunque solo pesen los ultimos"
+
+
+def test_una_duracion_imposible_no_ensucia_la_medida():
+    r = ca.Ritmo()
+    for mala in (0, -1, None, "medio segundo"):
+        r.anota(mala)
+    assert r.periodo_s == ca.PERIODO_MIN_S and r.total == 0
+
+
+def test_el_latido_fijo_manda_sobre_lo_medido():
+    """La salida de emergencia: reproducir la cadencia de una sesion vieja. No
+    esta en la ventana a proposito, solo en la linea de ordenes."""
+    r = ca.Ritmo(fijo=2.5)
+    for _ in range(20):
+        r.anota(0.3)
+    assert r.periodo_s == 2.5
+    assert "latido fijo" in r.etiqueta()
+
+
+def test_la_etiqueta_dice_las_tres_cifras_que_importan():
+    r = ca.Ritmo()
+    for _ in range(10):
+        r.anota(0.7)
+    txt = r.etiqueta()
+    assert "0.70 s/analisis" in txt and "p95" in txt and "Hz" in txt

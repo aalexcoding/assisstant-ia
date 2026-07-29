@@ -16,8 +16,14 @@ COSTES MEDIDOS, que es lo que hace viable la idea:
 
     hashear los 6 nameplates          0,8 ms por frame   <- se puede hacer a 10 Hz
     OCR de UN nameplate               ~60 ms             <- solo cuando cambia
-    OCR del frame entero             ~950 ms             <- lo que se evita
-    buffer de 10 frames en memoria      38 MB
+    ciclo de analisis entero          ver core.analisis  <- lo que se evita
+
+El coste del ciclo completo NO SE REPITE AQUI a proposito. Estuvo escrito como
+"~950 ms" y el repo llego a tener tres cifras distintas y ninguna medida -"2-4 s"
+en el README, "0,7 s" en gui.py y esta-, que es como se acaba razonando sobre un
+numero que ya no existe. Vive en un solo sitio, core/analisis.py (bloque del
+LATIDO), y ademas se mide en caliente en cada sesion porque depende de la
+maquina, la ventana y el mazo.
 
 MARGENES DE LA CAPSULA. Se hashea el INTERIOR de la zona (se descarta
 MARGEN_HASH por lado) por la misma razon que en la cache de rangos: el borde pilla
