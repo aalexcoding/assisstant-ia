@@ -34,11 +34,20 @@ pytestmark = [pytest.mark.corpus, pytest.mark.lento, pytest.mark.vision]
 # comparan tiempos, lineas crudas de chat ni equity: son un reloj, un OCR y un
 # Monte Carlo, y cambiarian sin que nada este mal.
 CAMPOS_ORO = ("hero_cards", "board", "hero_position", "stack_unit", "facing",
-              "vs_position", "hero_cards_dimmed")
+              "vs_position", "hero_cards_dimmed", "mano_seguida")
 
-# El ciclo medido en produccion ronda 0,55 s/frame. El techo se pone donde
-# empezaria a notarse en el HUD, no pegado a la media.
-LATENCIA_P95_MAX_S = 3.0
+# `mano_seguida` entra el 29-07-2026, al cambiar el corte por board_vacio
+# (hand_tracker.BOARD_VACIO_FRAMES). Es reproducible aunque sea un contador con
+# memoria: la sesion se reproduce ENTERA y en orden, asi que el rastreador ve la
+# misma secuencia que vio en vivo. Y es justo el campo donde se nota que una
+# lectura floja del board parta una mano en dos, que era el fallo.
+
+# BAJADO de 3,0 a 1,8 el 29-07-2026. Un techo de 3 s protegia de algo que ya no
+# puede pasar: medido sobre las 7 sesiones grabadas, el p95 del ciclo va de 0,836
+# a 1,149 s, y en la ultima -con el chat espaciado y el disco solapado- es 0,889.
+# Un techo muy por encima de lo medido no caza ninguna regresion; 1,8 deja el
+# doble del p95 tipico de margen y sigue avisando si algo se dispara.
+LATENCIA_P95_MAX_S = 1.8
 
 # Esquema minimo del GameState: campo -> tipos admitidos. Es el contrato entre
 # vision/ y decision/, que hasta ahora no estaba escrito en ningun sitio.

@@ -151,13 +151,12 @@ def motivos_de_frontera(previo, actual):
       "board"       los dos boards (de longitud legal) comparten menos de
                     BOARD_COMUNES_MIN cartas. NO CORTA: medido, 3 de 3 de sus
                     cortes no tenian respaldo ni del chat ni de las cartas.
-      "board_vacio" habia board (de longitud legal) y ahora no hay ninguna carta.
-                    Se descarto en la primera medicion, sobre 267 frames, por
-                    miedo a que el OCR perdiera el board un frame. Con 3.300
-                    frames de tres sesiones resulta ser de las mejores: 35 de 52
-                    cortes reales y CERO disparos sin respaldo. Se probo exigir 3
-                    frames vacios seguidos y no mejora (67 aciertos frente a 68) y
-                    obliga a mirar al futuro, asi que se deja causal.
+      "board_vacio" habia board (de longitud legal) y ahora no hay ninguno. Con
+                    3.300 frames de tres sesiones resulto ser de las mejores
+                    señales: 35 de 52 cortes reales y CERO disparos sin respaldo.
+                    OJO: el motivo se calcula aqui pero POR SI SOLO YA NO CORTA;
+                    hace falta que la racha llegue a BOARD_VACIO_FRAMES, y el
+                    porque y la medicion estan alli.
       "stack_sube"  algun stack subio mas de lo que absorbe el redondeo. Parecia
                     la señal ideal -en poker solo se ganan fichas al acabar la
                     mano- pero NO CORTA: mirando las 12 subidas dentro de manos
@@ -284,6 +283,49 @@ MOTIVOS_DE_CORTE = frozenset({"board_vacio", "boton"})
 # pierde ninguna.
 MIN_FRAMES_POR_MANO = 4
 
+# Frames SEGUIDOS sin board que hacen falta para cortar por "board_vacio".
+#
+# EL FALLO: una sola lectura mala del board parte una mano en dos. Se ve sin
+# ambiguedad porque las dos mitades comparten el board -dos manos consecutivas
+# con las mismas cinco cartas no son dos manos-, y esa señal no depende del chat
+# ni del propio rastreador. Medido sobre las 7 sesiones grabadas: 21 de 245
+# manos con board estaban partidas, el 8,6%.
+#
+# Y no hace falta que el board se pierda del todo: _board_legal devuelve None
+# tanto si no se leyo ninguna carta como si se leyeron 2, asi que un board a
+# medias -que es el fallo de lectura mas comun- entra por la misma puerta que el
+# final de una mano de verdad.
+#
+# EL UMBRAL SALE DEL DATO. Rachas de frames sin board, separadas por si detras
+# venia otro board (frontera real) o volvia el mismo (lectura perdida):
+#
+#     duracion de la racha    perdidas    fronteras reales
+#     1 frame                    17              0
+#     2 frames                    4              0
+#     3 frames                    1              1
+#     >= 5 frames                41            186
+#
+# Las fronteras de verdad NUNCA duran menos de 3 frames, porque despues de una
+# mano viene un preflop entero sin board. Ahi esta el valle.
+#
+# EFECTO, contando manos partidas sobre las 7 sesiones:
+#
+#     hoy (corta al primer frame)      327 manos, 245 con board, 21 partidas
+#     exigir 2 frames                  310         227             2
+#     exigir 3 frames                  307         224             0
+#
+# ESTO CONTRADICE UNA DECISION ANTERIOR del propio modulo, que decia "se probo
+# exigir 3 frames vacios seguidos y no mejora (67 aciertos frente a 68)". No se
+# contradice el dato, se contradice la METRICA: aquella contaba cuantas fronteras
+# reales se pillaban y esta cuenta cuantas se INVENTAN. Se pierde como mucho un
+# acierto y se dejan de fabricar 21 manos falsas, y una mano falsa no es un
+# detalle contable: reinicia lo comprometido de todos, caduca el respaldo de
+# nombres antes de tiempo y vuelve a repartir posiciones a mitad de mano.
+#
+# El coste es que el corte llega 2 frames tarde. Es barato: esos dos frames son
+# preflop sin board, donde no hay nada que atribuir a una mano ni a la otra.
+BOARD_VACIO_FRAMES = 3
+
 
 class _Asiento:
     """Seguimiento de un asiento dentro de UNA mano.
@@ -358,6 +400,8 @@ class HandTracker:
         # buzon de nombres que deja el LAZO RAPIDO entre dos analisis. Se vacia
         # en cada update(); ver observar_nombre para por que no votan directo.
         self._pendientes_nombre = {}
+        # frames seguidos sin board legal; ver BOARD_VACIO_FRAMES
+        self._sin_board = 0
         self._abrir(frozenset())
 
     def _abrir(self, motivos):
@@ -465,6 +509,7 @@ class HandTracker:
         modifica el state (para eso esta aplicar())."""
         actual = _vista(state, hand_number)
         motivos = motivos_de_frontera(self._previo, actual) if self._previo else frozenset()
+        motivos = self._board_vacio_sostenido(motivos, actual)
         if motivos & MOTIVOS_DE_CORTE and self._frames >= MIN_FRAMES_POR_MANO:
             self._abrir(motivos)
         self._previo = actual
@@ -538,6 +583,23 @@ class HandTracker:
                 bet_leido=p.get("bet") if isinstance(p.get("bet"), (int, float)) else None)
 
         return self.resumen()
+
+    def _board_vacio_sostenido(self, motivos, actual):
+        """`board_vacio` solo corta cuando lleva BOARD_VACIO_FRAMES seguidos.
+
+        La cuenta vive aqui y no en motivos_de_frontera porque esa funcion es
+        pura -compara dos frames y nada mas- y esto necesita memoria. Se mantiene
+        pura a proposito: es lo que deja auditar una frontera con los dos frames
+        delante, sin reconstruir la sesion entera.
+
+        El motivo se retira mientras la racha es corta y se AÑADE en el frame que
+        la completa, que es cuando ya se sabe que el board no vuelve. Ver
+        BOARD_VACIO_FRAMES para la medicion."""
+        sin_board = actual["board"] is None
+        self._sin_board = self._sin_board + 1 if sin_board else 0
+        if self._sin_board == BOARD_VACIO_FRAMES:
+            return frozenset(motivos) | {"board_vacio"}
+        return frozenset(motivos) - {"board_vacio"}
 
     def observar_nombre(self, seat, nombre):
         """Deposita un nombre visto por el LAZO RAPIDO, que no llama a update().

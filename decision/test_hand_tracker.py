@@ -166,7 +166,8 @@ def test_tras_cortar_sin_mover_el_boton_las_posiciones_no_estan_asentadas():
     tr = ht.HandTracker()
     calentar(tr, estado({"UL": 50.0}, board=("Ah", "Kd", "2c"), posiciones={"UL": "BTN"}),
              n=ht.MIN_FRAMES_POR_MANO + 1)
-    info = tr.update(estado({"UL": 50.0}, posiciones={"UL": "BTN"}))   # board_vacio
+    for _ in range(ht.BOARD_VACIO_FRAMES):    # el corte llega al tercero, ver alli
+        info = tr.update(estado({"UL": 50.0}, posiciones={"UL": "BTN"}))
     assert info["posiciones_asentadas"] is False
     info = tr.update(estado({"UL": 50.0, "MR": 30.0}, posiciones={"MR": "BTN"}))
     assert info["posiciones_asentadas"] is True, "se asientan al mover el boton"
@@ -193,12 +194,50 @@ def test_una_carta_del_hero_mal_leida_no_parte_la_mano():
 
 
 def test_el_board_que_se_vacia_es_mano_nueva():
-    """Una mano empieza siempre preflop. Se descarto en la primera medicion (267
-    frames) y con 3.300 resulta ser de las mejores: 35 de 52, cero falsos."""
+    """Una mano empieza siempre preflop. Con 3.300 frames resulta ser de las
+    mejores señales: 35 de 52, cero falsos.
+
+    Corta al TERCER frame sin board, no al primero; ver BOARD_VACIO_FRAMES."""
     tr = ht.HandTracker()
     calentar(tr, estado({"UL": 50.0}, board=("2h", "3h", "4h")))
     m0 = tr.update(estado({"UL": 46.0}, board=("2h", "3h", "4h")))["mano"]
+    for _ in range(ht.BOARD_VACIO_FRAMES - 1):
+        assert tr.update(estado({"UL": 46.0}, board=()))["mano"] == m0
     assert tr.update(estado({"UL": 46.0}, board=()))["mano"] == m0 + 1
+
+
+def test_un_board_que_PARPADEA_no_parte_la_mano():
+    """EL FALLO que motiva BOARD_VACIO_FRAMES: una sola lectura mala del board
+    partia la mano en dos. Se veia sin ambiguedad porque las dos mitades
+    compartian el board -dos manos consecutivas con las mismas cinco cartas no
+    son dos manos- y medido eran 21 de 245, el 8,6%.
+
+    Y no hace falta perder el board del todo: _board_legal devuelve None tanto si
+    no se leyo ninguna carta como si se leyeron 2, asi que un board a medias
+    -el fallo de lectura mas comun- entraba por la misma puerta que el final de
+    una mano de verdad."""
+    tr = ht.HandTracker()
+    board = ("2h", "3h", "4h", "9s", "Kd")
+    calentar(tr, estado({"UL": 50.0}, board=board))
+    m0 = tr.update(estado({"UL": 46.0}, board=board))["mano"]
+    tr.update(estado({"UL": 46.0}, board=()))                  # se pierde un frame
+    assert tr.update(estado({"UL": 46.0}, board=board))["mano"] == m0
+    tr.update(estado({"UL": 46.0}, board=("2h", "3h")))        # board a medias
+    tr.update(estado({"UL": 46.0}, board=("2h", "3h")))
+    assert tr.update(estado({"UL": 46.0}, board=board))["mano"] == m0
+
+
+def test_la_racha_sin_board_se_reinicia_al_volver_a_verlo():
+    """Si no se reiniciara, dos parpadeos sueltos y lejanos sumarian hasta el
+    umbral y cortarian igual, que es justo lo que se viene a evitar."""
+    tr = ht.HandTracker()
+    board = ("2h", "3h", "4h")
+    calentar(tr, estado({"UL": 50.0}, board=board))
+    m0 = tr.update(estado({"UL": 46.0}, board=board))["mano"]
+    for _ in range(5):
+        tr.update(estado({"UL": 46.0}, board=()))              # 1 frame sin board
+        tr.update(estado({"UL": 46.0}, board=board))           # y vuelve
+    assert tr.update(estado({"UL": 46.0}, board=board))["mano"] == m0
 
 
 def test_el_numero_de_mano_del_chat_ya_no_corta():
