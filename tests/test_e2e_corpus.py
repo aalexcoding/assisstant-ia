@@ -180,6 +180,15 @@ def al_dia():
     for fr in frames:
         por_sesion.setdefault(fr.sesion, []).append(fr)
 
+    # FUERA LOS TROZOS SUELTOS. Un frame sacado de mitad de una sesion -las
+    # carpetas notas-*- no se puede reproducir en frio: al analisis le falta la
+    # historia que tenia delante. Ver corpus.es_fragmento para el criterio y por
+    # que se decide por el numero de mano y no por el nombre de la carpeta.
+    por_sesion = {s: fs for s, fs in por_sesion.items() if not corpus.es_fragmento(fs)}
+    if not por_sesion:
+        pytest.skip(f"del commit actual ({actual}) solo hay trozos sueltos, que no "
+                    f"son reproducibles en frio; graba una sesion entera")
+
     pares = []
     for _ses, fs in sorted(por_sesion.items()):
         an = Analizador(seed_equity=1, tmp_frame="/tmp/poker_oro_frame.png")

@@ -88,6 +88,33 @@ def sesiones(raiz=RAIZ):
                   if os.path.isdir(d) and os.path.basename(d)[0] != "_")
 
 
+def es_fragmento(frames):
+    """¿Estos frames son un TROZO suelto sacado de mitad de una sesion?
+
+    Importa para todo lo que REPRODUZCA los frames en frio. Reproducir una sesion
+    entera es la misma cuenta que la original: el Analizador arranca vacio igual
+    que arranco alli y va acumulando lo mismo. Reproducir un trozo NO lo es, y no
+    hay forma de arreglarlo: al analisis le falta la historia que tenia delante
+    -el voto de asientos, el del boton, los nombres, la referencia fijada-, asi
+    que puede dar otro resultado sin que nada este roto.
+
+    EL CASO: las carpetas notas-* guardan UN frame, el que el usuario marco
+    mientras jugaba. La regresion de oro las comparaba y una fallaba siempre
+    (hero_position 'SB' grabado contra 'BTN' reproducido). Un test que no puede
+    pasar nunca no protege nada: acaba tapando una regresion de verdad.
+
+    Se detecta por el numero de MANO del primer frame, no por el nombre de la
+    carpeta. Toda sesion de verdad empieza en la mano 1 -el rastreador arranca
+    ahi-, asi que un primer frame que ya dice mano 8 o mano 16 esta declarando
+    por si solo que hubo analisis antes que aqui no esta. Medido sobre el corpus:
+    las 9 sesiones empiezan en la mano 1, y las 2 notas en la 8 y la 16."""
+    if not frames:
+        return False
+    primero = min(frames, key=lambda f: f.n)
+    mano = (primero.state or {}).get("mano_seguida")
+    return isinstance(mano, int) and mano > 1
+
+
 def _cargar(ruta_json, exigir_png=True):
     n = int(os.path.basename(ruta_json)[:-5])
     carpeta = os.path.dirname(ruta_json)
