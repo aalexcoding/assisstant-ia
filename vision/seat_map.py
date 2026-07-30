@@ -1512,16 +1512,47 @@ SEAT_BET_ZONES_8MAX = {
     "HERO": (0.24, 0.80, 0.53, 0.99),
 }
 
+# MEDIDAS, no derivadas, y hacia falta: entraron derivadas del desplazamiento del
+# asiento equivalente de la mesa de 6 y estaban muy mal puestas. La señal para
+# juzgarlas es propia -de una zona de apuesta tiene que salir un importe en BB
+# legible cuando el jugador ha apostado- asi que se barrio el desplazamiento
+# contando importes leidos. Sobre 129 frames de una sesion y 206 de otra:
+#
+#     asiento   derivada (A/B)   medida (A/B)
+#     TL             0 /   0        88 / 167
+#     UL             5 /   6        39 / 129
+#     TR             8 /  27        96 / 189
+#     DL             0 /   0        47 /  58
+#     ML             1 /  13        16 /  48
+#     MR             2 /  27        13 /  43
+#     HERO           0 /   0         8 /  10
+#     UR             8 /  24        10 /  21   <- se queda como estaba
+#     DR             0 /   0         0 /   0   <- nunca lee nada, ver abajo
+#
+# SE VALIDARON EN LAS DOS SESIONES, Y ESO CAMBIO EL RESULTADO. El primer barrido
+# uso una sola sesion y daba para TR y UR unos desplazamientos que en la otra
+# bajaban a CERO -sobreajuste puro-. Barriendo contra las dos a la vez y cogiendo
+# el minimo de las dos, TR sale a otro sitio y UR resulta que no mejora: se deja.
+#
+# DR NO LEE NADA con ninguna posicion de las 16 probadas. Puede que en esas dos
+# sesiones ese asiento no apostara nunca de forma visible, o que su importe se
+# dibuje en un sitio que el barrido no cubrio. Queda como derivada y sin validar,
+# y es lo unico de esta tabla que no esta medido.
+#
+# NO SON CRITICAS y por eso se aceptan asi: el importe leido aqui NUNCA crea una
+# subida, solo ATRIBUYE una que el boton "Igualar" ya ha demostrado que existe
+# (ver decision/engine). Una zona mal puesta hace que no se atribuya, no que se
+# invente.
 SEAT_BET_ZONES_9MAX = {
-    "TL":   (0.24, -0.13, 0.48, 0.03),
-    "TR":   (0.52, -0.10, 0.76, 0.06),
-    "UL":   (-0.01, 0.13, 0.23, 0.31),
+    "TL":   (0.12, -0.19, 0.36, -0.03),
+    "TR":   (0.64, -0.22, 0.88, -0.06),
+    "UL":   (-0.13, 0.07, 0.11, 0.25),
     "UR":   (0.75, 0.09, 1.01, 0.27),
-    "ML":   (-0.02, 0.44, 0.18, 0.62),
-    "MR":   (0.81, 0.43, 0.97, 0.61),
-    "DL":   (0.10, 0.80, 0.30, 0.98),
+    "ML":   (0.10, 0.44, 0.30, 0.62),
+    "MR":   (0.75, 0.49, 0.91, 0.67),
+    "DL":   (-0.02, 0.86, 0.18, 1.04),
     "DR":   (0.69, 0.82, 0.85, 1.00),
-    "HERO": (0.26, 0.83, 0.54, 1.02),
+    "HERO": (0.38, 0.71, 0.66, 0.90),
 }
 
 SEAT_BET_ZONES = SEAT_BET_ZONES_6MAX
