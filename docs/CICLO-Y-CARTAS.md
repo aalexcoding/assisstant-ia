@@ -113,7 +113,7 @@ decisión.
 
 ---
 
-## ⬜ Fase 2 — La referencia duplicada y el disco solapado
+## ✅ Fase 2 — La referencia duplicada y el disco solapado  ·  `e9ce22f`
 
 **Cero cambios de campo.** `replay --diff` tiene que dar 0 diferencias.
 
@@ -130,7 +130,7 @@ decisión.
 `mascara_roja` acotada a las 6 anclas, **el criterio se escribe antes de medir**: si no baja de
 ~5 ms para los seis, no entra.
 
-## ⬜ Fase 3 — Re-censo al terminar una mano
+## ✅ Fase 3 — Re-censo al terminar una mano  ·  `69acd6b`
 
 Es la nota del frame 1333: *"no se han actualizado correctamente los nombres de los jugadores,
 hay que actualizar los jugadores al comienzo de cada mano"*.
@@ -180,7 +180,12 @@ separan, la regla no entra**.
 Y **el HUD deja de mentir por omisión**: `name_de_mano_anterior` ya viaja en el state y
 `players_markup` lo ignora.
 
-## ⬜ Fase 4 — El lazo rápido verifica la mesa
+## 🟡 Fase 4 — El lazo rápido verifica la mesa  ·  `19a3640`
+
+Cableada y con test de contrato. **Lo que gana, medido con un A/B controlado
+sobre los mismos frames: UNA mano-asiento de 86.** El mecanismo funciona y
+cuesta cero, pero el lazo lento ya leía el 96,5% de los nombres. Donde valdría
+es en condiciones malas, como la sesión de torneo que perdía el 28,6%.
 
 Presupuesto medido del tick (hoy gasta 91-256 ms cuando OCR-ea):
 
@@ -203,7 +208,7 @@ sin jugar) — la nota del frame 254.
 **Métrica que manda**: cuántas de las **234** mano-asiento que hoy no leen nombre en toda la
 mano pasan a leerlo. Hace falta sesión en vivo: en frío no hay ticks.
 
-## ⬜ Fase 5 — Ritmo medido, y fuera el selector
+## ✅ Fase 5 — Ritmo medido, y fuera el selector  ·  `e9981f1`
 
 Se mide **en caliente**, con los primeros ~30 frames de la sesión. Descartado medir al arrancar
 con frames grabados (habría que versionarlos, y el proyecto se niega a eso por diseño) y el
@@ -230,7 +235,7 @@ igual que los tres que había. Se mide por sesión y se graba en `_sesion.json`.
 El usuario deja de elegir y empieza a **ver**. Hoy 8 de los 40 valores del spin son físicamente
 imposibles y ninguno describe el periodo real.
 
-## ⬜ Fase 6 — Cartas: primero la vara de medir
+## ✅ Fase 6 — Cartas: primero la vara de medir  ·  `6307359`
 
 Con ~7.700 frames grabados y cero etiquetas, la vara sale de **señales que no dependen del
 propio detector**:
