@@ -78,3 +78,34 @@ la carta la afina, y se fija por sesión— pero es una secuencia nueva.
 
 **Mientras no se haga, la estrategia es MARGEN en las zonas, no precisión en la
 referencia**, y eso ya está aplicado donde se midió que hacía falta.
+
+## Lo que sí se ha añadido: calibración por contenido
+
+`vision/calibracion.py` y `herramientas/calibrar_zonas.py`. **Se apoya en lo que
+hay y no lo sustituye**: las zonas siguen siendo fracciones del núcleo y la
+referencia se sigue fijando igual. Lo que hace es medir si el resultado está bien
+puesto.
+
+Convierte en instrumento el diagnóstico que se hizo A MANO tres veces. Las tres
+veces la firma era la misma: **el objeto detectado arranca o termina exactamente en
+el borde de su zona**. El criterio exige LAS DOS señales —tocar el borde *y* ser
+más estrecha que sus hermanas— porque por separado ninguna vale: el 127 % de las
+cartas de board tocaban el borde superior y casi ninguna estaba cortada.
+
+Y la escala de carta entra ahí como medida auxiliar, que es donde se puede usar sin
+re-derivar nada.
+
+    herramientas/calibrar_zonas.py testing/sesion-XXX
+
+### Validado en el campo, no solo con tests
+
+Con los valores de zona de **antes** de los arreglos del 30-07, la herramienta
+señala exactamente los recortes que se habían encontrado a mano:
+
+    zona                    lado   veces   corrección sugerida
+    revelada.UR              izq      29              -0.0417
+    revelada.UL              der      19              +0.0282
+
+El de `UR` es el que se encontró mirando frames uno a uno; **el de `UL` no se había
+visto** y el margen nuevo ya lo cubre. Con los valores actuales no señala nada en
+cuatro sesiones.
