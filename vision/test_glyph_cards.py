@@ -941,6 +941,140 @@ def test_un_borron_que_no_es_ningun_glifo_no_se_fuerza_a_un_rango():
     assert got is None
 
 
+# --- UN ATLAS POR MAZO ---------------------------------------------------
+# El atlas se compartia entre los dos mazos y por eso el calco no acertaba NI UNA
+# VEZ en el de cara blanca: 0 de 186 cartas, contra el 44% del solido. Las dos
+# tipografias son distintas -el 4 del mazo nuevo cierra el vertice, el 9 tiene
+# otra panza- asi que ninguna plantilla del solido llegaba nunca al umbral.
+#
+# Es el tipo de fallo que no se ve: no habia error, solo se pagaba OCR completo en
+# el 99% de las cartas de ese mazo. Estos tests estan para que no vuelva.
+
+@pytest.fixture(scope="module")
+def glifos_glyph():
+    etiquetas, M = color_rank_ocr._glifos("glyph")
+    atlas = cv2.imread(color_rank_ocr.GLIFOS_FICHERO_GLYPH, cv2.IMREAD_GRAYSCALE)
+    return etiquetas, M, atlas
+
+
+def test_cada_mazo_tiene_SU_atlas_y_no_son_el_mismo():
+    """EL FALLO EN UNA LINEA. Si los dos mazos vuelven a compartir plantillas, el
+    calco deja de disparar en uno de los dos y no se entera nadie: no aparece
+    ningun error, solo se triplica el coste del frame."""
+    solid = cv2.imread(color_rank_ocr.GLIFOS_POR_MAZO["solid"], cv2.IMREAD_GRAYSCALE)
+    glyph = cv2.imread(color_rank_ocr.GLIFOS_POR_MAZO["glyph"], cv2.IMREAD_GRAYSCALE)
+    assert solid is not None and glyph is not None
+    assert solid.shape == glyph.shape
+    assert not np.array_equal(solid, glyph), "los dos mazos comparten atlas"
+
+
+def test_las_plantillas_cargadas_dependen_del_MAZO():
+    """El candado de verdad: no basta con que los dos PNG existan, hay que
+    comprobar que `deck` llega hasta la carga. Con `_glifos()` ignorando el
+    argumento, todos los demas tests de este bloque seguirian verdes."""
+    _e1, M_solid = color_rank_ocr._glifos("solid")
+    _e2, M_glyph = color_rank_ocr._glifos("glyph")
+    assert not np.allclose(M_solid, M_glyph)
+    # y la plantilla binaria del acuerdo tambien, que va por otra cache
+    assert not np.array_equal(color_rank_ocr._plantilla_binaria(3, "solid"),
+                              color_rank_ocr._plantilla_binaria(3, "glyph"))
+
+
+def test_el_atlas_del_mazo_nuevo_tiene_sus_trece_casillas(glifos_glyph):
+    etiquetas, _M, atlas = glifos_glyph
+    lado = color_rank_ocr.GLIFO_LADO
+    assert atlas.shape == (lado, lado * len(etiquetas))
+    assert set(etiquetas) == set("2 3 4 5 6 7 8 9 10 J Q K A".split())
+
+
+def test_cada_plantilla_del_mazo_nuevo_se_identifica_a_si_misma(glifos_glyph):
+    etiquetas, M, _atlas = glifos_glyph
+    assert all(etiquetas[int(np.argmax(M @ M[i]))] == r for i, r in enumerate(etiquetas))
+
+
+def test_cada_plantilla_del_mazo_nuevo_se_calca_a_si_misma(glifos_glyph):
+    etiquetas, _M, atlas = glifos_glyph
+    lado = color_rank_ocr.GLIFO_LADO
+    for i, r in enumerate(etiquetas):
+        trozo = (atlas[:, i * lado:(i + 1) * lado] > 127).astype(np.float32)
+        calcado = color_rank_ocr._acuerdo(
+            trozo, color_rank_ocr._plantilla_binaria(i, "glyph"))
+        assert abs(calcado - 1.0) < 1e-9, f"la plantilla del '{r}'"
+
+
+def test_el_umbral_del_mazo_nuevo_es_mas_BAJO_y_esta_medido():
+    """0.88 y no el 0.95 del solido, y no es una rebaja a ojo.
+
+    En el solido hay un hueco limpio entre lo propio y lo ajeno. Aqui las dos
+    poblaciones SE SOLAPAN -tinta de color, trazo fino, mas variacion entre
+    cartas del mismo rango-, asi que el umbral se midio dejando uno fuera sobre
+    288 glifos: los 17 casos en que un rango ajeno le gana al propio no pasan de
+    0.738, y la cobertura hace meseta plana de 0.85 a 0.88. Con 0.88 entran 176
+    glifos y CERO errores.
+
+    Con el 0.95 del solido funcionaria igual de bien pero solo cubriria el 34.4%,
+    o sea 77 cartas de mas pagando OCR completo."""
+    assert color_rank_ocr.umbral_de_calco("glyph") == 0.88
+    assert color_rank_ocr.umbral_de_calco("solid") == color_rank_ocr.GLIFO_UMBRAL
+    assert color_rank_ocr.umbral_de_calco("glyph") < color_rank_ocr.umbral_de_calco("solid")
+    # un mazo que no este en la tabla no se queda sin umbral
+    assert color_rank_ocr.umbral_de_calco("un_mazo_que_no_existe") == color_rank_ocr.GLIFO_UMBRAL
+
+
+def test_el_umbral_del_mazo_nuevo_deja_fuera_a_los_impostores_medidos(glifos_glyph):
+    """Los 17 impostores medidos llegan como mucho a 0.738; el umbral esta en
+    0.88. Aqui se comprueba la version comprobable sin corpus: que ninguna
+    plantilla se calca sobre OTRA por encima del umbral."""
+    etiquetas, _M, atlas = glifos_glyph
+    lado = color_rank_ocr.GLIFO_LADO
+    u = color_rank_ocr.umbral_de_calco("glyph")
+    peor = 0.0
+    for i in range(len(etiquetas)):
+        trozo = (atlas[:, i * lado:(i + 1) * lado] > 127).astype(np.float32)
+        for j in range(len(etiquetas)):
+            if i == j:
+                continue
+            peor = max(peor, color_rank_ocr._acuerdo(
+                trozo, color_rank_ocr._plantilla_binaria(j, "glyph")))
+    assert peor < u, f"un rango se calca sobre otro al {peor:.3f}"
+
+
+def test_NINGUN_glifo_del_mazo_nuevo_lo_sabria_leer_el_atlas_del_solido(glifos_glyph):
+    """EL FALLO, EN ARITMETICA. Es la explicacion del 0 de 186, y se comprueba sin
+    corpus ni sesion: se coge cada plantilla del mazo nuevo, se lee con el atlas
+    del SOLIDO y se mira cuanto se calca. Ninguna de las trece pasa de 0.734, y
+    alli el umbral esta en 0.95. O sea que compartir atlas no es que funcionara
+    peor: es que no podia acertar NUNCA, y eso no salia en ningun test porque el
+    calco callandose es un camino legitimo -cae al OCR- y nadie contaba cuantas
+    veces caia."""
+    etiquetas, _M, atlas = glifos_glyph
+    lado = color_rank_ocr.GLIFO_LADO
+    _e, M_solid = color_rank_ocr._glifos("solid")
+    peor = 0.0
+    for i, r in enumerate(etiquetas):
+        g = (atlas[:, i * lado:(i + 1) * lado] > 127).astype(np.float32)
+        j = int(np.argmax(M_solid @ color_rank_ocr._vector_glifo(g)))
+        calcado = color_rank_ocr._acuerdo(g, color_rank_ocr._plantilla_binaria(j, "solid"))
+        assert calcado < color_rank_ocr.umbral_de_calco("solid"), \
+            f"el '{r}' del mazo nuevo si lo leeria el atlas del solido ({calcado:.3f})"
+        peor = max(peor, calcado)
+    assert peor < 0.80, f"medido en 0.734; ahora {peor:.3f}"
+
+
+def test_cada_plantilla_del_mazo_nuevo_se_reconoce_con_SU_atlas(glifos_glyph):
+    """La otra mitad del anterior: con su atlas las trece se calcan al 100%. Los
+    dos juntos son el candado del encaminamiento por `deck` -si se perdiera, uno
+    de los dos se pondria rojo- y no hace falta falsear ningun fichero."""
+    etiquetas, M, atlas = glifos_glyph
+    lado = color_rank_ocr.GLIFO_LADO
+    for i, r in enumerate(etiquetas):
+        g = (atlas[:, i * lado:(i + 1) * lado] > 127).astype(np.float32)
+        j = int(np.argmax(M @ color_rank_ocr._vector_glifo(g)))
+        assert etiquetas[j] == r
+        calcado = color_rank_ocr._acuerdo(g, color_rank_ocr._plantilla_binaria(j, "glyph"))
+        assert calcado >= color_rank_ocr.umbral_de_calco("glyph"), f"el '{r}': {calcado:.3f}"
+
+
 # --- las plantillas conservan la PROPORCION del glifo --------------------
 # La primera version escalaba cada glifo a un cuadrado, y eso deforma -una 'J'
 # estrecha se estiraba hasta llenarlo- y tira la proporcion, que es informacion

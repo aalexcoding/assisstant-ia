@@ -253,26 +253,149 @@ Nuevo `herramientas/score_cartas.py`. Reutiliza `tests/corpus.py` y `core/invari
 que encuentra más cartas") y `_encolar_cartas` (el orden calco → caché → OCR) **no tienen ni
 un test**, y son justo lo que un camino nuevo rompería.
 
-## ⬜ Fase 7 — El rango a OCR de verdad, con los dos mazos vivos
+## ✅ Fase 7 — El rango a OCR de verdad, con los dos mazos vivos
 
-El rango sale hoy de tres caminos: **calco por plantillas** (`glifos_rango.png`, 13 glifos),
-**caché de sesión** y **tesseract** con voto de 9-18 variantes. Puntos flojos documentados:
+**Se midió primero, como manda la fase 6, y la medición cambió la fase.** El plan proponía
+elegir entre un clasificador de 13 clases y un tesseract mejor alimentado. No hizo falta
+ninguno de los dos: la medición encontró que el camino que ya existía **estaba desconectado en
+uno de los dos mazos**.
 
-- el atlas se etiquetó **a mano y a ojo** a propósito, porque *"etiquetar con el mismo
-  instrumento que se quiere sustituir habría fijado su error en piedra"*;
-- las mediciones del atlas (1.208 y 414 glifos) son **todas del mazo sólido**; sobre
-  `deck="glyph"` no está medido;
-- `is_ten` **no puede dispararse** en el mazo nuevo (su '1' mide 0,59 de relación, lejos del
-  0,12-0,15 del viejo).
+### Lo que se midió antes de tocar nada
 
-**Se mide primero con la fase 6 y luego se decide el motor.** Los dos candidatos:
+Por qué camino se resuelve cada carta, separado por mazo (sesiones de ≥120 frames):
 
-1. **Clasificador propio de 13 clases** sobre el glifo aislado (`rango_grande_mask` ya lo
-   entrega limpio, y *"aislada NO SE EQUIVOCA NUNCA, solo se calla"*).
-2. **Tesseract mejor alimentado**: con el glifo aislado y normalizado quizá basta una vista.
+| mazo | cartas | calco/caché | OCR | sin rango | dieces |
+|---|---|---|---|---|---|
+| glyph | 186 | **0 · 0 %** | 184 | 2 · 1 % | 4,3 % |
+| solid | 1.355 | 593 · 44 % | 723 | 39 · 3 % | 6,6 % |
 
-**La compatibilidad ya tiene sitio**: `deck` viaja por toda la cadena y en `color_rank_ocr`
-solo bifurca en **un** punto (`rank_mask`). Un tercer camino entra por ahí sin tocar lo demás.
+**El calco no acertaba NI UNA VEZ en el mazo de cara blanca.** No fallaba: se callaba, que es
+un camino legítimo —cae al OCR— y por eso no lo veía ningún test. El coste real era pagar OCR
+completo en el 99 % de las cartas de ese mazo.
+
+Y una **corrección al plan**: dice que `is_ten` *no puede dispararse* en el mazo nuevo. Se
+dispara 4 veces. Los dieces salen al 4,3 % frente al 7,7 % teórico.
+
+### La causa, en aritmética
+
+El atlas era **uno y compartido**, y todas sus mediciones (1.208 y 414 glifos) son del mazo
+sólido. Las dos tipografías son distintas: el 4 del mazo nuevo cierra el vértice y el 9 tiene
+otra panza. Puesto en números —cada plantilla del mazo nuevo leída con el atlas del sólido—:
+
+    las trece se calcan como mucho al 0,734   ·   el umbral de allí está en 0,95
+
+O sea que no es que funcionara peor: **no podía acertar nunca**. Es el test
+`test_NINGUN_glifo_del_mazo_nuevo_lo_sabria_leer_el_atlas_del_solido`, determinista y sin
+corpus.
+
+### Un atlas por mazo
+
+`vision/glifos_rango_glyph.png`, 13 glifos de 40×40 en orden de baraja, igual que el otro.
+Cosechados de las sesiones reales agrupando por lo que dice el OCR **solo cuando sus 9
+variantes coinciden por unanimidad**, y con las cajas mordidas descartadas: una plantilla
+sacada de un glifo cortado le enseñaría a la app a reconocer sus propios errores.
+
+**La etiqueta final la puso el ojo**, que es lo que el atlas exige desde el principio (*"ese
+descarte lo hace el ojo, no un umbral"*): hoja de contactos de 13 filas, se leen los trece
+seguidos y se comprueba que cada fila es lo que dice ser.
+
+**Medoide y no promedio.** El promedio de glifos que no caen en el mismo píxel difumina el
+trazo y baja el acuerdo con todos, incluido el suyo. Medida la cohesión de las dos variantes
+contra sus ejemplares, el medoide —el glifo real más parecido a sus hermanos— gana o empata en
+11 de 13.
+
+### El umbral también es de cada mazo
+
+En el sólido hay un hueco limpio entre lo propio y lo ajeno. Aquí las dos poblaciones **se
+solapan**, así que el hueco hay que buscarlo. Medido sobre 288 glifos **dejando uno fuera**
+(cada glifo contra un atlas reconstruido sin él):
+
+    la correlación elige el rango correcto      283/288 = 98,3 %
+    acuerdo con SU rango           p5 0,555   mediana 0,913
+    acuerdo con el MEJOR AJENO    p95 0,806   máximo  0,810
+
+Lo que decide no es el solape sino los **17 casos en que un rango ajeno le gana al propio**,
+porque son los únicos que pueden salir mal, y no pasan de **0,738**. La cobertura hace meseta
+plana de 0,85 a 0,88 (176 glifos), así que **0,88** no cuesta ni un glifo y deja 14 puntos de
+margen. Las 5 elecciones equivocadas de la correlación (`6→8` ×2, `J→3` ×2, `6→5`) las caza el
+acuerdo: ninguna llega a 0,85.
+
+El 0,95 del sólido funcionaría igual de bien aquí —también sin errores— pero cubriría el 34,4 %
+en vez del 61,1 %, o sea 77 cartas de más pagando OCR completo.
+
+### Qué se ganó, medido — y qué NO
+
+El número de producción sale de espiar `rango_por_calco` dentro del pipeline sobre las dos
+sesiones del mazo nuevo enteras (1.472 frames):
+
+| llamadas al calco con `deck="glyph"` | antes | después |
+|---|---|---|
+| se calla → paga OCR completo | **2.180** | 958 |
+| acierta | **0** | **1.222 · 56 %** |
+
+Cero de 2.180. Y con el mazo sólido, idéntico antes y después (91 de 267), que era el requisito.
+
+Que además **acierta**: las 133 cartas que el calco resuelve se enfrentan al voto completo del
+OCR como segunda opinión. **133 de 133 coinciden, cero desacuerdos** —no hubo hoja de contactos
+que revisar porque no había nada que mirar.
+
+**Y AQUI VA LO QUE NO SE GANO, que es la mitad del resultado.** La vara de la fase 6 sobre esas
+mismas 1.472 frames sale **idéntica hasta el decimal**, campo a campo y con el mismo reparto de
+rangos:
+
+    board_ilegal 2,38%   board_pierde_carta 3,85%   hero_cambia 0,34%   chat 0/180   J/Q/K 24,6%
+
+La primera vez que salió empate era la ventana de `--muestra`; esta vez no, porque el atlas se
+ejercitó 2.180 veces. Así que la conclusión es la que es: **el atlas cambia el COSTE, no la
+LECTURA**. Las 1.222 cartas que ahora resuelve el calco daban ya el mismo rango por OCR, que es
+justamente lo que dice el 133/133.
+
+**Y EL TIEMPO TAMPOCO SE GANA, que era lo que quedaba.** Primero pareció que sí: p95 del ciclo
+de 691 a 567 ms. Repetido **con el orden invertido**, el atlas propio sale a 654 y el compartido
+a 624, o sea que los 124 ms eran del orden de ejecución —el primer paso paga el arranque en frío
+de los trabajadores de OCR y ese arranque cae justo en la cola, que es donde estaba la
+"ganancia"—. Medido bien: **no hay diferencia**.
+
+Y se sabe por qué, que es lo que hace útil el dato. Contados los trabajos del lote de OCR sobre
+60 frames:
+
+    927 trabajos en 60 lotes (15,4 por lote; p50 14, máximo 59)
+    de rango de carta          81 ·  8,7 %
+    nameplates, botones, chat  846 · 91,3 %
+
+El lote corre en **trabajadores en paralelo**, así que quitar el 8,7 % de los trabajos no acorta
+el camino crítico. Ahorrar 1.222 llamadas a tesseract es real en número de trabajos e invisible
+en tiempo de pared, y **donde está el coste del ciclo es en los nameplates**. Eso es una medición
+para otra fase, no para ésta.
+
+Así que el balance de la fase 7, sin adornos: **arregla un camino que estaba muerto en uno de los
+dos mazos, con las mismas lecturas y sin regresión, y no acelera nada.** Los aciertos que faltan
+están en las cartas que el calco no toca, y ésa es otra medición.
+
+### Lo que queda flojo, y se dice
+
+- **El 7 no lo cubre el calco.** Su plantilla salió de 3 ejemplares —el OCR llega a unanimidad
+  en el 7 muchísimo menos que en los demás— y de las 133 cartas resueltas por calco **ninguna
+  es un 7**. No es un error: se calla y cae al OCR, que es el camino de siempre. Pero ahí no
+  hay ganancia. El 9 (10 ejemplares) y la A (15) están en el mismo grupo flojo.
+- **`--muestra` de `score_cartas.py` no sirve para medir este cambio**, y el primer intento
+  salió empate exacto por eso: coge un trozo seguido desde el principio (a propósito, por los
+  invariantes de serie) y las cartas del mazo nuevo empiezan en el frame 166. En la ventana de
+  220 frames había 3 de 210. Sin `--muestra` hay 77.
+- **La competición de mazos decide por zona y frame**, no por sesión, y en los primeros 40
+  frames de la sesión de glifo —donde todavía no hay cartas del mazo nuevo— gana el sólido con
+  cartas fantasma. Es el motivo por el que el usuario tiene selector de mazo en la GUI.
+
+### Lo que NO se hizo, y por qué
+
+Ni el clasificador de 13 clases ni el tesseract de una vista. **Un clasificador entrenado con
+los glifos que el calco acierta es el calco con más pasos**, y el propio calco ya resuelve el
+58 % con cero errores medidos; el margen que queda está en el OCR de las cartas que el calco no
+toca, y eso es otra medición. Se deja anotado, no empezado.
+
+**La compatibilidad se mantuvo donde ya estaba**: `deck` viajaba por toda la cadena y ahora
+también indexa `GLIFOS_POR_MAZO` y `GLIFO_UMBRAL_POR_MAZO`. Un tercer mazo entra con una línea
+y su PNG.
 
 ---
 
@@ -353,4 +476,6 @@ sin jugar**. Eso bloquea:
 - **Mesas de 9**: `seat_map.SEATS` define seis asientos. En la sesión del torneo
   la app leyó doce nombres distintos en lo que creía una mesa de seis y asignó el
   asiento `HERO` a un rival. Capturas en `docs/casos/`.
-- **Fase 7**: el rango a OCR de verdad, con los dos mazos vivos.
+- **El 7 del mazo de cara blanca**: su plantilla de calco salió de 3 ejemplares y el calco no
+  resuelve ni un 7 en 133 cartas. Cae al OCR, que es lo que hacía antes, pero ahí no hay
+  ganancia. Hace falta cosechar más 7 con criterio relajado y revisarlos a ojo.

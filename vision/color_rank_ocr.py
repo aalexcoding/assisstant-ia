@@ -344,6 +344,18 @@ def _rank_only_close_img(card_bgr, deck="solid"):
 # carta del board es LA MISMA IMAGEN durante todos los frames de esa calle, asi
 # que se estaba pagando ese 86% una y otra vez por la misma respuesta.
 #
+# ESE 86% YA NO ES EL REPARTO DE HOY, y conviene saberlo antes de optimizar por
+# aqui. Medido de nuevo sobre 60 frames de una sesion del mazo de cara blanca -que
+# usa 9 variantes, no 18-: 927 trabajos en 60 lotes, y solo 81 son de rango de
+# carta (8,7%). El 91,3% son nameplates, botones, chat y bote. Ahi esta el coste.
+#
+# Y el lote corre en TRABAJADORES EN PARALELO, asi que quitar trabajos de rango no
+# acorta el ciclo de forma medible: al arreglar el calco del mazo nuevo se pasaron
+# 1.222 cartas de OCR a calco y el p95 del ciclo no se movio (691->567 ms parecia
+# que si, hasta que invertir el orden de las dos pasadas dio 654->624: era el
+# arranque en frio de los trabajadores, que cae justo en la cola). El calco y esta
+# cache valen por lo que ahorran de CPU, no por lo que acortan el reloj.
+#
 # LA CLAVE es (palo, hash del INTERIOR del recorte). El interior -se descarta un
 # CACHE_MARGEN por cada lado- porque el borde del recorte trae tapete y fichas
 # que se ANIMAN: hasheando el recorte entero solo coincide el 52% de las veces,
@@ -436,8 +448,20 @@ def reset_rank_cache():
 # Los demas son glifos cortados -por el borde de la zona o por una ficha encima- y
 # meterlos como plantilla seria enseñarle a la app a reconocer sus propios
 # errores. Ese descarte lo hace el ojo, no un umbral.
+#
+# UN ATLAS POR MAZO, y esto se descubrio midiendo. Todo lo de arriba se midio con
+# el mazo SOLIDO y el atlas se compartia con el otro, asi que sobre el mazo de
+# cara blanca el calco no acertaba NI UNA VEZ: 0 de 186 cartas, frente al 44% del
+# solido. No es que el calco no sirva ahi, es que las dos tipografias son
+# distintas, y se ve poniendo los dos atlas uno encima del otro -el 4 del mazo
+# nuevo cierra el vertice y el 9 tiene otra panza-. Ver GLIFO_UMBRAL_POR_MAZO.
 GLIFOS_FICHERO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                               "glifos_rango.png")
+GLIFOS_FICHERO_GLYPH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "glifos_rango_glyph.png")
+# El atlas de cada mazo. Se indexa por el mismo `deck` que ya viaja por toda la
+# cadena, asi que un tercer mazo entra añadiendo una linea aqui y su PNG.
+GLIFOS_POR_MAZO = {"solid": GLIFOS_FICHERO, "glyph": GLIFOS_FICHERO_GLYPH}
 # En ORDEN DE BARAJA, uno por rango, para que el atlas se pueda revisar de un
 # vistazo: vision/glifos_rango.png se abre y se leen los trece seguidos.
 GLIFOS_ETIQUETAS = ("A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K")
@@ -459,23 +483,51 @@ GLIFO_LADO = 40
 # Con 0.90 de acuerdo entra el 95% de los glifos enteros y ningun cortado se
 # acerca: el peor llega a 0.582, o sea 32 puntos de margen.
 GLIFO_UMBRAL = 0.95
-_GLIFOS = None
+# EL UMBRAL TAMBIEN ES DE CADA MAZO, y aqui no se pudo copiar el del solido.
+#
+# En el solido hay un HUECO LIMPIO entre lo propio y lo ajeno, asi que el umbral
+# se puso alto y ya. En el de cara blanca las dos poblaciones SE SOLAPAN -el glifo
+# es tinta de color y trazo fino sobre cara blanca, y el mismo rango sale con mas
+# variacion entre cartas-, asi que el hueco hay que buscarlo. Medido sobre 288
+# glifos DEJANDO UNO FUERA (cada glifo contra un atlas reconstruido sin el, que si
+# no el numero sale inflado justo en los rangos con pocos ejemplares):
+#
+#     la correlacion elige el rango correcto      283/288 = 98.3%
+#     acuerdo con SU rango          p5 0.555   mediana 0.913
+#     acuerdo con el MEJOR AJENO   p95 0.806   maximo  0.810
+#
+# Se solapan, si. Pero lo que importa no es el solape sino los 17 casos en que un
+# rango ajeno LE GANA al propio, porque son los unicos que pueden salir mal, y
+# esos no pasan de 0.738. La cobertura hace meseta plana de 0.85 a 0.88 (176
+# glifos), asi que 0.88 no cuesta ni un glifo y deja 14 puntos de margen sobre el
+# peor impostor. Con 0.88: 61.1% resueltos por calco y CERO errores en los 288.
+#
+# El 0.95 del solido daria 34.4% aqui -tambien sin errores-, o sea que funcionaria
+# igual pero pagando OCR en 77 cartas de mas. Y las 5 elecciones equivocadas de la
+# correlacion (6->8 x2, J->3 x2, 6->5) las caza el acuerdo: ninguna llega a 0.85.
+GLIFO_UMBRAL_POR_MAZO = {"solid": GLIFO_UMBRAL, "glyph": 0.88}
+_GLIFOS = {}
 
 
-def _glifos():
-    """(etiquetas, matriz de vectores normalizados). Se carga una vez."""
-    global _GLIFOS
-    if _GLIFOS is None:
-        atlas = cv2.imread(GLIFOS_FICHERO, cv2.IMREAD_GRAYSCALE)
+def umbral_de_calco(deck="solid"):
+    """El umbral de aceptacion del calco para este mazo. Ver GLIFO_UMBRAL_POR_MAZO."""
+    return GLIFO_UMBRAL_POR_MAZO.get(deck, GLIFO_UMBRAL)
+
+
+def _glifos(deck="solid"):
+    """(etiquetas, matriz de vectores normalizados) del mazo. Se carga una vez."""
+    if deck not in _GLIFOS:
+        atlas = cv2.imread(GLIFOS_POR_MAZO.get(deck, GLIFOS_FICHERO),
+                           cv2.IMREAD_GRAYSCALE)
         if atlas is None:
-            _GLIFOS = ((), np.zeros((0, GLIFO_LADO * GLIFO_LADO), np.float32))
+            _GLIFOS[deck] = ((), np.zeros((0, GLIFO_LADO * GLIFO_LADO), np.float32))
         else:
             vs = []
             for i in range(len(GLIFOS_ETIQUETAS)):
                 g = atlas[:, i * GLIFO_LADO:(i + 1) * GLIFO_LADO].astype(np.float32) / 255.0
                 vs.append(_vector_glifo(g))
-            _GLIFOS = (GLIFOS_ETIQUETAS, np.array(vs))
-    return _GLIFOS
+            _GLIFOS[deck] = (GLIFOS_ETIQUETAS, np.array(vs))
+    return _GLIFOS[deck]
 
 
 def _encajar(m, lado=None):
@@ -500,17 +552,17 @@ def _acuerdo(g, plantilla_bin):
     return float((a & plantilla_bin).sum()) / mayor
 
 
-_PLANTILLAS_BIN = None
+_PLANTILLAS_BIN = {}
 
 
-def _plantilla_binaria(i):
-    global _PLANTILLAS_BIN
-    if _PLANTILLAS_BIN is None:
-        atlas = cv2.imread(GLIFOS_FICHERO, cv2.IMREAD_GRAYSCALE)
-        _PLANTILLAS_BIN = [
+def _plantilla_binaria(i, deck="solid"):
+    if deck not in _PLANTILLAS_BIN:
+        atlas = cv2.imread(GLIFOS_POR_MAZO.get(deck, GLIFOS_FICHERO),
+                           cv2.IMREAD_GRAYSCALE)
+        _PLANTILLAS_BIN[deck] = [
             (atlas[:, k * GLIFO_LADO:(k + 1) * GLIFO_LADO] > 127)
             for k in range(len(GLIFOS_ETIQUETAS))] if atlas is not None else []
-    return _PLANTILLAS_BIN[i]
+    return _PLANTILLAS_BIN[deck][i]
 
 
 def _vector_glifo(g):
@@ -523,7 +575,7 @@ def rango_por_calco(card_bgr, deck="solid"):
     """Rango por comparacion con las plantillas guardadas, o None si ninguna
     llega al umbral (entonces decide el OCR). Devuelve tambien el parecido para
     poder auditarlo."""
-    etiquetas, M = _glifos()
+    etiquetas, M = _glifos(deck)
     if not len(M):
         return None, 0.0
     m = _recortar(rango_grande_mask(card_bgr, deck))
@@ -531,8 +583,8 @@ def rango_por_calco(card_bgr, deck="solid"):
         return None, 0.0
     g = _encajar(m)
     i = int(np.argmax(M @ _vector_glifo(g)))
-    calcado = _acuerdo(g, _plantilla_binaria(i))
-    return (etiquetas[i], calcado) if calcado >= GLIFO_UMBRAL else (None, calcado)
+    calcado = _acuerdo(g, _plantilla_binaria(i, deck))
+    return (etiquetas[i], calcado) if calcado >= umbral_de_calco(deck) else (None, calcado)
 
 
 def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ", deck="solid"):
