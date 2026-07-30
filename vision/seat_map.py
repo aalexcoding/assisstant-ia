@@ -1294,9 +1294,34 @@ def detect_in_hand_seats(bgr, ref, dorsos=None):
 # entera; con 0.04 la zona de TOPC cortaba las dos cartas por abajo y
 # find_card_boxes devolvia 0 (find_card_boxes recorta a la region, asi que una
 # carta a medias fuera pierde alto y no pasa el filtro de tamaño). Con 0.06
-# entran. Ensanchar mas no cambia el resultado -probado hasta 0.14- y a 0.06 la
-# zona no llega ni al board ni al asiento vecino.
-REVELADA_MARGEN = 0.06
+# entran.
+#
+# SUBIDO DE 0.06 A 0.12 el 30-07-2026. El comentario anterior decia "ensanchar
+# mas no cambia el resultado, probado hasta 0.14", y ESA MEDICION ERA CORRECTA
+# PARA SU CONTEXTO: cuando se hizo, la unica disposicion era la de 6. En la de 9
+# el asiento UR esta en otro sitio y sus cartas reveladas caen mas lejos de la
+# zona del dorso, asi que el borde izquierdo las cortaba.
+#
+# EL CASO. En la sesion del 30-07 a las 01:49 -un torneo donde se ven las manos de
+# todos- UR salia con revealed=True y cards=None en todos los frames: el par SI se
+# detectaba y los rangos NO se resolvian. Su primera carta media 41 px contra los
+# 81 de la segunda, empezando exactamente en el borde de la zona, que es la firma
+# de un recorte. Es el mismo mecanismo que cortaba la primera carta del board (ver
+# BOARD_ZONE), en otra zona.
+#
+# Barrido sobre dos sesiones de torneo, contando manos reveladas con LOS DOS
+# rangos resueltos:
+#
+#     margen   pares   ambas resueltas   cajas estrechas
+#     0.06        61     58  (95%)              8
+#     0.09        94     88  (94%)              5
+#     0.12       101    100  (99%)              1
+#     0.15       114    111  (97%)              2
+#
+# 0.12 es el mejor: maximo de rangos resueltos y una sola caja estrecha. Y los 40
+# pares que aparecen de mas respecto a 0.06 son REALES, no falsos positivos: se
+# ve porque resuelven los dos rangos.
+REVELADA_MARGEN = 0.12
 
 
 def revealed_zone_px(ref, seat, shape, dorsos=None):

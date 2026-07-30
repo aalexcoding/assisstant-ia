@@ -392,3 +392,37 @@ def test_el_board_cabe_entero_en_su_zona():
     flop por la izquierda."""
     x0, _y0, x1, _y1 = seat_map.BOARD_ZONE
     assert x1 - x0 >= 5 * 0.09, f"la zona mide {x1 - x0:.2f} y el board ocupa ~0.45"
+
+
+def test_la_zona_de_MANO_REVELADA_deja_margen_para_las_dos_cartas():
+    """EL CASO, de un torneo donde se ven las manos de todos (sesion del 30-07 a
+    las 01:49): el asiento UR de la mesa de 9 salia con revealed=True y
+    cards=None en TODOS los frames. El par si se detectaba y los rangos no se
+    resolvian, porque su primera carta media 41 px contra los 81 de la segunda,
+    empezando exactamente en el borde de la zona.
+
+    Es el mismo mecanismo que cortaba la primera carta del board, en otra zona. La
+    zona de revelada se deriva de la del DORSO, que esta calibrada para el blob que
+    asoma por detras del nameplate y es mas pequeño que la carta entera, asi que
+    el margen tiene que cubrir esa diferencia MAS el temblor de la referencia.
+
+    Medido: con 0.06 se resolvian 58 de 61 manos, con 0.12 son 100 de 101."""
+    assert seat_map.REVELADA_MARGEN >= 0.12
+
+
+def test_la_zona_revelada_de_cada_asiento_cabe_en_la_imagen():
+    """Si se sale, se recorta, y una carta a medias pierde su rango. UR de la mesa
+    de 9 es el mas expuesto: su zona de dorso llega a 1.23 del nucleo y con el
+    margen se va a 1.35."""
+    shape = (944, 1540, 3)
+    ref = (324, 195, 932, 412, False)
+    for plazas in (6, 8, 9):
+        z = seat_map.zonas(plazas)["dorsos"]
+        for asiento in z:
+            x0, y0, x1, y1 = seat_map.revealed_zone_px(ref, asiento, shape, z)
+            assert x1 > x0 and y1 > y0, f"{plazas}/{asiento}: zona vacia"
+            ancho_pedido = (z[asiento][2] + seat_map.REVELADA_MARGEN) * ref[2]
+            # la carta mide ~0.09 del nucleo: si se recorta mas que eso, se pierde
+            recortado = max(0, int(ref[0] + ancho_pedido) - shape[1])
+            assert recortado < 0.09 * ref[2], (
+                f"{plazas}/{asiento}: se recortan {recortado} px, mas de una carta")
