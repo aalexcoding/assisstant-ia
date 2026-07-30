@@ -735,9 +735,61 @@ def detect_button_seat(bgr, ref, seats=None):
 # Cinco intentos. Quien lo vuelva a intentar deberia empezar por otro sitio: no
 # por como se PROMEDIA la lectura, sino por que el propio find_reference tiene
 # cuatro modos separados 69 px en la misma mesa quieta.
-REF_MIN_PARA_FIJAR = 10
+# SUBIDO DE 10 A 30 el 30-07-2026. La medicion anterior decia que mas muestras no
+# ayudaban -3,6% de error con 10 y 3,0% con 80- y esa medicion NO CUBRIA EL CASO
+# que lo destapo: pedia sesiones de 150+ frames y la que fallaba tiene 80.
+#
+# EL CASO. Una sesion de heads-up en mesa de 9 plazas donde la app dio CERO
+# recomendaciones en 80 frames. El ancho del nucleo salia 974 en los 80 frames
+# -perfectamente estable- y el ALTO era bimodal: 475 en 35 frames y 358 en 27. La
+# referencia se fijo en 358, que es la MINORIA, porque la mediana de las 10
+# primeras cayo ahi. Con la mediana mal, el 50% de los frames se descartaban.
+#
+# La mediana converge despacio en ese caso: 358 hasta N=30 y 451 a partir de N=40.
+#
+# Barrido sobre 17 sesiones, contando frames descartados por "la mesa no esta donde
+# dice", que es lo que deja muda a la app:
+#
+#     N = 10 (lo que habia)   451 descartes,  23 re-fijadas
+#     N = 20                  434             23
+#     N = 30                  420             21
+#     N = 40                  402             20
+#
+# 40 DESCARTA MENOS Y AUN ASI SE ELIGE 30, por un riesgo que el numero no ve:
+# durante el calentamiento -mientras no hay referencia fijada- el guardian de "la
+# mesa no esta donde dice" NO OPERA, porque no hay con que comparar. Ese guardian
+# existe porque una vez aparecio un jugador fantasma llamado "Ciegas" leido de un
+# panel que tapaba media mesa, y corrio todas las posiciones. Cuadruplicar esa
+# ventana de exposicion por 18 descartes de 5.000 no es un buen cambio; triplicarla
+# por 31 tampoco es evidente, pero 30 frames son ~15 s y el riesgo se acota a la
+# primera media mano.
+REF_MIN_PARA_FIJAR = 30
 REF_TOLERANCIA = 0.06
-REF_SEGUIDAS_PARA_REFIJAR = 15
+# BAJADO DE 15 A 10 el 30-07-2026, y con un minimo medido detras. Lo destapo una
+# sesion de heads-up en mesa de 9 plazas donde la app dio CERO recomendaciones en
+# 80 frames: se descartaba el 50% por "la mesa no esta donde dice", y la racha mas
+# larga de descartes era 14, UNO POR DEBAJO del umbral. O sea que la app se quedo
+# 14 frames seguidos ciega -unos 7 segundos- y el contador se reseteo sin re-fijar,
+# arrastrando una referencia mala toda la sesion.
+#
+# Barrido sobre 17 sesiones, contando frames descartados y veces que se re-fija:
+#
+#     N = 15 (lo que habia)   496 descartes,  15 re-fijadas
+#     N = 12                  468             19
+#     N = 10                  451             23      <- minimo
+#     N =  8                  518             41
+#     N =  6                  469             55
+#
+# HAY MINIMO Y ESTA EN 10: por debajo empeora, porque re-fijar con menos evidencia
+# aterriza en valores peores y el numero de re-fijadas se dispara. En la sesion que
+# lo destapo, 41 -> 30 descartes. Una sesion de las 17 empeora (22 -> 31) y el
+# resto mejora o se queda igual.
+#
+# SE PROBO TAMBIEN RE-FIJAR POR TASA -si mas del R% de los ultimos N frames
+# discrepan- y NO gana: ayuda en las sesiones donde la referencia fijada es mala y
+# empeora donde es buena, con el total practicamente igual (496 contra 496
+# descartes). Redistribuye, no reduce.
+REF_SEGUIDAS_PARA_REFIJAR = 10
 
 # DESCARTAR EL FRAME es otra decision, y necesita otro umbral. Reutilizar el 6%
 # de arriba tiraba el 40% de los frames por puro temblor del detector: son dos

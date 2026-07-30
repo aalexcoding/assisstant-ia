@@ -721,6 +721,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.set_default_size(420, 320)
 
     def _build_controls(self):
+        # DOS RENGLONES, no uno. Con la etiqueta de ritmo en la misma fila que los
+        # botones la ventana se estiraba de mas -lo pidio el usuario- y ademas son
+        # dos cosas distintas: arriba lo que SE TOCA, abajo lo que SE MIRA.
+        columna = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
 
         # Modo HUD: se esconde todo menos lo que se mira en plena mano.
@@ -809,9 +813,13 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         box.append(self.mesa_combo)
         box.append(mazo_label)
         box.append(self.mazo_combo)
-        box.append(self.ritmo_label)
         box.append(self.testing_check)
-        return box
+        columna.append(box)
+        # el ritmo va en su propio renglon, alineado a la izquierda para que no
+        # empuje el ancho de la ventana cuando el texto crece
+        self.ritmo_label.set_halign(Gtk.Align.START)
+        columna.append(self.ritmo_label)
+        return columna
 
     def _build_status_frame(self):
         frame = Gtk.Frame(label="Estado / avisos")
