@@ -279,6 +279,30 @@ def test_una_subida_que_el_boton_delata_pero_la_mesa_no_explica_se_abstiene():
     assert any("igualar" in w and "ningun asiento" in w for w in st["warnings"])
 
 
+def test_un_to_call_mayor_que_el_stack_no_se_usa_ni_se_corrige_adivinando():
+    """Sesión 2026-07-31, frame 0099: 12,6 se leyó como 126. El número
+    imposible prueba que el OCR vio un botón, pero no cuánto hay que pagar."""
+    st = {"board": [], "hero_cards": ["As", "Ac"], "hero_position": "BB",
+          "facing": None, "stack_unit": "bb", "to_call": 126.0, "warnings": [],
+          "players": [dict(P("BB", None, hero=True), stack=44.1)]}
+    assert engine.decide(st) is None
+    assert st["to_call"] == 126.0, "se conserva la lectura cruda para diagnosticar"
+    assert any("importe imposible" in w for w in st["warnings"])
+    assert any("no se recomienda como bote sin abrir" in w for w in st["warnings"])
+
+
+def test_un_to_call_imposible_no_borra_una_subida_visible_y_fiable():
+    st = {"board": [], "hero_cards": ["As", "Ac"], "hero_position": "BB",
+          "facing": None, "stack_unit": "bb", "to_call": 126.0, "warnings": [],
+          "players": [dict(P("BB", None, hero=True), stack=44.1),
+                      dict(P("HJ", 2.0), stack=25.0)]}
+    r = engine.decide(st)
+    assert r is not None
+    assert r["facing_used"] == "threebet_call"
+    assert r["vs_position"] == "HJ"
+    assert any("importe imposible" in w for w in st["warnings"])
+
+
 def test_la_sb_completando_sigue_recomendando():
     """Pide 0,5bb, por debajo de la ciega grande: no es una subida."""
     st = {"board": [], "hero_cards": ["Ah", "Kd"], "hero_position": "SB",
@@ -438,6 +462,22 @@ def test_asimetria_solo_se_usa_la_presencia_de_un_post(desc, acciones):
     assert _limpers_log([("MR", "CO", 1.0)], acciones) == 1, desc
 
 
+def test_la_sb_que_ya_mostro_call_cuenta_aunque_siga_marcando_media_ciega():
+    acciones = [
+        {"seat": "HERO", "accion": "post", "t": 100.0},
+        {"seat": "MR", "position": "SB", "accion": "call", "t": 101.0},
+    ]
+    assert _limpers_log([("MR", "SB", 0.5)], acciones) == 1
+
+
+def test_el_call_positivo_no_duplica_un_limper_ya_visible():
+    acciones = [
+        {"seat": "HERO", "accion": "post", "t": 100.0},
+        {"seat": "MR", "position": "CO", "accion": "call", "t": 101.0},
+    ]
+    assert _limpers_log([("MR", "CO", 1.0)], acciones) == 1
+
+
 # --- SIN BOTONES LEIDOS, EL BOTE PUEDE ESTAR SUBIDO IGUAL -------------------
 # Toda la deteccion de subida vivia dentro de `if facing == "bet"`, incluida la
 # red de to_call. Pero los botones solo se leen en ~el 10% de los frames, asi
@@ -471,6 +511,16 @@ def test_con_el_boton_pidiendo_dos_bb_no_se_recomienda_como_bote_sin_abrir():
     assert any("2 BB para igualar" in w for w in st["warnings"])
 
 
+def test_una_apuesta_visible_manda_aunque_desaparezcan_los_botones():
+    """Sesión 2026-07-31, frames 0237-0244: CO seguía teniendo 3,5bb
+    en la mesa, pero facing=None hacía oscilar la recomendación a open_raise."""
+    r, _st = _decide(
+        "BB", ["Ac", "8h"], rivales=[("TOPC", "CO", 3.5)])
+    assert r is not None
+    assert r["facing_used"] == "threebet_call"
+    assert r["vs_position"] == "CO"
+
+
 def test_si_lo_ultimo_visto_fue_un_rival_subiendo_tampoco():
     """Frame 0247 del usuario."""
     r, _st = _decide("SB", ["Ah", "7c"], acciones=SUBE)
@@ -478,13 +528,6 @@ def test_si_lo_ultimo_visto_fue_un_rival_subiendo_tampoco():
 
 
 @pytest.mark.parametrize("desc, kwargs", [
-    ("una subida YA RESPONDIDA no bloquea: se mira la ultima accion, no toda la "
-     "mano (asi se pasa de perder 485 recomendaciones a 204)",
-     dict(hero_pos="SB", cartas=["Ah", "7c"],
-          acciones=SUBE + [{"seat": "UL", "accion": "call"}])),
-    ("la subida del PROPIO HERO no le bloquea a el mismo (de 204 a 111)",
-     dict(hero_pos="BTN", cartas=["Ah", "Kd"],
-          acciones=[{"seat": "HERO", "accion": "raise", "verbo": "Subir"}])),
     ("sin ninguna señal, se recomienda como siempre",
      dict(hero_pos="BTN", cartas=["Ah", "Kd"])),
     ("un to_call de media ciega (la SB completando) no es una subida",
@@ -493,6 +536,304 @@ def test_si_lo_ultimo_visto_fue_un_rival_subiendo_tampoco():
 def test_los_recortes_que_evitan_comerse_las_recomendaciones_buenas(desc, kwargs):
     r, _st = _decide(**kwargs)
     assert r is not None, desc
+
+
+def test_un_fold_o_call_posterior_no_borra_la_apertura_rival():
+    """La acción posterior cambia quién está hablando, no vuelve a cerrar el
+    bote. Sin importe suficiente para atribuir el raiser se debe abstener."""
+    for respuesta in ("fold", "call"):
+        r, st = _decide(
+            "SB", ["Ah", "7c"],
+            acciones=SUBE + [{"seat": "UL", "accion": respuesta}])
+        assert r is None
+        assert any("historial vigente vio a un rival SUBIR" in w
+                   for w in st["warnings"])
+
+
+def _open_shove_state(hero_pos="BB", cards=("As", "Ah"), vs_pos="HJ",
+                      shove_bb=10.0, ante_bb=1.0, max_players=8,
+                      before=(), after=()):
+    positions = ("EP2", "MP1", "MP2", "HJ", "CO", "BTN", "SB", "BB")
+    players = []
+    seat_by_position = {}
+    for index, position in enumerate(positions):
+        seat = "HERO" if position == hero_pos else f"S{index}"
+        seat_by_position[position] = seat
+        bet = (1.0 + ante_bb) if position == "BB" else None
+        if position == vs_pos:
+            bet = shove_bb
+        players.append({
+            "seat": seat,
+            "position": position,
+            "is_hero": position == hero_pos,
+            "stack": 30.0 if position == hero_pos else 20.0,
+            "bet": bet,
+        })
+    post_seat = seat_by_position["BB"]
+    actions = [
+        {"seat": post_seat, "position": "BB", "accion": "post", "t": 100.0},
+        *before,
+        {"seat": seat_by_position[vs_pos], "position": vs_pos,
+         "accion": "allin", "t": 105.0},
+        *after,
+    ]
+    hero_bet = next(p["bet"] for p in players if p["is_hero"]) or 0.0
+    return {
+        "board": [],
+        "hero_cards": list(cards),
+        "hero_position": hero_pos,
+        "facing": "bet",
+        "stack_unit": "bb",
+        "to_call": max(0.0, shove_bb - hero_bet),
+        "max_players": max_players,
+        "acciones": {"acciones": actions, "completo": False},
+        "players": players,
+        "warnings": [],
+    }
+
+
+def test_open_shove_8max_10bb_usa_el_suplemento_y_no_threebet_call():
+    st = _open_shove_state()
+    r = engine.decide(st)
+    assert r is not None
+    assert r["action"] == "CALL"
+    assert r["facing_used"] == "call_vs_open_push"
+    assert r["source"] == "supplemental_chart"
+    assert r["effective_stack_bb"] == pytest.approx(10.0)
+
+
+def test_open_shove_recomienda_fold_fuera_del_rango_de_call():
+    st = _open_shove_state(cards=("7s", "2h"))
+    r = engine.decide(st)
+    assert r is not None
+    assert r["action"] == "FOLD"
+
+
+def test_open_shove_conserva_una_celda_mixta():
+    st = _open_shove_state(
+        hero_pos="BTN", cards=("4s", "4h"), vs_pos="MP2")
+    r = engine.decide(st)
+    assert r is not None
+    assert r["action"] == "CALL 50% / FOLD 50%"
+    assert r["action_es"] == "pagar el 50% / no ir el 50%"
+
+
+def test_un_allin_inicial_fuera_de_10bb_no_usa_otra_tabla():
+    """Sesión 2026-07-31_022832, frame 0446: HJ empuja 19,8bb y 97o en
+    BB recibió CALL usando indebidamente threebet_call de 40bb."""
+    st = _open_shove_state(cards=("9s", "7h"), shove_bb=19.8)
+    r = engine.decide(st)
+    assert r is None
+    assert st["preflop_action"]["ultima_agresion"] == "allin"
+    assert any("19.8 BB" in w and "solo cubre 10 BB" in w
+               for w in st["warnings"])
+
+
+@pytest.mark.parametrize("cambio, motivo", [
+    ({"max_players": 6}, "solo para mesa 8-max"),
+    ({"ante_bb": 0.0}, "corresponde a 1 BB de ante"),
+])
+def test_open_shove_no_extrapola_formato_ni_ante(cambio, motivo):
+    st = _open_shove_state(**cambio)
+    assert engine.decide(st) is None
+    assert any(motivo in w for w in st["warnings"])
+
+
+def test_open_shove_no_limp_no_se_aplica_tras_un_limper():
+    st = _open_shove_state(before=(
+        {"seat": "S1", "position": "MP1", "accion": "call", "t": 103.0},
+    ))
+    assert engine.decide(st) is None
+    assert any("no es un open-push RFI" in w for w in st["warnings"])
+
+
+def test_open_shove_heads_up_no_se_aplica_si_ya_pago_otro():
+    st = _open_shove_state(after=(
+        {"seat": "S4", "position": "CO", "accion": "call", "t": 106.0},
+    ))
+    assert engine.decide(st) is None
+    assert any("spot es multiway" in w for w in st["warnings"])
+
+
+def test_allin_residual_anterior_a_la_ultima_ciega_no_bloquea_la_mano_nueva():
+    """Sesión 2026-07-31_022832, frame 0311."""
+    r, st = _decide(
+        "BB", ["Jh", "2s"],
+        acciones=[
+            {"seat": "ML", "position": "HJ", "accion": "allin", "t": 100.0},
+            {"seat": "HERO", "accion": "post", "t": 102.0},
+        ])
+    assert r is not None
+    assert st["preflop_action"]["nivel"] == "sin_agresion_observada"
+
+
+def test_agresion_ambigua_en_el_frame_de_ciegas_no_se_trata_como_bote_abierto():
+    r, st = _decide(
+        "BB", ["Jh", "2s"],
+        acciones=[
+            {"seat": "HERO", "accion": "post", "t": 100.0},
+            {"seat": "ML", "position": "HJ", "accion": "raise", "t": 100.0},
+        ])
+    assert r is None
+    assert any("mismo frame que la ultima colocacion" in w
+               for w in st["warnings"])
+
+
+def test_bb_con_varios_limpers_sube_kk_por_valor():
+    """Sesión 2026-07-31_022832, frames 0184-0187: con KK en BB y tres
+    limpers no se debe conservar el CHECK del fallback antiguo."""
+    r, st = _decide(
+        "BB", ["Kh", "Kd"],
+        rivales=[
+            ("ML", "HJ", 1.0),
+            ("TOPC", "CO", 1.0),
+            ("UR", "BTN", 1.0),
+        ])
+    assert r is not None
+    assert r["action"] == "RAISE OVER LIMPERS (7 BB)"
+    assert r["source"] == "public_heuristic"
+    assert r["confidence"] == "media"
+
+
+def test_bb_cuenta_la_sb_completada_y_sube_kk_a_ocho_bb():
+    """Sesión 2026-07-31_022832, frames 0184-0187: había cuatro calls,
+    pero la SB seguía mostrando 0,5 BB y el contador antiguo devolvía tres."""
+    acciones = [
+        {"seat": "HERO", "position": "BB", "accion": "post", "t": 100.0},
+        {"seat": "ML", "position": "MP2", "accion": "call", "t": 101.0},
+        {"seat": "TOPC", "position": "CO", "accion": "call", "t": 102.0},
+        {"seat": "UR", "position": "BTN", "accion": "call", "t": 103.0},
+        {"seat": "MR", "position": "SB", "accion": "call", "t": 104.0},
+        # El mismo cartel capturado otra vez no añade un quinto limper.
+        {"seat": "MR", "position": "SB", "accion": "call", "t": 105.0},
+    ]
+    r, _st = _decide(
+        "BB", ["Kh", "Kd"], acciones=acciones,
+        rivales=[
+            ("ML", "MP2", 1.0),
+            ("TOPC", "CO", 1.0),
+            ("UR", "BTN", 1.0),
+            ("MR", "SB", 0.5),
+        ])
+    assert r is not None
+    assert r["action"] == "RAISE OVER LIMPERS (8 BB)"
+    assert r["source"] == "public_heuristic"
+
+
+def test_bb_con_varios_limpers_puede_hacer_check_sin_fingir_tabla_multiway():
+    r, _st = _decide(
+        "BB", ["7h", "2d"],
+        rivales=[
+            ("ML", "HJ", 1.0),
+            ("TOPC", "CO", 1.0),
+            ("UR", "BTN", 1.0),
+        ])
+    assert r is not None
+    assert r["action"] == "CHECK"
+    assert r["source"] == "safety_default"
+    assert r["confidence"] == "baja"
+    assert "no se presenta este check como solución GTO" in r["reasoning"]
+
+
+@pytest.mark.parametrize("hero_pos,raiser_pos,caller_pos", [
+    ("BB", "BTN", "SB"),
+    ("SB", "MP2", "BTN"),
+])
+def test_las_ciegas_no_reutilizan_defensa_headsup_si_hay_caller(
+        hero_pos, raiser_pos, caller_pos):
+    """Sesión 2026-07-31_020108, frames 0352-0353: K6s en BB recibía
+    ALL IN desde la tabla heads-up pese a que SB ya había pagado a BTN."""
+    r, st = _decide(
+        hero_pos,
+        ["Ks", "6s"],
+        acciones=[
+            {"seat": "TOPC", "position": raiser_pos, "accion": "raise", "t": 1.0},
+            {"seat": "UR", "position": caller_pos, "accion": "call", "t": 2.0},
+        ],
+        rivales=[
+            ("TOPC", raiser_pos, 2.0),
+            ("UR", caller_pos, 2.0),
+        ],
+    )
+    assert r is None
+    assert any("tabla threebet_call disponible es heads-up" in warning
+               for warning in st["warnings"])
+
+
+def test_la_sb_que_completa_una_apertura_a_dos_bb_cuenta_como_caller():
+    """El tracker guarda 1,5 BB porque descuenta la media ciega ya puesta."""
+    players = [
+        dict(P("BTN", 2.0), committed_calle=2.0),
+        dict(P("SB", 2.0), committed_calle=1.5),
+        dict(P("BB", None, hero=True), committed_calle=0.0),
+    ]
+    assert engine._contar_callers(players, "BTN") == 1
+
+
+def test_despues_de_que_el_hero_suba_no_se_recomienda_otra_apertura():
+    r, st = _decide(
+        "BTN", ["Ah", "Kd"],
+        acciones=[{"seat": "HERO", "accion": "raise", "verbo": "Subir"}])
+    assert r is None
+    assert any("hero ya ha actuado" in w for w in st["warnings"])
+
+
+def test_el_allin_del_hero_bloquea_aunque_despues_un_rival_pague():
+    r, st = _decide(
+        "BB", ["7c", "7d"],
+        acciones=[
+            {"seat": "HERO", "accion": "allin", "verbo": "All-in"},
+            {"seat": "TOPC", "accion": "call", "verbo": "Igualar"},
+        ])
+    assert r is None
+    assert any("hero ya esta all-in" in w for w in st["warnings"])
+
+
+def test_una_resubida_entre_rivales_no_conserva_la_defensa_contra_el_open():
+    """Sesión 2026-07-31, frame 0096: HJ abre a 2bb y CO va all-in
+    por 13,6bb. La recomendación antigua seguía siendo 3BET (9 BB) vs HJ."""
+    r, st = _decide(
+        "BB", ["As", "Ac"], acciones=[
+            {"seat": "ML", "accion": "raise"},
+            {"seat": "TOPC", "accion": "allin"},
+        ], rivales=[
+            ("ML", "HJ", 2.0),
+            ("TOPC", "CO", None),
+        ])
+    assert r is None
+    assert st["preflop_action"]["nivel"] == "resubida_observada"
+    assert st["preflop_action"]["ultimo_agresor_position"] == "CO"
+    assert any("resubida antes de la decision del hero" in w for w in st["warnings"])
+
+
+def test_una_resubida_despues_del_open_del_hero_se_reconoce_como_turno_nuevo():
+    """Sesión 2026-07-31, frame 0209: el hero abre a 2bb y SB va
+    all-in por 27bb. No hay tabla para responder, pero sí hubo acción nueva."""
+    r, st = _decide(
+        "CO", ["Qc", "9d"], acciones=[
+            {"seat": "HERO", "accion": "raise"},
+            {"seat": "ML", "accion": "fold"},
+            {"seat": "TOPC", "accion": "allin"},
+        ], rivales=[("TOPC", "SB", None)])
+    assert r is None
+    assert st["preflop_action"]["rival_agresion_posterior_hero"] is True
+    assert any("la accion ha vuelto al hero frente a una resubida" in w
+               for w in st["warnings"])
+    assert not any("sin una nueva accion rival" in w for w in st["warnings"])
+
+
+def test_un_fold_posterior_no_esconde_una_resubida_entre_rivales():
+    r, st = _decide(
+        "BB", ["As", "Ac"], acciones=[
+            {"seat": "ML", "accion": "raise"},
+            {"seat": "TOPC", "accion": "allin"},
+            {"seat": "UR", "accion": "fold"},
+        ], rivales=[
+            ("ML", "HJ", 2.0),
+            ("TOPC", "CO", None),
+        ])
+    assert r is None
+    assert any("se observaron 2 agresiones" in w for w in st["warnings"])
 
 
 # --- postflop_equity: separado de decide(), y abstenerse antes que inflar ----
@@ -521,6 +862,22 @@ def test_equity_en_preflop_devuelve_none_sin_ensuciar_warnings():
 
 def test_equity_sin_las_cartas_del_hero():
     assert engine.postflop_equity(_post(hero_cards=[]), seed=1) is None
+
+
+def test_equity_no_se_muestra_despues_de_que_el_hero_foldee():
+    st = _post(hero_cards_dimmed=True)
+    assert engine.postflop_equity(st, seed=1) is None
+    assert any("apagadas" in w for w in st["warnings"])
+
+
+def test_equity_respeta_el_in_hand_explicito_del_hero():
+    players = [
+        {"is_hero": True, "in_hand": False, "position": "BTN", "stack": 30.0},
+        {"is_hero": False, "in_hand": True, "position": "BB", "stack": 25.0},
+    ]
+    st = _post(players=players)
+    assert engine.postflop_equity(st, seed=1) is None
+    assert any("hero ya no" in w for w in st["warnings"])
 
 
 def test_equity_sin_in_hand_no_supone_el_numero_de_rivales():
@@ -621,6 +978,13 @@ def test_el_stack_cacheado_NO_cruza_la_frontera_de_mano():
     assert engine._cached_hero_stack({}, mano=8) == (None, False)
 
 
+def test_dos_contextos_no_comparten_el_stack_cacheado():
+    uno, dos = engine.DecisionContext(), engine.DecisionContext()
+    assert engine._cached_hero_stack({"stack": 25.0}, mano=7, context=uno) == (25.0, False)
+    assert engine._cached_hero_stack({}, mano=7, context=uno) == (25.0, True)
+    assert engine._cached_hero_stack({}, mano=7, context=dos) == (None, False)
+
+
 def test_sin_numero_de_mano_la_cache_se_comporta_como_antes():
     """No se puede saber si se cruzo la frontera, asi que manda solo el TTL. Pasa
     en los tests que arman un GameState a mano, no en produccion, donde
@@ -629,3 +993,54 @@ def test_sin_numero_de_mano_la_cache_se_comporta_como_antes():
     assert engine._cached_hero_stack({"stack": 12.0}) == (12.0, False)
     assert engine._cached_hero_stack({}) == (12.0, True)
     assert engine._cached_hero_stack({}, mano=3) == (12.0, True)
+
+
+def test_stack_inicial_suma_lo_comprometido_sin_sumar_dos_fuentes():
+    """Stack y apuesta son magnitudes distintas; bet y committed son dos
+    lecturas de la misma inversión y no deben sumarse entre sí."""
+    hero = {
+        "stack": 19.0,
+        "bet": 1.0,
+        "committed": 0.9,
+        "committed_calle": 1.0,
+    }
+    assert engine._hero_starting_stack(
+        hero, mano=11, context=engine.DecisionContext()) == (20.0, False)
+
+
+def test_stack_inicial_cacheado_no_duplica_una_inversion_posterior():
+    """Si el stack visible de 20bb se cacheó antes de apostar, un frame posterior
+    sin stack y con 3bb comprometidas sigue siendo 20bb iniciales, no 23."""
+    context = engine.DecisionContext()
+    assert engine._hero_starting_stack(
+        {"stack": 20.0, "committed": 0.0}, mano=4, context=context
+    ) == (20.0, False)
+    assert engine._hero_starting_stack(
+        {"committed": 3.0}, mano=4, context=context
+    ) == (20.0, True)
+
+
+def test_defensa_selecciona_tabla_por_stack_efectivo_con_el_agresor():
+    """Hero empieza con 20bb, pero el BTN abrió con 13bb totales. QQ cambia de
+    3bet pequeño en la tabla de 20 a all-in en la de 15: la prueba hace visible
+    que se consultó la profundidad efectiva y no solo el stack del hero."""
+    st = {
+        "board": [],
+        "hero_cards": ["Qs", "Qh"],
+        "hero_position": "BB",
+        "facing": "bet",
+        "stack_unit": "bb",
+        "to_call": 1.0,
+        "warnings": [],
+        "players": [
+            dict(P("BB", 1.0, hero=True), seat="HERO", stack=19.0,
+                 committed=1.0),
+            dict(P("BTN", 2.0), seat="R1", stack=11.0, committed=2.0),
+        ],
+    }
+    r = engine.decide(st, context=engine.DecisionContext())
+    assert r is not None
+    assert r["stack_bb"] == pytest.approx(20.0)
+    assert r["effective_stack_bb"] == pytest.approx(13.0)
+    assert r["action"] == "ALL IN"
+    assert "stack inicial del agresor 13.0bb" in r["reasoning"]

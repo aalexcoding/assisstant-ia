@@ -289,13 +289,14 @@ def test_lo_que_queda_esta_arriba_y_no_esta_vacio(carta_k):
     assert ys_a.max() < ys_c.max(), "el rango va arriba"
 
 
-def test_los_dos_mazos_aislan_por_componentes_no_por_altura(carta_k):
-    """Las cartas del hero salen cortadas por su nameplate y una fraccion fija de
-    la altura les parte el numero. Ese era el motivo de que hubiera que ELEVARLAS
-    para leerlas."""
-    entera = color_rank_ocr.rank_mask(carta_k, "solid")
-    assert np.array_equal(color_rank_ocr.rango_grande_mask(carta_k, "solid"),
-                          color_rank_ocr._fila_de_arriba(entera))
+def test_el_indice_solido_conserva_el_glifo_completo():
+    """El recorte espacial no puede partir la parte baja de un rango real."""
+    carta = np.full((117, 83, 3), (60, 60, 200), np.uint8)
+    cv2.putText(carta, "K", (7, 47), cv2.FONT_HERSHEY_SIMPLEX,
+                1.35, (255, 255, 255), 4)
+    entera = color_rank_ocr.rank_mask(carta, "solid")
+    aislada = color_rank_ocr.rango_grande_mask(carta, "solid")
+    assert np.array_equal(aislada, color_rank_ocr._fila_de_arriba(entera))
 
 
 def test_en_una_carta_cortada_no_se_pierde_la_parte_de_abajo_del_glifo():
@@ -859,6 +860,20 @@ def test_una_ficha_clara_apoyada_abajo_ensucia_la_mascara_completa_pero_no_la_de
     assert abs(int((limpia > 0).sum()) - int((arriba > 0).sum())) < 30
 
 
+def test_el_mazo_solido_solo_lee_el_indice_superior_izquierdo(carta_limpia):
+    """Una mancha blanca mayor que el rango no puede sustituirlo por altura."""
+    base = color_rank_ocr.rango_grande_mask(carta_limpia, "solid")
+    con_ficha = carta_limpia.copy()
+    cv2.rectangle(con_ficha, (65, 112), (115, 165), (255, 255, 255), -1)
+
+    leido = color_rank_ocr.rango_grande_mask(con_ficha, "solid")
+
+    assert np.array_equal(leido, base)
+    ys, xs = np.where(leido > 0)
+    assert xs.max() < color_rank_ocr.SOLID_INDEX_WIDTH_FRAC * leido.shape[1]
+    assert ys.max() < color_rank_ocr.SOLID_INDEX_HEIGHT_FRAC * leido.shape[1]
+
+
 # --- el rango por CALCO, con las plantillas guardadas --------------------
 # Idea del usuario: la fuente es la misma en los cuatro palos, asi que basta una
 # plantilla por rango, generada una vez y versionada. Medido sobre 1.208 glifos
@@ -964,8 +979,10 @@ def test_cada_mazo_tiene_SU_atlas_y_no_son_el_mismo():
     solid = cv2.imread(color_rank_ocr.GLIFOS_POR_MAZO["solid"], cv2.IMREAD_GRAYSCALE)
     glyph = cv2.imread(color_rank_ocr.GLIFOS_POR_MAZO["glyph"], cv2.IMREAD_GRAYSCALE)
     assert solid is not None and glyph is not None
-    assert solid.shape == glyph.shape
-    assert not np.array_equal(solid, glyph), "los dos mazos comparten atlas"
+    assert solid.shape != glyph.shape, "el mazo nuevo tiene varias plantillas por rango"
+    lado = color_rank_ocr.GLIFO_LADO
+    for mazo, img in (("solid", solid), ("glyph", glyph)):
+        assert img.shape == (lado, lado * len(color_rank_ocr.etiquetas_de_mazo(mazo)))
 
 
 def test_las_plantillas_cargadas_dependen_del_MAZO():
@@ -974,17 +991,33 @@ def test_las_plantillas_cargadas_dependen_del_MAZO():
     argumento, todos los demas tests de este bloque seguirian verdes."""
     _e1, M_solid = color_rank_ocr._glifos("solid")
     _e2, M_glyph = color_rank_ocr._glifos("glyph")
-    assert not np.allclose(M_solid, M_glyph)
+    assert M_solid.shape != M_glyph.shape
+    assert not np.allclose(M_solid[3], M_glyph[3])
     # y la plantilla binaria del acuerdo tambien, que va por otra cache
     assert not np.array_equal(color_rank_ocr._plantilla_binaria(3, "solid"),
                               color_rank_ocr._plantilla_binaria(3, "glyph"))
 
 
-def test_el_atlas_del_mazo_nuevo_tiene_sus_trece_casillas(glifos_glyph):
-    etiquetas, _M, atlas = glifos_glyph
+def test_el_atlas_del_mazo_nuevo_cubre_los_trece_rangos(glifos_glyph):
+    """Aqui las casillas NO son trece: cada rango tiene varias familias de forma y
+    la etiqueta se repite. Lo que tiene que cumplirse es que estan los trece y que
+    hay una casilla por etiqueta -si se desincronizan, `rango_por_calco` devolveria
+    la etiqueta de otra plantilla y el fallo sería silencioso-."""
+    etiquetas, M, atlas = glifos_glyph
     lado = color_rank_ocr.GLIFO_LADO
     assert atlas.shape == (lado, lado * len(etiquetas))
+    assert len(M) == len(etiquetas)
     assert set(etiquetas) == set("2 3 4 5 6 7 8 9 10 J Q K A".split())
+    assert len(etiquetas) > 13, "el mazo nuevo necesita varias plantillas por rango"
+
+
+def test_el_mazo_solido_sigue_con_una_plantilla_por_rango():
+    """El cambio de varias-por-rango es SOLO del mazo nuevo. En el sólido no hay
+    medición que lo respalde y sus 13 llevan 1.208 glifos detrás."""
+    assert color_rank_ocr.etiquetas_de_mazo("solid") == color_rank_ocr.GLIFOS_ETIQUETAS
+    assert len(color_rank_ocr.etiquetas_de_mazo("solid")) == 13
+    assert color_rank_ocr.etiquetas_de_mazo("un_mazo_que_no_existe") == \
+        color_rank_ocr.GLIFOS_ETIQUETAS
 
 
 def test_cada_plantilla_del_mazo_nuevo_se_identifica_a_si_misma(glifos_glyph):
@@ -1021,22 +1054,29 @@ def test_el_umbral_del_mazo_nuevo_es_mas_BAJO_y_esta_medido():
     assert color_rank_ocr.umbral_de_calco("un_mazo_que_no_existe") == color_rank_ocr.GLIFO_UMBRAL
 
 
-def test_el_umbral_del_mazo_nuevo_deja_fuera_a_los_impostores_medidos(glifos_glyph):
-    """Los 17 impostores medidos llegan como mucho a 0.738; el umbral esta en
-    0.88. Aqui se comprueba la version comprobable sin corpus: que ninguna
-    plantilla se calca sobre OTRA por encima del umbral."""
+def test_ninguna_plantilla_del_mazo_nuevo_se_calca_sobre_OTRO_RANGO(glifos_glyph):
+    """Que dos plantillas se parezcan solo es peligroso si son de RANGOS DISTINTOS.
+
+    Del mismo rango tienen que parecerse -son familias de forma del mismo glifo, y
+    el par más parecido llega a 0.963-, así que compararlas todas contra todas daría
+    rojo sin que nada esté mal. Lo que no puede pasar es que un rango se calque
+    sobre otro: el peor par de rangos distintos es una Q contra un 8 al 0.809, siete
+    puntos por debajo del umbral."""
     etiquetas, _M, atlas = glifos_glyph
     lado = color_rank_ocr.GLIFO_LADO
     u = color_rank_ocr.umbral_de_calco("glyph")
-    peor = 0.0
+    peor, culpables = 0.0, ""
     for i in range(len(etiquetas)):
         trozo = (atlas[:, i * lado:(i + 1) * lado] > 127).astype(np.float32)
         for j in range(len(etiquetas)):
-            if i == j:
+            if etiquetas[i] == etiquetas[j]:
                 continue
-            peor = max(peor, color_rank_ocr._acuerdo(
-                trozo, color_rank_ocr._plantilla_binaria(j, "glyph")))
-    assert peor < u, f"un rango se calca sobre otro al {peor:.3f}"
+            a = color_rank_ocr._acuerdo(
+                trozo, color_rank_ocr._plantilla_binaria(j, "glyph"))
+            if a > peor:
+                peor, culpables = a, f"'{etiquetas[i]}' contra '{etiquetas[j]}'"
+    assert peor < u, f"{culpables} se calcan al {peor:.3f}"
+    assert peor < 0.85, f"medido en 0.809; ahora {peor:.3f} ({culpables})"
 
 
 def test_NINGUN_glifo_del_mazo_nuevo_lo_sabria_leer_el_atlas_del_solido(glifos_glyph):

@@ -35,15 +35,19 @@ rastreador y la equity van cada uno en su try. Un OCR que devuelve basura o un
 chat ilegible degradan el resultado de ese frame, no tumban el ciclo.
 """
 import os
+import tempfile
 import time
 from dataclasses import dataclass, field
 
 import cv2
 
+from domain.state import GameState, Recommendation
+
 from decision import action_log as alog
 from decision import engine
 from decision import hand_strength as hstr
 from decision import hand_tracker
+from core.board_tracker import BoardTracker
 from vision import hand_result as hr
 from vision import rango_directo
 from vision import seat_map
@@ -142,6 +146,13 @@ TICKS_MIN_ENTRE_ANALISIS = 5
 RITMO_MUESTRAS = 30      # ciclos recientes con los que se estima el p95
 
 
+def _tmp_frame_unico():
+    """Reserva una ruta exclusiva para un Analizador que recibe arrays."""
+    fd, ruta = tempfile.mkstemp(prefix="poker_frame_", suffix=".png")
+    os.close(fd)
+    return ruta
+
+
 class Ritmo:
     """Mide el ciclo y dice cada cuanto conviene latir.
 
@@ -150,6 +161,10 @@ class Ritmo:
     seguirlo, y una media de toda la sesion tardaria en enterarse."""
 
     def __init__(self, fijo=None):
+        if fijo is not None and (isinstance(fijo, bool)
+                                 or not isinstance(fijo, (int, float))
+                                 or fijo <= 0):
+            raise ValueError("el intervalo fijo debe ser un numero positivo")
         self._muestras = []
         self._fijo = fijo          # --interval, para reproducir una cadencia vieja
         self.total = 0
@@ -173,7 +188,7 @@ class Ritmo:
         """El latido. Mientras no haya medidas se usa PERIODO_MIN_S, que es el
         suelo: arrancar latiendo rapido no hace daño porque los primeros ciclos
         son justo los que hay que medir."""
-        if self._fijo:
+        if self._fijo is not None:
             return self._fijo
         p95 = self._p(0.95)
         if p95 is None:
@@ -191,7 +206,7 @@ class Ritmo:
         p50, p95 = self._p(0.50), self._p(0.95)
         if p50 is None:
             return "Ritmo: midiendo..."
-        fijo = " (latido fijo)" if self._fijo else ""
+        fijo = " (latido fijo)" if self._fijo is not None else ""
         return (f"Ritmo: {p50:.2f} s/analisis (p95 {p95:.2f}) · "
                 f"latido {self.periodo_s:.1f} s · "
                 f"vigilancia {1 / VIGILANCIA_PERIODO_S:.0f} Hz{fijo}")
@@ -208,8 +223,8 @@ class Analisis:
     Es la unidad que se enseña en el HUD y la que se graba en modo testing, y por
     eso a_dict() produce exactamente la forma que ya tienen los JSON de
     testing/sesion-*/NNNN.json: cambiarla invalidaria las sesiones grabadas."""
-    state: dict
-    recommendation: dict | None = None
+    state: GameState
+    recommendation: Recommendation | None = None
     hand: dict | None = None
     equity: dict | None = None
     hand_result: dict | None = None
@@ -250,12 +265,12 @@ class Analizador:
         directamente -lo que hace el replay- este fichero no se toca.
     """
     max_players: int | None = None
-    # MAZO de cartas configurado en el cliente: "glyph" (cara blanca, rango
-    # de color), "solid" (fondo de color, rango blanco) o None para que
-    # compitan los dos detectores, que es lo que se hacia siempre.
-    mazo: str | None = None
+    # MAZO de cartas configurado en el cliente. Producción va directamente al
+    # de fondo de color y rango blanco; "glyph" y None (competición de ambos)
+    # quedan disponibles para sesiones antiguas y diagnóstico explícito.
+    mazo: str | None = "solid"
     seed_equity: int | None = None
-    tmp_frame: str = "/tmp/poker_frame_analisis.png"
+    tmp_frame: str | None = None
 
     # --- memoria de vision: se aprende de los primeros frames y se reutiliza ---
     # El disco del dealer recortado de ESTA mesa, para encontrarlo cuando el color
@@ -273,6 +288,10 @@ class Analizador:
     # --- memoria de decision: es de la mano en curso ---------------------------
     tracker: hand_tracker.HandTracker = field(default_factory=hand_tracker.HandTracker)
     action_log: alog.ActionLog = field(default_factory=alog.ActionLog)
+    # El board se confirma temporalmente despues de que HandTracker determine la
+    # mano. Asi una lectura parcial no alimenta la equity ni una recomendacion,
+    # pero tampoco puede arrastrarse a la mano siguiente.
+    board_tracker: BoardTracker = field(default_factory=BoardTracker)
 
     # --- lazo rapido ----------------------------------------------------------
     watch: sw.SeatWatch = field(default_factory=sw.SeatWatch)
@@ -282,8 +301,14 @@ class Analizador:
     # mismo proceso, asi que con un global una sesion de 8 contaminaria a la
     # siguiente de 6 y el fallo saldria como una regresion fantasma.
     seats: dict = field(init=False, default=None)
+    decision_context: engine.DecisionContext = field(default_factory=engine.DecisionContext)
+    seat_lines_cache: dict = field(default_factory=dict)
+    _tmp_frame_propio: bool = field(init=False, default=False)
 
     def __post_init__(self):
+        self._tmp_frame_propio = self.tmp_frame is None
+        if self.tmp_frame is None:
+            self.tmp_frame = _tmp_frame_unico()
         self.seats = seat_map.disposicion(self.max_players)
         # el vigilante mira las mismas capsulas que el analisis, o se dedicaria a
         # hashear tapete vacio mientras los asientos de verdad pasan sin mirar
@@ -302,6 +327,7 @@ class Analizador:
     # ¿habia botones en la ultima mirada rapida? Sirve para detectar el FLANCO
     # (empieza el turno del hero), que es lo que dispara el analisis completo.
     _turno: bool = False
+    _calle_vista: str | None = None
 
     # --- lectura espaciada del chat (ver CHAT_MAX_S) ---------------------------
     # Empieza en True: el primer frame lo lee, para no arrancar con el panel en
@@ -335,13 +361,21 @@ class Analizador:
 
         # los asientos estables de la mano en curso se realimentan al
         # reconocimiento: ver table_state.analyze_layout
+        seat_lines_changed = None
+        if self._ref is not None:
+            try:
+                seat_lines_changed = set(self.watch.cambios_completos(bgr, self._ref))
+            except Exception:  # noqa: BLE001
+                self.seat_lines_cache.clear()
         state = ts.analyze_layout(ruta, max_players=self.max_players,
                                   mazo=self.mazo,
                                   asientos_estables=self.tracker.asientos_estables(),
                                   plantilla_boton=self.plantilla_boton,
                                   referencia=self.referencia,
                                   escala_glifo=self.escala_glifo,
-                                  leer_chat=leer_chat)
+                                  leer_chat=leer_chat,
+                                  seat_lines_cache=self.seat_lines_cache,
+                                  seat_lines_changed=seat_lines_changed)
         if leer_chat:
             self._leer_chat = False
             self._ultimo_chat = ahora
@@ -390,7 +424,10 @@ class Analizador:
         try:
             info = self.tracker.update(state, (resultado or {}).get("hand_number"))
             hand_tracker.aplicar(state, info)
+            self._calle_vista = state.get("calle_seguida")
+            self.board_tracker.aplicar(state, info["mano"])
             if info["mano"] != self._mano_vista:
+                self.seat_lines_cache.clear()
                 self._mano_vista = info["mano"]
                 self.action_log.nueva_mano()
                 # SE PIDE EL CHAT PARA EL FRAME SIGUIENTE, no para este. La
@@ -409,11 +446,17 @@ class Analizador:
                 self.watch.re_censar()
             self.action_log.observar_estado(state, t=time.time())
             state["acciones"] = self.action_log.acciones()
+            # Se calcula antes del motor para que siga disponible postflop:
+            # decide() se abstiene en cuanto ve board, pero el estudio de la mano
+            # necesita saber quién conservó la iniciativa y qué tipo de bote era.
+            state["preflop_action"] = alog.estado_preflop(state)
             state["vigilancia"] = self.vigilancia.a_dict()
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as e:  # noqa: BLE001 - el frame sigue siendo util sin memoria
+            self.decision_context.reset()
+            state.setdefault("warnings", []).append(
+                f"rastreador: fallo {type(e).__name__}; se omite el historial de acciones")
 
-        recommendation = engine.decide(state)
+        recommendation = engine.decide(state, context=self.decision_context)
         hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
         equity = self._equity_de(state)
 
@@ -437,9 +480,21 @@ class Analizador:
         """Equity postflop del frame, o None. Una sola implementacion, la del
         motor; un fallo aqui no puede tumbar el analisis."""
         try:
-            return engine.postflop_equity(state, seed=self.seed_equity)
-        except Exception:  # noqa: BLE001
+            return engine.postflop_equity(state, seed=self.seed_equity,
+                                          context=self.decision_context)
+        except Exception as e:  # noqa: BLE001
+            state.setdefault("warnings", []).append(
+                f"equity: fallo interno ({type(e).__name__}); no se calcula")
             return None
+
+    def cerrar(self):
+        """Libera los recursos privados de esta sesion de analisis."""
+        self.decision_context.reset()
+        if self._tmp_frame_propio and self.tmp_frame:
+            try:
+                os.unlink(self.tmp_frame)
+            except FileNotFoundError:
+                pass
 
     # ----------------------------------------------------------------- vigilancia
     def vigilar(self, crop):
@@ -479,7 +534,8 @@ class Analizador:
                 lineas = parse_tsv_lines(res[i])
                 nombre, _s, accion = ts._seat_plate_name_stack(lineas)
                 if accion:
-                    self.action_log.observar(seat, accion, t=time.time())
+                    self.action_log.observar(
+                        seat, accion, t=time.time(), street=self._calle_vista)
                 # EL NOMBRE SALE GRATIS y hasta ahora se tiraba: esta lectura ya
                 # esta hecha y pagada, se hacia solo por el verbo. El rapido mira
                 # las capsulas 1,6 veces mas que el lento y justo cuando cambian,

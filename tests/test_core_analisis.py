@@ -32,6 +32,10 @@ def an():
     return ca.Analizador(seed_equity=1)
 
 
+def test_el_analizador_usa_el_mazo_solido_por_defecto():
+    assert ca.Analizador().mazo == "solid"
+
+
 def crop(h=200, w=300):
     return np.zeros((h, w, 3), dtype=np.uint8)
 
@@ -93,6 +97,16 @@ def test_un_array_se_vuelca_al_fichero_temporal_del_analizador(tmp_path):
     assert bgr is img, "el array se pasa tal cual, sin releerlo del disco"
 
 
+def test_cada_analizador_recibe_un_temporal_y_contexto_propios():
+    uno, dos = ca.Analizador(), ca.Analizador()
+    try:
+        assert uno.tmp_frame != dos.tmp_frame
+        assert uno.decision_context is not dos.decision_context
+    finally:
+        uno.cerrar()
+        dos.cerrar()
+
+
 def test_una_imagen_ilegible_lo_dice_en_vez_de_seguir_con_None(an):
     """cv2.imread devuelve None sin lanzar. Seguir con eso reventaria mucho mas
     tarde y en otro sitio."""
@@ -107,7 +121,10 @@ def test_un_fallo_de_la_equity_no_tumba_el_frame(an, monkeypatch):
     del analisis -que incluye la recomendacion- tiene que llegar al HUD igual."""
     monkeypatch.setattr(ca.engine, "postflop_equity",
                         lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
-    assert an._equity_de({"board": ["2c", "5c", "9d"]}) is None
+    state = {"board": ["2c", "5c", "9d"]}
+    assert an._equity_de(state) is None
+    assert any(w.startswith("equity: fallo interno (RuntimeError)")
+               for w in state["warnings"])
 
 
 def test_la_semilla_de_equity_llega_al_motor(an, monkeypatch):
@@ -115,9 +132,11 @@ def test_la_semilla_de_equity_llega_al_motor(an, monkeypatch):
     equity seria reproducible."""
     visto = {}
     monkeypatch.setattr(ca.engine, "postflop_equity",
-                        lambda state, seed=None: visto.update(seed=seed) or {"ok": 1})
+                        lambda state, seed=None, context=None:
+                        visto.update(seed=seed, context=context) or {"ok": 1})
     an._equity_de({})
     assert visto["seed"] == 1
+    assert visto["context"] is an.decision_context
 
 
 # --- el lazo rapido: vigilar -------------------------------------------------
@@ -600,6 +619,12 @@ def test_el_latido_fijo_manda_sobre_lo_medido():
         r.anota(0.3)
     assert r.periodo_s == 2.5
     assert "latido fijo" in r.etiqueta()
+
+
+@pytest.mark.parametrize("intervalo", [0, -1, "1", True])
+def test_el_latido_fijo_rechaza_intervalos_invalidos(intervalo):
+    with pytest.raises(ValueError, match="positivo"):
+        ca.Ritmo(fijo=intervalo)
 
 
 def test_la_etiqueta_dice_las_tres_cifras_que_importan():

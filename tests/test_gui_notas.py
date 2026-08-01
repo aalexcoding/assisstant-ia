@@ -219,6 +219,9 @@ def test_las_notas_de_la_misma_ejecucion_van_a_la_misma_carpeta(sin_grabar):
 def test_el_modo_hud_esconde_los_paneles_secundarios(ventana):
     ventana.hud_check.set_active(True)
     assert all(not p.get_visible() for p in ventana._paneles_secundarios)
+    assert not ventana.settings_row.get_visible()
+    assert not ventana.calibrate_button.get_visible()
+    assert not ventana.ritmo_label.get_visible()
     assert ventana.rec_label.get_parent() is not None, \
         "pero NUNCA la recomendacion: es para lo que se enciende"
     assert "HUD" in ventana.get_title()

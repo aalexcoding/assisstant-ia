@@ -70,6 +70,15 @@ def test_defensa_sb_vs_btn():
                      vs_position="BTN") is not None
 
 
+def test_defensa_bb_vs_mp1_20bb_recuperada_de_la_captura_6():
+    """La imagen fuente existía, pero el ranges.json antiguo había perdido el
+    spot completo al sobrescribir una posición OCR duplicada."""
+    result = recommend(["Ah", "Ad"], "BB", 20, facing="threebet_call",
+                       vs_position="MP1")
+    assert result is not None
+    assert result["action"] == "3BET (5 BB)"
+
+
 # --- datos ausentes: se calla, no adivina ------------------------------------
 
 @pytest.mark.parametrize("desc, kwargs", [

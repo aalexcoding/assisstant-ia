@@ -148,6 +148,22 @@ def test_el_boton_en_otro_asiento_es_mano_nueva(tras_mover_el_boton):
     assert info["mano"] == m0 + 1
 
 
+def test_el_boton_que_se_mueve_tras_un_frame_sin_mesa_corta_inmediatamente():
+    """Una animación sin referencia no puede ocultar la frontera de mano."""
+    tr = ht.HandTracker()
+    calentar(tr, estado({"UL": 50.0}, posiciones={"UL": "BTN"}),
+             n=ht.MIN_FRAMES_POR_MANO + 1)
+    m0 = tr.resumen()["mano"]
+
+    tr.update(estado({}))  # frame sin referencia: no trae ningún botón
+    info = tr.update(estado({"UL": 50.0, "MR": 30.0},
+                            hero=("7c", "7d"),
+                            posiciones={"MR": "BTN"}))
+
+    assert info["mano"] == m0 + 1
+    assert "boton" in info["motivos_apertura"]
+
+
 def test_al_cortar_por_boton_la_base_se_rehace(tras_mover_el_boton):
     """El que gano el bote no puede aparecer comprometido en la mano siguiente."""
     _m0, info = tras_mover_el_boton
@@ -204,6 +220,25 @@ def test_el_board_que_se_vacia_es_mano_nueva():
     for _ in range(ht.BOARD_VACIO_FRAMES - 1):
         assert tr.update(estado({"UL": 46.0}, board=()))["mano"] == m0
     assert tr.update(estado({"UL": 46.0}, board=()))["mano"] == m0 + 1
+
+
+def test_un_frame_sin_referencia_no_cuenta_como_board_vacio():
+    tr = ht.HandTracker()
+    con_board = estado({"UL": 50.0}, board=("2h", "3h", "4h"))
+    con_board["table_reference_valid"] = True
+    calentar(tr, con_board)
+    m0 = tr.resumen()["mano"]
+
+    desconocido = estado({})
+    desconocido["table_reference_valid"] = False
+    for _ in range(ht.BOARD_VACIO_FRAMES + 2):
+        assert tr.update(desconocido)["mano"] == m0
+
+    vacio_valido = estado({"UL": 50.0})
+    vacio_valido["table_reference_valid"] = True
+    for _ in range(ht.BOARD_VACIO_FRAMES - 1):
+        assert tr.update(vacio_valido)["mano"] == m0
+    assert tr.update(vacio_valido)["mano"] == m0 + 1
 
 
 def test_un_board_que_PARPADEA_no_parte_la_mano():

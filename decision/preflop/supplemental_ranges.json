@@ -1,0 +1,136 @@
+{
+  "_meta": {
+    "name": "8-Max MTT 10BB Tournament Poker Charts",
+    "provider": "RangeConverter",
+    "source_url": "https://rangeconverter.com/downloads/8-max-MTT-10bb-Tournament-Poker-Charts",
+    "retrieved": "2026-07-31",
+    "format": "MTT",
+    "players": 8,
+    "stack_bb": 10,
+    "ante_total_bb": 1,
+    "solution": "no_limp",
+    "frequency_rounding": "nearest 50%",
+    "scope": "call_vs_open_push",
+    "position_mapping": {
+      "UTG": "EP2",
+      "UTG1": "MP1",
+      "MP": "MP2",
+      "HJ": "HJ",
+      "CO": "CO",
+      "BTN": "BTN",
+      "SB": "SB",
+      "BB": "BB"
+    },
+    "notes": [
+      "Supplemental source kept separate from ranges.json, which is generated from the user's ZeroS Poker captures.",
+      "Only the Facing a Raise / opener all-in charts are transcribed.",
+      "A missing hand class means FOLD. Mixed cells are retained as CALL 50% / FOLD 50%."
+    ]
+  },
+  "call_vs_open_push": {
+    "10": {
+      "MP1": {
+        "EP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "AKo", "KK", "KQs", "AQo", "QQ", "AJo", "JJ", "TT", "99", "88", "77", "66"]
+        }
+      },
+      "MP2": {
+        "EP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "AKo", "KK", "KQs", "AQo", "QQ", "AJo", "JJ", "TT", "99", "88", "77", "66"]
+        },
+        "MP1": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "AKo", "KK", "KQs", "AQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66"]
+        }
+      },
+      "HJ": {
+        "EP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "AKo", "KK", "KQs", "AQo", "QQ", "AJo", "JJ", "TT", "99", "88", "77", "66"]
+        },
+        "MP1": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "AKo", "KK", "KQs", "AQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66", "55"]
+        },
+        "MP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "AKo", "KK", "KQs", "KJs", "AQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66", "55"]
+        }
+      },
+      "CO": {
+        "EP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "AKo", "KK", "KQs", "AQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66"]
+        },
+        "MP1": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "AKo", "KK", "KQs", "AQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66", "55"]
+        },
+        "MP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "AKo", "KK", "KQs", "KJs", "AQo", "KQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66", "55"]
+        },
+        "HJ": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "AKo", "KK", "KQs", "KJs", "AQo", "KQo", "QQ", "AJo", "JJ", "ATo", "TT", "A9o", "99", "88", "77", "66", "55"]
+        }
+      },
+      "BTN": {
+        "EP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "AKo", "KK", "KQs", "AQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66"]
+        },
+        "MP1": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "AKo", "KK", "KQs", "AQo", "KQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66", "55"]
+        },
+        "MP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "AKo", "KK", "KQs", "KJs", "AQo", "KQo", "QQ", "AJo", "JJ", "ATo", "TT", "A9o", "99", "88", "77", "66", "55"],
+          "CALL 50% / FOLD 50%": ["44"]
+        },
+        "HJ": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "AKo", "KK", "KQs", "KJs", "KTs", "AQo", "KQo", "QQ", "AJo", "JJ", "ATo", "TT", "A9o", "99", "88", "77", "66", "55", "44"],
+          "CALL 50% / FOLD 50%": ["A8o"]
+        },
+        "CO": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "AKo", "KK", "KQs", "KJs", "KTs", "AQo", "KQo", "QQ", "QJs", "AJo", "JJ", "ATo", "TT", "A9o", "99", "A8o", "88", "77", "66", "55", "44"]
+        }
+      },
+      "SB": {
+        "EP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "AKo", "KK", "KQs", "KJs", "AQo", "KQo", "QQ", "AJo", "JJ", "ATo", "TT", "99", "88", "77", "66", "55"]
+        },
+        "MP1": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "AKo", "KK", "KQs", "KJs", "AQo", "KQo", "QQ", "AJo", "JJ", "ATo", "TT", "A9o", "99", "88", "77", "66", "55", "44"]
+        },
+        "MP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "AKo", "KK", "KQs", "KJs", "KTs", "AQo", "KQo", "QQ", "QJs", "AJo", "JJ", "ATo", "TT", "A9o", "99", "88", "77", "66", "55", "44", "33"]
+        },
+        "HJ": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "AKo", "KK", "KQs", "KJs", "KTs", "AQo", "KQo", "QQ", "QJs", "QTs", "AJo", "KJo", "JJ", "ATo", "TT", "A9o", "99", "A8o", "88", "A7o", "77", "66", "55", "44", "33"]
+        },
+        "CO": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "AKo", "KK", "KQs", "KJs", "KTs", "AQo", "KQo", "QQ", "QJs", "QTs", "AJo", "KJo", "JJ", "ATo", "TT", "A9o", "99", "A8o", "88", "A7o", "77", "A6o", "66", "A5o", "55", "44", "33"]
+        },
+        "BTN": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "AKo", "KK", "KQs", "KJs", "KTs", "K9s", "K8s", "AQo", "KQo", "QQ", "QJs", "QTs", "AJo", "KJo", "QJo", "JJ", "JTs", "ATo", "KTo", "TT", "A9o", "99", "A8o", "88", "A7o", "77", "A6o", "66", "A5o", "55", "A4o", "44", "A3o", "33", "A2o", "22"]
+        }
+      },
+      "BB": {
+        "EP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "AKo", "KK", "KQs", "KJs", "KTs", "AQo", "KQo", "QQ", "QJs", "QTs", "AJo", "JJ", "ATo", "TT", "A9o", "99", "88", "77", "66", "55", "44", "33"]
+        },
+        "MP1": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "AKo", "KK", "KQs", "KJs", "KTs", "AQo", "KQo", "QQ", "QJs", "QTs", "AJo", "KJo", "JJ", "ATo", "TT", "A9o", "99", "A8o", "88", "77", "66", "55", "44", "33"]
+        },
+        "MP2": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "AKo", "KK", "KQs", "KJs", "KTs", "AQo", "KQo", "QQ", "QJs", "QTs", "AJo", "KJo", "JJ", "JTs", "ATo", "TT", "A9o", "99", "A8o", "88", "A7o", "77", "66", "55", "44", "33", "22"]
+        },
+        "HJ": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "AKo", "KK", "KQs", "KJs", "KTs", "K9s", "AQo", "KQo", "QQ", "QJs", "QTs", "AJo", "KJo", "JJ", "JTs", "ATo", "KTo", "TT", "A9o", "99", "A8o", "88", "A7o", "77", "A6o", "66", "A5o", "55", "A4o", "44", "33", "22"]
+        },
+        "CO": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "AKo", "KK", "KQs", "KJs", "KTs", "K9s", "AQo", "KQo", "QQ", "QJs", "QTs", "AJo", "KJo", "QJo", "JJ", "JTs", "ATo", "KTo", "TT", "A9o", "99", "A8o", "88", "A7o", "77", "A6o", "66", "A5o", "55", "A4o", "44", "A3o", "33", "A2o", "22"]
+        },
+        "BTN": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "AKo", "KK", "KQs", "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "AQo", "KQo", "QQ", "QJs", "QTs", "Q9s", "AJo", "KJo", "QJo", "JJ", "JTs", "J9s", "ATo", "KTo", "QTo", "JTo", "TT", "A9o", "K9o", "99", "A8o", "88", "A7o", "77", "A6o", "66", "A5o", "55", "A4o", "44", "A3o", "33", "A2o", "22"],
+          "CALL 50% / FOLD 50%": ["T9s"]
+        },
+        "SB": {
+          "CALL": ["AA", "AKs", "AQs", "AJs", "ATs", "A9s", "A8s", "A7s", "A6s", "A5s", "A4s", "A3s", "A2s", "AKo", "KK", "KQs", "KJs", "KTs", "K9s", "K8s", "K7s", "K6s", "K5s", "K4s", "K3s", "K2s", "AQo", "KQo", "QQ", "QJs", "QTs", "Q9s", "Q8s", "Q7s", "Q6s", "Q5s", "AJo", "KJo", "QJo", "JJ", "JTs", "J9s", "J8s", "J7s", "ATo", "KTo", "QTo", "JTo", "TT", "T9s", "T8s", "A9o", "K9o", "Q9o", "J9o", "T9o", "99", "A8o", "K8o", "Q8o", "88", "A7o", "K7o", "77", "A6o", "K6o", "66", "A5o", "K5o", "55", "A4o", "K4o", "44", "A3o", "K3o", "33", "A2o", "K2o", "22"],
+          "CALL 50% / FOLD 50%": ["Q4s", "98s"]
+        }
+      }
+    }
+  }
+}

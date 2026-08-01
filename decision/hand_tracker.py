@@ -120,6 +120,9 @@ def _vista(state, hand_number=None):
             stacks[seat] = float(p["stack"])
     return {
         "board": _board_legal(state.get("board") or []),
+        # Los estados antiguos y los tests que no exponen esta señal conservan
+        # el comportamiento histórico. Producción la declara siempre.
+        "table_reference_valid": state.get("table_reference_valid", True) is not False,
         "hero_cards": list(state.get("hero_cards") or []),
         "hand_number": hand_number,
         "boton": next((p.get("seat") for p in state.get("players") or []
@@ -447,6 +450,10 @@ class HandTracker:
         self._pendientes_nombre = {}
         # frames seguidos sin board legal; ver BOARD_VACIO_FRAMES
         self._sin_board = 0
+        # Último botón realmente visto, aunque entre medias haya frames sin
+        # referencia de mesa. Comparar solo contra el frame anterior pierde el
+        # movimiento cuando una animación deja ese frame sin jugadores.
+        self._ultimo_boton_visto = None
         self._abrir(frozenset())
 
     def _abrir(self, motivos):
@@ -554,6 +561,9 @@ class HandTracker:
         modifica el state (para eso esta aplicar())."""
         actual = _vista(state, hand_number)
         motivos = motivos_de_frontera(self._previo, actual) if self._previo else frozenset()
+        if (actual["boton"] and self._ultimo_boton_visto
+                and actual["boton"] != self._ultimo_boton_visto):
+            motivos = frozenset(motivos) | {"boton"}
         motivos = self._board_vacio_sostenido(motivos, actual)
         if motivos & MOTIVOS_DE_CORTE and self._frames >= MIN_FRAMES_POR_MANO:
             self._abrir(motivos)
@@ -561,6 +571,8 @@ class HandTracker:
         self._frames += 1
         if actual["boton"] and (not self._botones or self._botones[-1] != actual["boton"]):
             self._botones.append(actual["boton"])
+        if actual["boton"]:
+            self._ultimo_boton_visto = actual["boton"]
 
         # CALLE. Se mide por el numero de cartas de board, y SOLO PUEDE AVANZAR:
         # el board no encoge en una mano de verdad, asi que un board mas corto (o
@@ -640,6 +652,12 @@ class HandTracker:
         El motivo se retira mientras la racha es corta y se AÑADE en el frame que
         la completa, que es cuando ya se sabe que el board no vuelve. Ver
         BOARD_VACIO_FRAMES para la medicion."""
+        # Un frame sin referencia no dice que la mesa esté vacía: dice que no
+        # sabemos dónde mirar. Contarlo como preflop fabricó la mano 11 al final
+        # de sesion-2026-07-31_011143 aunque el river seguía visible. La racha se
+        # pausa; la siguiente observación válida decidirá si sigue vacía.
+        if not actual["table_reference_valid"]:
+            return frozenset(motivos) - {"board_vacio"}
         sin_board = actual["board"] is None
         self._sin_board = self._sin_board + 1 if sin_board else 0
         if self._sin_board == BOARD_VACIO_FRAMES:

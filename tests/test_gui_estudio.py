@@ -37,8 +37,10 @@ def ventana(app, monkeypatch):
     sustituye por un buzon."""
     win = gui.PokerAssistantWindow(app, 1.2)
     llamadas = []
-    monkeypatch.setattr(win, "_buscar_estudio",
-                        lambda board, ganadora, showdown: llamadas.append(board))
+    monkeypatch.setattr(
+        win, "_buscar_estudio",
+        lambda board, ganadora, showdown, contexto=None:
+        llamadas.append((board, contexto)))
     win.llamadas = llamadas
     yield win
     win.destroy()
@@ -55,7 +57,8 @@ def termina_mano(win, n, board=None):
 
 def test_el_estudio_recibe_el_board_de_la_mano_que_termina(ventana):
     termina_mano(ventana, 1, board=["Ah", "Kd", "2c"])
-    assert ventana.llamadas == [["Ah", "Kd", "2c"]]
+    assert ventana.llamadas[0][0] == ["Ah", "Kd", "2c"]
+    assert ventana.llamadas[0][1]["board"] == ["Ah", "Kd", "2c"]
 
 
 def test_una_mano_sin_board_no_hereda_el_de_la_anterior(ventana):
@@ -63,4 +66,26 @@ def test_una_mano_sin_board_no_hereda_el_de_la_anterior(ventana):
     Sin vaciar, la 2 estudiaria el flop de la 1."""
     termina_mano(ventana, 1, board=["Ah", "Kd", "2c"])
     termina_mano(ventana, 2)
-    assert ventana.llamadas == [["Ah", "Kd", "2c"], []]
+    assert [x[0] for x in ventana.llamadas] == [["Ah", "Kd", "2c"], []]
+    assert ventana.llamadas[1][1] == {}
+
+
+def test_pinta_ficha_trazable_aunque_el_indice_semantico_falle(ventana):
+    ventana.on_estudio({
+        "fichas": [{
+            "title": "Multiway: rangos más fuertes",
+            "principle": "Apostar y continuar más estrecho.",
+            "consider": ["Evitar range-bet", "Valorar el potencial de nuts"],
+            "limits": ["No sustituye rangos específicos."],
+            "source": {
+                "name": "Guía pública",
+                "url": "https://example.test/guia",
+            },
+        }],
+        "referencias": [],
+        "problema": "índice no disponible",
+    })
+    text = ventana.prev_coach_label.get_text()
+    assert "Multiway: rangos más fuertes" in text
+    assert "Guía pública" in text
+    assert "índice no disponible" in text

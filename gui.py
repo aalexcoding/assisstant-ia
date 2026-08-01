@@ -25,6 +25,7 @@ import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -42,11 +43,11 @@ import testing_session as ts_session
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gio, GLib, Gtk, Pango
+gi.require_version("Gdk", "4.0")
+from gi.repository import Gdk, Gio, GLib, Gtk, Pango
 
 CALIBRATION_PATH = os.path.join(BASE_DIR, "calibration", "config.local.json")
 SELECT_REGION_MODULE = "calibration.select_region"
-TMP_FRAME_PATH = "/tmp/poker_gui_frame.png"
 
 # VIGILANCIA_PERIODO_S y el resto de la cadencia viven en core/analisis.py, con
 # el codigo que los usa. Aqui solo se importa el periodo, que hace falta para el
@@ -54,6 +55,111 @@ TMP_FRAME_PATH = "/tmp/poker_gui_frame.png"
 
 SUIT_SYMBOLS = {"h": "♥", "d": "♦", "c": "♣", "s": "♠"}
 SUIT_COLORS = {"h": "#e74c3c", "d": "#3498db", "c": "#2ecc71", "s": "#95a5a6"}
+
+# Una interfaz de juego necesita jerarquía estable: la acción debe destacar,
+# los datos de contexto deben poder leerse sin competir con ella y los detalles
+# técnicos deben seguir disponibles sin ocupar la pantalla todo el tiempo.
+# Se usa una paleta oscura propia para que el aspecto no dependa del tema GTK
+# instalado en la distribución.
+APP_CSS = """
+window.poker-app {
+    background-color: #0b1016;
+    color: #e6edf3;
+}
+.topbar {
+    background-color: #111820;
+    border-bottom: 1px solid #27313d;
+    padding: 14px 20px;
+}
+.brand-title {
+    color: #f4f7fa;
+    font-size: 21px;
+    font-weight: 800;
+}
+.brand-subtitle {
+    color: #8b98a7;
+    font-size: 12px;
+}
+.toolbar {
+    background-color: #0f151c;
+    border-bottom: 1px solid #27313d;
+    padding: 10px 20px;
+}
+.content {
+    padding: 18px;
+}
+.card {
+    background-color: #151c24;
+    border: 1px solid #2a3542;
+    border-radius: 12px;
+    padding: 16px;
+}
+.primary-card {
+    background-color: #14221c;
+    border-color: #2d6b4b;
+    padding: 20px;
+}
+.card-title {
+    color: #8b98a7;
+    font-size: 11px;
+    font-weight: 800;
+}
+.summary-tile {
+    background-color: #0f151c;
+    border: 1px solid #27313d;
+    border-radius: 9px;
+    padding: 11px 13px;
+}
+.muted {
+    color: #8b98a7;
+}
+.status-pill {
+    border-radius: 999px;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-weight: 800;
+}
+.status-idle {
+    background-color: #27313d;
+    color: #b6c0cb;
+}
+.status-live {
+    background-color: #173e2b;
+    color: #6ee7a7;
+}
+.status-error {
+    background-color: #4a2025;
+    color: #ff9da7;
+}
+button.primary-action {
+    background-color: #238636;
+    color: white;
+    border-color: #2ea043;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 700;
+}
+button.primary-action:hover {
+    background-color: #2ea043;
+}
+button.secondary-action {
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+.field-label {
+    color: #8b98a7;
+    font-size: 11px;
+    font-weight: 700;
+}
+.technical {
+    color: #9ba7b4;
+    font-size: 12px;
+}
+expander > title {
+    color: #aeb8c4;
+    padding-top: 6px;
+}
+"""
 
 
 def load_region():
@@ -140,7 +246,7 @@ class AnalysisWorker(threading.Thread):
     """Hilo de analisis: abre el stream, lee frames, recorta, analiza y
     manda cada resultado a la ventana via GLib.idle_add. No toca widgets."""
 
-    def __init__(self, win, interval, sesion=None, max_players=None, mazo=None):
+    def __init__(self, win, interval, sesion=None, max_players=None, mazo="solid"):
         super().__init__(daemon=True)
         self.win = win
         # EL LATIDO SE MIDE. `interval` ya no es el periodo sino la salida de
@@ -156,8 +262,7 @@ class AnalysisWorker(threading.Thread):
         # max_players (3-Max, 6-Max...) sirve de red: las posiciones salen del
         # RECUENTO de asientos ocupados, asi que un asiento fantasma las desplaza
         # todas.
-        self.analizador = Analizador(max_players=max_players, mazo=mazo,
-                                     tmp_frame=TMP_FRAME_PATH)
+        self.analizador = Analizador(max_players=max_players, mazo=mazo)
         # TestingSession o None. Lo pone el hilo principal antes de arrancar y no
         # se toca despues: la grabacion se decide al iniciar el analisis, no a
         # mitad, para que una sesion grabada sea de principio a fin.
@@ -232,6 +337,7 @@ class AnalysisWorker(threading.Thread):
         try:
             load_region()
         except (FileNotFoundError, ValueError, KeyError):
+            self.analizador.cerrar()
             GLib.idle_add(self.win.on_error, "No hay recuadro calibrado. Pulsa 'Recalibrar recuadro'.")
             GLib.idle_add(self.win.on_stopped)
             return
@@ -240,6 +346,7 @@ class AnalysisWorker(threading.Thread):
             self._log("Abriendo stream (elige la pantalla en el dialogo del portal)...")
             portal, session_handle, fd, stream, _props = pc.open_frame_stream(log=self._log)
         except Exception as e:  # noqa: BLE001 - queremos reportar cualquier fallo del portal en la UI
+            self.analizador.cerrar()
             GLib.idle_add(self.win.on_error, f"No se pudo abrir el stream: {e}")
             GLib.idle_add(self.win.on_stopped)
             return
@@ -293,6 +400,7 @@ class AnalysisWorker(threading.Thread):
                 if resto > 0:
                     self._stop.wait(resto)
         finally:
+            self.analizador.cerrar()
             try:
                 stream.close()
             except Exception:  # noqa: BLE001
@@ -310,8 +418,11 @@ class AnalysisWorker(threading.Thread):
 
 class PokerAssistantWindow(Gtk.ApplicationWindow):
     def __init__(self, app, interval):
-        super().__init__(application=app, title="Poker Assistant IA - Panel de control")
-        self.set_default_size(520, 700)
+        super().__init__(application=app, title="Poker Assistant — Mesa en directo")
+        self.set_default_size(900, 820)
+        self.set_size_request(440, 360)
+        self.add_css_class("poker-app")
+        self._install_css()
         self.worker = None
         self.running = False
         self.sesion = None          # TestingSession mientras se graba
@@ -329,16 +440,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # ultimo board visto de la mano en curso, para el estudio post-mano: al
         # terminar la mano el board ya no esta en pantalla
         self._ultimo_board = []
+        self._ultimo_contexto_postflop = {}
 
-        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        root.set_margin_top(16)
-        root.set_margin_bottom(16)
-        root.set_margin_start(16)
-        root.set_margin_end(16)
-        self.set_child(root)
-
-        # Los paneles que el modo HUD esconde. La recomendacion, la equity y la
-        # mano actual se quedan: son lo unico que se mira en plena mano.
+        # Primero se construyen los bloques porque algunos (HUD, estado) se
+        # enlazan desde la cabecera y la barra de controles.
         estado = self._build_state_frame()
         mano = self._build_hand_frame()
         equity = self._build_equity_frame()
@@ -348,46 +453,141 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         controles = self._build_controls()
         avisos = self._build_status_frame()
 
-        for w in (estado, mano, equity, reco, anterior, nota, controles, avisos):
-            root.append(w)
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        self.set_child(root)
+        root.append(self._build_header())
+        root.append(controles)
+
+        self.main_scroll = Gtk.ScrolledWindow()
+        self.main_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.main_scroll.set_vexpand(True)
+        self.main_scroll.set_propagate_natural_height(False)
+
+        contenido = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        contenido.add_css_class("content")
+        contenido.append(reco)
+        contenido.append(estado)
+
+        # Mano formada y equity son dos lecturas relacionadas y secundarias.
+        # Compartir renglón deja claro que describen la mano; no compiten con la
+        # recomendación, que ocupa sola todo el ancho.
+        self.insights_row = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        mano.set_hexpand(True)
+        equity.set_hexpand(True)
+        self.insights_row.append(mano)
+        self.insights_row.append(equity)
+        contenido.append(self.insights_row)
+
+        contenido.append(anterior)
+        contenido.append(nota)
+        contenido.append(avisos)
+        self.main_scroll.set_child(contenido)
+        root.append(self.main_scroll)
+
         self.hud = False
         self._paneles_secundarios = (estado, anterior, nota, avisos)
 
         self._refresh_region_label()
         self.connect("close-request", self._on_close)
 
-    def _build_state_frame(self):
-        frame = Gtk.Frame(label="Estado detectado")
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.set_margin_top(8)
-        box.set_margin_bottom(8)
-        box.set_margin_start(8)
-        box.set_margin_end(8)
+    @staticmethod
+    def _install_css():
+        provider = Gtk.CssProvider()
+        provider.load_from_data(APP_CSS, -1)
+        display = Gdk.Display.get_default()
+        if display is not None:
+            Gtk.StyleContext.add_provider_for_display(
+                display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
-        self.hero_label = self._markup_label("Tus cartas: <i>-</i>")
-        self.board_label = self._markup_label("Board: <i>-</i>")
-        self.pot_label = self._markup_label("Bote: <i>-</i>")
-        players_title = self._markup_label("<b>Jugadores</b>")
+    @staticmethod
+    def _panel(title, primary=False):
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        panel.add_css_class("card")
+        if primary:
+            panel.add_css_class("primary-card")
+        heading = Gtk.Label(label=title.upper())
+        heading.set_halign(Gtk.Align.START)
+        heading.set_xalign(0.0)
+        heading.add_css_class("card-title")
+        panel.append(heading)
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        panel.append(body)
+        return panel, body
+
+    def _build_header(self):
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14)
+        header.add_css_class("topbar")
+
+        brand = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+        brand.set_hexpand(True)
+        title = Gtk.Label(label="Poker Assistant")
+        title.set_halign(Gtk.Align.START)
+        title.add_css_class("brand-title")
+        self.header_subtitle = Gtk.Label(
+            label="Decisiones claras · lectura de mesa en tiempo real")
+        self.header_subtitle.set_halign(Gtk.Align.START)
+        self.header_subtitle.add_css_class("brand-subtitle")
+        brand.append(title)
+        brand.append(self.header_subtitle)
+
+        self.header_status_label = Gtk.Label(label="EN ESPERA")
+        self.header_status_label.add_css_class("status-pill")
+        self.header_status_label.add_css_class("status-idle")
+        self.header_status_label.set_valign(Gtk.Align.CENTER)
+
+        header.append(brand)
+        header.append(self.header_status_label)
+        return header
+
+    def _set_run_state(self, text, css_class):
+        for old in ("status-idle", "status-live", "status-error"):
+            self.header_status_label.remove_css_class(old)
+        self.header_status_label.add_css_class(css_class)
+        self.header_status_label.set_text(text)
+
+    def _build_state_frame(self):
+        panel, box = self._panel("Mesa en directo")
+
+        resumen = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        self.hero_label = self._markup_label(
+            '<span size="small" foreground="#8b98a7">TUS CARTAS</span>\n'
+            '<span size="x-large"><i>-</i></span>')
+        self.board_label = self._markup_label(
+            '<span size="small" foreground="#8b98a7">BOARD</span>\n'
+            '<span size="x-large"><i>-</i></span>')
+        self.pot_label = self._markup_label(
+            '<span size="small" foreground="#8b98a7">BOTE</span>\n'
+            '<span size="large"><i>-</i></span>')
+        for widget in (self.hero_label, self.board_label, self.pot_label):
+            widget.add_css_class("summary-tile")
+            widget.set_hexpand(True)
+            widget.set_halign(Gtk.Align.FILL)
+            widget.set_valign(Gtk.Align.FILL)
+            resumen.append(widget)
+
+        self.state_details = Gtk.Expander(label="Jugadores y acciones observadas")
+        self.state_details.set_expanded(False)
+        detail_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        detail_box.set_margin_top(8)
         self.players_label = self._markup_label("<i>sin datos</i>")
+        self.players_label.add_css_class("technical")
         # lo que se ha VISTO hacer en esta mano. Nunca es la lista completa: el
         # verbo dura menos que el periodo de muestreo (ver action_log).
         self.acciones_label = self._markup_label("")
         self.acciones_label.set_wrap(True)
         self.acciones_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        self.acciones_label.add_css_class("technical")
+        detail_box.append(self.players_label)
+        detail_box.append(self.acciones_label)
+        self.state_details.set_child(detail_box)
 
-        for w in (self.hero_label, self.board_label, self.pot_label, players_title,
-                  self.players_label, self.acciones_label):
-            box.append(w)
-        frame.set_child(box)
-        return frame
+        box.append(resumen)
+        box.append(self.state_details)
+        return panel
 
     def _build_hand_frame(self):
-        frame = Gtk.Frame(label="Mano actual")
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.set_margin_top(8)
-        box.set_margin_bottom(8)
-        box.set_margin_start(8)
-        box.set_margin_end(8)
+        panel, box = self._panel("Mano formada y proyectos")
 
         self.made_label = Gtk.Label()
         self.made_label.set_use_markup(True)
@@ -398,28 +598,18 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.draws_label = self._markup_label("<i>-</i>")
         self.draws_label.set_wrap(True)
         self.draws_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-
-        note = self._markup_label(
-            '<span size="small" foreground="#95a5a6"><i>Probabilidad de COMPLETAR el '
-            'proyecto (calculo exacto; entre corchetes la regla del 2 y 4), '
-            'NO de ganar la mano: esa es la de abajo, en "Equity estimada". Se puede '
-            'ligar el color y perder contra uno mayor, o no ligarlo y ganar igual.</i></span>')
-        note.set_wrap(True)
-        note.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        panel.set_tooltip_text(
+            "Los porcentajes de proyectos indican la probabilidad de completarlos, "
+            "no la probabilidad de ganar. La probabilidad de ganar aparece en Equity.")
 
         box.append(self.made_label)
         box.append(self.draws_label)
-        box.append(note)
-        frame.set_child(box)
-        self.hand_frame = frame
-        frame.set_visible(False)
-        return frame
+        self.hand_frame = panel
+        panel.set_visible(False)
+        return panel
 
     def _build_equity_frame(self):
-        frame = Gtk.Frame(label="Equity estimada")
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        for lado in ("top", "bottom", "start", "end"):
-            getattr(box, f"set_margin_{lado}")(8)
+        panel, box = self._panel("Equity estimada")
 
         self.eq_main_label = Gtk.Label()
         self.eq_main_label.set_use_markup(True)
@@ -428,26 +618,23 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
         self.eq_rivals_label = self._markup_label("")
         self.eq_effect_label = self._markup_label("")
-        eq_note = self._markup_label(
-            '<span size="small" foreground="#95a5a6"><i>Equity "de all-in": supone que se '
-            'ven todas las cartas sin mas apuestas. NO es una recomendacion, no mira el bote. '
-            'Supone que cada rival tiene el rango con el que ENTRO al bote — ya han pasado el '
-            'flop, asi que su rango real es mas fuerte y este numero es un TECHO. La '
-            'probabilidad de COMPLETAR un proyecto esta arriba, en "Mano actual": es otra cosa.'
-            '</i></span>')
+        self.eq_odds_label = self._markup_label("")
+        panel.set_tooltip_text(
+            "Equity de all-in: supone que se ven todas las cartas sin más apuestas. "
+            "Si hay una apuesta, el precio del call se muestra aparte; comparar "
+            "ambas cifras sigue sin ser una recomendación de acción.")
 
-        for w in (self.eq_rivals_label, self.eq_effect_label, eq_note):
+        for w in (self.eq_rivals_label, self.eq_effect_label, self.eq_odds_label):
             w.set_wrap(True)
             w.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
 
         box.append(self.eq_main_label)
         box.append(self.eq_rivals_label)
         box.append(self.eq_effect_label)
-        box.append(eq_note)
-        frame.set_child(box)
-        self.equity_frame = frame
-        frame.set_visible(False)
-        return frame
+        box.append(self.eq_odds_label)
+        self.equity_frame = panel
+        panel.set_visible(False)
+        return panel
 
     def on_ritmo(self, texto):
         """Lo que esta tardando de verdad, en la ventana. Sustituye al selector de
@@ -493,15 +680,37 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                 f'vienen de que tienen un rango.</span>')
         else:
             self.eq_effect_label.set_markup("")
+
+        odds = eq.get("pot_odds")
+        if odds:
+            requerido = 100 * odds["required_equity"]
+            texto = (
+                f'Precio del call: pagar <b>{odds["call_bb"]:g} BB</b> para un bote '
+                f'final de <b>{odds["final_pot_bb"]:g} BB</b> · necesita '
+                f'<b>{requerido:.0f}%</b> de equity')
+            if odds.get("current_spr") is not None:
+                texto += (
+                    f' · SPR actual <b>{odds["current_spr"]:g}</b> '
+                    f'({odds["effective_stack_bb"]:g} BB efectivos)')
+            if odds.get("raw_margin_pp") is not None:
+                margen = odds["raw_margin_pp"]
+                texto += (
+                    f'\nEquity bruta frente al precio: '
+                    f'<b>{margen:+.0f} puntos</b>')
+            texto += (
+                '\n<span foreground="#f39c12"><i>Orientativo: la equity supone '
+                'check-down y no ajusta el rango rival a esta apuesta; no equivale '
+                'a CALL/FOLD.</i></span>')
+            self.eq_odds_label.set_markup(
+                f'<span size="small">{texto}</span>')
+            self.eq_odds_label.set_visible(True)
+        else:
+            self.eq_odds_label.set_markup("")
+            self.eq_odds_label.set_visible(False)
         return False
 
     def _build_recommendation_frame(self):
-        frame = Gtk.Frame(label="Recomendacion")
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.set_margin_top(8)
-        box.set_margin_bottom(8)
-        box.set_margin_start(8)
-        box.set_margin_end(8)
+        panel, box = self._panel("Decisión recomendada", primary=True)
 
         self.rec_label = Gtk.Label()
         self.rec_label.set_use_markup(True)
@@ -511,19 +720,14 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.reasoning_label = self._markup_label('<i>pulsa "Iniciar analisis" para empezar</i>')
         self.reasoning_label.set_wrap(True)
         self.reasoning_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+        self.reasoning_label.add_css_class("muted")
 
         box.append(self.rec_label)
         box.append(self.reasoning_label)
-        frame.set_child(box)
-        return frame
+        return panel
 
     def _build_prev_hand_frame(self):
-        frame = Gtk.Frame(label="Mano anterior")
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.set_margin_top(8)
-        box.set_margin_bottom(8)
-        box.set_margin_start(8)
-        box.set_margin_end(8)
+        panel, box = self._panel("Última mano")
 
         self.prev_main_label = self._markup_label("<i>sin manos terminadas todavia</i>")
         self.prev_showdown_label = self._markup_label("")
@@ -531,14 +735,16 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # hueco preparado para el coaching (Fase 4.3): NO se implementa aqui, va
         # el RAG postflop + historial de acciones, una pieza mayor aparte.
         self.prev_coach_label = self._markup_label("")
+        for optional in (self.prev_showdown_label, self.prev_hero_label,
+                         self.prev_coach_label):
+            optional.set_visible(False)
 
         for w in (self.prev_main_label, self.prev_showdown_label,
                   self.prev_hero_label, self.prev_coach_label):
             w.set_wrap(True)
             w.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
             box.append(w)
-        frame.set_child(box)
-        return frame
+        return panel
 
     def _build_note_frame(self):
         """Marcar una situacion rara y anotarla, para revisarla despues con el
@@ -550,13 +756,11 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         asociada al frame del momento de guardar apuntaria al frame equivocado.
         Asi que "Marcar situacion" fija de inmediato el frame que se esta viendo
         y el texto se aplica a ese, se tarde lo que se tarde en escribirlo."""
-        frame = Gtk.Frame(label="Marcar una situacion para revisarla despues")
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        for lado in ("top", "bottom", "start", "end"):
-            getattr(box, f"set_margin_{lado}")(8)
+        panel, box = self._panel("Anotar una situación")
 
         fila = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.mark_button = Gtk.Button(label="Marcar situacion")
+        self.mark_button = Gtk.Button(label="Marcar ahora")
+        self.mark_button.add_css_class("secondary-action")
         self.mark_button.set_tooltip_text(
             "Fija AHORA el frame que estas viendo. Escribe la nota despues sin prisa: "
             "se guardara junto a ESE frame, no al que se este analizando cuando "
@@ -569,7 +773,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.nota_entry.set_placeholder_text("que te ha parecido raro (Enter para guardar)")
         self.nota_entry.connect("activate", self._on_guardar_nota)
 
-        self.nota_button = Gtk.Button(label="Guardar nota")
+        self.nota_button = Gtk.Button(label="Guardar")
+        self.nota_button.add_css_class("secondary-action")
         self.nota_button.connect("clicked", self._on_guardar_nota)
 
         fila.append(self.mark_button)
@@ -583,8 +788,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
         box.append(fila)
         box.append(self.nota_estado)
-        frame.set_child(box)
-        return frame
+        return panel
 
     def _nota_aviso(self, texto, color="#95a5a6", size="small"):
         self.nota_estado.set_markup(
@@ -707,6 +911,13 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.hud = boton.get_active()
         for panel in self._paneles_secundarios:
             panel.set_visible(not self.hud)
+        # En 420 px los selectores y el calibrador consumirían más altura que la
+        # propia recomendación. El modo compacto conserva solo iniciar/detener y
+        # el interruptor para volver; la configuración reaparece intacta al salir.
+        self.settings_row.set_visible(not self.hud)
+        self.calibrate_button.set_visible(not self.hud)
+        self.ritmo_label.set_visible(not self.hud)
+        self.header_subtitle.set_visible(not self.hud)
         self.set_title("Poker Assistant IA" + (" — HUD" if self.hud
                                                else " - Panel de control"))
         try:
@@ -718,26 +929,29 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         except Exception:  # noqa: BLE001
             pass
         if self.hud:
-            self.set_default_size(420, 320)
+            self.set_default_size(460, 360)
+        else:
+            self.set_default_size(900, 820)
 
     def _build_controls(self):
-        # DOS RENGLONES, no uno. Con la etiqueta de ritmo en la misma fila que los
-        # botones la ventana se estiraba de mas -lo pidio el usuario- y ademas son
-        # dos cosas distintas: arriba lo que SE TOCA, abajo lo que SE MIRA.
-        columna = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        columna = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        columna.add_css_class("toolbar")
+        acciones = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        ajustes = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
 
         # Modo HUD: se esconde todo menos lo que se mira en plena mano.
-        self.hud_check = Gtk.CheckButton(label="HUD")
+        self.hud_check = Gtk.CheckButton(label="HUD compacto")
         self.hud_check.set_tooltip_text(
             "Deja solo la recomendacion, la equity y la mano actual, y pone la "
             "ventana encima. Para tenerla al lado de la mesa mientras juegas.")
         self.hud_check.connect("toggled", self._on_hud)
 
-        self.start_button = Gtk.Button(label="Iniciar analisis")
+        self.start_button = Gtk.Button(label="Iniciar análisis")
+        self.start_button.add_css_class("primary-action")
         self.start_button.connect("clicked", self._on_toggle)
 
-        self.calibrate_button = Gtk.Button(label="Recalibrar recuadro")
+        self.calibrate_button = Gtk.Button(label="Calibrar captura")
+        self.calibrate_button.add_css_class("secondary-action")
         self.calibrate_button.connect("clicked", self._on_calibrate)
 
         # Tamaño de mesa. Hace DOS cosas, y las dos importan: acota cuantos
@@ -751,7 +965,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # Una opcion que dice deducir algo y no lo deduce es peor que no tenerla:
         # invita a dejarla puesta. Detectar la disposicion sola hara falta algun
         # dia, y entonces volvera; mientras no exista, no se anuncia.
-        mesa_label = Gtk.Label(label="Mesa")
+        mesa_label = Gtk.Label(label="MESA")
+        mesa_label.add_css_class("field-label")
         self.mesa_combo = Gtk.ComboBoxText()
         for etiqueta in ("2 (heads-up)", "3-Max", "6-Max", "8-Max", "9 plazas"):
             self.mesa_combo.append_text(etiqueta)
@@ -780,54 +995,57 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # cartas del otro mazo, el calco de plantillas solo acertaba 24 de 177 y
         # el 8 salia al 1,3% de las lecturas cuando le toca el 7,7%.
         #
-        # Se deja "Auto" y ademas es lo que arranca, al reves que en el selector
-        # de mesa: aqui la deteccion SI funciona -gana el que encuentra mas
-        # cartas, y esta medido- y ademas cubre el caso de cambiar de mazo a
-        # mitad de sesion, que el usuario hace. Fijarlo es para cuando se sabe.
-        mazo_label = Gtk.Label(label="Mazo")
+        # Se conserva "Auto" para diagnóstico y cambios de mazo, pero la ruta
+        # normal arranca directamente en el mazo que se usa ahora: evita ejecutar
+        # dos detectores y que una hipótesis ajena gane por cajas espurias.
+        mazo_label = Gtk.Label(label="BARAJA")
+        mazo_label.add_css_class("field-label")
         self.mazo_combo = Gtk.ComboBoxText()
-        for etiqueta in ("Mazo: auto", "Cara blanca", "Fondo de color"):
+        for etiqueta in ("Fondo de color", "Cara blanca", "Mazo: auto"):
             self.mazo_combo.append_text(etiqueta)
         self.mazo_combo.set_active(0)
         self.mazo_combo.set_tooltip_text(
             "Que baraja tienes puesta en el cliente. 'Cara blanca' es la de fondo "
             "blanco con el numero en el color del palo; 'Fondo de color' la de "
-            "fondo pintado con el numero en blanco. Con auto se prueban las dos y "
-            "gana la que encuentre mas cartas.")
+            "fondo pintado con el numero en blanco, que es la opción principal. "
+            "Con auto se prueban las dos y gana la que encuentre más cartas.")
 
         # Modo testing: graba cada frame junto con todo lo que se calculo de el,
         # emparejados por nombre, en testing/sesion-<fecha>/. Es un CheckButton y
         # no un boton aparte a proposito: la grabacion acompaña al analisis (se
         # decide antes de darle a "Iniciar"), no es un proceso independiente que
         # se pueda encender y apagar a mitad y dejar una sesion a trozos.
-        self.testing_check = Gtk.CheckButton(label="Grabar sesion de testing")
+        self.testing_check = Gtk.CheckButton(label="Grabar diagnóstico")
         self.testing_check.set_tooltip_text(
             "Guarda cada captura y sus resultados en testing/sesion-<fecha>/, "
             "en duplas 0001.png + 0001.json, para revisar despues por que la app "
             "dijo lo que dijo. Se activa al iniciar el analisis.")
 
-        box.append(self.start_button)
-        box.append(self.hud_check)
-        box.append(self.calibrate_button)
-        box.append(mesa_label)
-        box.append(self.mesa_combo)
-        box.append(mazo_label)
-        box.append(self.mazo_combo)
-        box.append(self.testing_check)
-        columna.append(box)
-        # el ritmo va en su propio renglon, alineado a la izquierda para que no
-        # empuje el ancho de la ventana cuando el texto crece
+        acciones.append(self.start_button)
+        acciones.append(self.hud_check)
+        acciones.append(self.calibrate_button)
+
+        # El ritmo es estado, no configuración. Se alinea a la derecha de las
+        # acciones principales y deja de mezclarse con los selectores.
         self.ritmo_label.set_halign(Gtk.Align.START)
-        columna.append(self.ritmo_label)
+        self.ritmo_label.set_hexpand(True)
+        self.ritmo_label.set_halign(Gtk.Align.END)
+        self.ritmo_label.add_css_class("muted")
+        acciones.append(self.ritmo_label)
+
+        ajustes.append(mesa_label)
+        ajustes.append(self.mesa_combo)
+        ajustes.append(mazo_label)
+        ajustes.append(self.mazo_combo)
+        ajustes.append(self.testing_check)
+
+        columna.append(acciones)
+        columna.append(ajustes)
+        self.settings_row = ajustes
         return columna
 
     def _build_status_frame(self):
-        frame = Gtk.Frame(label="Estado / avisos")
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        box.set_margin_top(8)
-        box.set_margin_bottom(8)
-        box.set_margin_start(8)
-        box.set_margin_end(8)
+        panel, box = self._panel("Sistema y diagnóstico")
 
         self.region_label = self._markup_label("Recuadro: <i>-</i>")
         self.status_label = self._markup_label("Parado.")
@@ -841,8 +1059,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         box.append(self.status_label)
         box.append(self.testing_label)
         box.append(self.warnings_label)
-        frame.set_child(box)
-        return frame
+        return panel
 
     @staticmethod
     def _markup_label(markup):
@@ -862,18 +1079,20 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
     def _on_toggle(self, _btn):
         if self.running:
-            self.start_button.set_label("Parando...")
+            self.start_button.set_label("Deteniendo…")
             self.start_button.set_sensitive(False)
+            self._set_run_state("DETENIENDO", "status-idle")
             if self.worker:
                 self.worker.stop()
         else:
             self.running = True
-            self.start_button.set_label("Parar analisis")
+            self.start_button.set_label("Detener análisis")
             self.calibrate_button.set_sensitive(False)
             self.testing_check.set_sensitive(False)
             self.mesa_combo.set_sensitive(False)
             self.mazo_combo.set_sensitive(False)
             self.status_label.set_markup("Iniciando...")
+            self._set_run_state("INICIANDO", "status-live")
             intervalo = self.default_interval
 
             self.sesion = None
@@ -920,12 +1139,12 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
     # SIN None: ya no hay "auto". Ver el combo para el porque.
     _MESA_OPCIONES = (2, 3, 6, 8, 9)
 
-    # mismo orden que el combo de mazo; None = que compitan los dos detectores
-    _MAZO_OPCIONES = (None, "glyph", "solid")
+    # mismo orden que el combo de mazo; None = diagnóstico con ambos detectores
+    _MAZO_OPCIONES = ("solid", "glyph", None)
 
     def _mazo(self):
         i = self.mazo_combo.get_active()
-        return self._MAZO_OPCIONES[i] if 0 <= i < len(self._MAZO_OPCIONES) else None
+        return self._MAZO_OPCIONES[i] if 0 <= i < len(self._MAZO_OPCIONES) else "solid"
 
     def _max_players(self):
         """Las plazas de la mesa, siempre un numero: el combo ya no ofrece 'auto'.
@@ -962,6 +1181,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
     def on_error(self, msg):
         self.status_label.set_markup(f'<span foreground="#e74c3c">{GLib.markup_escape_text(msg)}</span>')
+        self._set_run_state("ERROR", "status-error")
         return False
 
     def on_testing_progress(self, n, errores):
@@ -975,7 +1195,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
     def on_stopped(self):
         self.running = False
         self.worker = None
-        self.start_button.set_label("Iniciar analisis")
+        self.start_button.set_label("Iniciar análisis")
         self.start_button.set_sensitive(True)
         self.calibrate_button.set_sensitive(True)
         self.testing_check.set_sensitive(True)
@@ -992,6 +1212,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                 f'</span>')
         if not self.status_label.get_text().startswith("No se pudo"):
             self.status_label.set_markup("Parado.")
+        self._set_run_state("EN ESPERA", "status-idle")
         return False
 
     @staticmethod
@@ -1033,6 +1254,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         return False
 
     def on_result(self, state, recommendation, hand=None):
+        self._set_run_state("ANALIZANDO", "status-live")
         # cachea el nombre del hero (ultimo no-nulo del asiento is_hero): su
         # nameplate a veces muestra la accion ("Igualar"/"Pasar") en vez del
         # nombre, asi que solo se actualiza cuando hay nombre.
@@ -1041,14 +1263,21 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                 self._hero_name = p["name"]
                 break
 
-        self.hero_label.set_markup("Tus cartas: " + cards_markup(state.get("hero_cards")))
-        self.board_label.set_markup("Board: " + (cards_markup(state.get("board"))
-                                                 if state.get("board") else "<i>(preflop)</i>"))
+        self.hero_label.set_markup(
+            '<span size="small" foreground="#8b98a7">TUS CARTAS</span>\n'
+            f'<span size="x-large">{cards_markup(state.get("hero_cards"))}</span>')
+        self.board_label.set_markup(
+            '<span size="small" foreground="#8b98a7">BOARD</span>\n'
+            f'<span size="x-large">{cards_markup(state.get("board")) if state.get("board") else "<i>Preflop</i>"}</span>')
         pot = state.get("pot")
-        self.pot_label.set_markup(f"Bote: {GLib.markup_escape_text(str(pot))}" if pot is not None
-                                  else "Bote: <i>-</i>")
+        pot_text = GLib.markup_escape_text(str(pot)) if pot is not None else "<i>-</i>"
+        self.pot_label.set_markup(
+            '<span size="small" foreground="#8b98a7">BOTE</span>\n'
+            f'<span size="large" weight="bold">{pot_text}</span>')
         if state.get("board"):
             self._ultimo_board = list(state["board"])
+            self._ultimo_contexto_postflop = postmano.contexto_desde_estado(
+                state, hand)
         self.players_label.set_markup(players_markup(state.get("players")))
         acc = (state.get("acciones") or {}).get("acciones") or []
         if acc:
@@ -1065,38 +1294,57 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self._update_hand(hand)
 
         if recommendation:
-            # orden bilingue: ingles grande, castellano debajo mas pequeño. El
-            # ingles ya viene normalizado por la capa de traduccion; el .upper()
-            # solo actua en el respaldo, por si llega una etiqueta sin traducir.
+            # La interfaz está en castellano: la acción legible va primero y el
+            # código inglés de la tabla queda como referencia secundaria.
             esc = GLib.markup_escape_text
             en = recommendation.get("action_en") or str(recommendation["action"]).upper()
             es = recommendation.get("action_es")
             # Una accion DERIVADA (Fase E) es indistinguible a simple vista de una
             # que sale de sus tablas -"CHECK" es "CHECK"-, asi que se distingue por
             # color y con una linea propia que nombra la celda donante. El verde se
-            # reserva para lo que si esta digitalizado.
-            derivada = recommendation.get("source") == "derived"
-            color = "#f39c12" if derivada else "#2ecc71"
-            markup = f'<span size="xx-large" weight="bold" foreground="{color}">{esc(en)}</span>'
-            if es:
-                markup += f'\n<span size="large" foreground="#bdc3c7">{esc(es)}</span>'
+            # reserva para las capturas originales; una guía pública separada va
+            # en azul para que su procedencia tampoco quede oculta.
+            source = recommendation.get("source")
+            derivada = source == "derived"
+            suplementaria = source == "supplemental_chart"
+            color = ("#f39c12" if derivada else
+                     "#38bdf8" if suplementaria else
+                     "#2ecc71")
+            principal = str(es or en).upper()
+            markup = (
+                f'<span size="xx-large" weight="bold" foreground="{color}">'
+                f'{esc(principal)}</span>')
+            if es and en:
+                markup += (
+                    f'\n<span size="small" foreground="#8b98a7">'
+                    f'Código de tabla: {esc(en)}</span>')
             if derivada:
                 markup += (f'\n<span size="small" foreground="#f39c12">inferido de '
                            f'{esc(str(recommendation.get("donor") or "otra celda tuya"))}'
                            f' — confianza {esc(str(recommendation.get("confidence") or "?"))}'
                            f'</span>')
+            elif suplementaria:
+                markup += (
+                    f'\n<span size="small" foreground="#38bdf8">'
+                    f'guía pública complementaria: '
+                    f'{esc(str(recommendation.get("source_name") or "rango suplementario"))}'
+                    f'</span>')
             self.rec_label.set_markup(markup)
             reasoning = recommendation.get("reasoning") or ""
             self.reasoning_label.set_markup(GLib.markup_escape_text(reasoning))
         else:
-            self.rec_label.set_markup('<span size="xx-large" weight="bold" foreground="#7f8c8d">-</span>')
+            self.rec_label.set_markup(
+                '<span size="x-large" weight="bold" foreground="#8b98a7">'
+                'SIN ACCIÓN DISPONIBLE</span>')
             reason = self._no_reco_reason(state)
             self.reasoning_label.set_markup(
                 f'<span foreground="#f39c12"><i>{GLib.markup_escape_text(reason)}</i></span>')
 
         warnings = state.get("warnings") or []
         self.warnings_label.set_markup(
-            ("Avisos: " + GLib.markup_escape_text("; ".join(warnings))) if warnings else "")
+            ("<b>Avisos</b>\n" + GLib.markup_escape_text("\n• ".join(
+                ["• " + warnings[0], *warnings[1:]]))) if warnings else
+            '<span foreground="#6ee7a7">Sin avisos activos.</span>')
         return False
 
     @staticmethod
@@ -1189,23 +1437,28 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                 if not any(hr._names_match(s.get("player", ""), g) for g in ganadores)]
         self.prev_showdown_label.set_markup(
             "mano a mano con: " + ", ".join(opps) if opps else "")
+        self.prev_showdown_label.set_visible(bool(opps))
 
         outcome = hr.hero_outcome(result, self._hero_name)
         if outcome["status"] == "won":
             body = ("Ganaste esta mano con: " + esc(outcome["hero_hand"])
                     if outcome["hero_hand"] else "Ganaste esta mano")
             self.prev_hero_label.set_markup(f'<span foreground="#2ecc71" weight="bold">{body}</span>')
+            self.prev_hero_label.set_visible(True)
         elif outcome["status"] == "split":
             body = ("Empataste el bote con: " + esc(outcome["hero_hand"])
                     if outcome["hero_hand"] else "Empataste el bote")
             self.prev_hero_label.set_markup(f'<span foreground="#3498db" weight="bold">{body}</span>')
+            self.prev_hero_label.set_visible(True)
         elif outcome["status"] == "lost":
             body = ("Perdiste con: " + esc(outcome["hero_hand"])
                     if outcome["hero_hand"] else "Perdiste esta mano")
             self.prev_hero_label.set_markup(f'<span foreground="#e74c3c" weight="bold">{body}</span>')
+            self.prev_hero_label.set_visible(True)
         else:
             # sin evidencia de si el hero jugo la mano: no se afirma nada
             self.prev_hero_label.set_markup("")
+            self.prev_hero_label.set_visible(False)
 
         # ESTUDIO POST-MANO (Fase 4.4). Se lanza en un hilo porque la primera
         # consulta carga el modelo de embeddings y tarda segundos; la mano ya ha
@@ -1213,6 +1466,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.prev_coach_label.set_markup(
             '<span size="small" foreground="#95a5a6"><i>buscando videos sobre '
             'situaciones parecidas...</i></span>')
+        self.prev_coach_label.set_visible(True)
         # SE VACIA AL CONSUMIRLO. Es el board de la mano que acaba de terminar y
         # solo sirve para este estudio; si se queda puesto, la siguiente mano que
         # termine sin haber llegado a leer board -todos se retiran preflop, que es
@@ -1220,39 +1474,114 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # suyo. Al abrir mano no se vacia nada: el board de la mano que se cierra
         # hace falta justo aqui, despues de la frontera.
         board, self._ultimo_board = list(self._ultimo_board), []
+        contexto, self._ultimo_contexto_postflop = (
+            dict(self._ultimo_contexto_postflop), {})
         ganadora = result.get("winning_hand")
         showdown = bool(result.get("showdown"))
-        threading.Thread(target=self._buscar_estudio, args=(board, ganadora, showdown),
+        threading.Thread(target=self._buscar_estudio,
+                         args=(board, ganadora, showdown, contexto),
                          daemon=True).start()
         return False
 
-    def _buscar_estudio(self, board, ganadora, showdown):
+    def _buscar_estudio(self, board, ganadora, showdown, contexto=None):
         try:
             r = postmano.estudiar(board=board, mano_ganadora=ganadora,
-                                  hero_en_showdown=showdown)
+                                  hero_en_showdown=showdown,
+                                  contexto=contexto)
         except Exception:  # noqa: BLE001 - estudiar nunca puede tumbar la UI
             r = None
         GLib.idle_add(self.on_estudio, r)
 
     def on_estudio(self, r):
-        """Pinta las referencias de estudio. NO es consejo sobre la mano que se
-        acaba de jugar -es prosa recuperada por parecido semantico- y el texto lo
-        dice: se ofrece el video y el minuto para poder comprobarlo."""
+        """Pinta fichas condicionadas y referencias semánticas de estudio.
+
+        Ninguna entra en el motor live. Las fichas tienen condiciones
+        verificables; los vídeos siguen presentándose solo como situaciones
+        parecidas y enlazadas a su fuente.
+        """
+        fichas = (r or {}).get("fichas") or []
         refs = (r or {}).get("referencias") or []
-        if not refs:
+        problema = (r or {}).get("problema")
+        if not fichas and not refs and problema:
+            self.prev_coach_label.set_markup(
+                '<span size="small" foreground="#f39c12"><b>Estudio no disponible:</b> '
+                f'{GLib.markup_escape_text(problema)}</span>')
+            return False
+        if not fichas and not refs:
             self.prev_coach_label.set_markup(
                 '<span size="small" foreground="#95a5a6"><i>Sin videos que se parezcan '
                 'lo bastante a esta mano.</i></span>')
             return False
         esc = GLib.markup_escape_text
-        lineas = ['<span size="small" foreground="#95a5a6">Para repasar, videos que hablan '
-                  'de situaciones <i>parecidas</i> (no de esta mano):</span>']
+        lineas = []
+        if fichas:
+            lineas.append(
+                '<span size="small" foreground="#95a5a6"><b>Claves para '
+                'revisar este spot</b> · estudio postmano, no orden live:</span>')
+        for ficha in fichas:
+            source = ficha.get("source") or {}
+            source_name = source.get("name") or "fuente"
+            source_url = source.get("url")
+            video_path = source.get("video_path")
+            source_link = esc(source_name)
+            href = source_url
+            if not href and video_path:
+                try:
+                    href = Path(video_path).as_uri()
+                except ValueError:
+                    href = None
+            if href:
+                source_link = f'<a href="{esc(href)}">{source_link}</a>'
+            timestamp = source.get("timestamp_s")
+            if timestamp is not None:
+                source_link += f' · {esc(postmano.minuto(timestamp))}'
+            lineas.append(
+                f'<span size="small">&#8226; <b>{esc(ficha.get("title") or "")}</b>'
+                f' · {source_link}</span>')
+            lineas.append(
+                f'<span size="small" foreground="#c4ccd4">  '
+                f'{esc(ficha.get("principle") or "")}</span>')
+            consider = ficha.get("consider") or []
+            if consider:
+                lineas.append(
+                    f'<span size="small" foreground="#8b98a7">  Revisar: '
+                    f'{esc(" · ".join(consider[:2]))}</span>')
+            limits = ficha.get("limits") or []
+            if limits:
+                lineas.append(
+                    f'<span size="small" foreground="#7f8c8d"><i>  Límite: '
+                    f'{esc(limits[0])}</i></span>')
+        if refs:
+            if lineas:
+                lineas.append("")
+            lineas.append(
+                '<span size="small" foreground="#95a5a6">Vídeos con situaciones '
+                '<i>parecidas</i> (no analizan esta mano):</span>')
         for x in refs:
-            nombre = (x["video"] or "").replace("_", " ")
+            nombre = x.get("title") or (x["video"] or "").replace("_", " ")
             if len(nombre) > 70:
                 nombre = nombre[:70] + "..."
-            lineas.append(f'<span size="small">&#8226; {esc(nombre)} '
-                          f'<b>{esc(postmano.minuto(x["inicio_s"]))}</b></span>')
+            ruta = x.get("video_path")
+            titulo = esc(nombre)
+            if ruta:
+                try:
+                    titulo = f'<a href="{esc(Path(ruta).as_uri())}">{titulo}</a>'
+                except ValueError:
+                    pass
+            extracto = " ".join((x.get("texto") or "").split())
+            if len(extracto) > 180:
+                extracto = extracto[:177].rsplit(" ", 1)[0] + "..."
+            lineas.append(
+                f'<span size="small">&#8226; {titulo} '
+                f'<b>{esc(postmano.minuto(x["inicio_s"]))}</b>'
+                f' · similitud {100 * x["score"]:.0f}%</span>')
+            if extracto:
+                lineas.append(
+                    f'<span size="small" foreground="#8b98a7">  {esc(extracto)}</span>')
+        if problema:
+            lineas.append(
+                '<span size="small" foreground="#f39c12"><i>Referencias '
+                f'semánticas no disponibles: {esc(problema)}</i></span>')
         self.prev_coach_label.set_markup("\n".join(lineas))
         return False
 

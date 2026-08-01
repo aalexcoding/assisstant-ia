@@ -54,7 +54,7 @@ BANDA_NOMBRE = (0.00, 0.45)
 BUFFER_MAX = 10
 
 
-def _hash_zona(bgr, caja):
+def _hash_zona(bgr, caja, banda=BANDA_NOMBRE):
     x0, y0, x1, y1 = caja
     h, w = bgr.shape[:2]
     x0, y0 = max(0, x0), max(0, y0)
@@ -63,7 +63,7 @@ def _hash_zona(bgr, caja):
     if sub.size == 0:
         return None
     sh = sub.shape[0]
-    sub = sub[int(sh * BANDA_NOMBRE[0]):int(sh * BANDA_NOMBRE[1])]
+    sub = sub[int(sh * banda[0]):int(sh * banda[1])]
     if sub.size == 0:
         return None
     sh, sw = sub.shape[:2]
@@ -96,6 +96,7 @@ class SeatWatch:
         # cambia de tamaño, y si cambiara habria que empezar de cero igual.
         self._seats = seats or seat_map.SEATS
         self._ultimas = {}
+        self._ultimas_completas = {}
         self._pendientes = set()
 
     def cambios(self, bgr, ref):
@@ -128,6 +129,17 @@ class SeatWatch:
         hace."""
         self._pendientes = set(self._seats)
 
+    def cambios_completos(self, bgr, ref):
+        """Cambios en nombre o stack, aptos para invalidar una caché completa."""
+        nuevos = {s: _hash_zona(
+            bgr, seat_map.zone_to_px(ref, self._seats[s]["plate"], bgr.shape),
+            banda=(0.0, 1.0)) for s in self._seats}
+        cambiados = [s for s, h in nuevos.items()
+                     if h is not None and (s not in self._ultimas_completas
+                                           or self._ultimas_completas[s] != h)]
+        self._ultimas_completas.update(nuevos)
+        return cambiados
+
     def olvidar(self):
         """Para empezar de cero: sesion nueva o recuadro recalibrado.
 
@@ -135,6 +147,7 @@ class SeatWatch:
         son de otras cajas y compararlas no significa nada. Para el arranque de
         una mano lo que se quiere es re_censar()."""
         self._ultimas.clear()
+        self._ultimas_completas.clear()
         self._pendientes.clear()
 
 

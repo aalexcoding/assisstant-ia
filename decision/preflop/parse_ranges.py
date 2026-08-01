@@ -29,8 +29,15 @@ salida de stderr para el detalle por imagen):
 - El grid de 3BET-CALL/10BB/1BB (My position)/ no existe en el material
   fuente (carpeta vacia): a 10BB efectivos no hay rango de BB vs apertura.
 
-Uso: .venv/bin/python decision/preflop/parse_ranges.py
+Uso:
+    .venv/bin/python -m decision.preflop.parse_ranges
+    .venv/bin/python -m decision.preflop.parse_ranges --refresh <imagen> [...]
+
+``--refresh`` redigitaliza solo las celdas indicadas y actualiza sus spots en
+el JSON existente. Sirve para reparar una captura concreta sin volver a lanzar
+los cientos de procesos OCR del corpus entero.
 """
+import argparse
 import json
 import os
 import re
@@ -236,6 +243,22 @@ def build_open_raise(dig, result):
             result["open_raise"][stack_key][hero_label] = ranges
 
 
+def store_threebet_spot(dig, result, stack_key, hero_label, opp_label,
+                        ranges, path):
+    """Guarda un spot sin permitir que una etiqueta OCR repetida borre otra."""
+    result["threebet_call"][stack_key].setdefault(hero_label, {})
+    spots = result["threebet_call"][stack_key][hero_label]
+    if opp_label in spots:
+        dig.failures.append((
+            path,
+            f"posición duplicada {hero_label} vs {opp_label}; "
+            "se conserva la primera y no se sobrescribe",
+        ))
+        return False
+    spots[opp_label] = ranges
+    return True
+
+
 def build_threebet(dig, result):
     result["threebet_call"] = {}
     stacks = list_stack_dirs(THREEBET_DIR)
@@ -258,11 +281,53 @@ def build_threebet(dig, result):
                 if out is None:
                     continue
                 hero_label, opp_label, ranges = out
-                result["threebet_call"][stack_key].setdefault(hero_label, {})
-                result["threebet_call"][stack_key][hero_label][opp_label] = ranges
+                # Una lectura errónea del botón de rival podía producir la
+                # misma etiqueta que una imagen anterior. El dict la
+                # sobrescribía en silencio: el total de imágenes seguía
+                # cuadrando aproximadamente, pero desaparecía otra posición
+                # (así quedó fuera BB vs MP1 a 20 BB en ranges.json).
+                store_threebet_spot(
+                    dig, result, stack_key, hero_label, opp_label, ranges, path)
 
 
-def main():
+def refresh_threebet_images(paths):
+    """Redigitaliza imágenes 3BET-CALL concretas sobre el JSON existente."""
+    with open(OUTPUT_PATH, encoding="utf-8") as f:
+        result = json.load(f)
+    dig = Digitizer()
+    updated = []
+    for path in paths:
+        path = os.path.abspath(path)
+        stack_dir = os.path.basename(os.path.dirname(os.path.dirname(path)))
+        if not re.fullmatch(r"\d+(?:\.\d+)?BB", stack_dir):
+            raise ValueError(
+                f"{path}: no está bajo 3BET-CALL/<stack>BB/<hero>/imagen.png")
+        stack_key = stack_dir[:-2]
+        out = dig.process_threebet_image(path, stack_key)
+        if out is None:
+            continue
+        hero_label, opp_label, ranges = out
+        result.setdefault("threebet_call", {}).setdefault(
+            stack_key, {}).setdefault(hero_label, {})[opp_label] = ranges
+        updated.append((stack_key, hero_label, opp_label, path))
+
+    if dig.failures:
+        detalle = "; ".join(f"{p}: {reason}" for p, reason in dig.failures)
+        raise RuntimeError(f"no se actualiza ranges.json: {detalle}")
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    for stack, hero, opp, path in updated:
+        print(f"REFRESH {stack}BB {hero} vs {opp} <- {path}", file=sys.stderr)
+    for warning in dig.warnings:
+        print(f"WARN {warning}", file=sys.stderr)
+    return updated
+
+
+def main(refresh=None):
+    if refresh:
+        refresh_threebet_images(refresh)
+        return
     dig = Digitizer()
     result = {}
     n_open_files = sum(
@@ -300,4 +365,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    parser.add_argument(
+        "--refresh", nargs="+", metavar="PNG",
+        help="redigitaliza solo estas capturas 3BET-CALL sobre ranges.json")
+    args = parser.parse_args()
+    main(refresh=args.refresh)

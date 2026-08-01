@@ -87,6 +87,7 @@ def test_analyze_layout_corta_en_vez_de_leer_zonas_desplazadas(estado_gris):
     assert estado_gris["players"] == []
     assert estado_gris["hero_cards"] == []
     assert estado_gris["board"] == []
+    assert estado_gris["table_reference_valid"] is False
 
 
 def test_ni_llega_a_hacer_ocr(estado_gris):
@@ -112,6 +113,36 @@ def test_un_frame_sin_mesa_tampoco_inventa_nada(analizar):
     st = analizar(frame(None))
     assert st["players"] == []
     assert any("no se encuentra la mesa" in w for w in st["warnings"])
+
+
+def test_un_frame_invalido_solo_intenta_recuperar_el_board(
+        tmp_path, monkeypatch):
+    ruta = tmp_path / "f.png"
+    cv2.imwrite(str(ruta), frame((40, 120, 40)))
+
+    class ReferenciaInvalida:
+        fijada = (120, 90, 900, 400)
+
+        def de(self, _bgr):
+            return self.fijada + (True,)
+
+    llamadas = []
+
+    def solo_board(_bgr, state, ref, mazo):
+        llamadas.append((ref, mazo))
+        state["board_slots"] = ["As", "Kd", "7c"]
+        state["board"] = ["As", "Kd", "7c"]
+        return True
+
+    monkeypatch.setattr(ts, "_leer_solo_board_con_referencia_fijada", solo_board)
+    st = ts.analyze_layout(
+        str(ruta), referencia=ReferenciaInvalida(), mazo="solid")
+
+    assert llamadas == [((120, 90, 900, 400), "solid")]
+    assert st["board"] == ["As", "Kd", "7c"]
+    assert st["players"] == []
+    assert st["hero_cards"] == []
+    assert st["table_reference_valid"] is False
 
 
 def test_una_ruta_que_no_existe_da_su_propio_aviso():
@@ -224,6 +255,14 @@ def test_guardar_y_recuperar():
     assert cro.cached_rank(k) == (True, "K")
 
 
+def test_la_cache_conserva_la_confianza_del_origen():
+    k = cro.cache_key(carta(200), "club")
+    cro.store_rank(k, "K", confidence=0.73)
+
+    assert cro.cached_rank(k) == (True, "K")
+    assert cro.cached_rank_confidence(k) == pytest.approx(0.73)
+
+
 def test_tambien_se_cachea_el_fallo():
     """El OCR es determinista: reintentar un None daria el mismo None, y es el
     caso mas caro."""
@@ -244,6 +283,7 @@ def test_reset_vacia_la_cache():
     cro.store_rank(cro.cache_key(carta(200), "club"), "K")
     cro.reset_rank_cache()
     assert not cro._RANK_CACHE
+    assert not cro._RANK_CONFIDENCE_CACHE
 
 
 # --- REPARTO DE JOBS DE OCR POR IDIOMA --------------------------------------
@@ -328,11 +368,27 @@ def test_un_nameplate_normal_da_nombre_y_no_accion():
     assert acc is None
 
 
+def test_un_nick_en_mayusculas_es_valido_dentro_de_un_nameplate():
+    """BOLIYA16 era visible durante cientos de frames pero el extractor general
+    exige minúsculas para defenderse de etiquetas de UI. Dentro de la zona fija
+    de un asiento ese veto no corresponde."""
+    n, _stk, acc = ts._seat_plate_name_stack(lineas("BOLIYA16", "55,3 BB"))
+    assert n == "BOLIYA16"
+    assert acc is None
+
+
 @pytest.mark.parametrize("verbo", ["Igualar", "All-in"])
 def test_un_nameplate_con_el_verbo_no_devuelve_nombre(verbo):
     n, _stk, acc = ts._seat_plate_name_stack(lineas(verbo))
     assert n is None
     assert acc == verbo, "el verbo se devuelve aparte, que es informacion util"
+
+
+@pytest.mark.parametrize("estado", ["Ciegas", "Ganado", "Ganador"])
+def test_un_texto_temporal_sobre_el_asiento_no_se_vota_como_nombre(estado):
+    n, _stk, acc = ts._seat_plate_name_stack(lineas(estado))
+    assert n is None
+    assert acc == estado
 
 
 # --- ETIQUETAS DE POSICION SEGUN CUANTOS JUGADORES HAY ---------------------

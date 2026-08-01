@@ -1,0 +1,25 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencias del sistema para OCR y GTK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv python3-gi gir1.2-gtk-4.0 xvfb \
+            tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa libtesseract-dev
+      - name: Entorno Python con paquetes GTK del sistema
+        run: |
+          python3 -m venv --system-site-packages .venv-ci
+          .venv-ci/bin/python -m pip install --upgrade pip
+          .venv-ci/bin/python -m pip install -r requirements-dev.txt
+      - name: Contratos tipados
+        run: .venv-ci/bin/python -m mypy domain
+      - name: Suite rápida, incluida la GUI bajo Xvfb
+        run: xvfb-run -a .venv-ci/bin/python -m pytest -m "not lento and not corpus"

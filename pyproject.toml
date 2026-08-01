@@ -24,6 +24,11 @@ markers = [
     "corpus: necesita las sesiones grabadas en testing/ (no versionadas)",
 ]
 
+[tool.mypy]
+files = ["domain"]
+python_version = "3.12"
+strict = true
+
 [tool.coverage.run]
 branch = true
 source = ["core", "decision", "vision"]

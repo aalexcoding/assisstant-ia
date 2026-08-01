@@ -1,0 +1,471 @@
+{
+  "schema_version": 1,
+  "cards": [
+    {
+      "id": "multiway_tight_linear",
+      "title": "Multiway: rangos más fuertes y menos apuestas automáticas",
+      "priority": 100,
+      "recommendation_level": "study_only",
+      "confidence": "high",
+      "conditions": {
+        "street": ["flop", "turn", "river"],
+        "opponents_min": 2
+      },
+      "principle": "Al haber varios rivales, la carga de defensa se reparte: conviene apostar y continuar con rangos más fuertes que heads-up, abandonar más aire y valorar más el potencial de nuts.",
+      "consider": [
+        "Reducir las apuestas de rango y los faroles puros.",
+        "Preferir tamaños más contenidos salvo ventaja de nuts muy clara.",
+        "Dar más peso a posición, redraws y equity retenida cuando pagan."
+      ],
+      "avoid": [
+        "Trasladar sin ajustes una estrategia heads-up de c-bet automática.",
+        "Suponer que cada rival debe defender la misma frecuencia que heads-up."
+      ],
+      "limits": [
+        "Es una heurística general: no sustituye rangos multiway específicos ni modela cooperación o perfiles rivales."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — 10 Tips for Multiway Pots in Poker",
+        "url": "https://blog.gtowizard.com/10-tips-multiway-pots-in-poker/"
+      }
+    },
+    {
+      "id": "srp_ip_cbet_static",
+      "title": "C-bet IP en flop estático",
+      "priority": 75,
+      "exclusive_group": "srp_ip_cbet_texture",
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["single_raised"],
+        "initiative": ["con_iniciativa"],
+        "position_relation": ["IP"],
+        "opponents_max": 1,
+        "texture_any": ["static"]
+      },
+      "principle": "En heads-up, el agresor preflop IP conserva ventaja de rango y los flops desconectados/rainbow suelen admitir una frecuencia de c-bet mayor, a menudo con tamaño pequeño.",
+      "consider": [
+        "Empezar por la interacción de ambos rangos preflop, no solo por si la mano propia conectó.",
+        "Usar el tamaño pequeño como simplificación en boards que apenas ayudan al caller."
+      ],
+      "avoid": [
+        "Convertir la tendencia agregada en una apuesta del 100% sin comprobar posiciones y stacks."
+      ],
+      "limits": [
+        "La fuente estudia MTT heads-up, especialmente PFR contra defensa de ciegas; no fija una frecuencia universal."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Flop Heuristics: IP C-Betting in MTTs",
+        "url": "https://blog.gtowizard.com/flop-heuristics-ip-c-betting-in-mtts/"
+      }
+    },
+    {
+      "id": "srp_ip_cbet_dynamic",
+      "title": "C-bet IP en flop dinámico",
+      "priority": 76,
+      "exclusive_group": "srp_ip_cbet_texture",
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["single_raised"],
+        "initiative": ["con_iniciativa"],
+        "position_relation": ["IP"],
+        "opponents_max": 1,
+        "texture_any": ["dynamic"]
+      },
+      "principle": "Los flops conectados o con proyectos ayudan más al rango que pagó preflop; el agresor IP suele chequear más y, cuando apuesta, necesita una selección más polar que en un board seco.",
+      "consider": [
+        "Aumentar los checks con manos medias y aire sin buenas continuaciones.",
+        "Relacionar el tamaño con vulnerabilidad, ventaja de nuts y conectividad."
+      ],
+      "avoid": [
+        "Hacer range-bet pequeño solo por conservar la iniciativa."
+      ],
+      "limits": [
+        "Monocolor, conectado y two-tone no son equivalentes; la ficha solo marca la dirección general."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Flop Heuristics: IP C-Betting in MTTs",
+        "url": "https://blog.gtowizard.com/flop-heuristics-ip-c-betting-in-mtts/"
+      }
+    },
+    {
+      "id": "srp_oop_pfr_no_autocbet",
+      "title": "Agresor preflop OOP: evitar la c-bet automática",
+      "priority": 72,
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["single_raised"],
+        "initiative": ["con_iniciativa"],
+        "position_relation": ["OOP"],
+        "opponents_max": 1
+      },
+      "principle": "En bote subido simple y fuera de posición, apostar en exceso expone el rango: los boards altos/estáticos toleran más c-bet pequeña, mientras que los dinámicos exigen más checks.",
+      "consider": [
+        "Conservar manos fuertes y proyectos en el rango de check.",
+        "Comprobar ventaja de rango y de nuts antes de apostar."
+      ],
+      "avoid": [
+        "C-betear cualquier par de cartas por haber sido el agresor preflop."
+      ],
+      "limits": [
+        "No debe extrapolarse a botes 3-bet, donde el SPR y las ventajas de rango cambian."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Exploiting Excessive C-Betting by OOP",
+        "url": "https://blog.gtowizard.com/exploiting-excessive-c-betting-by-oop/"
+      }
+    },
+    {
+      "id": "threebet_oop_aggressor_cbet",
+      "title": "Bote 3-bet: agresor OOP en flop",
+      "priority": 84,
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["3bet"],
+        "initiative": ["con_iniciativa"],
+        "position_relation": ["OOP"],
+        "opponents_max": 1
+      },
+      "principle": "El agresor OOP puede c-betear más a menudo en un bote 3-bet que en un SRP por los rangos fuertes y el menor SPR; el stack, las posiciones y el board siguen decidiendo cuánto.",
+      "consider": [
+        "A menor SPR, más manos pueden apostar sin sufrir tantas calles futuras.",
+        "Mantener tamaño pequeño en muchos flops y reducir frecuencia cuando el board favorece al caller."
+      ],
+      "avoid": [
+        "Aplicar la regla de check frecuente del SRP OOP sin ajustar por SPR.",
+        "Tratar BTN, CO y posiciones tempranas como rangos equivalentes."
+      ],
+      "limits": [
+        "La ficha requiere que el historial haya observado exactamente dos agresiones preflop."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — C-Betting OOP in 3-Bet Pots",
+        "url": "https://blog.gtowizard.com/c-betting-oop-in-3-bet-pots/"
+      }
+    },
+    {
+      "id": "fourbet_oop_caller_check",
+      "title": "Bote 4-bet: caller OOP en flop",
+      "priority": 86,
+      "recommendation_level": "study_only",
+      "confidence": "high",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["4bet_plus"],
+        "initiative": ["sin_iniciativa"],
+        "position_relation": ["OOP"],
+        "opponents_max": 1
+      },
+      "principle": "Como caller OOP en un bote 4-bet, el punto de partida es chequear el rango en la gran mayoría de flops; los donk bets pequeños existen solo en boards muy concretos.",
+      "consider": [
+        "Construir primero la respuesta frente a la c-bet del agresor.",
+        "Tratar cualquier lead como excepción que necesita board y rangos exactos."
+      ],
+      "avoid": [
+        "Generalizar un donk del solver a todos los boards con una carta alta."
+      ],
+      "limits": [
+        "Tres o más agresiones observadas se agrupan como 4bet+; una 5-bet requiere análisis específico."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — 4-Bet Pots OOP as the Preflop Caller",
+        "url": "https://blog.gtowizard.com/4-bet-pots-oop-as-the-preflop-caller/"
+      }
+    },
+    {
+      "id": "blind_defense_cbet_size",
+      "title": "Defensa de ciega: el tamaño cambia el umbral",
+      "priority": 82,
+      "recommendation_level": "study_only",
+      "confidence": "high",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["single_raised"],
+        "initiative": ["sin_iniciativa"],
+        "position_relation": ["OOP"],
+        "opponents_max": 1,
+        "facing_bet": true,
+        "reliable_call_price": true
+      },
+      "principle": "La respuesta desde ciegas depende tanto del tamaño de c-bet como del board: frente a tamaños mayores se defiende más estrecho, aunque la lectura final necesita rangos y textura.",
+      "consider": [
+        "Comparar el precio del call con la capacidad de realizar equity en calles futuras.",
+        "Reservar raises para valor y proyectos que se beneficien de generar fold equity."
+      ],
+      "avoid": [
+        "Interpretar una apuesta grande como farol y ampliar automáticamente los calls."
+      ],
+      "limits": [
+        "Pot odds y equity bruta no incluyen equity futura, rake ni distribución de rangos."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Flop Heuristics for Defending the Blinds in MTTs",
+        "url": "https://blog.gtowizard.com/flop-heuristics-for-defending-the-blinds-in-mtts/"
+      }
+    },
+    {
+      "id": "blind_defense_default_check",
+      "title": "Defensa de ciega: empezar chequeando al agresor",
+      "priority": 73,
+      "recommendation_level": "study_only",
+      "confidence": "high",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["single_raised"],
+        "initiative": ["sin_iniciativa"],
+        "position_relation": ["OOP"],
+        "opponents_max": 1
+      },
+      "principle": "Después de pagar preflop desde una ciega, el punto de partida es chequear al agresor en casi todos los flops; los donk bets se concentran en excepciones muy concretas, sobre todo boards bajos y conectados.",
+      "consider": [
+        "Mantener manos fuertes en el rango de check para poder responder a la c-bet.",
+        "Exigir una ventaja clara de nuts o un exploit identificado antes de liderar."
+      ],
+      "avoid": [
+        "Donk betear por protección solo porque el board parece bajo o favorable."
+      ],
+      "limits": [
+        "La excepción de boards conectados es de baja frecuencia y no constituye por sí sola una orden de apostar."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Flop Heuristics for Defending the Blinds in MTTs",
+        "url": "https://blog.gtowizard.com/flop-heuristics-for-defending-the-blinds-in-mtts/"
+      }
+    },
+    {
+      "id": "ip_cold_caller_vs_cbet",
+      "title": "Cold caller IP frente a c-bet",
+      "priority": 81,
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["single_raised"],
+        "initiative": ["sin_iniciativa"],
+        "position_relation": ["IP"],
+        "opponents_max": 1,
+        "facing_bet": true
+      },
+      "principle": "El cold caller IP responde a la c-bet principalmente pagando; el raise es selectivo porque la posición permite realizar equity y tomar decisiones con más información.",
+      "consider": [
+        "Dar más valor al call con manos que conservan equity y jugabilidad.",
+        "Seleccionar raises por ventaja de nuts, vulnerabilidad o proyectos robustos."
+      ],
+      "avoid": [
+        "Sobreraisear manos medias que se benefician de mantener dentro los faroles."
+      ],
+      "limits": [
+        "La fuente es MTT y no sustituye rangos exactos por posiciones, stacks y tamaño de apuesta."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Flop Heuristics: IP Cold-Caller in MTTs",
+        "url": "https://blog.gtowizard.com/flop-heuristics-ip-cold-caller-in-mtts/"
+      }
+    },
+    {
+      "id": "ip_cold_caller_after_check",
+      "title": "Cold caller IP cuando el agresor chequea",
+      "priority": 79,
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["single_raised"],
+        "initiative": ["sin_iniciativa"],
+        "position_relation": ["IP"],
+        "opponents_max": 1,
+        "facing_bet": false,
+        "observed_action_counts": [
+          {"street": "flop", "accion": "check", "min": 1}
+        ]
+      },
+      "principle": "El check del agresor OOP no significa que haya abandonado: el cold caller IP debe apostar de forma selectiva y conservar checks, aprovechando su posición sin convertir todo el aire en farol.",
+      "consider": [
+        "En boards estáticos, polarizar más y proteger el rango de check con manos medias.",
+        "En boards dinámicos, usar tamaños menores con valor vulnerable y proyectos."
+      ],
+      "avoid": [
+        "Interpretar un check como permiso para apostar el rango completo."
+      ],
+      "limits": [
+        "Solo se activa cuando el historial capturó un check de flop y un to_call numérico igual a cero."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Flop Heuristics: IP Cold-Caller in MTTs",
+        "url": "https://blog.gtowizard.com/flop-heuristics-ip-cold-caller-in-mtts/"
+      }
+    },
+    {
+      "id": "threebet_ip_aggressor_cbet",
+      "title": "Bote 3-bet: agresor IP en flop",
+      "priority": 85,
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["3bet"],
+        "initiative": ["con_iniciativa"],
+        "position_relation": ["IP"],
+        "opponents_max": 1
+      },
+      "principle": "El 3-bettor IP suele llegar con ventaja de rango y posición, por lo que puede c-betear agresivamente en muchos flops; el tamaño y los checks dependen del SPR y de cuánto alcanza el board al caller.",
+      "consider": [
+        "En stacks cortos, tamaños muy pequeños pueden repartir la presión entre flop, turn y river.",
+        "Conservar checks en flops que golpean el rango de call o donde la ventaja de nuts se estrecha."
+      ],
+      "avoid": [
+        "Confundir una frecuencia agregada alta con range-bet obligatorio."
+      ],
+      "limits": [
+        "La fuente estudia MTT; posiciones, profundidad e ICM pueden cambiar de forma material la estrategia."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — C-Betting IP in 3-Bet Pots",
+        "url": "https://blog.gtowizard.com/c-betting-ip-in-3-bet-pots/"
+      }
+    },
+    {
+      "id": "threebet_ip_caller_position",
+      "title": "Bote 3-bet: caller IP aprovecha posición",
+      "priority": 83,
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["3bet"],
+        "initiative": ["sin_iniciativa"],
+        "position_relation": ["IP"],
+        "opponents_max": 1
+      },
+      "principle": "El caller IP parte con desventaja de rango frente al 3-bettor, pero puede compensar esperando información y realizando mejor su equity; los stacks profundos y boards dinámicos aumentan el valor de esa paciencia.",
+      "consider": [
+        "Usar el call y el check-back para obligar al agresor OOP a revelar su estrategia en calles posteriores.",
+        "Aumentar la agresión solo cuando textura, rango y mano concreta lo justifican."
+      ],
+      "avoid": [
+        "Forzar la acción en flop solo para recuperar la iniciativa."
+      ],
+      "limits": [
+        "No cubre squeezes ni botes multiway, que requieren rangos más fuertes."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Mastering Three-Bet Pots In Position in MTTs",
+        "url": "https://blog.gtowizard.com/mastering-three-bet-pots-in-position-in-mtts/"
+      }
+    },
+    {
+      "id": "threebet_oop_caller_default_check",
+      "title": "Bote 3-bet: caller OOP empieza chequeando",
+      "priority": 83,
+      "recommendation_level": "study_only",
+      "confidence": "high",
+      "conditions": {
+        "street": ["flop"],
+        "pot_type": ["3bet"],
+        "initiative": ["sin_iniciativa"],
+        "position_relation": ["OOP"],
+        "opponents_max": 1
+      },
+      "principle": "El caller OOP tiene normalmente un rango más débil y capado que el 3-bettor; debe comenzar chequeando casi todos los flops y no interpretar una c-bet pequeña como debilidad.",
+      "consider": [
+        "Responder al tamaño pequeño con una mezcla de calls, folds y raises ligada al board y al bajo SPR.",
+        "Reconocer que se puede foldear más que MDF cuando el agresor conserva una ventaja fuerte de equity."
+      ],
+      "avoid": [
+        "Defender por obligación matemática cada combo frente a una c-bet pequeña.",
+        "Crear un rango amplio de donk bets sin una razón específica del board."
+      ],
+      "limits": [
+        "Las excepciones de lead aparecen en boards muy coordinados; requieren rangos y stacks exactos."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Mastering Three-Bet Pots Out of Position in MTTs",
+        "url": "https://blog.gtowizard.com/mastering-three-bet-pots-out-of-position-in-mtts/"
+      }
+    },
+    {
+      "id": "river_bluffcatch_price_first",
+      "title": "River bluff-catch: primero precio y rango, después blockers",
+      "priority": 88,
+      "recommendation_level": "study_only",
+      "confidence": "high",
+      "conditions": {
+        "street": ["river"],
+        "opponents_max": 1,
+        "facing_bet": true,
+        "reliable_call_price": true
+      },
+      "principle": "En un bluff-catch de river, el precio del call fija la equity mínima; los blockers sirven para ordenar decisiones cercanas, pero son secundarios frente a la frecuencia real de valor y faroles del rango rival.",
+      "consider": [
+        "Usar call / bote final como umbral y revisar qué combos de valor y farol llegan por la secuencia.",
+        "Preferir blockers que eliminen valor y no eliminen los faroles naturales."
+      ],
+      "avoid": [
+        "Pagar solo por tener un blocker atractivo si el rival no llega con suficientes faroles.",
+        "Comparar la equity de check-down contra un rango aleatorio con el umbral como si fuera una decisión resuelta."
+      ],
+      "limits": [
+        "La app todavía no reconstruye el rango condicionado por toda la secuencia ni incorpora rake o ICM."
+      ],
+      "source": {
+        "kind": "public_guide",
+        "name": "GTO Wizard — Understanding Blockers in Poker",
+        "url": "https://blog.gtowizard.com/understanding-blockers-in-poker/"
+      }
+    },
+    {
+      "id": "local_turn_probe_after_xx",
+      "title": "Probe turn tras check-check flop",
+      "priority": 78,
+      "recommendation_level": "study_only",
+      "confidence": "medium",
+      "conditions": {
+        "street": ["turn"],
+        "pot_type": ["single_raised"],
+        "initiative": ["sin_iniciativa"],
+        "position_relation": ["OOP"],
+        "opponents_max": 1,
+        "observed_action_counts": [
+          {"street": "flop", "accion": "check", "min": 2}
+        ]
+      },
+      "principle": "Tras check-check flop, el check del agresor debilita parte de su rango y abre probes en turn; el tamaño debe elegirse según la mano y el runout, no como apuesta automática.",
+      "consider": [
+        "Separar probes pequeños/despolarizados de tamaños grandes y polarizados.",
+        "Reducir tamaños grandes cuando el turn completa proyectos que vuelven frágil la equity."
+      ],
+      "avoid": [
+        "Interpretar el check behind como rango siempre débil o sin trampas."
+      ],
+      "limits": [
+        "Solo aparece si el registro capturó dos checks de flop; una secuencia incompleta no se rellena por inferencia."
+      ],
+      "source": {
+        "kind": "local_transcript",
+        "name": "Zeros Poker — Cómo y cuándo hacer Probe bet en el turn tras X-X flop",
+        "video_path": "/mnt/qnap/Poker/VIDEOS ZEROS POKER/TORNEOS/6. EL CURSO ABSOLUTO DE JUEGO POSTFLOP (Avanzado)/1. Defensa de ciegas (Juego sin iniciativa OOP)/23. Cómo y cuándo hacer Probe bet en el turn a 30%, 75%, o 150% pot tras X-X flop.mp4",
+        "timestamp_s": 15
+      }
+    }
+  ]
+}

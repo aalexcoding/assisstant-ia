@@ -63,6 +63,7 @@ ESQUEMA = {
     "vs_position": (str, type(None)),
     "stack_unit": (str,),
     "chat_lines": (list, type(None)),
+    "table_reference_valid": (bool,),
 }
 
 
@@ -76,7 +77,7 @@ def reanalizados(corpus_muestra):
     por_sesion, salida = {}, []
     for fr in sorted(corpus_muestra, key=lambda f: (f.sesion, f.n)):
         an = por_sesion.setdefault(
-            fr.sesion, Analizador(seed_equity=1, tmp_frame="/tmp/poker_e2e_frame.png"))
+            fr.sesion, Analizador(seed_equity=1))
         t0 = time.perf_counter()
         try:
             res = an.analizar(fr.png)
@@ -207,7 +208,7 @@ def al_dia():
         # cuanto se grabo la primera sesion de 9: 4 tests rojos sin que nada
         # estuviera mal.
         meta = corpus.meta_de_sesion(fs[0].carpeta)
-        an = Analizador(seed_equity=1, tmp_frame="/tmp/poker_oro_frame.png",
+        an = Analizador(seed_equity=1,
                         max_players=meta.get("max_players"),
                         mazo=meta.get("mazo"))
         for fr in sorted(fs, key=lambda f: f.n):

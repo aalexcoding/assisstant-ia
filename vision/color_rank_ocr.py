@@ -100,6 +100,13 @@ RANK_TALL_FRAC = 0.6         # alto minimo (fraccion del mas alto) para ser glif
 ONE_MAX_ASPECT = 0.4         # el '1' es una barra fina: ancho/alto < esto
 ONE_MAX_OVERLAP = 0.2        # '1' y '0' van lado a lado: solape horizontal pequeño
 
+# El índice del mazo solid está en la esquina superior izquierda. Se escala con
+# el ANCHO porque las cartas del hero pueden venir cortadas por abajo: su ancho
+# se conserva, su alto no. Los límites incluyen con margen los glifos medidos
+# en cartas reales de 85 px (x=7..38, y=9..47).
+SOLID_INDEX_WIDTH_FRAC = 0.70
+SOLID_INDEX_HEIGHT_FRAC = 0.72
+
 
 def _white_mask(card_bgr):
     hsv = cv2.cvtColor(card_bgr, cv2.COLOR_BGR2HSV)
@@ -257,13 +264,21 @@ def rango_grande_mask(card_bgr, deck="solid"):
     glyph_card_detector.INDICE_ANCHO_FRAC, incluido por que se escala con el ANCHO
     de la carta y no con su alto).
 
-    El mazo de fondo solido NO se toca: alli el rango va sobre color plano sin
-    ilustracion que compita, y _fila_de_arriba esta medido 40/40 tal cual."""
+    En el mazo de fondo sólido se aplica la misma propiedad física: el rango
+    blanco está en el índice superior izquierdo. Así una ficha clara apoyada
+    abajo no puede ganar por tamaño al componente del rango."""
     mask = rank_mask(card_bgr, deck)
     if deck == "glyph":
         alto, ancho = mask.shape
         lh = min(alto, int(ancho * glyph_card_detector.INDICE_ALTO_FRAC))
         lw = max(1, int(ancho * glyph_card_detector.INDICE_ANCHO_FRAC))
+        solo_indice = np.zeros_like(mask)
+        solo_indice[:lh, :lw] = mask[:lh, :lw]
+        mask = solo_indice
+    else:
+        alto, ancho = mask.shape
+        lh = max(1, min(alto, int(ancho * SOLID_INDEX_HEIGHT_FRAC)))
+        lw = max(1, min(ancho, int(ancho * SOLID_INDEX_WIDTH_FRAC)))
         solo_indice = np.zeros_like(mask)
         solo_indice[:lh, :lw] = mask[:lh, :lw]
         mask = solo_indice
@@ -376,6 +391,7 @@ CACHE_MARGEN = 0.15
 CACHE_MAX = 512
 
 _RANK_CACHE = {}
+_RANK_CONFIDENCE_CACHE = {}
 
 
 def cache_key(card_bgr, suit, deck="solid"):
@@ -400,7 +416,16 @@ def cached_rank(key):
     return True, _RANK_CACHE[key]
 
 
-def store_rank(key, rank):
+def cached_rank_confidence(key):
+    """Confianza original de una entrada de caché, o ``None`` si no se guardó.
+
+    Se mantiene separada de ``cached_rank`` para no romper su contrato histórico
+    ``(hay_entrada, rango)``.
+    """
+    return _RANK_CONFIDENCE_CACHE.get(key)
+
+
+def store_rank(key, rank, confidence=None):
     if key is None:
         return
     if len(_RANK_CACHE) >= CACHE_MAX:
@@ -408,12 +433,18 @@ def store_rank(key, rank):
         # de una sesion es pequeño, y un dict de 512 entradas ya cubre de sobra
         # una mano larga. Vaciar cuesta un frame lento cada muchisimos.
         _RANK_CACHE.clear()
+        _RANK_CONFIDENCE_CACHE.clear()
     _RANK_CACHE[key] = rank
+    if confidence is not None:
+        _RANK_CONFIDENCE_CACHE[key] = float(max(0.0, min(1.0, confidence)))
+    else:
+        _RANK_CONFIDENCE_CACHE.pop(key, None)
 
 
 def reset_rank_cache():
     """Para tests y para empezar sesion limpia."""
     _RANK_CACHE.clear()
+    _RANK_CONFIDENCE_CACHE.clear()
 
 
 # --- CALCO DE GLIFOS: leer el rango sin OCR ---
@@ -465,6 +496,35 @@ GLIFOS_POR_MAZO = {"solid": GLIFOS_FICHERO, "glyph": GLIFOS_FICHERO_GLYPH}
 # En ORDEN DE BARAJA, uno por rango, para que el atlas se pueda revisar de un
 # vistazo: vision/glifos_rango.png se abre y se leen los trece seguidos.
 GLIFOS_ETIQUETAS = ("A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K")
+# VARIAS PLANTILLAS POR RANGO en el mazo de cara blanca, y la etiqueta se repite.
+#
+# Con una sola por rango el calco resolvia el 56% y rechazaba glifos que a ojo son
+# obvios: 139 sietes rechazados a 0,78-0,79 con el umbral en 0,88. El motivo no era
+# el umbral ni el tamaño de la muestra: agrupando los 1.053 glifos SIN ETIQUETA
+# salen 51 familias de forma, de 2 a 7 por rango -el 2 sale en siete, el 6 en
+# seis-, y una sola plantilla no puede cubrir varias. Son grosores de trazo
+# distintos: `_encajar` normaliza el TAMAÑO pero no el grosor, y el trazo depende de
+# a que escala venia la carta cuando se le aplico el umbral de color.
+#
+# EL ORDEN NO ES DE BARAJA, es el de los grupos por tamaño, porque el atlas se
+# revisa como lo que es: una hoja de contactos de 51 casillas que se leen y se
+# etiquetan a ojo. Ese etiquetado es el del metodo original -"de los 21 grupos que
+# salen se guardan SOLO los trece que son un glifo entero; ese descarte lo hace el
+# ojo"- y aqui de los 51 no hubo que descartar ninguno: los 51 se leen limpios. Lo
+# que si cazo el ojo fue lo de antes: agrupando por lo que dice la correlacion,
+# entre 88 candidatos a Q habia tres 3 y un glifo roto.
+#
+# Medido con el atlas construido con la PRIMERA MITAD de los frames y probado en la
+# SEGUNDA -manos y cartas que ningun grupo vio-: 80,1% de cobertura con 0,88, y el
+# techo de los impostores no se mueve (maximo 0,813).
+GLIFOS_ETIQUETAS_GLYPH = (
+    "7", "2", "10", "4", "2", "5", "Q", "7", "2", "Q",
+    "9", "5", "2", "5", "6", "A", "5", "J", "7", "K",
+    "Q", "6", "3", "K", "Q", "A", "8", "4", "6", "8",
+    "3", "A", "9", "K", "6", "2", "6", "J", "J", "A",
+    "10", "3", "4", "2", "2", "5", "K", "Q", "9", "6",
+    "8")
+GLIFOS_ETIQUETAS_POR_MAZO = {"solid": GLIFOS_ETIQUETAS, "glyph": GLIFOS_ETIQUETAS_GLYPH}
 GLIFO_LADO = 40
 # SE DA POR BUENO CUANDO SE CALCA EL 90%. El criterio es literal: que fraccion de
 # los pixeles del glifo coincide con la plantilla, medido sobre el area del mas
@@ -506,6 +566,17 @@ GLIFO_UMBRAL = 0.95
 # igual pero pagando OCR en 77 cartas de mas. Y las 5 elecciones equivocadas de la
 # correlacion (6->8 x2, J->3 x2, 6->5) las caza el acuerdo: ninguna llega a 0.85.
 GLIFO_UMBRAL_POR_MAZO = {"solid": GLIFO_UMBRAL, "glyph": 0.88}
+
+# Calidad mínima para mandar un rango del BOARD sólido al OCR cuando no alcanza
+# el umbral estricto de calco. No decide qué rango es: solo comprueba que la
+# forma todavía se parece a algún glifo completo.
+#
+# Medido sobre 462 lecturas de board contrastadas visualmente en tres sesiones:
+# 460 correctas y las dos cartas tapadas por fichas de 011143/0271. Las tapadas
+# dan 0,507 y 0,545; la correcta más baja da 0,579 (un board resaltado al
+# terminar la mano) y en las otras dos sesiones el mínimo es 0,840. Se coloca
+# en el hueco, 0,56.
+SOLID_BOARD_RANK_SHAPE_MIN = 0.56
 _GLIFOS = {}
 
 
@@ -514,19 +585,26 @@ def umbral_de_calco(deck="solid"):
     return GLIFO_UMBRAL_POR_MAZO.get(deck, GLIFO_UMBRAL)
 
 
+def etiquetas_de_mazo(deck="solid"):
+    """Las etiquetas del atlas de este mazo, UNA POR CASILLA. Se repiten cuando un
+    rango tiene varias familias de forma; ver GLIFOS_ETIQUETAS_GLYPH."""
+    return GLIFOS_ETIQUETAS_POR_MAZO.get(deck, GLIFOS_ETIQUETAS)
+
+
 def _glifos(deck="solid"):
     """(etiquetas, matriz de vectores normalizados) del mazo. Se carga una vez."""
     if deck not in _GLIFOS:
+        etiquetas = etiquetas_de_mazo(deck)
         atlas = cv2.imread(GLIFOS_POR_MAZO.get(deck, GLIFOS_FICHERO),
                            cv2.IMREAD_GRAYSCALE)
         if atlas is None:
             _GLIFOS[deck] = ((), np.zeros((0, GLIFO_LADO * GLIFO_LADO), np.float32))
         else:
             vs = []
-            for i in range(len(GLIFOS_ETIQUETAS)):
+            for i in range(len(etiquetas)):
                 g = atlas[:, i * GLIFO_LADO:(i + 1) * GLIFO_LADO].astype(np.float32) / 255.0
                 vs.append(_vector_glifo(g))
-            _GLIFOS[deck] = (GLIFOS_ETIQUETAS, np.array(vs))
+            _GLIFOS[deck] = (etiquetas, np.array(vs))
     return _GLIFOS[deck]
 
 
@@ -561,7 +639,7 @@ def _plantilla_binaria(i, deck="solid"):
                            cv2.IMREAD_GRAYSCALE)
         _PLANTILLAS_BIN[deck] = [
             (atlas[:, k * GLIFO_LADO:(k + 1) * GLIFO_LADO] > 127)
-            for k in range(len(GLIFOS_ETIQUETAS))] if atlas is not None else []
+            for k in range(len(etiquetas_de_mazo(deck)))] if atlas is not None else []
     return _PLANTILLAS_BIN[deck][i]
 
 
@@ -639,6 +717,34 @@ def add_rank_jobs(batch, card_bgr, whitelist="0123456789AKQJ", deck="solid"):
     return start, batch.job_count()
 
 
+def resolve_rank_with_confidence(texts, card_bgr=None, deck="solid"):
+    """Devuelve ``(rango, confianza)`` conservando la abstención del OCR.
+
+    La confianza es la fracción del voto máximo posible que respalda al
+    ganador, no solo la fracción de las respuestas no vacías. Así, una única
+    respuesta entre muchas variantes no se convierte artificialmente en 1.0.
+    """
+    if card_bgr is not None and is_ten(card_bgr, deck):
+        return "10", 1.0
+    n_full = len(PSM_SCALE_VARIANTS)
+    weighted = []
+    total_posible = 0
+    for i, t in enumerate(texts):
+        peso = FULL_VOTE_WEIGHT if i < n_full else 1
+        total_posible += peso
+        c = normalize_rank(t)
+        if c is not None:
+            weighted.extend([c] * peso)
+    if not weighted or not total_posible:
+        return None, 0.0
+    counts = Counter(weighted)
+    max_count = max(counts.values())
+    winners = [c for c in counts if counts[c] == max_count]
+    if len(winners) != 1:
+        return None, 0.0
+    return winners[0], max_count / total_posible
+
+
 def resolve_rank(texts, card_bgr=None, deck="solid"):
     """Rango por voto mayoritario ponderado sobre las lecturas validas.
 
@@ -648,18 +754,4 @@ def resolve_rank(texts, card_bgr=None, deck="solid"):
     - Las lecturas de la mascara completa (primera mitad, metodo probado)
       cuentan doble; las de la vista close (segunda mitad) corrigen glifos
       redondos. Empate a maximo -> None (mejor omitir que inventar una carta)."""
-    if card_bgr is not None and is_ten(card_bgr, deck):
-        return "10"
-    n_full = len(PSM_SCALE_VARIANTS)
-    weighted = []
-    for i, t in enumerate(texts):
-        c = normalize_rank(t)
-        if c is None:
-            continue
-        weighted.extend([c] * (FULL_VOTE_WEIGHT if i < n_full else 1))
-    if not weighted:
-        return None
-    counts = Counter(weighted)
-    max_count = max(counts.values())
-    winners = [c for c in counts if counts[c] == max_count]
-    return winners[0] if len(winners) == 1 else None
+    return resolve_rank_with_confidence(texts, card_bgr, deck)[0]

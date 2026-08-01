@@ -31,6 +31,10 @@ import re
 # "OPEN RAISE (3.5 BB)" -> base="OPEN RAISE", size="3.5"
 SIZING_RE = re.compile(r"^(?P<base>.*?)\s*\(\s*(?P<size>\d+(?:[.,]\d+)?)\s*BB\s*\)\s*$",
                        re.IGNORECASE)
+MIXED_PART_RE = re.compile(
+    r"^(?P<action>.*?)\s+(?P<percentage>\d+(?:[.,]\d+)?)%$",
+    re.IGNORECASE,
+)
 
 # Etiqueta sintetica del motor (no sale de ranges.json): la BB nunca ABRE el
 # bote, asi que cuando nadie ha subido su decision es pasar y ver el flop gratis.
@@ -48,6 +52,8 @@ _BASE = {
     "ALL IN":              ("ALL IN", "con todo (all in)"),
     "CALL":                ("CALL", "pagar"),
     "MARGINAL CALL":       ("MARGINAL CALL", "pagar, justo"),
+    "CALL 50% / FOLD 50%": ("CALL 50% / FOLD 50%",
+                            "pagar el 50% / no ir el 50%"),
     "CHECK (BB OPTION)":   ("CHECK", "pasar (opcion de la BB)"),
     # Fase E: la opcion de la BB derivada de la fila SB (ver preflop/derive.py).
     # "CHECK" a secas y no "CHECK (BB OPTION)" porque aqui SI se ha mirado la
@@ -57,6 +63,7 @@ _BASE = {
     "MARGINAL RAISE OVER LIMPERS": ("MARGINAL RAISE OVER LIMPERS",
                                     "subir sobre los que han entrado, justo"),
     "SQUEEZE":                     ("SQUEEZE", "resubir con gente dentro (squeeze)"),
+    "4BET NON-ALL-IN":             ("4BET", "resubir sin ir all in"),
 }
 
 
@@ -75,6 +82,29 @@ def translate_action(label):
 
     par = _BASE.get(base.upper())
     if par is None:
+        parts = re.split(r"\s*/\s*", texto)
+        mixed = [MIXED_PART_RE.match(part) for part in parts]
+        if len(parts) >= 2 and all(mixed):
+            translated = []
+            for match in mixed:
+                action_en, action_es = translate_action(match.group("action"))
+                percentage = match.group("percentage").replace(",", ".")
+                translated.append(
+                    (action_en, action_es, percentage))
+            en = " / ".join(
+                f"{action_en} {percentage}%"
+                for action_en, _action_es, percentage in translated
+            )
+            es = (
+                " / ".join(
+                    f"{action_es} el {percentage.replace('.', ',')}%"
+                    for _action_en, action_es, percentage in translated
+                )
+                if all(action_es for _action_en, action_es, _percentage
+                       in translated)
+                else None
+            )
+            return en, es
         return texto.upper(), None
     en, es = par
 

@@ -9,7 +9,7 @@ import os
 
 import pytest
 
-from decision import engine
+from decision import engine, journal
 from tests import corpus
 
 
@@ -33,7 +33,29 @@ def pytest_configure(config):
     jugado. Se apaga por env (para los subprocesos) y por atributo (para este,
     que ya tiene el modulo importado)."""
     os.environ["POKER_DECISIONS_LOG"] = "0"
-    engine._LOG_ACTIVO = False
+    journal.set_enabled(False)
+
+
+def _hay_display_gtk():
+    """True solo si GTK puede crear ventanas en este proceso."""
+    try:
+        import gi
+        gi.require_version("Gdk", "4.0")
+        from gi.repository import Gdk
+        return Gdk.Display.get_default() is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def pytest_collection_modifyitems(config, items):
+    """Sin display, GTK importa pero falla al construir la primera ventana."""
+    if _hay_display_gtk():
+        return
+    skip = pytest.mark.skip(
+        reason="los tests GTK necesitan un display (usa Xvfb o una sesion grafica)")
+    for item in items:
+        if item.get_closest_marker("gtk"):
+            item.add_marker(skip)
 
 
 @pytest.fixture(autouse=True)

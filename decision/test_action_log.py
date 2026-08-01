@@ -61,6 +61,34 @@ def test_el_mismo_verbo_en_cuatro_frames_es_una_sola_subida(log):
     assert len(log.acciones()["acciones"]) == 1
 
 
+def test_variantes_ocr_del_mismo_verbo_son_una_sola_accion(log):
+    log.observar("UL", "Pasar")
+    log.observar("UL", "Pasar ~>")
+
+    assert [a["accion"] for a in log.acciones()["acciones"]] == ["check"]
+
+
+@pytest.mark.parametrize("primera", ["Subir", "Apostar", "Igualar"])
+def test_una_segunda_linea_allin_actualiza_el_evento_en_vez_de_duplicarlo(
+        log, primera):
+    log.observar("UL", primera)
+    log.observar("UL", "; All-in")
+    log.observar("UL", "All-in")
+
+    acciones = log.acciones()["acciones"]
+    assert len(acciones) == 1
+    assert acciones[0]["accion"] == "allin"
+    assert acciones[0]["orden"] == 1
+
+
+def test_un_allin_tras_volver_el_nick_si_es_otra_accion(log):
+    log.observar("UL", "Subir")
+    log.observar("UL", None)
+    log.observar("UL", "All-in")
+
+    assert [a["accion"] for a in log.acciones()["acciones"]] == ["raise", "allin"]
+
+
 def test_si_vuelve_a_verse_el_nick_y_sube_otra_vez_son_dos_subidas(log):
     for _ in range(4):
         log.observar("UL", "Subir")
@@ -185,5 +213,205 @@ def test_repetir_el_mismo_estado_no_duplica_nada(log):
     assert log.observar_estado(ESTADO) == []
 
 
+def test_el_lazo_lento_enriquece_la_accion_del_rapido_sin_duplicarla(log):
+    log.observar("UL", "Apostar", t=1.0, street="flop")
+    state = {
+        "calle_seguida": "flop", "pot": 7.0,
+        "players": [{
+            "seat": "UL", "position": "BB", "action": "Apostar",
+            "committed_calle": 2.0, "bet": 2.0,
+        }],
+    }
+    assert log.observar_estado(state, t=1.1) == []
+    [a] = log.acciones()["acciones"]
+    assert a["street"] == "flop"
+    assert a["position"] == "BB"
+    assert a["pot_bb"] == 7.0
+
+
 def test_un_gamestate_sin_jugadores_no_revienta():
     assert al.ActionLog().observar_estado({}) == []
+
+
+def test_la_accion_conserva_calle_y_snapshots_sin_inventar_un_incremento(log):
+    state = {
+        "calle_seguida": "turn", "pot": 9.5,
+        "players": [{
+            "seat": "UL", "position": "BB", "action": "Apostar",
+            "committed_calle": 4.0, "bet": 4.0,
+        }],
+    }
+    [a] = log.observar_estado(state)
+    assert a["street"] == "turn"
+    assert a["pot_bb"] == 9.5
+    assert a["committed_street_bb"] == 4.0
+    assert a["bet_visible_bb"] == 4.0
+    assert "amount_bb" not in a
+
+
+# --- reconstrucción de la secuencia preflop ---------------------------------
+
+def _estado(acciones, players=()):
+    return {
+        "acciones": {"acciones": acciones, "completo": False},
+        "players": list(players),
+    }
+
+
+def test_el_estado_preflop_completa_la_posicion_por_el_asiento():
+    st = _estado(
+        [{"seat": "TOPC", "position": None, "accion": "allin"}],
+        [{"seat": "TOPC", "position": "CO"}],
+    )
+    r = al.estado_preflop(st)
+    assert r["ultimo_agresor_position"] == "CO"
+
+
+def test_open_y_allin_de_otro_jugador_es_una_resubida_observada():
+    st = _estado([
+        {"seat": "ML", "accion": "raise"},
+        {"seat": "TOPC", "accion": "allin"},
+    ])
+    r = al.estado_preflop(st)
+    assert r["nivel"] == "resubida_observada"
+    assert r["agresiones_observadas"] == 2
+    assert r["ultimo_agresor_seat"] == "TOPC"
+
+
+def test_una_apuesta_de_flop_no_se_cuenta_como_resubida_preflop():
+    st = _estado([
+        {"seat": "ML", "accion": "raise", "street": "preflop"},
+        {"seat": "TOPC", "accion": "bet", "street": "flop"},
+    ])
+    r = al.estado_preflop(st)
+    assert r["nivel"] == "apertura_observada"
+    assert r["agresiones_observadas"] == 1
+    assert r["ultimo_agresor_seat"] == "ML"
+
+
+def test_un_fold_posterior_no_borra_la_ultima_resubida():
+    st = _estado([
+        {"seat": "ML", "accion": "raise"},
+        {"seat": "TOPC", "accion": "allin"},
+        {"seat": "UR", "accion": "fold"},
+    ])
+    assert al.estado_preflop(st)["ultimo_agresor_seat"] == "TOPC"
+
+
+def test_detecta_la_resubida_que_devuelve_la_accion_al_hero():
+    st = _estado([
+        {"seat": "HERO", "accion": "raise"},
+        {"seat": "ML", "accion": "fold"},
+        {"seat": "TOPC", "accion": "allin"},
+    ], [{"seat": "TOPC", "position": "SB"}])
+    r = al.estado_preflop(st)
+    assert r["hero_ultima_accion"] == "raise"
+    assert r["rival_agresion_posterior_hero"] is True
+    assert r["rival_posterior_position"] == "SB"
+    assert r["primera_agresion_seat"] == "HERO"
+    assert r["agresiones_antes_hero"] == 0
+    assert r["agresiones_hero"] == 1
+    assert r["callers_entre_hero_y_resubida"] == 0
+
+
+def test_cuenta_un_cold_call_entre_el_open_del_hero_y_el_squeeze():
+    st = _estado([
+        {"seat": "HERO", "accion": "raise"},
+        {"seat": "SB", "accion": "call"},
+        {"seat": "BB", "accion": "raise"},
+    ])
+    r = al.estado_preflop(st)
+    assert r["callers_entre_hero_y_resubida"] == 1
+
+
+def test_repetir_un_allin_antiguo_no_inventa_otra_resubida():
+    st = _estado([
+        {"seat": "TOPC", "accion": "allin"},
+        {"seat": "UR", "accion": "fold"},
+        {"seat": "TOPC", "accion": "allin"},
+    ])
+    r = al.estado_preflop(st)
+    assert r["nivel"] == "apertura_observada"
+    assert r["agresiones_observadas"] == 1
+
+
+def test_una_agresion_anterior_a_la_ultima_ciega_es_residual():
+    """Sesión 2026-07-31_022832, frame 0311: el all-in pertenecía a la
+    transición anterior; la ciega del HERO se observó dos segundos después."""
+    st = _estado([
+        {"seat": "TOPC", "accion": "post", "t": 100.0},
+        {"seat": "UR", "accion": "post", "t": 100.0},
+        {"seat": "ML", "accion": "allin", "t": 100.0},
+        {"seat": "HERO", "accion": "post", "t": 102.0},
+    ])
+    r = al.estado_preflop(st)
+    assert r["nivel"] == "sin_agresion_observada"
+    assert r["ultima_agresion"] is None
+    assert r["acciones_antes_del_ultimo_post"] == 3
+
+
+def test_una_agresion_posterior_a_todas_las_ciegas_si_es_actual():
+    st = _estado([
+        {"seat": "TOPC", "accion": "post", "t": 100.0},
+        {"seat": "HERO", "accion": "post", "t": 102.0},
+        {"seat": "ML", "accion": "allin", "t": 105.0},
+        {"seat": "UR", "accion": "fold", "t": 106.0},
+    ])
+    r = al.estado_preflop(st)
+    assert r["nivel"] == "apertura_observada"
+    assert r["ultima_agresion"] == "allin"
+
+
+def test_estado_preflop_distingue_limp_antes_y_call_despues_del_shove():
+    st = _estado([
+        {"seat": "HERO", "accion": "post", "t": 100.0},
+        {"seat": "UL", "accion": "call", "t": 101.0},
+        {"seat": "ML", "accion": "allin", "t": 102.0},
+        {"seat": "UR", "accion": "call", "t": 103.0},
+        {"seat": "TOPC", "accion": "fold", "t": 104.0},
+    ])
+    r = al.estado_preflop(st)
+    assert r["callers_antes_primera_agresion"] == 1
+    assert r["callers_despues_ultima_agresion"] == 1
+
+
+def test_limpers_observados_deduplican_y_respetan_la_ultima_accion():
+    st = _estado([
+        {"seat": "HERO", "accion": "post", "t": 100.0},
+        {"seat": "UL", "accion": "call", "t": 101.0},
+        {"seat": "UL", "accion": "call", "t": 102.0},
+        {"seat": "ML", "accion": "call", "t": 103.0},
+        {"seat": "ML", "accion": "fold", "t": 104.0},
+    ])
+    assert al.estado_preflop(st)["limper_seats_observed"] == ["UL"]
+
+
+def test_un_call_anterior_a_la_ultima_ciega_no_es_un_limper_actual():
+    st = _estado([
+        {"seat": "UL", "accion": "call", "t": 99.0},
+        {"seat": "HERO", "accion": "post", "t": 100.0},
+        {"seat": "ML", "accion": "call", "t": 101.0},
+    ])
+    assert al.estado_preflop(st)["limper_seats_observed"] == ["ML"]
+
+
+def test_los_folds_alrededor_del_shove_no_cuentan_como_callers():
+    st = _estado([
+        {"seat": "HERO", "accion": "post", "t": 100.0},
+        {"seat": "UL", "accion": "fold", "t": 101.0},
+        {"seat": "ML", "accion": "allin", "t": 102.0},
+        {"seat": "UR", "accion": "fold", "t": 103.0},
+    ])
+    r = al.estado_preflop(st)
+    assert r["callers_antes_primera_agresion"] == 0
+    assert r["callers_despues_ultima_agresion"] == 0
+
+
+def test_una_agresion_en_el_mismo_frame_que_la_ultima_ciega_es_ambigua():
+    st = _estado([
+        {"seat": "HERO", "accion": "post", "t": 100.0},
+        {"seat": "ML", "accion": "raise", "t": 100.0},
+    ])
+    r = al.estado_preflop(st)
+    assert r["nivel"] == "sin_agresion_observada"
+    assert r["agresion_ambigua_arranque"] is True

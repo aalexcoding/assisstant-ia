@@ -21,7 +21,6 @@ from core import Analizador
 from capture import portal_capture as pc
 
 CALIBRATION_PATH = os.path.join(os.path.dirname(__file__), "calibration", "config.local.json")
-TMP_FRAME_PATH = "/tmp/poker_alpha_frame.png"
 
 
 def load_region():
@@ -62,7 +61,7 @@ def main():
     # El MISMO ciclo que corre la GUI. Antes esto llamaba a analyze_layout y a
     # decide() por su cuenta, sin rastreador ni registro de acciones, asi que
     # diagnosticaba una version mas pobre de lo que el usuario ve en el HUD.
-    analizador = Analizador(tmp_frame=TMP_FRAME_PATH)
+    analizador = Analizador()
     portal, session_handle, fd, stream, _props = pc.open_frame_stream()
     print(f"Analizando cada {args.interval}s (Ctrl+C para parar)...\n")
     last_printed = None
@@ -82,6 +81,7 @@ def main():
     except KeyboardInterrupt:
         print("\nParado.")
     finally:
+        analizador.cerrar()
         stream.close()
         os.close(fd)
         portal.close_session(session_handle)

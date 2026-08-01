@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -c ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(git -C /home/adiaz/Documents/labs/poker-game log --oneline -15)",
+      "Bash(/home/adiaz/Documents/labs/poker-game/.venv/bin/python -c ' *)"
+    ]
+  }
+}

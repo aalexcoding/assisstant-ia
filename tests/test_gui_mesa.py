@@ -51,6 +51,36 @@ def test_arranca_en_6_max(ventana):
     assert ventana._max_players() == 6
 
 
+def test_la_jerarquia_principal_es_compacta_y_tiene_scroll(ventana):
+    """La información técnica no puede empujar la recomendación fuera de una
+    ventana normal ni competir con ella al arrancar."""
+    assert ventana.main_scroll.get_vexpand() is True
+    assert ventana.state_details.get_expanded() is False
+    assert ventana.rec_label.get_parent() is not None
+    assert ventana.header_status_label.get_text() == "EN ESPERA"
+
+
+def test_la_accion_en_castellano_es_la_lectura_principal(ventana):
+    estado = {
+        "hero_cards": ["Ah", "Kd"],
+        "board": [],
+        "pot": "1,5 BB",
+        "players": [{"name": "yo", "position": "BTN", "stack": 20,
+                     "is_hero": True}],
+        "acciones": {"acciones": []},
+        "warnings": [],
+    }
+    ventana.on_result(
+        estado,
+        {"action": "OPEN RAISE (2 BB)", "action_en": "OPEN RAISE (2 BB)",
+         "action_es": "subir a 2 BB", "source": "chart",
+         "reasoning": "Rango de apertura"},
+    )
+    texto = ventana.rec_label.get_text()
+    assert texto.startswith("SUBIR A 2 BB")
+    assert "Código de tabla: OPEN RAISE (2 BB)" in texto
+
+
 def test_estan_las_cinco_mesas_y_en_el_orden_del_combo(ventana):
     """Si el orden se desincroniza, elegir 8-Max daria la geometria de otra mesa
     y el fallo no se veria: leeria nombres donde no hay nadie."""
@@ -78,12 +108,9 @@ def test_cada_opcion_da_una_geometria_coherente(ventana):
 # --- el selector de MAZO ----------------------------------------------------
 
 def test_el_selector_de_mazo_tiene_los_tres_caminos(ventana):
-    """Lo pidio el usuario: "añade una opcion en la GUI para que yo te diga que
-    mazo estoy usando". Auto sigue existiendo -y arranca- porque aqui la
-    deteccion SI funciona: gana el que encuentra mas cartas, esta medido, y
-    ademas cubre cambiar de mazo a mitad de sesion."""
-    assert gui.PokerAssistantWindow._MAZO_OPCIONES == (None, "glyph", "solid")
-    assert ventana._mazo() is None
+    """Solid es producción; glyph y auto siguen disponibles explícitamente."""
+    assert gui.PokerAssistantWindow._MAZO_OPCIONES == ("solid", "glyph", None)
+    assert ventana._mazo() == "solid"
     for i, mazo in enumerate(gui.PokerAssistantWindow._MAZO_OPCIONES):
         ventana.mazo_combo.set_active(i)
         assert ventana._mazo() == mazo

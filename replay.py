@@ -70,6 +70,26 @@ def _accion(datos):
     return (datos.get("recommendation") or {}).get("action")
 
 
+def configuracion_sesion(directorio, max_players=None):
+    """Configuración efectiva del replay.
+
+    Un argumento explícito de plazas manda. Si no existe, se reutiliza la
+    metadata con la que se grabó la sesión; para el mazo se conserva incluso
+    ``None`` porque en sesiones antiguas significaba modo auto.
+    """
+    meta = {}
+    try:
+        with open(os.path.join(directorio, "_sesion.json")) as f:
+            cargada = json.load(f)
+            if isinstance(cargada, dict):
+                meta = cargada
+    except (OSError, ValueError):
+        pass
+    plazas = max_players if max_players is not None else meta.get("max_players")
+    mazo = meta["mazo"] if "mazo" in meta else "solid"
+    return plazas, mazo
+
+
 def comparar(grabado, nuevo):
     """Diferencias entre lo que se grabo y lo que sale ahora.
 
@@ -98,8 +118,8 @@ def reproducir(directorio, desde=0, hasta=None, diff=False, max_players=None,
 
     El Analizador es NUEVO: la memoria entre frames se reconstruye igual que en
     vivo, que es la unica forma de que el replay signifique algo."""
-    an = Analizador(max_players=max_players, seed_equity=seed_equity,
-                    tmp_frame="/tmp/poker_replay_frame.png")
+    max_players, mazo = configuracion_sesion(directorio, max_players)
+    an = Analizador(max_players=max_players, mazo=mazo, seed_equity=seed_equity)
     lote = [f for f in frames(directorio) if f[0] >= desde]
     if hasta is not None:
         lote = lote[:hasta]
@@ -136,6 +156,7 @@ def reproducir(directorio, desde=0, hasta=None, diff=False, max_players=None,
     resumen["ciclo_p50_s"] = _p(ciclos, 50)
     resumen["ciclo_p95_s"] = _p(ciclos, 95)
     resumen["etapas_p50_s"] = {k: _p(v, 50) for k, v in sorted(etapas.items())}
+    an.cerrar()
     return resumen
 
 

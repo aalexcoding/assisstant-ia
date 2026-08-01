@@ -26,15 +26,18 @@ import hashlib
 import json
 import os
 import time
+from importlib.metadata import version
 
 import numpy as np
 
+from decision.rag import catalog
 from decision.rag.clean import clean_text
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TRANSCRIPTS_DIR = os.path.join(HERE, "transcripts")
 INDEX_DIR = os.path.join(HERE, "index")
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+FASTEMBED_VERSION = version("fastembed")
 
 EMB_PATH = os.path.join(INDEX_DIR, "embeddings.npy")
 META_PATH = os.path.join(INDEX_DIR, "meta.jsonl")
@@ -56,6 +59,9 @@ def load_chunks():
             text = clean_text(ch["text"]).strip()
             if not text:
                 continue
+            meta = catalog.metadata(ch["video"], ch.get("video_path"))
+            if not meta["is_strategy"]:
+                continue
             records.append({
                 "video": ch["video"],
                 "video_path": ch["video_path"],
@@ -63,6 +69,7 @@ def load_chunks():
                 "start_time": ch["start_time"],
                 "end_time": ch["end_time"],
                 "text": text,
+                **meta,
             })
     return records, len(files), empty
 
@@ -70,9 +77,11 @@ def load_chunks():
 def fingerprint(records):
     h = hashlib.sha256()
     h.update(MODEL_NAME.encode())
+    h.update(FASTEMBED_VERSION.encode())
     for r in records:
         h.update(r["video"].encode())
         h.update(str(r["chunk_index"]).encode())
+        h.update(catalog.embedding_prefix(r).encode())
         h.update(r["text"].encode())
     return h.hexdigest()
 
@@ -105,7 +114,7 @@ def build(force=False):
     model = TextEmbedding(MODEL_NAME)
     print(f"modelo listo en {time.time() - t0:.1f}s")
 
-    texts = [r["text"] for r in records]
+    texts = [catalog.embedding_prefix(r) + "\n" + r["text"] for r in records]
     embs = np.empty((len(texts), 384), dtype=np.float32)
     t0 = time.time()
     for i, vec in enumerate(model.embed(texts, batch_size=64)):
@@ -128,6 +137,7 @@ def build(force=False):
     with open(MANIFEST_PATH, "w") as fh:
         json.dump({
             "model": MODEL_NAME,
+            "fastembed_version": FASTEMBED_VERSION,
             "dim": 384,
             "count": len(records),
             "fingerprint": fp,

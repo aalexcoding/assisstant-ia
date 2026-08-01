@@ -84,28 +84,48 @@ sobre las 6 sesiones grabadas la cache de una mano anterior se equivoca en mas
 del 15% el 62,3% de las veces (la de la misma mano, el 33,6%). Se anota en el
 reasoning cuando se usa; ver _cached_hero_stack.
 """
-import json
-import os
 import time
+import statistics
+from dataclasses import dataclass, field
 
+from domain.state import GameState, Recommendation
+
+from decision import action_log
 from decision import equity
 from decision import hand_tracker
+from decision import journal
+from decision import postflop_math
 
-from decision.preflop.actions import CHECK_BB_OPTION, translate_into
+from decision.preflop.actions import translate_into
 from decision.preflop.derive import bb_option, squeeze, vs_limp
-from decision.preflop import lookup
+from decision.preflop import bb_multi_limp, lookup, open_push, rangeconverter
 from decision.preflop.lookup import recommend
 
-_DECISIONS_LOG_PATH = os.path.join(os.path.dirname(__file__), "decisions.local.jsonl")
-
-# El registro de decisiones se puede APAGAR. En produccion interesa (es la
-# semilla para "aprender el estilo" mas adelante), pero un test que llama a
-# decide() no tiene por que dejar rastro en el fichero real del usuario, y menos
-# aun cientos de lineas por pasada del corpus. POKER_DECISIONS_LOG=0 lo apaga.
-_LOG_ACTIVO = os.environ.get("POKER_DECISIONS_LOG", "1") != "0"
-
 _HERO_STACK_TTL_S = 90.0
-_last_hero_stack = {"value": None, "t": 0.0, "mano": None}
+
+
+@dataclass
+class DecisionContext:
+    """Memoria efimera de una sola sesion de analisis."""
+    last_hero_stack: dict = field(
+        default_factory=lambda: {
+            "value": None,
+            "starting_value": None,
+            "t": 0.0,
+            "mano": None,
+        })
+    player_starting_stacks: dict = field(
+        default_factory=lambda: {"mano": None, "samples": {}})
+
+    def reset(self):
+        self.last_hero_stack.update(
+            value=None, starting_value=None, t=0.0, mano=None)
+        self.player_starting_stacks.update(mano=None, samples={})
+
+
+# Compatibilidad para llamadas directas a decide(). El ciclo real recibe un
+# contexto propio desde core.Analizador.
+_DEFAULT_CONTEXT = DecisionContext()
 
 
 def reset_state():
@@ -116,7 +136,7 @@ def reset_state():
     -decide() lo reutilizaria como si fuera de este frame- y la suite pasa a
     depender del orden. En produccion no se llama: la cache es justo lo que salva
     la recomendacion cuando el nameplate del hero se tapa con los botones."""
-    _last_hero_stack.update(value=None, t=0.0, mano=None)
+    _DEFAULT_CONTEXT.reset()
 
 # La ciega grande vale 1 POR DEFINICION: los importes vienen en big blinds. Se
 # nombra en vez de escribir 1 suelto para que se lea que es una unidad, no una
@@ -143,7 +163,25 @@ _STACK_KEY_EXACT_TOL = 0.25
 # Ahora el juicio se hace contra la rejilla REAL de cada familia (_stack_grid).
 
 
-def _cached_hero_stack(hero, mano=None):
+def _committed_bb(player, *, max_allowed=None):
+    """Mejor lectura disponible de lo que un jugador ya puso en la mano.
+
+    ``committed``/``committed_calle`` vienen de la bajada de stack entre
+    frames; ``bet`` se lee directamente sobre la mesa. Las dos primeras son una
+    cota inferior cuando el tracker entró tarde en la mano, por lo que se usa el
+    máximo de las fuentes válidas, no su suma.
+    """
+    values = [
+        player.get(field)
+        for field in ("committed", "committed_calle", "bet")
+        if player and isinstance(player.get(field), (int, float))
+    ]
+    if max_allowed is not None:
+        values = [value for value in values if 0 <= float(value) <= max_allowed]
+    return max([0.0, *map(float, values)])
+
+
+def _cached_hero_stack(hero, mano=None, context=None):
     """Stack del hero en bb, con cache reciente: cuando es su turno el nameplate
     deja de mostrar el numero (muestra la accion, o lo tapan los botones), o sea
     que el stack desaparece de pantalla JUSTO en el momento en que hace falta
@@ -172,18 +210,113 @@ def _cached_hero_stack(hero, mano=None):
     Si no hay numero de mano (`mano is None`) no se puede saber si se cruzo la
     frontera y solo manda el TTL, que es como se comportaba antes. Pasa en los
     tests que llaman a decide() con un GameState a mano, no en produccion."""
+    cache = (context or _DEFAULT_CONTEXT).last_hero_stack
     val = hero.get("stack") if hero else None
     if val is not None:
-        _last_hero_stack.update(value=val, t=time.monotonic(), mano=mano)
+        cache.update(
+            value=val,
+            # decide() llega aquí antes de la primera acción voluntaria del hero.
+            # Por tanto solo puede haber ciegas/ante. Un ``committed`` mayor de
+            # 2 BB es una frontera de mano perdida (caso real: 40 BB residuales
+            # en 011143/0031), no una inversión de esta decisión.
+            starting_value=float(val) + _committed_bb(
+                hero, max_allowed=_BB_POSTED_MAX_MULT),
+            t=time.monotonic(),
+            mano=mano,
+        )
         return val, False
-    if _last_hero_stack["value"] is None:
+    if cache["value"] is None:
         return None, False
-    if time.monotonic() - _last_hero_stack["t"] > _HERO_STACK_TTL_S:
+    if time.monotonic() - cache["t"] > _HERO_STACK_TTL_S:
         return None, False
-    if (mano is not None and _last_hero_stack["mano"] is not None
-            and mano != _last_hero_stack["mano"]):
+    if (mano is not None and cache["mano"] is not None
+            and mano != cache["mano"]):
         return None, False
-    return _last_hero_stack["value"], True
+    return cache["value"], True
+
+
+def _hero_starting_stack(hero, mano=None, context=None):
+    """Stack del hero al empezar la mano, conservado de forma coherente.
+
+    El cliente muestra el stack *restante*. Para seleccionar una tabla preflop
+    hay que sumar lo ya comprometido. Cuando el nameplate se tapa no se suma el
+    comprometido actual a un stack cacheado antiguo —eso lo contaría dos
+    veces—: se reutiliza el total que se calculó en el mismo instante que la
+    lectura de stack.
+    """
+    remaining, cached = _cached_hero_stack(hero, mano, context)
+    if remaining is None:
+        return None, cached
+    cache = (context or _DEFAULT_CONTEXT).last_hero_stack
+    if cached:
+        return cache.get("starting_value"), True
+    return float(remaining) + _committed_bb(
+        hero, max_allowed=_BB_POSTED_MAX_MULT), False
+
+
+def _player_starting_stack(player):
+    """Stack inicial visible de un rival, o None si falta su stack restante."""
+    if not player or not isinstance(player.get("stack"), (int, float)):
+        return None
+    return float(player["stack"]) + _committed_bb(player)
+
+
+def _observe_player_starting_stacks(players, mano=None, context=None):
+    """Cache robusta por asiento del stack inicial observado en esta mano."""
+    cache = (context or _DEFAULT_CONTEXT).player_starting_stacks
+    if mano is not None and cache.get("mano") != mano:
+        cache.update(mano=mano, samples={})
+    for player in players or []:
+        seat = player.get("seat")
+        value = _player_starting_stack(player)
+        if not seat or value is None:
+            continue
+        samples = cache.setdefault("samples", {}).setdefault(seat, [])
+        samples.append(float(value))
+        del samples[:-5]
+
+
+def _cached_player_starting_stack(seat, mano=None, context=None):
+    if not seat:
+        return None
+    cache = (context or _DEFAULT_CONTEXT).player_starting_stacks
+    if (mano is not None and cache.get("mano") is not None
+            and cache.get("mano") != mano):
+        return None
+    samples = cache.get("samples", {}).get(seat) or []
+    return float(statistics.median(samples)) if samples else None
+
+
+def _effective_stack_vs(
+        players, hero_starting_bb, *, seat=None, position=None,
+        mano=None, context=None):
+    """Profundidad efectiva hero-agresor y procedencia de la lectura.
+
+    Se prioriza el asiento estable porque una posición puede estar ausente en
+    el frame donde aparece el verbo. Si no se puede leer el stack del agresor,
+    se conserva el stack inicial del hero y se declara el fallback: inventar un
+    stack rival sería peor que seguir usando la cota conocida.
+    """
+    rival = None
+    if seat:
+        rival = next(
+            (p for p in players or [] if p.get("seat") == seat
+             and not p.get("is_hero")),
+            None,
+        )
+    if rival is None and position:
+        rival = next(
+            (p for p in players or [] if p.get("position") == position
+             and not p.get("is_hero")),
+            None,
+        )
+    rival_starting = _player_starting_stack(rival)
+    if rival_starting is None:
+        rival_starting = _cached_player_starting_stack(
+            seat or (rival or {}).get("seat"), mano, context)
+    if rival_starting is None:
+        return hero_starting_bb, None
+    return min(float(hero_starting_bb), rival_starting), rival_starting
 
 
 # ver seat_map.BB_POSTED_MAX_MULT: la apuesta del asiento BB es ciega + ante
@@ -277,36 +410,6 @@ def _stack_key_note(result, stack_bb, facing, warnings):
             f"queda a {abs(vecina - stack_bb):.1f}bb]")
 
 
-def _log_decision(state, recommendation, abstain_reason):
-    """Anota una linea JSONL por cada decision (recomendacion o abstencion con
-    motivo). Semilla para 'aprender el estilo' mas adelante; por ahora es solo
-    registro. Un fallo al escribir nunca debe tumbar decide()."""
-    if not _LOG_ACTIVO:
-        return
-    try:
-        entry = {
-            "t": time.time(),
-            "image": state.get("image"),
-            "hero_cards": state.get("hero_cards") or [],
-            "board_empty": not state.get("board"),
-            "hero_position": state.get("hero_position"),
-            "facing": state.get("facing"),
-            "vs_position": state.get("vs_position"),
-            "stack_unit": state.get("stack_unit"),
-        }
-        if recommendation is not None:
-            entry["stack_bb"] = round(recommendation.get("stack_bb"), 2)
-            entry["action"] = recommendation.get("action")
-            entry["facing_used"] = recommendation.get("facing_used")
-            entry["vs_position"] = recommendation.get("vs_position")
-        else:
-            entry["abstain"] = abstain_reason
-        with open(_DECISIONS_LOG_PATH, "a") as f:
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    except Exception:
-        pass
-
-
 # Margen para reconocer a un rival que ha ENTRADO PAGANDO (limp, o la SB
 # completando): su importe queda en una ciega grande. Ancho por los dos lados
 # porque en torneo con BB-ante el importe puede pasar algo de 1 y porque el OCR
@@ -336,7 +439,7 @@ def _asientos_que_solo_pusieron(acciones):
     return {s for s, a in ultima.items() if a == "post"}
 
 
-def _contar_limpers(players, acciones=None):
+def _contar_limpers(players, acciones=None, secuencia=None):
     """Cuantos rivales han ENTRADO PAGANDO voluntariamente. 0 si el bote no esta
     limpeado, None si no se pudo saber.
 
@@ -363,13 +466,25 @@ def _contar_limpers(players, acciones=None):
        subido, y "subir sobre los limpers" no es el spot. Se devuelve 0 para que
        la capa derivada no se dispare y el motor siga por donde iba.
 
-    Se mira el importe leido en la mesa y, si no lo hay, lo que el rastreador
-    deduce de la bajada de stack EN ESTA CALLE. Devolver None cuando ningun rival
-    da ninguna de las dos señales importa: no es lo mismo "he mirado y no hay
-    limpers" que "no he podido mirar"."""
+    Se mira el importe leido en la mesa y, si no hay agresión, se une por asiento
+    con los CALL positivos del historial vigente. Esto cubre la SB que ya mostró
+    ``Igualar`` pero cuyo importe aún sigue en 0,5 BB. Devolver None cuando
+    ninguna fuente vio nada importa: no es lo mismo "he mirado y no hay limpers"
+    que "no he podido mirar"."""
+    if secuencia is None and acciones:
+        secuencia = action_log.estado_preflop({
+            "players": players,
+            "acciones": acciones,
+        })
+    if (secuencia
+            and secuencia.get("nivel") != "sin_agresion_observada"):
+        return 0
+    limpers_log = set(
+        (secuencia or {}).get("limper_seats_observed") or [])
     solo_pusieron = _asientos_que_solo_pusieron(acciones)
     visto = False
     n = 0
+    contados = set()
     for p in players:
         if p.get("is_hero"):
             continue
@@ -387,7 +502,14 @@ def _contar_limpers(players, acciones=None):
             return 0                     # el bote esta SUBIDO, no limpeado
         if not es_bb and _LIMP_MIN_BB <= v <= _LIMP_MAX_BB:
             n += 1
-    return n if visto else None
+            identidad = p.get("seat") or p.get("position")
+            if identidad:
+                contados.add(identidad)
+    # El historial es una fuente positiva, no una exigencia: añade calls que el
+    # importe todavía no refleja, pero nunca borra limpers visibles por el mero
+    # hecho de que el muestreo no capturase su verbo.
+    n += len(limpers_log - contados)
+    return n if visto or limpers_log else None
 
 
 # Orden en que se habla PREFLOP, de primero a ultimo. Es universal: las ciegas
@@ -404,7 +526,12 @@ def _habla_antes(a, b):
 
 def _contar_callers(players, vs_position):
     """Rivales, aparte del raiser, que ya han metido mas que la ciega grande: han
-    PAGADO la subida. Es lo que convierte una defensa normal en un squeeze."""
+    PAGADO la subida. Es lo que convierte una defensa normal en un squeeze.
+
+    ``committed_calle`` guarda solo lo añadido durante la calle. Para la SB que
+    paga una apertura a 2 BB son exactamente 1,5 BB (las otras 0,5 ya estaban
+    puestas), por lo que el límite es inclusivo. Usar ``> 1.5`` ocultó el caller
+    real de la sesión 2026-07-31_020108/0352 y dejó pasar una defensa heads-up."""
     n = 0
     for p in players:
         if p.get("is_hero") or p.get("position") == vs_position:
@@ -412,7 +539,7 @@ def _contar_callers(players, vs_position):
         v = p.get("committed_calle")
         if not isinstance(v, (int, float)):
             v = p.get("bet")
-        if isinstance(v, (int, float)) and v > BB * 1.5:
+        if isinstance(v, (int, float)) and v >= BB * 1.5:
             n += 1
     return n
 
@@ -421,6 +548,62 @@ def _hero_player(state):
     for p in state.get("players", []):
         if p.get("is_hero"):
             return p
+    return None
+
+
+def _player_by_seat_or_position(players, seat=None, position=None):
+    """Jugador del agresor, priorizando el asiento (estable dentro de la mano)."""
+    if seat is not None:
+        found = next((p for p in players if p.get("seat") == seat), None)
+        if found is not None:
+            return found
+    if position is not None:
+        return next((p for p in players if p.get("position") == position), None)
+    return None
+
+
+def _ante_total_bb(players):
+    """Ante total visible a partir de lo puesto por la BB, o None.
+
+    En los torneos con BB-ante que reconoce esta app, el asiento BB muestra
+    ``ciega (1 BB) + ante``. Esta misma representación ya se usa en
+    ``_detect_raiser`` para no confundir sus 2 BB obligatorias con una subida.
+    Exigir la lectura evita aplicar una tabla con ante de 1 BB a una estructura
+    sin ante o a un frame donde ese supuesto no se puede comprobar.
+    """
+    bb = next((p for p in players if p.get("position") == "BB"), None)
+    if bb is None:
+        return None
+    puesto = bb.get("bet")
+    if not isinstance(puesto, (int, float)):
+        puesto = bb.get("committed_calle")
+    if not isinstance(puesto, (int, float)) or puesto < BB:
+        return None
+    return max(0.0, float(puesto) - BB)
+
+
+def _open_shove_amount(state, secuencia, hero, to_call):
+    """Importe total del primer all-in, solo con evidencia del estado actual."""
+    players = state.get("players") or []
+    rival = _player_by_seat_or_position(
+        players,
+        secuencia.get("ultimo_agresor_seat"),
+        secuencia.get("ultimo_agresor_position"),
+    )
+    amount = rival.get("bet") if rival else None
+    if not isinstance(amount, (int, float)) and rival is not None:
+        amount = rival.get("committed_calle")
+    if isinstance(amount, (int, float)):
+        return float(amount)
+
+    # El botón da lo que FALTA por poner. Sumado a lo que el hero ya tiene
+    # delante reconstruye el total que hay que igualar; no se usa si falta
+    # cualquiera de las dos piezas.
+    hero_put = hero.get("bet") if hero else None
+    if not isinstance(hero_put, (int, float)) and hero is not None:
+        hero_put = hero.get("committed_calle")
+    if isinstance(to_call, (int, float)) and isinstance(hero_put, (int, float)):
+        return float(to_call + hero_put)
     return None
 
 
@@ -434,12 +617,8 @@ def _agresor_del_log(state):
     tienen el importe mas alto en la mesa. Son dos fuentes independientes (OCR del
     nameplate vs OCR de la zona de apuesta), y sin ese cruce una sola lectura mala
     del verbo elegiria el rango de defensa equivocado."""
-    ult = ((state.get("acciones") or {}).get("acciones") or [])
-    agresor = None
-    for r in reversed(ult):
-        if r.get("accion") in ("raise", "bet", "allin"):
-            agresor = r.get("position")
-            break
+    secuencia = state.get("preflop_action") or action_log.estado_preflop(state)
+    agresor = secuencia.get("ultimo_agresor_position")
     if agresor is None:
         return None
     apuestas = [(p.get("position"), p.get("bet")) for p in state.get("players") or []
@@ -464,41 +643,22 @@ def _hay_que_igualar(state):
 
 
 def _log_dice_que_subieron(state):
-    """True si lo ULTIMO que vio el historial fue a alguien SUBIR.
+    """True si el historial vigente vio a un rival SUBIR.
 
     Misma asimetria que en _contar_limpers y _agresor_del_log: solo se usa la
     PRESENCIA del verbo, nunca su ausencia. El historial viene con
     completo=False, asi que "no he visto ninguna subida" no significa que no la
-    haya; pero haber visto un "Subir" si demuestra que la hubo.
+    haya; pero haber visto un "Subir" si demuestra que el bote fue abierto.
 
-    DOS RECORTES, y los dos salen de medir sobre 4.749 frames preflop de 15
-    sesiones, contando cuantas recomendaciones se pierden:
-
-        se mira...                                    pierde
-        nada (solo to_call)                              28
-        cualquier subida de la mano                     485   <- inaceptable
-        la ULTIMA accion, sea de quien sea              204
-        la ultima accion Y QUE NO SEA DEL HERO          111   <- esta
-
-    1. SOLO LA ULTIMA ACCION, no toda la mano. El historial acumula la mano
-       entera, asi que una subida ya respondida bloqueaba el camino de "bote sin
-       abrir" durante el resto de la mano.
-    2. Y QUE NO SEA DEL PROPIO HERO. De los 204 que se perdian, 91 no tenian
-       NINGUNA prueba independiente de subida, y al mirarlos eran todos el mismo
-       caso: la ultima accion vista era el hero subiendo. El motor se bloqueaba
-       a si mismo.
-
-    Lo que queda es justo lo que el usuario anoto ("el que esta a mi derecha ha
-    subido y a mi no me lo ha detectado rapido"): un RIVAL acaba de subir y
-    todavia nadie ha respondido. De esos 111, 28 traen ademas to_call>1, 76 una
-    bajada de stack de mas de 1,35bb en algun rival y 50 un importe dibujado en
-    la mesa: casi todos con corroboracion independiente."""
-    acciones = (state.get("acciones") or {}).get("acciones") or []
-    if not acciones:
-        return False
-    ultima = acciones[-1]
-    return (ultima.get("accion") in ("raise", "allin")
-            and ultima.get("seat") != "HERO")
+    Antes se miraba solo la ULTIMA acción y un fold posterior borraba la subida.
+    Eso ocurrió en la sesión 2026-07-31_022832: HJ fue all-in, CO foldeó y el
+    motor volvió a recomendar como si el bote estuviera limpeado. Ya no hace
+    falta ese recorte: estado_preflop descarta las acciones anteriores a la
+    última colocación de ciegas, que era la causa real de que una agresión vieja
+    contaminase la mano siguiente."""
+    secuencia = state.get("preflop_action") or action_log.estado_preflop(state)
+    return (secuencia.get("nivel") != "sin_agresion_observada"
+            and secuencia.get("ultimo_agresor_seat") != "HERO")
 
 
 _RAISE_ABSTAIN = {
@@ -515,7 +675,7 @@ _RAISE_ABSTAIN = {
 }
 
 
-def postflop_equity(state, iterations=None, seed=None):
+def postflop_equity(state: GameState, iterations=None, seed=None, context=None):
     """Equity postflop del hero por simulacion, o None si no se puede calcular
     honestamente (el motivo va a state["warnings"]).
 
@@ -547,6 +707,9 @@ def postflop_equity(state, iterations=None, seed=None):
         return None                      # preflop o board ilegible: sin ruido
     if len(state.get("hero_cards") or []) != 2:
         return abstain("equity: no se ven tus 2 cartas")
+    if state.get("hero_cards_dimmed"):
+        return abstain("equity: tus cartas están apagadas porque ya no sigues "
+                       "en la mano; no se calcula una decisión ajena")
 
     jugadores = state.get("players") or []
     if not any("in_hand" in p for p in jugadores):
@@ -555,6 +718,9 @@ def postflop_equity(state, iterations=None, seed=None):
                        "menos rivales de los que hay INFLA la equity")
 
     rivales = [p for p in jugadores if p.get("in_hand") and not p.get("is_hero")]
+    hero_visible = next((p for p in jugadores if p.get("is_hero")), None)
+    if hero_visible is not None and hero_visible.get("in_hand") is False:
+        return abstain("equity: el hero ya no figura en la mano")
     if not rivales:
         # o la mano termino, o es un showdown con las cartas ya giradas: en los
         # dos casos afirmar "ganas seguro" seria falso
@@ -581,7 +747,7 @@ def postflop_equity(state, iterations=None, seed=None):
     stack_bb = None
     hero = _hero_player(state)
     if state.get("stack_unit") == "bb":
-        stack_bb, _cacheado = _cached_hero_stack(hero, state.get("mano_seguida"))
+        stack_bb, _cacheado = _cached_hero_stack(hero, state.get("mano_seguida"), context)
 
     resultado = equity.estimate_equity(
         state.get("hero_cards"), board, state.get("hero_position"), len(rivales),
@@ -601,18 +767,222 @@ def postflop_equity(state, iterations=None, seed=None):
     if state.get("facing") is None:
         resultado.setdefault("warnings", []).append(
             "no se leyeron los botones de accion: puede que no sea tu turno")
+    resultado["pot_odds"] = postflop_math.calcular(state, resultado)
     return resultado
 
 
-def decide(state):
+def _recommend_response_to_3bet(state, secuencia, context):
+    """Resuelve hero RFI -> rival 3bet con el suplemento público.
+
+    Devuelve ``(recommendation, None)`` o ``(None, motivo)``. Solo la evidencia
+    positiva del log abre esta ruta: el primer agresor observado debe ser HERO,
+    la inversión del hero debe parecer un open y no puede haber cold callers.
+    """
+    hero_position = state.get("hero_position")
+    rival_position = secuencia.get("rival_posterior_position")
+    if not hero_position or not rival_position:
+        return None, (
+            "se vio la resubida posterior al open del hero, pero falta la "
+            "posición del hero o del 3bettor")
+    if not _habla_antes(hero_position, rival_position):
+        return None, (
+            f"la secuencia dice que {rival_position} 3beteó a {hero_position}, "
+            "pero esa posición no habla después del open; posiciones incoherentes")
+    if secuencia.get("agresiones_observadas") != 2:
+        return None, (
+            f"se observaron {secuencia.get('agresiones_observadas')} agresiones; "
+            "la tabla pública solo cubre open del hero y un único 3bet")
+    if secuencia.get("callers_entre_hero_y_resubida"):
+        return None, (
+            "un rival pagó entre el open del hero y la resubida: es un squeeze "
+            "multiway, no el heads-up RFI vs 3bet de la tabla pública")
+
+    hero = _hero_player(state)
+    invested = _committed_bb(hero)
+    if invested < 1.5 or invested > 4.5:
+        return None, (
+            f"el hero figura con {invested:.1f} BB comprometidas al recibir la "
+            "resubida; no se puede corroborar que su agresión fuese un open "
+            "normal (1,5-4,5 BB) y no una 3bet previa")
+    if state.get("stack_unit") != "bb":
+        return None, "los stacks de la respuesta a 3bet no están declarados en BB"
+
+    mano = state.get("mano_seguida")
+    hero_total = _cached_player_starting_stack("HERO", mano, context)
+    if hero_total is None:
+        hero_total = _player_starting_stack(hero)
+    rival_seat = secuencia.get("rival_posterior_seat")
+    effective_bb, rival_total = _effective_stack_vs(
+        state.get("players") or [],
+        hero_total,
+        seat=rival_seat,
+        position=rival_position,
+        mano=mano,
+        context=context,
+    ) if hero_total is not None else (None, None)
+    if effective_bb is None or rival_total is None:
+        return None, (
+            "se identificó la 3bet, pero no se pudo recuperar el stack inicial "
+            "del hero y del 3bettor; sin profundidad efectiva no se elige tabla")
+    rival_player = _player_by_seat_or_position(
+        state.get("players") or [], rival_seat, rival_position)
+    rival_invested = _committed_bb(rival_player)
+    if rival_invested <= invested + 0.5:
+        return None, (
+            f"se vio el verbo de resubida, pero el importe del 3bettor no quedó "
+            f"confirmado ({rival_invested:.1f} BB frente a {invested:.1f} BB del "
+            "hero). Sin tamaño no se distingue una 3bet normal de la primera "
+            "línea de un all-in y no se consulta una tabla distinta")
+
+    max_players = state.get("max_players")
+    adapted_6max = max_players == 6
+    if max_players not in (6, 8):
+        return None, (
+            "el suplemento RFI vs 3bet solo se usa en mesas declaradas 8-max "
+            "o en el subárbol de posiciones tardías de una mesa 6-max")
+    if adapted_6max and (
+            hero_position not in ("HJ", "CO", "BTN", "SB")
+            or rival_position not in ("CO", "BTN", "SB", "BB")):
+        return None, (
+            f"no se traslada {hero_position} vs {rival_position} desde 8-max a "
+            "6-max: solo se aceptan posiciones tardías con el mismo orden")
+
+    rival_action = secuencia.get("rival_posterior_accion")
+    if rival_action == "allin" and effective_bb > 25.0:
+        return None, (
+            f"el rival fue all-in a {effective_bb:.1f} BB; las tablas públicas "
+            "de 30+ BB responden a una 3bet normal, no a ese shove")
+    if rival_action != "allin" and effective_bb <= 25.0:
+        return None, (
+            "la tabla pública cercana de 20 BB responde específicamente a una "
+            "3bet all-in, pero el historial solo observó una resubida no all-in")
+    result = rangeconverter.recommend_response_to_3bet(
+        state.get("hero_cards") or [],
+        hero_position,
+        rival_position,
+        effective_bb,
+        threebet_all_in=(rival_action == "allin"),
+    )
+    if result is None:
+        return None, (
+            f"RangeConverter no publica una celda utilizable para "
+            f"{hero_position} vs {rival_position} a {effective_bb:.1f} BB "
+            "efectivos (rejilla 20/30/40/50/60/100; interpolación solo entre "
+            "donantes compatibles y fallback vecino a un máximo de 5 BB)")
+    stack_key = result["stack_key"]
+    if stack_key == 20 and rival_action != "allin":
+        return None, (
+            "la tabla pública de 20 BB responde específicamente a una 3bet "
+            "all-in, pero el historial solo observó una resubida no all-in")
+    if stack_key != 20 and rival_action == "allin":
+        return None, (
+            f"el rival fue all-in a {effective_bb:.1f} BB; la tabla pública de "
+            f"{stack_key:g} BB responde a una 3bet normal, no a ese shove")
+    if result["action"] == "NOT_IN_RFI":
+        return None, (
+            f"{lookup.normalize_hand(state.get('hero_cards') or [])} no forma "
+            f"parte del RFI de {hero_position} en la solución pública de "
+            f"{stack_key:g} BB; no se inventa una respuesta fuera del árbol")
+
+    assumptions = list(result["assumptions"])
+    source = result["source"]
+    interpolated = source == "interpolated_chart"
+    confidence = (
+        f"{result['confidence']}: frecuencias interpoladas entre tablas "
+        "compatibles; ante de la mesa no medible; sin ICM"
+        if interpolated else
+        "media-alta: posición/stack publicados; ante de la mesa no medible "
+        "con fiabilidad en este frame; sin ICM"
+    )
+    format_note = "8-max exacto"
+    assumptions.append(
+        "el PDF usa ante total 1 BB; el importe de ante no se verifica en este frame")
+    if adapted_6max:
+        source = (
+            "interpolated_chart_adapted_6max"
+            if interpolated else
+            "rangeconverter_public_chart_adapted_6max"
+        )
+        confidence = (
+            "media-baja: interpolación y subárbol tardío 8-max trasladado "
+            "a 6-max"
+            if interpolated else
+            "media: subárbol tardío 8-max trasladado a 6-max"
+        )
+        assumptions.append(
+            "adaptación a 6-max solo para posiciones tardías; no es solución 6-max")
+        format_note = "adaptado al subárbol tardío 6-max"
+    if interpolated:
+        lower, upper = result["donor_stack_keys"]
+        interpolation = (
+            f"; interpolación lineal entre {lower:g} y {upper:g} BB, "
+            f"desacuerdo {result['disagreement']:.2f}"
+        )
+    else:
+        distance = abs(effective_bb - stack_key)
+        interpolation = (
+            "" if distance <= _STACK_KEY_EXACT_TOL else
+            f"; tabla vecina de {stack_key:g} BB, distancia {distance:.1f} BB"
+        )
+    sizing_note = (
+        " El PDF confirma 4bet no all-in, pero su tamaño impreso no se usa: "
+        "el OCR no lo recupera con fiabilidad."
+        if "4BET NON-ALL-IN" in result["action"] else ""
+    )
+    recommendation = {
+        "action": result["action"],
+        "reasoning": (
+            f"Respuesta al 3bet de {rival_position} después del open del hero: "
+            f"{effective_bb:.1f} BB efectivos (hero {hero_total:.1f}, rival "
+            f"{rival_total:.1f}); RangeConverter MTT 8-max, ante total 1 BB, "
+            "chip-EV, frecuencias fuente redondeadas al 50% "
+            f"({format_note}{interpolation})."
+            f"{sizing_note}"
+        ),
+        "hero_cards": state.get("hero_cards"),
+        "hero_position": hero_position,
+        "stack_bb": hero_total,
+        "effective_stack_bb": effective_bb,
+        "stack_unit": "bb",
+        "stack_cacheado": True,
+        "facing_used": "response_to_3bet",
+        "vs_position": rival_position,
+        "source": source,
+        "source_name": result.get("source_name"),
+        "source_url": result.get("source_url"),
+        "confidence": confidence,
+        "assumptions": assumptions,
+        "stack_key": stack_key,
+    }
+    for field in (
+        "source_urls",
+        "action_probabilities",
+        "donor_stack_keys",
+        "donor_actions",
+        "interpolation_weight",
+        "disagreement",
+    ):
+        if result.get(field) is not None:
+            recommendation[field] = result[field]
+    translate_into(recommendation)
+    return recommendation, None
+
+
+def decide(state: GameState, context=None) -> Recommendation | None:
     warnings = state.setdefault("warnings", [])
+    _observe_player_starting_stacks(
+        state.get("players") or [], state.get("mano_seguida"), context)
 
     def abstain(reason):
         warnings.append(reason)
-        _log_decision(state, None, reason)
+        journal.record(state, None, reason)
         return None
 
-    if state.get("board"):
+    board_detected_count = state.get("board_detected_count", 0)
+    if state.get("board") or (
+            isinstance(board_detected_count, int)
+            and not isinstance(board_detected_count, bool)
+            and board_detected_count > 0):
         # NO se dice "el postflop no existe": si existe, lo da postflop_equity() y
         # el HUD lo pinta en su panel. Lo que no hay es una ACCION postflop, y es
         # a proposito -no hay rango postflop digitalizado, y convertir una
@@ -620,9 +990,12 @@ def decide(state):
         # texto viejo decia que el postflop era la Fase 4.3 (RAG) y que no
         # existia; se quedo caduco cuando entro el Monte Carlo y el usuario lo
         # leyo en el HUD como "se ha perdido la equity".
-        return abstain("hay board: no se recomienda accion postflop (no hay rango "
-                       "postflop digitalizado). La probabilidad de ganar SI se "
-                       "calcula y sale en el panel de equity")
+        detalle = (f"se detectaron {board_detected_count} caja(s) en la zona del board"
+                   if not state.get("board") else "hay board resuelto")
+        return abstain(
+            f"{detalle}: no se recomienda accion preflop (no hay rango postflop "
+            "digitalizado). La probabilidad de ganar solo se calcula cuando las "
+            "cartas comunitarias estan resueltas")
 
     hero_cards = state.get("hero_cards") or []
     if len(hero_cards) != 2:
@@ -637,6 +1010,70 @@ def decide(state):
         return abstain("tus cartas salen apagadas: ya no estas en esta mano")
 
     hero = _hero_player(state)
+
+    # El historial es incompleto, pero el ORDEN de lo que sí se observó es
+    # evidencia positiva. Antes cualquier acción del hero cortaba aquí y se
+    # perdía una resubida rival posterior; también se conservaba una defensa
+    # contra el primer raiser aunque después otro jugador hubiese ido all-in.
+    # Se expone el resumen en el estado para que replay/HUD puedan auditar por
+    # qué se bloqueó una recomendación.
+    secuencia = action_log.estado_preflop(state)
+    state["preflop_action"] = secuencia
+    accion_hero = secuencia["hero_ultima_accion"]
+    if accion_hero is not None:
+        if accion_hero == "allin":
+            return abstain("el hero ya esta all-in en esta mano; no existe otra "
+                           "decision preflop que recomendar")
+        if accion_hero == "fold":
+            return abstain("el hero ya se retiro de esta mano; no existe otra "
+                           "decision preflop que recomendar")
+        if secuencia["rival_agresion_posterior_hero"]:
+            if (accion_hero == "raise"
+                    and secuencia.get("primera_agresion_seat") == "HERO"
+                    and secuencia.get("agresiones_antes_hero") == 0
+                    and secuencia.get("agresiones_hero") == 1):
+                recommendation, reason = _recommend_response_to_3bet(
+                    state, secuencia, context)
+                if recommendation is not None:
+                    journal.record(state, recommendation, None)
+                    return recommendation
+                return abstain(
+                    "la accion ha vuelto al hero frente a una resubida. "
+                    + reason)
+            rival = (secuencia["rival_posterior_position"]
+                     or secuencia["rival_posterior_seat"]
+                     or "un rival")
+            accion = secuencia["rival_posterior_accion"]
+            verbo = "fue all-in" if accion == "allin" else "resubio"
+            return abstain(
+                f"despues de que el hero actuase ({accion_hero}), {rival} {verbo}: "
+                "la accion ha vuelto al hero frente a una resubida, pero no hay "
+                "rangos digitalizados de respuesta a 3bet/4bet; sin recomendacion "
+                "estrategica fiable")
+        return abstain(
+            f"el hero ya ha actuado ({accion_hero}) en esta mano; "
+            "sin una nueva accion rival que devuelva el turno, no se recomienda "
+            "otra decision preflop")
+
+    if secuencia["nivel"] == "resubida_observada":
+        rival = (secuencia["ultimo_agresor_position"]
+                 or secuencia["ultimo_agresor_seat"]
+                 or "un rival")
+        return abstain(
+            f"se observaron {secuencia['agresiones_observadas']} agresiones preflop; "
+            f"la ultima es de {rival}, por lo que hay una resubida antes de la "
+            "decision del hero. Las tablas disponibles solo cubren open_raise y "
+            "respuesta a una apertura, no cold-call/4bet frente a una resubida; "
+            "sin recomendacion estrategica fiable")
+
+    if (secuencia["nivel"] == "sin_agresion_observada"
+            and secuencia.get("agresion_ambigua_arranque")):
+        return abstain(
+            "se vio una agresion en el mismo frame que la ultima colocacion de "
+            "ciegas; el orden dentro de ese frame no es cronologico y no se puede "
+            "saber si pertenece a esta mano o a la anterior. No se recomienda "
+            "como bote sin abrir")
+
     hero_position = state.get("hero_position") or (hero.get("position") if hero else None)
     if hero_position is None:
         return abstain("no se detecto la posicion del hero; no se puede recomendar")
@@ -665,12 +1102,148 @@ def decide(state):
                        "table_state.analyze_layout(); configura PokerStars para mostrar "
                        "los importes en big blinds")
 
-    stack_bb, stack_cacheado = _cached_hero_stack(hero, state.get("mano_seguida"))
+    stack_bb, stack_cacheado = _hero_starting_stack(
+        hero, state.get("mano_seguida"), context)
     if stack_bb is None:
         return abstain("no se encontro el stack del hero en BB (ni reciente en cache); "
                        "no se puede calcular la profundidad")
-    fuente = "stacks en BB"          # sin ciegas necesarias: el stack YA es la profundidad
+    cache = (context or _DEFAULT_CONTEXT).last_hero_stack
+    hero_remaining_bb = cache.get("value")
+    fuente = "stacks totales en BB"
     nota_cache = " stack cacheado de un frame anterior;" if stack_cacheado else ""
+
+    # El importe que pide "Igualar" nunca puede superar las fichas restantes
+    # del hero. En el frame 0099 de la sesión 2026-07-31 el OCR leyó 126 donde
+    # la pantalla mostraba 12,6. Dividir por diez a ciegas no es seguro (126
+    # también podría venir de 1,26), así que se conserva el valor crudo para
+    # diagnóstico pero no se usa para atribuir una subida ni elegir un rango.
+    to_call_pendiente = _hay_que_igualar(state)
+    to_call_invalido = (
+        to_call_pendiente is not None
+        and isinstance(hero_remaining_bb, (int, float))
+        and to_call_pendiente > hero_remaining_bb + hand_tracker.TO_CALL_MARGEN_BB
+    )
+    if to_call_invalido:
+        warnings.append(
+            f"el OCR del boton leyo {to_call_pendiente:g} BB para igualar, "
+            f"mas que el stack restante del hero ({hero_remaining_bb:.1f}bb): "
+            "importe imposible; "
+            "se conserva como lectura cruda pero no se usa para decidir")
+        to_call_pendiente = None
+
+    # CALL VS OPEN-PUSH. Esta familia no estaba en las capturas originales y por
+    # eso antes se cortaba todo all-in inicial. El suplemento público añadido es
+    # deliberadamente estrecho: 8-max, 10 BB, 1 BB de ante total, sin limpers y
+    # sin callers. Cada supuesto se verifica aquí; si falta uno no se degrada a
+    # threebet_call ni se busca una profundidad "parecida".
+    es_open_shove = (
+        secuencia["nivel"] == "apertura_observada"
+        and secuencia["ultima_agresion"] == "allin"
+    )
+    if es_open_shove:
+        rival = (secuencia["ultimo_agresor_position"]
+                 or secuencia["ultimo_agresor_seat"]
+                 or "un rival")
+        if secuencia.get("callers_antes_primera_agresion", 0):
+            return abstain(
+                f"{rival} fue all-in despues de uno o mas limpers: no es un open-push "
+                "RFI. El suplemento es una solucion no-limp y no se extrapola")
+        if secuencia.get("callers_despues_ultima_agresion", 0):
+            return abstain(
+                f"despues del all-in inicial de {rival} ya pago otro rival: el spot es "
+                "multiway. El suplemento CALL VS OPEN-PUSH es heads-up y no se extrapola")
+        if state.get("max_players") != 8:
+            return abstain(
+                f"{rival} fue all-in como primera agresion observada. Hay tabla "
+                "suplementaria CALL VS OPEN-PUSH solo para mesa 8-max; esta mesa declara "
+                f"{state.get('max_players')!r} plazas y no se traslada un rango entre "
+                "formatos")
+        seated_players = sum(
+            1 for p in state.get("players") or [] if p.get("position") is not None)
+        if seated_players != 8:
+            return abstain(
+                f"la mesa admite 8 plazas pero en esta mano solo hay "
+                f"{seated_players} posiciones asignadas. El suplemento modela 8 "
+                "jugadores activos y no se traslada a una mesa acortada")
+
+        ante_total = _ante_total_bb(state.get("players") or [])
+        if ante_total is None:
+            return abstain(
+                f"{rival} fue all-in como primera agresion observada, pero no se pudo "
+                "comprobar el ante total en lo puesto por la BB. El suplemento exige "
+                "1 BB de ante y no se usa con ese supuesto desconocido")
+        if abs(ante_total - open_push.ANTE_TOTAL_BB) > open_push.ANTE_TOLERANCE_BB:
+            return abstain(
+                f"{rival} fue all-in como primera agresion observada, pero el ante "
+                f"visible es {ante_total:.1f} BB. El suplemento CALL VS OPEN-PUSH "
+                "corresponde a 1 BB de ante total y no se extrapola")
+
+        shove_bb = _open_shove_amount(
+            state, secuencia, hero, to_call_pendiente)
+        if shove_bb is None:
+            return abstain(
+                f"{rival} fue all-in como primera agresion observada, pero no se pudo "
+                "leer su tamaño. Sin tamaño no se conocen las pot odds y no se usa la "
+                "tabla suplementaria de 10 BB")
+        effective_bb = min(shove_bb, stack_bb)
+        if abs(effective_bb - open_push.STACK_BB) > open_push.STACK_TOLERANCE_BB:
+            return abstain(
+                f"{rival} fue all-in por {shove_bb:.1f} BB y la profundidad efectiva "
+                f"es {effective_bb:.1f} BB. El suplemento CALL VS OPEN-PUSH solo cubre "
+                "10 BB exactas (tolerancia 0,5 BB); no se sustituye por threebet_call")
+
+        result = open_push.recommend(
+            hero_cards,
+            hero_position,
+            secuencia.get("ultimo_agresor_position"),
+            effective_bb,
+            state.get("max_players"),
+            seated_players,
+            ante_total,
+        )
+        if result is None:
+            return abstain(
+                f"el spot cumple 8-max/10 BB/ante 1 BB, pero no existe celda "
+                f"CALL VS OPEN-PUSH para {hero_position} vs {rival}; sin recomendacion")
+
+        action = result["action"]
+        mixed = action == "CALL 50% / FOLD 50%"
+        reasoning = (
+            f"Respuesta al open-push de {rival} por {shove_bb:.1f} BB: "
+            f"{effective_bb:.1f} BB efectivos. Tabla suplementaria pública "
+            f"'{result.get('source_name')}' para MTT 8-max, 10 BB, ante total 1 BB "
+            "y solución sin limps; no procede de las capturas ZeroS."
+        )
+        if mixed:
+            reasoning += (
+                " La celda publicada es mixta: CALL el 50% y FOLD el 50%; "
+                "no se ha convertido en una acción pura.")
+        recommendation = {
+            "action": action,
+            "reasoning": reasoning,
+            "hero_cards": hero_cards,
+            "hero_position": hero_position,
+            "stack_bb": stack_bb,
+            "effective_stack_bb": effective_bb,
+            "stack_unit": unit,
+            "stack_cacheado": stack_cacheado,
+            "facing_used": "call_vs_open_push",
+            "vs_position": secuencia.get("ultimo_agresor_position"),
+            "source": result["source"],
+            "source_name": result.get("source_name"),
+            "source_url": result.get("source_url"),
+            "confidence": "alta dentro de los supuestos; no incorpora ICM",
+            "assumptions": [
+                "MTT 8-max",
+                "10 BB efectivas",
+                "ante total 1 BB",
+                "sin limpers ni callers",
+                "estrategia chip-EV, no ICM",
+            ],
+        }
+        translate_into(recommendation)
+        journal.record(state, recommendation, None)
+        return recommendation
 
     # Defensa vs subida ajena: si el hero enfrenta una apuesta (facing="bet") y
     # se identifica una subida unica, se usa el rango threebet_call contra el
@@ -699,8 +1272,13 @@ def decide(state):
     vs_position = None
     derivada_meta = None          # procedencia si la accion NO sale de una tabla suya
     origen_subida = "subida inferida del importe apostado en la mesa"
-    if state.get("facing") == "bet":
-        vs_position, code = _detect_raiser(state.get("players", []), BB)
+    # El importe de la mesa es evidencia aunque el OCR de los botones falle.
+    # Antes solo se miraba dentro de ``facing == "bet"``: en los frames
+    # 0237-0244 de la sesión 2026-07-31 seguían visibles 3,5bb de CO, pero al
+    # perderse "Igualar" el motor volvió durante siete frames a open_raise.
+    vs_leida, code = _detect_raiser(state.get("players", []), BB)
+    if state.get("facing") == "bet" or code != "no_raise":
+        vs_position = vs_leida
         if vs_position is not None:
             facing = "threebet_call"
         elif code == "multiway":
@@ -726,7 +1304,7 @@ def decide(state):
             # -tipicamente porque el OCR del importe de la mesa fallo-. Seguir por
             # open_raise ahi seria recomendar el rango de APERTURA enfrentando una
             # subida: plausible y falso, el peor fallo posible en esta app.
-            to_call = state.get("to_call") if _hay_que_igualar(state) else None
+            to_call = to_call_pendiente
             if to_call is not None:
                 # El importe dibujado en la mesa no explica la subida -es el caso
                 # mayoritario: 59% de los frames preflop con to_call>1-, pero la
@@ -766,7 +1344,12 @@ def decide(state):
     # asi que uno puede fallar y el otro no. Fiarse solo de facing tira la
     # evidencia mas dura que hay: el cliente pidiendo un importe.
     if facing == "open_raise":
-        to_call = _hay_que_igualar(state)
+        if to_call_invalido:
+            return abstain(
+                "los botones demuestran que hay una apuesta que igualar, pero su importe "
+                "es imposible para el stack del hero y ningun importe fiable de la mesa "
+                "ha permitido clasificarla; no se recomienda como bote sin abrir")
+        to_call = to_call_pendiente
         subida_en_log = _log_dice_que_subieron(state)
         if to_call is not None or subida_en_log:
             pos_derivada, detalle = hand_tracker.atribuir_subida(
@@ -781,7 +1364,7 @@ def decide(state):
                 if to_call is not None:
                     prueba.append(f"el boton pide {to_call:g} BB para igualar")
                 if subida_en_log:
-                    prueba.append("lo ultimo que se vio en la mesa fue a un rival SUBIR")
+                    prueba.append("el historial vigente vio a un rival SUBIR")
                 return abstain(
                     f"{' y '.join(prueba)}, o sea que el bote NO esta sin abrir, pero no se "
                     f"ha podido atribuir la subida a ningun asiento ({detalle}); sin defensa "
@@ -804,9 +1387,36 @@ def decide(state):
 
         # SQUEEZE: si ademas del raiser hay quien ya ha pagado, la defensa
         # heads-up de sus tablas se queda suelta. Ver derive.squeeze.
+        agresor_seat = (
+            secuencia.get("ultimo_agresor_seat")
+            if secuencia.get("ultimo_agresor_position") == vs_position else None
+        )
+        effective_bb, rival_stack_bb = _effective_stack_vs(
+            state.get("players", []),
+            stack_bb,
+            seat=agresor_seat,
+            position=vs_position,
+            mano=state.get("mano_seguida"),
+            context=context,
+        )
+        detalle_efectivo = (
+            f"stack inicial del agresor {rival_stack_bb:.1f}bb"
+            if rival_stack_bb is not None
+            else "stack del agresor no legible; límite conservado en el stack del hero"
+        )
+
         callers = _contar_callers(state.get("players", []), vs_position)
-        derivada = (squeeze(hero_cards, hero_position, vs_position, stack_bb, callers)
+        derivada = (squeeze(
+            hero_cards, hero_position, vs_position, effective_bb, callers)
                     if callers >= 1 else None)
+        if callers >= 1 and derivada is None:
+            plural = "" if callers == 1 else "es"
+            return abstain(
+                f"{callers} rival{plural} ya ha{'n' if plural else ''} pagado la "
+                f"subida de {vs_position}: el spot es un squeeze/multiway, pero "
+                f"no existe un rango digitalizado ni un donante compatible para "
+                f"{hero_position}. La tabla threebet_call disponible es heads-up "
+                "y no se reutiliza con jugadores adicionales")
         if derivada is not None:
             action = derivada["action"]
             plural = "" if callers == 1 else "es"
@@ -815,22 +1425,24 @@ def decide(state):
                          f"INFERIDO de {derivada['donor']}, que en tu tabla dice "
                          f"'{derivada['donor_action']}': con gente dentro hay que apretar, y "
                          f"en tus tablas cada asiento aprieta la defensa un 15%. "
-                         f"{stack_bb:.1f}bb efectivos ({fuente};{nota_cache})")
+                         f"{effective_bb:.1f}bb efectivos ({fuente}; {detalle_efectivo};"
+                         f"{nota_cache})")
             derivada_meta = derivada
             translate_into({"action": action})       # valida que hay traduccion
             result = None
         else:
-            result = recommend(hero_cards, hero_position, stack_bb,
+            result = recommend(hero_cards, hero_position, effective_bb,
                                facing="threebet_call", vs_position=vs_position)
         if derivada is None:
             if result is None:
                 return abstain(f"sin rango de defensa para {hero_position} vs {vs_position} "
-                               f"a {stack_bb:.1f}bb (threebet_call)")
+                               f"a {effective_bb:.1f}bb efectivos (threebet_call)")
             action = result["action"]
-            reasoning = (f"Defensa (3bet/call) de {hero_position} a {stack_bb:.1f}bb efectivos "
-                         f"contra la subida de {vs_position} ({fuente};{nota_cache} "
+            reasoning = (f"Defensa (3bet/call) de {hero_position} a "
+                         f"{effective_bb:.1f}bb efectivos contra la subida de "
+                         f"{vs_position} ({fuente}; {detalle_efectivo};{nota_cache} "
                          f"{origen_subida})"
-                         + _stack_key_note(result, stack_bb, facing, warnings))
+                         + _stack_key_note(result, effective_bb, facing, warnings))
     elif hero_position == "BB":
         # LA OPCION DE LA BB. La BB nunca ABRE el bote, asi que si aqui no hay
         # subida que enfrentar es un bote limpeado y su decision es subir o pasar.
@@ -846,25 +1458,46 @@ def decide(state):
                            "(pasar no es gratis) pero tampoco se ha podido atribuir la "
                            "subida a ningun asiento; sin recomendacion fiable")
 
-        limpers = _contar_limpers(state.get("players", []), state.get("acciones"))
-        derivada = bb_option(hero_cards, stack_bb, limpers)
+        limpers = _contar_limpers(
+            state.get("players", []), state.get("acciones"), secuencia)
+        multiway = (
+            bb_multi_limp.recommend(hero_cards, stack_bb, limpers)
+            if isinstance(limpers, int) and limpers >= 2 else None
+        )
+        derivada = multiway or bb_option(hero_cards, stack_bb, limpers)
         if derivada is None:
-            # sin donante valido (2+ limpers, o etiqueta que no se sabe traducir):
-            # se queda el CHECK de siempre, que es la salida segura -pasar es
-            # gratis- pero se dice que es un defecto, no una lectura de la mano.
-            action = CHECK_BB_OPTION
             cuantos = (f"hay {limpers} rivales dentro" if isinstance(limpers, int)
                        else "no se pudo contar cuantos rivales han entrado")
-            reasoning = (f"Estas en la BB con opcion a {stack_bb:.1f}bb ({fuente};{nota_cache} "
-                         f"nadie ha subido, {cuantos}). Por defecto PASAR y ver el flop "
-                         f"gratis: no tengo un rango tuyo para este spot con tantos rivales.")
+            return abstain(
+                f"estas en la BB con opcion y nadie ha subido, pero {cuantos}. "
+                "No hay un rango digitalizado ni un donante valido para este spot "
+                "multiway: pasar es legal y gratis, pero recomendarlo por defecto "
+                "ocultaria manos fuertes que deben subir; sin recomendacion "
+                "estrategica fiable")
         else:
             action = derivada["action"]
-            reasoning = (f"Opcion de la BB a {stack_bb:.1f}bb ({fuente};{nota_cache} nadie ha "
-                         f"subido). INFERIDO de {derivada['donor']}, que en tu tabla dice "
-                         f"'{derivada['donor_action']}': no es tu rango digitalizado para "
-                         f"este spot, es el mas parecido que tienes. Con la opcion nunca se "
-                         f"retira uno, porque pasar es gratis.")
+            if multiway is not None:
+                if multiway["fallback"]:
+                    reasoning = (
+                        f"Opcion de la BB con {limpers} limpers a {stack_bb:.1f}bb "
+                        f"({fuente};{nota_cache} nadie ha subido): CHECK es gratis y "
+                        "se usa como fallback conservador. No existe una tabla multiway "
+                        "completa para decidir qué otras manos deberían aislar; no se "
+                        "presenta este check como solución GTO.")
+                else:
+                    reasoning = (
+                        f"Opcion de la BB con {limpers} limpers a {stack_bb:.1f}bb "
+                        f"({fuente};{nota_cache} nadie ha subido): {action} por valor "
+                        f"con {lookup.normalize_hand(hero_cards)}. Heurística pública: "
+                        "3 BB base + 1 BB por limper + 1 BB por estar OOP; no es una "
+                        "celda de las capturas ZeroS.")
+            else:
+                reasoning = (
+                    f"Opcion de la BB a {stack_bb:.1f}bb ({fuente};{nota_cache} nadie ha "
+                    f"subido). INFERIDO de {derivada['donor']}, que en tu tabla dice "
+                    f"'{derivada['donor_action']}': no es tu rango digitalizado para "
+                    f"este spot, es el mas parecido que tienes. Con la opcion nunca se "
+                    f"retira uno, porque pasar es gratis.")
             for sup in derivada["assumptions"]:
                 reasoning += f" OJO: {sup}."
             derivada_meta = derivada
@@ -889,14 +1522,91 @@ def decide(state):
                          f"{stack_bb:.1f}bb efectivos ({fuente};{nota_cache})")
             derivada_meta = derivada
         else:
-            result = recommend(hero_cards, hero_position, stack_bb, facing="open_raise")
-            if result is None:
-                return abstain(f"sin rango de apertura para {hero_position} a {stack_bb:.1f}bb "
-                               f"(open_raise); revisa que la posicion/stack esten en las tablas")
-            action = result["action"]
-            reasoning = (f"Rango de apertura de {hero_position} a {stack_bb:.1f}bb efectivos "
-                         f"({fuente};{nota_cache} sin subida que enfrentar, el hero abre el bote)"
-                         + _stack_key_note(result, stack_bb, facing, warnings))
+            public = None
+            use_public_family = (
+                stack_bb > max(_stack_grid("open_raise"))
+                and state.get("max_players") in (6, 8)
+            )
+            if use_public_family:
+                eligible_position = not (
+                    state.get("max_players") == 6
+                    and hero_position not in ("HJ", "CO", "BTN", "SB")
+                )
+                if eligible_position:
+                    public = rangeconverter.recommend_open_raise(
+                        hero_cards, hero_position, stack_bb)
+
+            if public is not None:
+                action = public["action"]
+                assumptions = list(public["assumptions"])
+                source = public["source"]
+                interpolated = source == "interpolated_chart"
+                confidence = (
+                    f"{public['confidence']}: frecuencias interpoladas entre "
+                    "tablas compatibles; ante no medible; sin ICM"
+                    if interpolated else
+                    "media-alta: posición/stack publicados; ante de la mesa "
+                    "no medible con fiabilidad; sin ICM"
+                )
+                format_note = "8-max exacto"
+                assumptions.append(
+                    "el PDF usa ante total 1 BB; no verificado en este frame")
+                if state.get("max_players") == 6:
+                    source = (
+                        "interpolated_chart_adapted_6max"
+                        if interpolated else
+                        "rangeconverter_public_chart_adapted_6max"
+                    )
+                    confidence = (
+                        "media-baja: interpolación y subárbol tardío 8-max "
+                        "trasladado a 6-max"
+                        if interpolated else
+                        "media: subárbol tardío 8-max trasladado a 6-max"
+                    )
+                    assumptions.append(
+                        "adaptación a 6-max solo para posiciones tardías")
+                    format_note = "subárbol tardío trasladado a 6-max"
+                if interpolated:
+                    lower, upper = public["donor_stack_keys"]
+                    note = (
+                        f"; interpolación entre {lower:g} y {upper:g} BB "
+                        f"(desacuerdo {public['disagreement']:.2f})"
+                    )
+                else:
+                    distance = abs(stack_bb - public["stack_key"])
+                    note = (
+                        "" if distance <= _STACK_KEY_EXACT_TOL else
+                        f"; tabla de {public['stack_key']:g} BB a "
+                        f"{distance:.1f} BB"
+                    )
+                reasoning = (
+                    f"RFI público de {hero_position} a {stack_bb:.1f} BB "
+                    f"({format_note}{note}; MTT, ante total 1 BB, chip-EV, "
+                    "frecuencias fuente redondeadas al 50%). El PDF fija la "
+                    "selección de manos; "
+                    "la etiqueta no inventa un sizing que no se haya importado "
+                    "con fiabilidad."
+                )
+                derivada_meta = dict(
+                    public,
+                    source=source,
+                    confidence=confidence,
+                    assumptions=assumptions,
+                )
+            else:
+                result = recommend(
+                    hero_cards, hero_position, stack_bb, facing="open_raise")
+                if result is None:
+                    return abstain(
+                        f"sin rango de apertura para {hero_position} a "
+                        f"{stack_bb:.1f}bb (open_raise); revisa que la "
+                        "posicion/stack esten en las tablas")
+                action = result["action"]
+                reasoning = (
+                    f"Rango de apertura de {hero_position} a "
+                    f"{stack_bb:.1f}bb efectivos ({fuente};{nota_cache} sin "
+                    "subida que enfrentar, el hero abre el bote)"
+                    + _stack_key_note(result, stack_bb, facing, warnings))
 
     recommendation = {
         "action": action,
@@ -904,6 +1614,8 @@ def decide(state):
         "hero_cards": hero_cards,
         "hero_position": hero_position,
         "stack_bb": stack_bb,
+        "effective_stack_bb": (
+            effective_bb if facing == "threebet_call" else stack_bb),
         "stack_unit": unit,
         "stack_cacheado": stack_cacheado,
         "facing_used": facing,
@@ -915,13 +1627,30 @@ def decide(state):
     if derivada_meta is not None:
         recommendation["source"] = derivada_meta["source"]
         recommendation["confidence"] = derivada_meta["confidence"]
-        recommendation["donor"] = derivada_meta["donor"]
+        if derivada_meta.get("donor"):
+            recommendation["donor"] = derivada_meta["donor"]
         recommendation["assumptions"] = derivada_meta["assumptions"]
+        if derivada_meta.get("source_name"):
+            recommendation["source_name"] = derivada_meta["source_name"]
+        if derivada_meta.get("source_url"):
+            recommendation["source_url"] = derivada_meta["source_url"]
+        if derivada_meta.get("stack_key") is not None:
+            recommendation["stack_key"] = derivada_meta["stack_key"]
+        for field in (
+            "source_urls",
+            "action_probabilities",
+            "donor_stack_keys",
+            "donor_actions",
+            "interpolation_weight",
+            "disagreement",
+        ):
+            if derivada_meta.get(field) is not None:
+                recommendation[field] = derivada_meta[field]
     else:
         recommendation["source"] = "chart"
     # action_en / action_es para el HUD. "action" se conserva con la etiqueta
     # CRUDA: es la que enlaza con ranges.json y la que registra el log, asi que
     # el historial de decisiones sigue siendo comparable entre versiones.
     translate_into(recommendation)
-    _log_decision(state, recommendation, None)
+    journal.record(state, recommendation, None)
     return recommendation

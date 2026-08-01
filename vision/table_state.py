@@ -17,6 +17,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import cv2
 
+from domain.state import GameState, new_game_state
+
 from vision import color_card_detector
 from vision import color_rank_ocr
 from vision import glyph_card_detector
@@ -115,7 +117,7 @@ def _resolve_card(card_bgr, w, h, rank_texts):
     return rank, suit, suit_conf
 
 
-def analyze(image_path):
+def analyze(image_path) -> GameState:
     """Rama original (mazo blanco, capturas de YouTube): deteccion de cartas por
     contorno + OCR de texto libre sin coordenadas fijas.
 
@@ -127,15 +129,7 @@ def analyze(image_path):
     Produccion es analyze_layout(). Se conserva porque es la unica rama que lee
     sin coordenadas fijas, util para diagnosticar capturas nuevas."""
     bgr = cv2.imread(image_path)
-    state = {
-        "image": os.path.basename(image_path),
-        "hero_cards": [],
-        "board": [],
-        "pot": None,
-        "blinds": None,
-        "players": [],
-        "warnings": [],
-    }
+    state = new_game_state(os.path.basename(image_path))
     if bgr is None:
         state["warnings"].append("no se pudo leer la imagen")
         return state
@@ -261,7 +255,13 @@ def _seat_plate_name_stack(lines):
             if action is None:
                 action = verbo
             continue                      # esta linea no es el nombre
-        if name is None and _is_name_candidate(texto):
+        # Aquí no se está buscando texto libre por toda la pantalla: ya estamos
+        # dentro de la cápsula exacta de un asiento. Por eso se puede aceptar un
+        # nick completamente en mayúsculas mediante _is_username_token. El
+        # filtro general _is_name_candidate exige dos minúsculas para no recoger
+        # etiquetas de UI y hacía que BOLIYA16 fuese imposible de recuperar por
+        # muchas veces que se releyese su nameplate.
+        if name is None and _is_username_token(texto):
             name = _clean_name(texto)
         if stack is None and _is_number_candidate(texto):
             stack = _to_int(texto)
@@ -274,6 +274,12 @@ def _seat_plate_name_stack(lines):
 SEAT_STATUS_WORDS = {
     "igualar", "iguala", "pasar", "pasa", "apostar", "apuesta", "subir", "sube",
     "resubir", "poner", "ausente", "ante", "allin", "paga", "espera", "sentado",
+    # Textos temporales o de overlays que pueden caer encima del nameplate. No
+    # son nicks ni decisiones de poker. "Ciegas" apareció sobre el asiento de
+    # BOLIYA16 al abrir el panel del torneo (sesión 2026-07-31, frame 0113) y
+    # quedó votado durante más de 300 frames; "Ganado" volvió a reemplazarlo al
+    # terminar una mano.
+    "ciegas", "ganado", "ganador",
     "noir",          # "No ir" (fold), que el cliente escribe en dos palabras
 }
 
@@ -547,59 +553,214 @@ def _cajas_de_carta(bgr, zona_px, esperadas=None, mazo=None):
     return glifo if len(glifo) >= len(solido) else solido
 
 
-def _encolar_cartas(batch, bgr, boxes):
+def _puntuar_cartas_principales(hero, board):
+    """Puntuación de una hipótesis de mazo para las dos zonas públicas.
+
+    El hero tiene exactamente dos cartas y el board solo puede tener 0, 3, 4 o
+    5. Son invariantes de la interfaz, no una apuesta sobre el OCR; por eso dan
+    mucha más información que elegir el mazo por el número de cajas de UNA zona.
+    """
+    n_hero, n_board = len(hero), len(board)
+    hero_score = 12 if n_hero == 2 else (3 if n_hero == 0 else -8)
+    board_score = 8 + n_board if n_board in (3, 4, 5) else (3 if n_board == 0 else -8)
+    return hero_score + board_score
+
+
+def _cajas_principales(bgr, hero_px, board_px, mazo=None):
+    """Detecta hero y board con UN único mazo para el frame.
+
+    Antes cada zona elegía por su cuenta. Con ruido, el hero podía resolverse
+    con ``glyph`` y el board con ``solid`` aunque la mesa solo muestra uno; esa
+    mezcla hacía que las dos mitades de la mano siguieran reglas de OCR opuestas.
+    Se comparan ambas hipótesis usando las dos zonas y se conserva el desempate
+    histórico a favor de glyph.
+    """
+    if mazo is not None:
+        return (_cajas_de_carta(bgr, hero_px, esperadas=2, mazo=mazo),
+                _cajas_de_carta(bgr, board_px, mazo=mazo), mazo)
+
+    hero_glyph = _cajas_de_carta(bgr, hero_px, esperadas=2, mazo="glyph")
+    board_glyph = _cajas_de_carta(bgr, board_px, mazo="glyph")
+    hero_solid = _cajas_de_carta(bgr, hero_px, esperadas=2, mazo="solid")
+    board_solid = _cajas_de_carta(bgr, board_px, mazo="solid")
+    if _puntuar_cartas_principales(hero_glyph, board_glyph) >= \
+            _puntuar_cartas_principales(hero_solid, board_solid):
+        return hero_glyph, board_glyph, "glyph"
+    return hero_solid, board_solid, "solid"
+
+
+def _asientos_para_apuestas(asientos_estables, todos):
+    """Asientos cuyo importe merece OCR en este frame.
+
+    Al arrancar una mano se censan todos. Una vez el rastreador ha confirmado
+    ocupación, los huecos no pueden crear una apuesta; omitirlos ahorra OCR sin
+    afectar al recuento, que sigue leyendo todos los nameplates.
+    """
+    if not asientos_estables:
+        return set(todos)
+    return (set(asientos_estables) & set(todos)) | {seat_map.HERO_SEAT}
+
+
+def _encolar_cartas(batch, bgr, boxes, rechazar_obstruidas=False):
     """Encola el OCR de rango de cada carta, SALTANDOSE las que ya estan en la
     cache de color_rank_ocr (ver alli el porque y la medicion). Devuelve
-    [(box, start, end, rango_cacheado), ...]; con rango_cacheado != NO_CACHE no
-    se ha encolado nada."""
+    [(box, start, end, rango_cacheado, confianza), ...]; con
+    rango_cacheado != NO_CACHE no se ha encolado nada."""
     jobs = []
     for box in boxes:
         crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
         deck = box.get("deck", "solid")
         # EL CALCO PRIMERO: si el glifo casa con una plantilla guardada no hace
         # falta OCR, que es el 86% del coste de un frame. Ver color_rank_ocr.
-        calco, _sim = color_rank_ocr.rango_por_calco(crop, deck)
+        calco, sim = color_rank_ocr.rango_por_calco(crop, deck)
         if calco is not None:
-            jobs.append((box, None, None, calco))
+            jobs.append((box, None, None, calco, sim))
+            continue
+        if (rechazar_obstruidas and deck == "solid"
+                and sim < color_rank_ocr.SOLID_BOARD_RANK_SHAPE_MIN):
+            # La caja y el palo pueden seguir siendo correctos aunque una ficha
+            # tape el índice. En ese caso el OCR fuerza una letra plausible
+            # sobre el fragmento restante (8->5 y 4->5 en 011143/0271). Un
+            # ``None`` conserva el slot y deja que BoardTracker use los frames
+            # limpios anterior y siguiente.
+            jobs.append((box, None, None, None, 0.0))
             continue
         key = color_rank_ocr.cache_key(crop, box["suit"], deck)
         hay, rango = color_rank_ocr.cached_rank(key)
         if hay:
-            jobs.append((box, None, None, rango))
+            confianza = color_rank_ocr.cached_rank_confidence(key)
+            jobs.append((box, None, None, rango, confianza))
         else:
             start, end = color_rank_ocr.add_rank_jobs(batch, crop, deck=deck)
-            jobs.append((box, start, end, _SIN_CACHE))
+            jobs.append((box, start, end, _SIN_CACHE, None))
     return jobs
 
 
 _SIN_CACHE = object()
 
 
-def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
-    """Resuelve las cartas de una zona (board o hero) usando la deteccion por
-    color de color_card_detector y el OCR de rango de color_rank_ocr.
-    card_jobs = [(box, start, end, rango_cacheado), ...] de _encolar_cartas."""
-    cards = []
-    unresolved = 0
-    for box, start, end, cacheado in card_jobs:
+def _resolve_zone_card_slots_with_confidence(bgr, batch_results, card_jobs):
+    """Resuelve cada caja como ``(código, confianza)`` sin perder su posición.
+
+    Una caja cuyo rango no se puede leer ocupa un ``None``. Esto es importante
+    en el board: filtrar ese hueco convertiría, por ejemplo, cinco cajas con la
+    tercera ilegible en un turn aparentemente válido de cuatro cartas.
+    """
+    slots = []
+    confidences = []
+    for job in card_jobs:
+        # Acepta el formato antiguo de cuatro campos para que herramientas y
+        # pruebas locales que construyen jobs a mano sigan siendo válidas.
+        box, start, end, cacheado = job[:4]
+        confianza = job[4] if len(job) >= 5 else None
         if cacheado is not _SIN_CACHE:
             rank = cacheado
+            confianza = 0.0 if confianza is None else confianza
         else:
             crop = bgr[box["y"]:box["y"] + box["h"], box["x"]:box["x"] + box["w"]]
             deck = box.get("deck", "solid")
-            rank = color_rank_ocr.resolve_rank(batch_results[start:end], crop, deck)
-            color_rank_ocr.store_rank(color_rank_ocr.cache_key(crop, box["suit"], deck), rank)
+            rank, confianza = color_rank_ocr.resolve_rank_with_confidence(
+                batch_results[start:end], crop, deck)
+            color_rank_ocr.store_rank(
+                color_rank_ocr.cache_key(crop, box["suit"], deck),
+                rank,
+                confianza,
+            )
         code = card_code(rank, box["suit"])
-        if code:
-            cards.append(code)
-        else:
-            unresolved += 1
+        slots.append(code)
+        confidences.append(float(confianza) if code is not None else 0.0)
+    return slots, confidences
+
+
+def _resolve_zone_card_slots(bgr, batch_results, card_jobs):
+    """Compatibilidad: devuelve solo los códigos de carta por slot."""
+    return _resolve_zone_card_slots_with_confidence(
+        bgr, batch_results, card_jobs)[0]
+
+
+def _resolve_zone_cards(bgr, zone_px, batch_results, card_jobs):
+    """Compatibilidad para zonas donde solo importa la lista de cartas válidas."""
+    slots = _resolve_zone_card_slots(bgr, batch_results, card_jobs)
+    cards = [code for code in slots if code is not None]
+    unresolved = sum(code is None for code in slots)
     return cards, unresolved
+
+
+BOARD_FALLBACK_MAX_GAP_FACTOR = 0.60
+BOARD_FALLBACK_MAX_Y_FACTOR = 0.30
+
+
+def _fila_board_coherente(boxes):
+    """La estructura mínima que distingue un board de resaltados sueltos."""
+    if len(boxes) not in (3, 4, 5):
+        return False
+    orden = sorted(boxes, key=lambda box: box["x"])
+    anchos = sorted(box["w"] for box in orden)
+    mediana = anchos[len(anchos) // 2]
+    if mediana <= 0:
+        return False
+    gaps = [
+        actual["x"] - (anterior["x"] + anterior["w"])
+        for anterior, actual in zip(orden, orden[1:])
+    ]
+    ys = [box["y"] for box in orden]
+    return (
+        all(0 <= gap <= BOARD_FALLBACK_MAX_GAP_FACTOR * mediana for gap in gaps)
+        and max(ys) - min(ys) <= BOARD_FALLBACK_MAX_Y_FACTOR * mediana
+    )
+
+
+def _leer_solo_board_con_referencia_fijada(bgr, state, ref_fijada, mazo):
+    """Recupera exclusivamente el board cuando falla la referencia del frame.
+
+    La captura no cambia de geometría durante una sesión y
+    ``ReferenciaFijada`` conserva la última caja estable. Usarla para TODA la
+    mesa sería peligroso —un panel puede fabricar jugadores y posiciones—, pero
+    el board tiene una zona pequeña y una estructura fuerte: exactamente
+    3/4/5 cajas de carta. Esta ruta no mira ningún otro dato.
+    """
+    ref = tuple(ref_fijada) + (False,)
+    board_px = seat_map.zone_to_px(ref, seat_map.BOARD_ZONE, bgr.shape)
+    board_boxes = sorted(
+        _cajas_de_carta(bgr, board_px, mazo=mazo),
+        key=lambda box: box["x"],
+    )
+    if not _fila_board_coherente(board_boxes):
+        return False
+
+    state["board_detected_count"] = len(board_boxes)
+    state["board_observed_street"] = {
+        3: "flop",
+        4: "turn",
+        5: "river",
+    }[len(board_boxes)]
+
+    batch = OcrBatch()
+    jobs = _encolar_cartas(
+        batch, bgr, board_boxes, rechazar_obstruidas=True)
+    resultados = batch.run()
+    slots, confianzas = _resolve_zone_card_slots_with_confidence(
+        bgr, resultados, jobs)
+    state["board_slots"] = slots
+    state["board_slot_confidence"] = confianzas
+    state["board"] = (
+        list(slots)
+        if all(code is not None for code in slots)
+        else []
+    )
+    sin_rango = sum(code is None for code in slots)
+    if sin_rango:
+        state["warnings"].append(
+            f"{sin_rango} carta(s) de board detectada(s) pero sin rango legible")
+    state["warnings"].append(
+        "referencia del frame inválida: se recupera solo la zona fija del board")
+    return True
 
 
 def analyze_layout(image_path, max_players=None, asientos_estables=None,
                    plantilla_boton=None, referencia=None, escala_glifo=None,
-                   leer_chat=True, mazo=None):
+                   leer_chat=True, mazo=None, seat_lines_cache=None,
+                   seat_lines_changed=None) -> GameState:
     """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
     produccion para el cliente real de PokerStars capturado limpio. Ancla una
     referencia independiente del color (nucleo del tapete por contraste) y lee
@@ -652,23 +813,11 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     nada. Las rutas de diagnostico analyze()/analyze_color_deck() si lo tienen,
     porque sus importes estan en fichas."""
     bgr = cv2.imread(image_path)
-    state = {
-        "image": os.path.basename(image_path),
-        "hero_cards": [],
-        "board": [],
-        "pot": None,
-        "players": [],
-        "hero_position": None,
-        "facing": None,
-        "vs_position": None,
-        # literal, no detectado: la app es BB-only (ver el bloque de arriba).
-        # Lo declara para que engine.decide() pueda RECHAZAR los GameState de las
-        # rutas de diagnostico, cuyos importes estan en fichas.
-        "stack_unit": "bb",
-        "to_call": None,
-        "chat_lines": [],
-        "warnings": [],
-    }
+    state = new_game_state(os.path.basename(image_path), live=True)
+    # No basta con usarlo para elegir la geometría: algunas tablas estratégicas
+    # dependen del número de plazas y el motor debe poder exigirlo en vez de
+    # trasladar silenciosamente un rango 8-max a 6-max/9-max.
+    state["max_players"] = max_players
     if bgr is None:
         state["warnings"].append("no se pudo leer la imagen")
         return state
@@ -717,7 +866,16 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
             "hay que mirar: el tapete es de un tema OSCURO o gris (hace falta uno con "
             "color, p.ej. el verde); el FONDO de alrededor es claro y se confunde con el "
             "tapete; o el recuadro de captura no la encuadra (recalibra)")
+        fijada = referencia.fijada if referencia is not None else None
+        if fijada is not None:
+            try:
+                _leer_solo_board_con_referencia_fijada(
+                    bgr, state, fijada, mazo)
+            except Exception as exc:  # noqa: BLE001 - el fallback nunca tumba el frame
+                state["warnings"].append(
+                    f"no se pudo recuperar la zona fija del board: {exc}")
         return state
+    state["table_reference_valid"] = True
 
     # LA DISPOSICION DE LA MESA sale de max_players, que ya viajaba hasta aqui.
     # Es coherente: ese parametro siempre ha querido decir "cuantos jugadores
@@ -736,8 +894,14 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     board_px = seat_map.zone_to_px(ref, seat_map.BOARD_ZONE, bgr.shape)
     # la mano del hero son 2 cartas SIEMPRE, y se dibujan pegadas sin hueco:
     # sin decirlo salen como un bloque unico que el filtro de forma tira entero.
-    hero_boxes = _cajas_de_carta(bgr, hero_px, esperadas=2, mazo=mazo)
-    board_boxes = _cajas_de_carta(bgr, board_px, mazo=mazo)
+    hero_boxes, board_boxes, mazo_frame = _cajas_principales(
+        bgr, hero_px, board_px, mazo=mazo)
+    state["board_detected_count"] = len(board_boxes)
+    state["board_observed_street"] = {
+        3: "flop",
+        4: "turn",
+        5: "river",
+    }.get(len(board_boxes))
     hero_plate_px = seat_map.hero_plate_from_cards(hero_boxes, bgr.shape)
     reloj.marca("cartas")
 
@@ -752,12 +916,20 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         else:
             x0, y0, x1, y1 = seat_map.zone_to_px(ref, ZONAS["seats"][name]["plate"], bgr.shape)
         seat_plate_px[name] = (x0, y0, x1, y1)
-        seat_tsv[name] = batch.add_tsv_job(bgr[y0:y1, x0:x1], scale=3)
+        if (seat_lines_cache is not None and seat_lines_changed is not None
+                and name not in seat_lines_changed and name in seat_lines_cache):
+            seat_tsv[name] = None
+        else:
+            seat_tsv[name] = batch.add_tsv_job(bgr[y0:y1, x0:x1], scale=3)
     # importe apostado por asiento (zona hacia el centro del tapete), para
     # inferir quien subio; se encola para todos y luego se lee solo en los
     # asientos ocupados.
     bet_tsv = {}
+    asientos_apuesta = _asientos_para_apuestas(asientos_estables, ZONAS["seats"])
     for name in ZONAS["seats"]:
+        if name not in asientos_apuesta:
+            bet_tsv[name] = None
+            continue
         bx = seat_map.zone_to_px(ref, ZONAS["apuestas"][name], bgr.shape)
         bet_tsv[name] = batch.add_tsv_job(bgr[bx[1]:bx[3], bx[0]:bx[2]], scale=3)
     # SEGUNDA LECTURA DEL STACK DEL HERO, solo su franja de abajo.
@@ -811,7 +983,8 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
 
     # cartas del hero y del board: encolar el OCR de rango (cajas ya detectadas)
     hero_jobs = _encolar_cartas(batch, bgr, hero_boxes)
-    board_jobs = _encolar_cartas(batch, bgr, board_boxes)
+    board_jobs = _encolar_cartas(
+        batch, bgr, board_boxes, rechazar_obstruidas=True)
 
     # LAS CARTAS DEL RIVAL, cuando el cliente las enseña. En un all-in o en el
     # showdown deja de haber dorso y se ve la mano, asi que se puede leer igual
@@ -825,7 +998,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # el mismo OCR que el board y el hero y asi viaja en el mismo viaje.
     reveladas_px = {s: seat_map.revealed_zone_px(ref, s, bgr.shape, ZONAS["dorsos"])
                     for s in seat_map.revealed_pair_seats(bgr, ref, ZONAS["dorsos"])}
-    reveladas_boxes = {s: _cajas_de_carta(bgr, px, esperadas=2, mazo=mazo)
+    reveladas_boxes = {s: _cajas_de_carta(bgr, px, esperadas=2, mazo=mazo_frame)
                        for s, px in reveladas_px.items()}
     reveladas_jobs = {s: _encolar_cartas(batch, bgr, cajas)
                       for s, cajas in reveladas_boxes.items()}
@@ -882,7 +1055,15 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # Los importes se leen SIEMPRE en big blinds: parse_amount_bb exige el sufijo
     # "BB" literal, asi que si el cliente no esta en ese modo no se lee nada y el
     # motor se abstiene. Nunca lee un numero en la unidad equivocada.
-    seat_lines = {name: parse_tsv_lines(results[seat_tsv[name]]) for name in ZONAS["seats"]}
+    seat_lines = {}
+    for name in ZONAS["seats"]:
+        idx = seat_tsv[name]
+        if idx is None:
+            seat_lines[name] = seat_lines_cache[name]
+        else:
+            seat_lines[name] = parse_tsv_lines(results[idx])
+            if seat_lines_cache is not None:
+                seat_lines_cache[name] = seat_lines[name]
 
     # `dorsos` y `button_seat` ya estan resueltos: se calcularon EN PARALELO con
     # el lote de OCR (ver _vision_sin_ocr). Tener cartas repartidas es la prueba
@@ -916,7 +1097,8 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
                or e != HUECO
                or _plate_occupied(lines))
         if occ:
-            bet_lines = parse_tsv_lines(results[bet_tsv[name]])
+            bet_idx = bet_tsv[name]
+            bet_lines = parse_tsv_lines(results[bet_idx]) if bet_idx is not None else []
             occupied[name] = {"name": n, "stack": stk, "action": accion,
                               "bet": seat_map.parse_amount_bb(bet_lines)}
 
@@ -1095,7 +1277,17 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     state["hero_cards_dimmed"] = bool(hero_boxes) and all(b.get("dimmed") for b in hero_boxes)
     if state["hero_cards_dimmed"]:
         state["warnings"].append("tus cartas salen apagadas: ya no estas en esta mano")
-    state["board"], board_unresolved = _resolve_zone_cards(bgr, board_px, results, board_jobs)
+    board_slots, board_confidence = _resolve_zone_card_slots_with_confidence(
+        bgr, results, board_jobs)
+    state["board_slots"] = board_slots
+    state["board_slot_confidence"] = board_confidence
+    board_unresolved = sum(code is None for code in board_slots)
+    # El board publicado representa una calle completa, nunca una lista
+    # comprimida. Los slots parciales quedan disponibles para la fusión temporal.
+    state["board"] = (
+        [code for code in board_slots if code is not None]
+        if not board_unresolved else []
+    )
     reloj.marca("resolver_cartas")
     if hero_unresolved:
         state["warnings"].append(f"{hero_unresolved} carta(s) del hero detectada(s) pero sin rango legible")
@@ -1202,7 +1394,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     return state
 
 
-def analyze_color_deck(image_path):
+def analyze_color_deck(image_path) -> GameState:
     """LEGADO / DIAGNOSTICO, NO APTO PARA EL MOTOR: igual que analyze(), sus
     stacks son enteros de FICHAS y no declara "stack_unit", asi que
     engine.decide() rechaza sus GameState a proposito (ver el guard de
@@ -1219,15 +1411,7 @@ def analyze_color_deck(image_path):
     depende del estilo de mazo) y la forma de GameState es la misma que la
     de analyze(): a Fase 4/5 les da igual que rama de Fase 3 la produjo."""
     bgr = cv2.imread(image_path)
-    state = {
-        "image": os.path.basename(image_path),
-        "hero_cards": [],
-        "board": [],
-        "pot": None,
-        "blinds": None,
-        "players": [],
-        "warnings": [],
-    }
+    state = new_game_state(os.path.basename(image_path))
     if bgr is None:
         state["warnings"].append("no se pudo leer la imagen")
         return state

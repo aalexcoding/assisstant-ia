@@ -14,7 +14,9 @@ tiene dos consecuencias prácticas:
   ruta fallaría al importar a sus hermanos. (Los dos `ocr_worker.py` — el de
   `vision/` y el de `decision/preflop/` — comparten nombre a propósito y solo se
   distinguen así.)
-- `pytest` desde la raíz encuentra y ejecuta todo, sin configurar nada.
+- `pytest` desde la raíz ejecuta todo lo disponible sin configurar nada. Los
+  tests GTK se saltan automáticamente si no hay display; para incluirlos en CI
+  hay que ejecutarlos bajo Xvfb.
 
 ### Dos velocidades
 
@@ -29,7 +31,8 @@ imagen, el E2E sobre frames reales y los invariantes sobre las 26 sesiones
 grabadas; es la de antes de commitear.
 
 Marcas (`pyproject.toml`): `lento` (segundos por test), `vision` (necesita
-opencv), `gtk` (necesita PyGObject), `corpus` (necesita `testing/`).
+opencv), `gtk` (necesita PyGObject y display; se salta sin él), `corpus`
+(necesita `testing/`).
 
 ### El corpus no se versiona
 
@@ -48,6 +51,15 @@ pytest --corpus-n 200                                  # muestra más pequeña
 pytest --corpus-semilla 42                             # reproducible
 pytest --corpus-seleccion testing/_seleccion.local.json  # exactamente la anterior
 ```
+
+### Entorno reproducible
+
+`requirements.txt` fija las dependencias directas y `pylock.toml` contiene la
+resolución transitiva para la plataforma/Python con que se generó. Se regenera
+tras cambiar dependencias con `python -m pip lock -r requirements.txt -o
+pylock.toml`. La comprobación de contratos se ejecuta con `python -m mypy
+domain`; la CI ejecuta además toda la suite rápida bajo Xvfb, incluidos los
+tests GTK.
 
 Sin `testing/` esos tests salen como **skipped** con el motivo, nunca como
 passed.
@@ -141,9 +153,11 @@ permite abrir el PNG y mirar el JSON de al lado sin cruzar timestamps. El JSON
 incluye los `warnings`, que suelen ser lo más informativo cuando algo sale mal, y
 el tiempo que tardó el análisis de ese frame.
 
-La **equity postflop se calcula y se graba** aunque todavía no se muestre en el
-HUD: es justo el número que hay que contrastar contra frames reales antes de
-enseñarlo, así que grabarlo es el paso previo a cablearlo.
+La **equity postflop se calcula, se graba y se muestra** en el HUD. Si el hero
+enfrenta una apuesta y se leen bote y cantidad a pagar, el mismo panel añade el
+precio del call, la equity mínima y el SPR actual. Esa comparación se etiqueta
+como orientativa: la equity es de check-down y no actualiza el rango rival por
+haber apostado, por lo que nunca se convierte automáticamente en CALL/FOLD.
 
 `testing_session.resumen(carpeta)` da un agregado de la sesión (frames, cuántos
 con recomendación, motivos de abstención más frecuentes) sin abrir los frames uno
@@ -326,10 +340,20 @@ panel "Mano anterior" no pierde ni un frame.
   de frames, acotado.
 - `decision/rag/postmano.py` — Fase 4.4: **estudio post-mano**. Al terminar la mano busca en las
   transcripciones los trozos que hablan de situaciones *parecidas*, con el vídeo y el minuto para
-  poder comprobarlo. **No es consejo sobre esa mano** —es prosa recuperada por parecido— y el
-  panel lo dice. La consulta se construye solo con lo observado (board, textura, mano ganadora,
-  showdown) y hay umbral de similitud, para que una mano rara no acabe con tres referencias
-  irrelevantes presentadas como si vinieran a cuento.
+  poder comprobarlo. Lo acompaña `strategy_cards.py`, un catálogo de fichas de estudio con
+  condiciones explícitas, principio, límites y fuente enlazada. Las fichas cubren multiway,
+  iniciativa IP/OOP en SRP, defensa de ciegas/cold-call, roles principales de 3-bet, caller OOP
+  de 4-bet, probe turn y bluff-catch river. No entran en `engine.decide` ni emiten una acción
+  live. La consulta incorpora solo contexto observado: hero, board, mano formada,
+  calle, posición IP/OOP cuando es inequívoca, iniciativa, tipo de bote, SPR y acciones
+  capturadas por calle. El título/ruta del curso aporta metadatos verificables para no mezclar
+  spots opuestos. Hay umbral de similitud y los resultados muestran extracto, score y enlace al
+  vídeo. Un índice roto se muestra como avería, no como “sin coincidencias”, y no impide mostrar
+  una ficha estructurada cuya condición sí se haya demostrado.
+- `decision/postflop_math.py` — precio matemático de un call: `call / bote final`,
+  además de stack efectivo y SPR del instante capturado. Nunca emite una acción. El bote
+  mostrado por PokerStars ya incluye la apuesta rival (contrastado contra frames reales);
+  las fórmulas y sus límites están documentados en el propio módulo.
 - `decision/rag/` — Fase 4.2: transcripción de vídeos. El retrieval está construido y
   cableado al estudio post-mano (ver `postmano.py` arriba). `video_index.py` localiza y ordena los vídeos de
   `TORNEOS/6. EL CURSO ABSOLUTO...` y `TORNEOS/5. CONTENIDO DE TEORÍA POSTFLOP...`
@@ -345,7 +369,7 @@ panel "Mano anterior" no pierde ni un frame.
   fuente); los JSON de `transcripts/` sí, por ser el producto final y pesar poco.
   `run_batch.py` reparte los 126 vídeos prioritarios en N procesos `pipeline.py` en
   paralelo para bajar el tiempo de reloj (cada proceso ya usa varios núcleos, pero no
-  todos). `build_index.py` calcula los embeddings de los 5.162 chunks y `query.py` los
+  todos). `build_index.py` calcula los embeddings de los 5.142 chunks estratégicos y `query.py` los
   consulta por similitud coseno; se usan **solo** desde `postmano.py`, después de la mano.
 - `hud/` — Fase 5: panel de salida con la recomendación.
 - `packaging/` — Fase 6: manifest Flatpak (pendiente hasta tener un core funcional).

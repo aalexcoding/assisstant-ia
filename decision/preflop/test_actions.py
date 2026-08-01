@@ -51,10 +51,19 @@ def test_la_etiqueta_sintetica_del_motor_tambien():
     ("OPEN RAISE (2 BB)", "OPEN RAISE (2 BB)", "abrir subiendo a 2 BB"),
     ("fold", "FOLD", "no ir"),
     (CHECK_BB_OPTION, "CHECK", "pasar (opcion de la BB)"),
+    ("CALL 50% / FOLD 50%", "CALL 50% / FOLD 50%",
+     "pagar el 50% / no ir el 50%"),
 ])
 def test_traduccion(etiqueta, en, es):
     """El importe viaja intacto en ingles y con coma decimal en castellano."""
     assert translate_action(etiqueta) == (en, es)
+
+
+def test_traduce_una_mezcla_interpolada_con_porcentajes_arbitrarios():
+    assert translate_action("OPEN RAISE 75% / LIMP 25%") == (
+        "OPEN RAISE 75% / LIMP 25%",
+        "abrir subiendo el 75% / pagar la ciega sin subir el 25%",
+    )
 
 
 # --- la coincidencia es EXACTA, no por prefijo -------------------------------
