@@ -175,6 +175,26 @@ def test_lo_PRIMERO_que_se_dice_es_que_no_se_encuentra_la_mesa():
     assert "no se encuentra la mesa" in VENTANA._no_reco_reason(st)
 
 
+def test_mientras_no_se_sabe_que_mesa_es_se_dice_Y_se_ofrece_el_atajo():
+    """Con el selector en "Auto" hay unos segundos en que el detector todavia no
+    tiene evidencia. Ahi el motor calla A PROPOSITO -se estaria mirando con la
+    disposicion de 6 sin saber si es la que toca-, y esa es LA razon de que el
+    panel este en blanco: si no se dice, el sintoma es "no hace nada al arrancar".
+    """
+    st = {"warnings": [], "max_players": None, "disposicion_detectada": None,
+          "hero_cards": ["Ah", "Kd"], "players": [{"name": "a"}]}
+    r = VENTANA._no_reco_reason(st)
+    assert "que mesa es" in r
+    assert "'Mesa'" in r, "hay que ofrecer el atajo de elegirla a mano"
+
+
+def test_una_vez_sabida_la_mesa_ya_no_se_menciona():
+    st = {"warnings": [], "max_players": None, "disposicion_detectada": 9,
+          "hero_cards": ["Ah", "Kd"], "players": [{"name": "a"}],
+          "hero_position": "BTN"}
+    assert "que mesa es" not in VENTANA._no_reco_reason(st)
+
+
 def test_el_tamaño_de_mesa_mal_puesto_se_nombra_Y_se_dice_como_arreglarlo():
     """Sin esto el sintoma es "no dice nada" y no hay forma de adivinar la causa,
     aunque se arregle en dos segundos con el selector."""

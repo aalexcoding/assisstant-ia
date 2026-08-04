@@ -41,6 +41,9 @@ class Recommendation(TypedDict, total=False):
 class GameState(TypedDict, total=False):
     image: str
     max_players: int | None
+    # que mesa dice el tapete que es (vision/disposicion.py), independientemente
+    # de la que se este usando. None mientras no haya evidencia suficiente.
+    disposicion_detectada: int | None
     hero_cards: list[str]
     hero_cards_dimmed: bool
     board: list[str]

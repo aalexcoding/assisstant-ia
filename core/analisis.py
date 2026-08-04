@@ -48,6 +48,7 @@ from decision import engine
 from decision import hand_strength as hstr
 from decision import hand_tracker
 from core.board_tracker import BoardTracker
+from vision import disposicion
 from vision import hand_result as hr
 from vision import rango_directo
 from vision import seat_map
@@ -295,20 +296,21 @@ class Analizador:
 
     # --- lazo rapido ----------------------------------------------------------
     watch: sw.SeatWatch = field(default_factory=sw.SeatWatch)
-    # LA DISPOSICION DE LA MESA, derivada de max_players en __post_init__. Se
-    # guarda en el Analizador y no en un global de seat_map PORQUE HAY VARIOS A LA
-    # VEZ: la regresion de oro crea uno por sesion en el mismo proceso, asi que
-    # con un global una sesion de 8 contaminaria a la siguiente de 6 y el fallo
-    # saldria como una regresion fantasma.
-    #
-    # OJO, HUECO CONOCIDO: sale de seat_map.disposicion(), que solo tiene tabla
-    # para 6 y 8, mientras que seat_map.zonas() -la que usa el analisis pesado-
-    # tiene tambien la de 9. En una mesa de 9 esto cae a la de 6, asi que el
-    # SeatWatch del lazo rapido vigila las seis zonas de la mesa de 6: TOPC y los
-    # dos del medio caen en tapete vacio y los verbos que se lean ahi se atribuyen
-    # al asiento equivocado. Deducido del codigo y NO medido todavia; ver
-    # docs/MESAS-DE-8-Y-9.md, "El lazo rapido NO usa la geometria de 9".
+    # LA DISPOSICION DE LA MESA, derivada de las plazas en uso. Se guarda en el
+    # Analizador y no en un global de seat_map PORQUE HAY VARIOS A LA VEZ: la
+    # regresion de oro crea uno por sesion en el mismo proceso, asi que con un
+    # global una sesion de 8 contaminaria a la siguiente de 6 y el fallo saldria
+    # como una regresion fantasma.
     seats: dict = field(init=False, default=None)
+    # QUE MESA ES, leido del tapete. Solo manda cuando el usuario NO ha elegido
+    # tamaño (max_players=None, el "Auto" del selector); si lo ha elegido, esto
+    # sigue mirando pero solo para avisar de que no cuadra. Ver
+    # vision/disposicion.py: acumula evidencia, se abstiene cuando no esta claro,
+    # y una vez fijada solo cambia si otra gana de forma seguida.
+    detector_disposicion: disposicion.DisposicionFijada = field(
+        default_factory=disposicion.DisposicionFijada)
+    # las plazas que se estan usando de verdad este frame (elegidas o detectadas)
+    plazas_en_uso: int | None = field(init=False, default=None)
     decision_context: engine.DecisionContext = field(default_factory=engine.DecisionContext)
     seat_lines_cache: dict = field(default_factory=dict)
     _tmp_frame_propio: bool = field(init=False, default=False)
@@ -317,10 +319,30 @@ class Analizador:
         self._tmp_frame_propio = self.tmp_frame is None
         if self.tmp_frame is None:
             self.tmp_frame = _tmp_frame_unico()
-        self.seats = seat_map.disposicion(self.max_players)
+        self._usar_plazas(self.max_players)
+
+    def _usar_plazas(self, plazas):
+        """Cambia la disposicion en uso y pone al vigilante a mirar sus zonas.
+
+        El SeatWatch tiene que OLVIDAR: sus huellas son de las cajas de la
+        disposicion anterior, y compararlas con las de la nueva no significa nada
+        -saldrian los seis asientos como "cambiados" o ninguno-. Es el mismo caso
+        que un recuadro recalibrado, para el que ya existe olvidar()."""
+        if plazas == self.plazas_en_uso and self.seats is not None:
+            return
+        primera = self.seats is None
+        self.plazas_en_uso = plazas
+        self.seats = seat_map.disposicion(plazas)
         # el vigilante mira las mismas capsulas que el analisis, o se dedicaria a
         # hashear tapete vacio mientras los asientos de verdad pasan sin mirar
         self.watch = sw.SeatWatch(self.seats)
+        self.seat_lines_cache.clear()
+        if not primera:
+            # LA MEMORIA POR ASIENTO ES DE LA MESA ANTERIOR. El censo, el boton y
+            # los nombres votados se midieron sobre otras zonas; un asiento que en
+            # la mesa nueva no existe -TOPC esta en la de 6 y no en la de 9- no
+            # puede estar ocupado ni tener el boton.
+            self.tracker.olvidar_asientos(self.seats)
     # NO HAY FrameBuffer, y es una retirada deliberada. Existia un anillo de 10
     # frames que se llenaba en cada tick (0,23 ms de copia, 47 MB retenidos) y que
     # NADIE LEIA en produccion: su unico proposito declarado -mirar hacia atras
@@ -367,6 +389,22 @@ class Analizador:
                      or ahora - self._ultimo_chat >= CHAT_MAX_S)
         self._frames_analizados += 1
 
+        # QUE MESA ES, antes de analizarla. Se mira con la referencia FIJADA del
+        # frame ANTERIOR -la misma que usa el lazo rapido- porque la de este
+        # todavia no existe: el desfase de un frame no importa, una mesa no cambia
+        # de tamaño de un frame al siguiente. Ver vision/disposicion.py.
+        #
+        # Un fallo aqui no puede tumbar el frame: se sigue con lo ultimo fijado,
+        # que en el peor caso es None y equivale a lo de siempre (la de 6).
+        detectada = None
+        if self._ref is not None:
+            try:
+                detectada = self.detector_disposicion.de(bgr, self._ref)
+            except Exception:  # noqa: BLE001
+                detectada = self.detector_disposicion.fijada
+        plazas = self.max_players if self.max_players is not None else detectada
+        self._usar_plazas(plazas)
+
         # el censo de asientos Y el boton de la mano en curso se realimentan al
         # reconocimiento: ver table_state.analyze_layout. Los dos van fijados por
         # mano (hand_tracker.CENSO_FRAMES), porque ninguno de los dos puede
@@ -377,7 +415,7 @@ class Analizador:
                 seat_lines_changed = set(self.watch.cambios_completos(bgr, self._ref))
             except Exception:  # noqa: BLE001
                 self.seat_lines_cache.clear()
-        state = ts.analyze_layout(ruta, max_players=self.max_players,
+        state = ts.analyze_layout(ruta, max_players=plazas,
                                   mazo=self.mazo,
                                   asientos_estables=self.tracker.asientos_estables(),
                                   boton_fijado=self.tracker.boton_de_la_mano(),
@@ -390,6 +428,24 @@ class Analizador:
         if leer_chat:
             self._leer_chat = False
             self._ultimo_chat = ahora
+
+        # QUE MESA CREE QUE ES, siempre, se use o no. Cuando el usuario ha elegido
+        # tamaño esto no manda, pero SI avisa: elegir 6-Max en una mesa de 9 es un
+        # fallo mudo -se leen 6 de los 9 asientos y el recuento desplaza todas las
+        # posiciones- y hasta ahora no habia forma de enterarse.
+        state["disposicion_detectada"] = detectada
+        if self.max_players is None:
+            if detectada is None:
+                state["warnings"].append(
+                    "todavia no se sabe que mesa es: se esta mirando donde caen los "
+                    "nameplates y hasta tenerlo claro se usa la disposicion de 6. Si la "
+                    "mesa no es de 6, eligela en el selector en vez de esperar")
+        elif detectada is not None and detectada != self.max_players:
+            state["warnings"].append(
+                f"has elegido una mesa de {self.max_players} y los nameplates caen donde "
+                f"los pondria una de {detectada}. Si la mesa es de {detectada}, cambialo: "
+                f"con la disposicion equivocada se leen menos asientos de los que hay y el "
+                f"recuento desplaza TODAS las posiciones")
 
         # La referencia del tapete se guarda para el lazo rapido, que no puede
         # permitirse recalcularla (17 ms medidos) diez veces por segundo.
@@ -467,7 +523,21 @@ class Analizador:
             state.setdefault("warnings", []).append(
                 f"rastreador: fallo {type(e).__name__}; se omite el historial de acciones")
 
-        recommendation = engine.decide(state, context=self.decision_context)
+        # SIN SABER QUE MESA ES NO SE RECOMIENDA. Pasa solo con el selector en
+        # "Auto" y solo hasta que el detector junta evidencia (medido: unos 50
+        # frames, porque primero tiene que fijarse la referencia del tapete). En
+        # esa ventana se esta mirando con la disposicion de 6 SIN saber si es la
+        # que toca, y las posiciones salen del recuento de asientos ocupados: en
+        # una mesa de 9 leida como de 6 salen 35 recomendaciones por 120 frames,
+        # todas con la fila de rango equivocada. Es el fallo caro de esta app -una
+        # respuesta plausible y falsa- y aqui se sabe de antemano que se puede
+        # estar cometiendo, asi que se calla. Elegir la mesa a mano sigue
+        # recomendando desde el primer frame.
+        sin_disposicion = self.max_players is None and self.detector_disposicion.fijada is None
+        if sin_disposicion:
+            recommendation = None
+        else:
+            recommendation = engine.decide(state, context=self.decision_context)
         hand = hstr.evaluate_hand(state.get("hero_cards"), state.get("board"))
         equity = self._equity_de(state)
 

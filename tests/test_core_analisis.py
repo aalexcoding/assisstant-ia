@@ -662,3 +662,53 @@ def test_dos_analizadores_con_disposiciones_DISTINTAS_no_se_contaminan():
 def test_sin_decir_nada_se_usa_la_de_6():
     """Es la que tiene detras todas las mediciones del proyecto."""
     assert len(ca.Analizador().seats) == 6
+
+
+# --- la disposicion detectada sola ------------------------------------------
+# El selector puede quedarse en "Auto" y entonces la mesa la decide
+# vision/disposicion.py mirando el tapete. Cambiarla a mitad de sesion mueve
+# cosas que estaban fijas, y eso es lo que se prueba aqui.
+
+def test_en_auto_se_arranca_con_la_de_6_hasta_tener_evidencia():
+    """No es una eleccion, es el suelo: mientras el detector no decide hay que
+    mirar en algun sitio y la de 6 es la que tiene todas las mediciones detras."""
+    a = ca.Analizador(max_players=None)
+    assert a.plazas_en_uso is None
+    assert len(a.seats) == 6
+
+
+def test_al_detectar_la_mesa_cambian_las_zonas_Y_el_vigilante():
+    """Los dos lazos tienen que mirar lo mismo o el nombre que lee uno no es del
+    asiento que cuenta el otro."""
+    a = ca.Analizador(max_players=None)
+    a._usar_plazas(9)
+    assert a.plazas_en_uso == 9
+    assert len(a.seats) == 9
+    assert set(a.watch._seats) == set(a.seats), "el vigilante mira las nuevas"
+
+
+def test_al_cambiar_de_mesa_se_tira_la_cache_de_nameplates():
+    """Las lineas cacheadas son de las cajas de la disposicion anterior."""
+    a = ca.Analizador(max_players=None)
+    a.seat_lines_cache["TOPC"] = [{"text": "loquesea"}]
+    a._usar_plazas(9)
+    assert a.seat_lines_cache == {}
+
+
+def test_al_cambiar_de_mesa_el_rastreador_suelta_los_asientos_que_no_existen():
+    """Un boton fijado en TOPC -que existe en la de 6 y no en la de 9- reventaba
+    el reparto de posiciones con un KeyError."""
+    a = ca.Analizador(max_players=None)
+    a.tracker._boton_fijo = "TOPC"
+    a.tracker._censo_fijo = {"TOPC", "UL", "HERO"}
+    a._usar_plazas(9)
+    assert a.tracker.boton_de_la_mano() is None
+    assert "TOPC" not in a.tracker.asientos_estables()
+
+
+def test_elegir_la_mesa_a_mano_ignora_al_detector():
+    """El usuario manda: si dice 6-Max, se usa 6-Max aunque el tapete diga otra
+    cosa. Lo que si hace el detector entonces es AVISAR (ver analizar)."""
+    a = ca.Analizador(max_players=6)
+    assert a.plazas_en_uso == 6
+    assert len(a.seats) == 6

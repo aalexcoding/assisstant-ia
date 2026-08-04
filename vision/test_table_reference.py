@@ -658,3 +658,28 @@ def test_el_umbral_esta_en_el_hueco_medido():
 def test_una_zona_de_tamaño_nulo_no_veta_nada():
     """No se inventa un vacio donde no se ha podido mirar."""
     assert ts._hay_capsula(np.zeros((0, 0, 3), np.uint8))
+
+
+# --- un asiento que no existe en ESTA disposicion no cuenta -------------------
+# El censo y el boton fijados de la mano en curso llegan de fuera y se midieron
+# con la disposicion que hubiera entonces. Con el selector en "Auto" esa puede
+# cambiar a mitad de sesion: los primeros frames se miran con la de 6 y, al
+# fijarse el detector en 9, TOPC deja de existir.
+
+def test_un_boton_fijado_en_un_asiento_inexistente_no_tumba_el_frame(analizar, tmp_path):
+    """Se colaba en `occupied` -"el dealer es siempre un jugador sentado"- y el
+    reparto de posiciones se caia con KeyError al buscar el centro de TOPC en una
+    mesa de 9, que no lo tiene."""
+    ruta = str(tmp_path / "f9.png")
+    cv2.imwrite(ruta, frame((40, 140, 60)))
+    st = ts.analyze_layout(ruta, max_players=9, boton_fijado="TOPC")
+    assert st["max_players"] == 9
+    assert all(p["seat"] != "TOPC" for p in st["players"])
+
+
+def test_un_censo_con_asientos_de_otra_mesa_se_filtra(analizar, tmp_path):
+    ruta = str(tmp_path / "f9b.png")
+    cv2.imwrite(ruta, frame((40, 140, 60)))
+    st = ts.analyze_layout(ruta, max_players=9,
+                           asientos_estables=["TOPC", "UL", "HERO"])
+    assert all(p["seat"] != "TOPC" for p in st["players"])

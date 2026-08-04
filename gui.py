@@ -323,6 +323,15 @@ class AnalysisWorker(threading.Thread):
         n = None
         sesion = self.sesion
         if sesion is not None:
+            # LA MESA DETECTADA SE APUNTA EN LA METADATA. Si no, una sesion
+            # grabada con el selector en "Auto" se guarda con max_players=None y
+            # deja de servir de verdad de terreno: la regresion de oro no la puede
+            # reproducir con su geometria y el test de precision del detector la
+            # descarta. Se escribe una sola vez, cuando el detector se fija.
+            if (sesion.meta.get("max_players") is None
+                    and state.get("disposicion_detectada")):
+                sesion.meta["max_players"] = state["disposicion_detectada"]
+                sesion.meta["max_players_detectado"] = True
             n = sesion.guardar(crop, datos, lambda ruta: cv2.imwrite(ruta, crop))
             if n is not None:
                 GLib.idle_add(self.win.on_testing_progress, n, sesion.errores)
@@ -1079,22 +1088,30 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # asi que un asiento fantasma las desplaza TODAS- y elige la GEOMETRIA,
         # o sea DONDE estan (ver seat_map.zonas).
         #
-        # YA NO HAY "auto", y lo pidio el usuario con razon: no detectaba nada.
-        # Solo queria decir "no acotes y usa la disposicion de 6", asi que en una
-        # mesa de 8 leia 4,69 asientos de 8 y 2 nicks de 10 sin avisar de nada.
-        # Una opcion que dice deducir algo y no lo deduce es peor que no tenerla:
-        # invita a dejarla puesta. Detectar la disposicion sola hara falta algun
-        # dia, y entonces volvera; mientras no exista, no se anuncia.
+        # "AUTO" HA VUELTO, y esta vez detecta de verdad. Se quito en su dia con
+        # razon: entonces solo queria decir "no acotes y usa la disposicion de 6",
+        # asi que en una mesa de 8 leia 4,69 asientos de 8 y 2 nicks de 10 sin
+        # avisar de nada. Ahora mira DONDE caen los nameplates del tapete y lo
+        # contrasta con las tres geometrias medidas (vision/disposicion.py): sobre
+        # las 29 sesiones grabadas con disposicion conocida acierta 20, se
+        # abstiene en 9 y NO se equivoca en ninguna. Cuando se abstiene se queda
+        # con la de 6 y lo dice en los avisos, que es lo que la version vieja no
+        # hacia.
         mesa_label = Gtk.Label(label="MESA")
         mesa_label.add_css_class("field-label")
         self.mesa_combo = Gtk.ComboBoxText()
-        for etiqueta in ("2 (heads-up)", "3-Max", "6-Max", "8-Max", "9 plazas"):
+        for etiqueta in ("Auto (la lee del tapete)", "2 (heads-up)", "3-Max",
+                         "6-Max", "8-Max", "9 plazas"):
             self.mesa_combo.append_text(etiqueta)
-        self.mesa_combo.set_active(self._MESA_OPCIONES.index(6))
+        self.mesa_combo.set_active(self._MESA_OPCIONES.index(None))
         self.mesa_combo.set_tooltip_text(
-            "Cuantas plazas tiene la mesa. Elige la que estas jugando: ademas de "
-            "acotar el recuento, decide DONDE se buscan los asientos. Hay geometria "
-            "medida para 6, 8 y 9; 2 y 3 usan la de 6, que es la que habia.")
+            "Cuantas plazas tiene la mesa. Ademas de acotar el recuento, decide "
+            "DONDE se buscan los asientos. Hay geometria medida para 6, 8 y 9; 2 y "
+            "3 usan la de 6, que es la que habia.\n\n"
+            "Auto la deduce de donde caen los nameplates y se abstiene si no lo "
+            "tiene claro (entonces usa la de 6 y avisa). Elegirla a mano sigue "
+            "mandando: si la eliges, Auto no toca nada, pero te avisa si lo que ve "
+            "no cuadra con lo que has elegido.")
 
         # EL RITMO SE VE, NO SE ELIGE. Antes habia aqui un spin de 0,25 a 10 s
         # cuyo numero no describia nada: 8 de sus 40 valores son fisicamente
@@ -1256,8 +1273,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
     # 6 no es que falten dos asientos: los laterales caen en el hueco entre los
     # de verdad y se pierden DOS jugadores por lado.
     #
-    # SIN None: ya no hay "auto". Ver el combo para el porque.
-    _MESA_OPCIONES = (2, 3, 6, 8, 9)
+    # None = "Auto": la disposicion la decide vision/disposicion.py mirando el
+    # tapete. Va la PRIMERA porque es lo que uno quiere por defecto: acierta o se
+    # abstiene, nunca elige mal. Ver el combo.
+    _MESA_OPCIONES = (None, 2, 3, 6, 8, 9)
 
     # mismo orden que el combo de mazo; None = diagnóstico con ambos detectores
     _MAZO_OPCIONES = ("solid", "glyph", None)
@@ -1267,11 +1286,15 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         return self._MAZO_OPCIONES[i] if 0 <= i < len(self._MAZO_OPCIONES) else "solid"
 
     def _max_players(self):
-        """Las plazas de la mesa, siempre un numero: el combo ya no ofrece 'auto'.
-        Si GTK devolviera -1 (nada seleccionado, que no deberia pasar) se cae a 6,
-        que es la disposicion con todas las mediciones del proyecto detras."""
+        """Las plazas elegidas, o None si se deja en "Auto" (que es el arranque).
+
+        None NO significa "no acotes": significa "la lee del tapete". Quien la lee
+        es vision/disposicion.py, y mientras no tenga evidencia suficiente se
+        sigue usando la de 6 y se avisa en los mensajes. Si GTK devolviera -1
+        (nada seleccionado, que no deberia pasar) tambien sale None, que es el
+        modo mas conservador de los dos."""
         i = self.mesa_combo.get_active()
-        return self._MESA_OPCIONES[i] if 0 <= i < len(self._MESA_OPCIONES) else 6
+        return self._MESA_OPCIONES[i] if 0 <= i < len(self._MESA_OPCIONES) else None
 
     def _on_calibrate(self, _btn):
         if self.running:
@@ -1480,6 +1503,21 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         for w in state.get("warnings") or []:
             if "no se encuentra la mesa" in w:
                 return w
+        # y despues, con el selector en "Auto", el rato en que todavia no se sabe
+        # que mesa es. Ahi el motor NO recomienda a proposito (ver
+        # core.Analizador.analizar): se estaria mirando con la disposicion de 6
+        # sin saber si es la que toca, y las posiciones salen del recuento de
+        # asientos. Se dice aqui y no como aviso suelto porque es LA razon de que
+        # el panel este en blanco, y dura unos segundos al arrancar.
+        # se exige que el campo EXISTA -lo pone siempre el pipeline real- para no
+        # confundir "en Auto y sin decidir" con "este estado no habla de mesas"
+        if ("disposicion_detectada" in state
+                and state.get("max_players") is None
+                and state["disposicion_detectada"] is None):
+            return ("Mirando que mesa es (los nameplates dicen donde estan las plazas). "
+                    "Hasta saberlo no se recomienda: con la disposicion equivocada las "
+                    "posiciones salen mal y la recomendacion seria convincente y falsa. "
+                    "Si tienes prisa, elige el tamaño en el selector 'Mesa'.")
         # y lo segundo, porque es un ajuste que el usuario arregla en dos segundos
         # y sin el no hay NI UNA recomendacion: haber fijado un tamaño de mesa que
         # no es el de la mesa en la que se esta sentado. Sin nombrarlo aqui, el

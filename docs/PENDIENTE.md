@@ -1146,6 +1146,83 @@ depende de detectar sus cartas, y hay una señal mejor —su cápsula— que ya 
 para los rivales; falta comprobar qué hace con el badge de torneo, que vuelve
 clara la franja del stack.
 
+### 2.3g · Qué mesa es, leído del tapete — ✅ HECHO
+
+Lo pidió el usuario: *"extiende el sistema para que sea capaz de leer de la mesa
+las plazas ocupadas y sepa por sí solo cuántos jugadores están sentados para
+asignar el tipo de mesa sin tener que avisar yo en el gui"*. Y avisó del caso
+difícil: *"a veces hay 3 sentados en un 6-max, y las mesas finales son de 7, 8 o
+9"*.
+
+**Lo que se detecta es la GEOMETRÍA, no cuánta gente hay.** Son cosas distintas y
+confundirlas es el error clásico: un 6-max con tres jugadores sigue siendo un
+6-max y sus tres cápsulas caen en sitios de 6-max. Cuántos hay sentados lo sigue
+contando `table_state` frame a frame.
+
+**Cómo** (`vision/disposicion.py`): a cada geometría conocida se le pregunta,
+zona a zona, si ahí hay una cápsula anclada (`table_state.capsula_px`, la misma
+del arreglo de los stacks) y cuánto se descentra. Tres señales, y hacen falta las
+tres:
+
+| señal | qué aporta |
+|---|---|
+| contar cápsulas | 24 aciertos de 29 por sí sola |
+| descontar lo descentradas que están | los 5 fallos son mesas casi vacías, y ahí el centrado apunta a la buena |
+| **penalizar las cápsulas que deja sin explicar** | es lo único que separa 6 de 8, que comparten asientos |
+
+La tercera costó encontrarla. La de 8 puntuaba casi como la de 6 en una mesa de 6
+(3,07 contra 3,13 en una sesión real) porque comparten varios asientos; pero la
+de 8 **deja fuera** las cápsulas de los sitios que solo existen en 6. Contando
+eso, la misma sesión pasa a 1,12 contra 1,91.
+
+**El resultado, sobre las 29 sesiones grabadas con disposición conocida** (la
+verdad de terreno es gratis: cada `_sesion.json` guarda el `max_players` que el
+usuario eligió al grabar):
+
+| | |
+|---|---|
+| aciertos | **20** |
+| abstenciones | 9 |
+| **errores** | **0** |
+
+Cero errores es el reparto correcto, y es deliberado: los umbrales se barrieron y
+se eligieron **del centro de la zona sin errores**, no del borde (con margen 1,2
+se gana un acierto y aparece el primero). Una disposición equivocada no falla de
+forma visible; abstenerse solo significa seguir con la de 6 y avisar.
+
+**De punta a punta**, en una sesión real de 9-max (120 frames):
+
+| | asientos leídos | stacks | recomendaciones |
+|---|---|---|---|
+| el "auto" viejo (= usar la de 6) | 469 | 115 | **35, todas con la fila de rango equivocada** |
+| **Auto nuevo** | 806 | 548 | 0 |
+| elegir 9 a mano | 1039 | 851 | 0 |
+
+En una sesión de 6-max, Auto da **exactamente lo mismo** que elegir 6 a mano. El
+coste medido: en Auto no se recomienda durante los ~50 primeros frames (hay que
+esperar a que se fije la referencia del tapete y luego juntar 20 frames de
+evidencia), lo que en una sesión de 6-max son 4 recomendaciones menos de 13.
+Latencia: +14 ms de mediana sobre un ciclo de 0,35 s.
+
+**Dos bugs que destapó el cambio de disposición en caliente**, y que estaban
+latentes:
+
+1. El botón fijado de la mano en curso podía nombrar un asiento que en la mesa
+   nueva **no existe** (TOPC está en la de 6 y no en la de 9). Se colaba en
+   `occupied` —"el dealer es siempre un jugador sentado"— y el reparto de
+   posiciones se caía con un `KeyError`. Ahora `analyze_layout` filtra lo que le
+   llega de fuera contra la disposición en uso.
+2. `seat_map.disposicion()` tenía su propia tabla `{6, 8}` y se quedó sin la de 9
+   al añadirla, así que en una mesa de 9 el **lazo rápido** vigilaba las seis
+   zonas de la de 6. Ahora sale de `zonas()`, así que no pueden volver a
+   desincronizarse.
+
+**La mesa de 7 no está, y no es un olvido.** Se buscó: barrido de cápsulas sobre
+las 53 sesiones sin partir de ninguna geometría, y las 38 con tapete detectable
+salen de 6, 8 o 9. Una final de 7 jugadores es una mesa de **9 con dos huecos**,
+que es justo lo que el detector resuelve bien. Inventar una tabla de 7 a ojo sería
+exactamente lo que este proyecto no hace con las geometrías.
+
 ### 2.3b Corpus etiquetado
 
 El modo testing ya recoge la materia prima y las notas de §2.3 aportan los casos

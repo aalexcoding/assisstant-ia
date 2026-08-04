@@ -903,3 +903,46 @@ def test_un_nombre_vacio_no_se_deposita():
     tr.observar_nombre(None, "pepe")
     info = tr.update(estado({"UL": 20.0}))
     assert info["asientos"]["UL"]["nombre"] is None
+
+
+# --- cambiar de disposicion a mitad de sesion --------------------------------
+# Pasa con el selector en "Auto": los primeros frames se miran con la de 6
+# mientras el detector junta evidencia, y al fijarse en 9 la memoria por asiento
+# es de otra mesa. TOPC existe en la de 6 y no en la de 9.
+
+def test_al_cambiar_de_mesa_se_olvidan_los_asientos_que_ya_no_existen():
+    tr = ht.HandTracker()
+    for _ in range(ht.CENSO_FRAMES + 1):
+        tr.update(estado({"TOPC": 20.0, "UL": 30.0, "HERO": 40.0}))
+    assert "TOPC" in tr.asientos_estables()
+
+    tr.olvidar_asientos({"UL", "UR", "ML", "MR", "DL", "DR", "TL", "TR", "HERO"})
+
+    assert "TOPC" not in tr.asientos_estables()
+    assert "UL" in tr.asientos_estables(), "los que siguen existiendo no se tocan"
+
+
+def test_el_boton_fijado_en_un_asiento_que_ya_no_existe_se_suelta():
+    """Es el que reventaba: un boton fijado en TOPC se colaba en `occupied` y el
+    reparto de posiciones se caia con un KeyError al buscar su centro en una
+    disposicion que no lo tiene."""
+    tr = ht.HandTracker()
+    st = estado({"TOPC": 20.0, "UL": 30.0, "HERO": 40.0})
+    st["boton_leido"] = "TOPC"
+    for _ in range(ht.CENSO_FRAMES + 1):
+        tr.update(st)
+    assert tr.boton_de_la_mano() == "TOPC"
+
+    tr.olvidar_asientos({"UL", "HERO"})
+    assert tr.boton_de_la_mano() is None
+
+
+def test_olvidar_asientos_no_borra_la_mano_en_curso():
+    """La mano sigue siendo la misma: lo que ha dejado de significar es la
+    memoria POR ASIENTO, no el numero de mano ni el historial."""
+    tr = ht.HandTracker()
+    for _ in range(ht.CENSO_FRAMES + 1):
+        tr.update(estado({"TOPC": 20.0, "UL": 30.0, "HERO": 40.0}))
+    mano = tr.mano
+    tr.olvidar_asientos({"UL", "HERO"})
+    assert tr.mano == mano

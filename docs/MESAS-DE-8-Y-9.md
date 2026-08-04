@@ -1,13 +1,17 @@
 # Mesas de 8 y de 9: los asientos, medidos
 
-Estado: **cableado y jugable**. Elige **8-Max** en el selector "Mesa" de la
-ventana antes de darle a Iniciar.
+Estado: **cableado y jugable**. El selector "Mesa" arranca en **Auto** y la
+deduce del tapete; también puedes fijarla a mano antes de darle a Iniciar.
 
-Ese selector **ya no ofrece "auto"**, y lo pidió el usuario con razón: no
-detectaba nada. Solo quería decir "no acotes y usa la disposición de 6", así que
-en una mesa de 8 leía 4,69 asientos de 8 y 2 nicks de 10 sin avisar de nada. Una
-opción que dice deducir algo y no lo deduce invita a dejarla puesta. Arranca en
-6-Max, que es la disposición con todas las mediciones del proyecto detrás.
+**El "auto" volvió el 04-08-2026, y esta vez detecta de verdad.** Se había
+quitado con razón: entonces solo quería decir "no acotes y usa la disposición de
+6", así que en una mesa de 8 leía 4,69 asientos de 8 y 2 nicks de 10 sin avisar
+de nada — una opción que dice deducir algo y no lo deduce invita a dejarla
+puesta. El de ahora mira **dónde caen los nameplates** y lo contrasta con las
+tres geometrías medidas (`vision/disposicion.py`): sobre las 29 sesiones grabadas
+con disposición conocida **acierta 20, se abstiene en 9 y no se equivoca en
+ninguna**. Mientras no lo tiene claro usa la de 6 —como antes— pero lo dice, y no
+recomienda, que es justo lo que la versión vieja no hacía.
 
 Medido de punta a punta sobre dos sesiones reales de 8-max, reproduciendo los
 mismos frames con una disposición y con la otra.
@@ -105,18 +109,26 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
 
 ## Lo que queda
 
-- **El barrido sobredetecta**: 7,83 candidatos por frame en la mesa de 8 y 9,12
-  en una de 6, donde como mucho hay seis. Los falsos salen de la interfaz del
-  cliente (pestañas, casillas, botones). Sobre la sesión entera el ruido se
-  diluye al agrupar, pero para usarlo EN VIVO hay que limpiarlo. El filtro obvio
-  y sin medir: exigir tapete alrededor, que es lo que un nameplate tiene y una
-  pestaña no.
-- **La disposición la eliges tú en el selector "Mesa"**, no se detecta sola. Es
-  deliberado: una disposición equivocada no falla de forma visible -lee nombres
-  donde no hay nadie y deja jugadores invisibles- y eso desplaza TODAS las
-  posiciones, que salen del recuento de asientos ocupados. Detectarla sola queda
-  para cuando el barrido sea fiable frame a frame.
-- **La mesa de 7 sigue sin tabla.** Cae a la de 6, que es lo que hacía antes.
+- ~~**El barrido sobredetecta**~~ — sigue siendo cierto (7,83 candidatos por
+  frame en la de 8 y 9,12 en una de 6) y por eso **el detector NO usa el barrido
+  libre**. Se probó a limpiarlo con el filtro que quedaba apuntado —exigir tapete
+  alrededor— y ayuda, pero el panel del cliente de la derecha sigue saliendo como
+  cúmulo en casi todas las sesiones. La vía que sí funciona es la contraria:
+  preguntarle a cada geometría conocida si SUS zonas tienen cápsula, que es una
+  pregunta acotada. Ver `vision/disposicion.py`.
+- ~~**La disposición la eliges tú**~~ — **ya se detecta sola** (04-08-2026), con
+  abstención: 20 aciertos, 9 abstenciones y 0 errores sobre las 29 sesiones
+  etiquetadas. Sigue mandando lo que elijas a mano; en Auto, mientras no hay
+  evidencia se usa la de 6 y **no se recomienda**, porque las posiciones salen del
+  recuento de ocupados y con la geometría equivocada son plausibles y falsas.
+- **La mesa de 7 sigue sin tabla, y no por olvido.** Se buscó a propósito: se
+  barrieron las cápsulas de las 53 sesiones grabadas sin partir de ninguna
+  geometría, y las 38 con tapete detectable salen todas de 6, 8 o 9 —incluidas las
+  12 que no llevan la disposición apuntada en su metadata—. **Una final de 7
+  jugadores no es una mesa de 7 plazas**: es una de 9 con dos asientos vacíos, y
+  eso ya está cubierto (la geometría sale 9 y el recuento, 7). Medir una tabla de
+  7 hace falta el día que aparezca una mesa que de verdad no encaje; mientras
+  tanto el detector se abstiene en vez de inventarla.
 - **Las zonas de APUESTA siguen siendo derivadas y sin validar.** Se asume por
   cómo se usan: el importe leído ahí nunca crea una subida, solo atribuye una que
   el botón "Igualar" ya ha demostrado que existe, así que una zona mal puesta

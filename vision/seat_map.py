@@ -213,31 +213,28 @@ SEATS_9MAX = {
 # que solo leen la disposicion por defecto (herramientas de diagnostico y tests).
 SEATS = SEATS_6MAX
 
-# DESINCRONIZADO CON ZONAS_POR_DISPOSICION A PROPOSITO NO, POR DESCUIDO: aquel
-# tiene 6, 8 y 9 y este se quedo en 6 y 8 cuando se añadio la mesa de 9. Ver
-# disposicion() para lo que eso rompe.
-DISPOSICIONES = {6: SEATS_6MAX, 8: SEATS_8MAX}
-
-
 def disposicion(max_players=None):
     """Mapa de asientos para una mesa de `max_players` plazas.
 
     Sin decirlo, o con un numero para el que no hay tabla, se usa la de 6. NO se
-    adivina: una disposicion equivocada no falla de forma visible, lee nombres de
-    donde no hay nadie y deja jugadores invisibles, y eso desplaza TODAS las
-    posiciones porque salen del recuento de asientos ocupados. Mas vale leer de
-    menos con la tabla conocida que leer de mas con una inventada.
+    adivina AQUI: una disposicion equivocada no falla de forma visible, lee
+    nombres de donde no hay nadie y deja jugadores invisibles, y eso desplaza
+    TODAS las posiciones porque salen del recuento de asientos ocupados. Mas vale
+    leer de menos con la tabla conocida que leer de mas con una inventada. Quien
+    si mira la mesa para decidirlo -con evidencia y abstencion- es
+    vision/disposicion.py.
 
-    La mesa de 7 no tiene tabla todavia y cae a la de 6.
+    La mesa de 7 no tiene tabla y cae a la de 6; ver el docstring de
+    vision/disposicion.py para por que no se ha medido (no hay un solo frame de
+    una en el corpus).
 
-    HUECO CONOCIDO: LA MESA DE 9 TAMPOCO ESTA AQUI, y esa si tiene tabla medida
-    -zonas(9) la devuelve-. Su unico consumidor es core/analisis.py, que con esto
-    construye el SeatWatch del LAZO RAPIDO, asi que en una mesa de 9 ese lazo
-    vigila las seis zonas de la mesa de 6: TOPC y los dos del medio caen en tapete
-    vacio y un verbo leido en el borde de DL se etiqueta ML. El analisis pesado NO
-    esta afectado: ese va por zonas(). Deducido del codigo y sin medir; ver
-    docs/MESAS-DE-8-Y-9.md, "El lazo rapido NO usa la geometria de 9"."""
-    return DISPOSICIONES.get(max_players, SEATS_6MAX)
+    SALE DE zonas() Y NO DE UNA TABLA PROPIA, y eso arregla un fallo real: habia
+    un DISPOSICIONES = {6, 8} que se quedo sin la mesa de 9 al añadirla, asi que
+    en una mesa de 9 el SeatWatch del LAZO RAPIDO -su unico consumidor- vigilaba
+    las seis zonas de la de 6: TOPC y los dos del medio caian en tapete vacio y un
+    verbo leido en el borde de DL se etiquetaba ML. Con las dos derivadas de la
+    misma tabla no pueden volver a desincronizarse."""
+    return zonas(max_players)["seats"]
 
 
 HERO_SEAT = "HERO"

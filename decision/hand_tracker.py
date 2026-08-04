@@ -859,6 +859,33 @@ class HandTracker:
         if self._boton_fijo and self._censo_fijo is not None:
             self._censo_fijo = set(self._censo_fijo) | {self._boton_fijo}
 
+    def olvidar_asientos(self, existentes):
+        """Suelta todo lo que sepa de asientos que YA NO EXISTEN.
+
+        Hace falta cuando cambia la disposicion de la mesa a mitad de sesion, que
+        es lo que pasa con el selector en "Auto": los primeros frames se miran con
+        la de 6 mientras el detector junta evidencia, y al fijarse en 9 el censo,
+        el boton y los nombres votados son de asientos que en la mesa nueva no
+        estan (TOPC existe en la de 6 y no en la de 9). Arrastrarlos no es solo
+        feo: el boton fijado en un asiento inexistente reventaba el reparto de
+        posiciones.
+
+        NO borra la mano ni su numero: la mano sigue siendo la misma y el
+        historial de acciones tambien. Lo que se cae es la memoria POR ASIENTO,
+        que es justo lo que ha dejado de significar."""
+        existentes = set(existentes)
+        for atributo in ("_asientos", "_meta", "_veces", "_nombres",
+                         "_nombres_previos", "_pendientes_nombre", "_votos_boton"):
+            memoria = getattr(self, atributo, None)
+            if isinstance(memoria, dict):
+                for seat in [s for s in memoria if s not in existentes]:
+                    del memoria[seat]
+        if self._censo_fijo is not None:
+            self._censo_fijo = {s for s in self._censo_fijo if s in existentes}
+        if self._boton_fijo is not None and self._boton_fijo not in existentes:
+            self._boton_fijo = None
+        self._botones = [b for b in self._botones if b in existentes]
+
     def resumen(self):
         asientos = {}
         for seat, a in self._asientos.items():

@@ -17,6 +17,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gio, Gtk        # noqa: E402
 
 import gui                                # noqa: E402
+from vision import disposicion            # noqa: E402
 from vision import seat_map               # noqa: E402
 
 pytestmark = pytest.mark.gtk
@@ -37,18 +38,30 @@ def ventana(app):
     win.destroy()
 
 
-def test_el_selector_de_mesa_NO_ofrece_auto(ventana):
-    """Lo pidio el usuario y tenia razon: 'auto' no detectaba nada. Solo queria
-    decir "no acotes y usa la disposicion de 6", asi que en una mesa de 8 leia
-    4,69 asientos de 8 y 2 nicks de 10 sin avisar. Una opcion que dice deducir
-    algo y no lo deduce invita a dejarla puesta."""
-    assert None not in gui.PokerAssistantWindow._MESA_OPCIONES
-    assert ventana._max_players() is not None
+def test_el_auto_del_selector_significa_DETECTARLA(ventana):
+    """El "auto" se quito en su dia y volvio con la detección de verdad detras.
+
+    La version vieja se retiro con razon: solo queria decir "no acotes y usa la
+    disposicion de 6", asi que en una mesa de 8 leia 4,69 asientos de 8 y 2 nicks
+    de 10 sin avisar de nada. La de ahora mira DONDE caen los nameplates y lo
+    contrasta con las tres geometrias medidas (vision/disposicion.py): 20
+    aciertos, 9 abstenciones y CERO errores sobre las 29 sesiones grabadas con
+    disposicion conocida. Lo que hace None ahora es entregar la decision a ese
+    detector, no dejar la mesa sin acotar.
+
+    Si alguien vuelve a quitar el detector, este test tiene que caerse: un None
+    en el selector sin nadie que lo resuelva es exactamente el "auto" viejo."""
+    assert None in gui.PokerAssistantWindow._MESA_OPCIONES
+    assert ventana._max_players() is None, "Auto es lo que arranca puesto"
+    assert disposicion.PLAZAS_CANDIDATAS, "sin candidatas, Auto no decide nada"
 
 
-def test_arranca_en_6_max(ventana):
-    """La disposicion con todas las mediciones del proyecto detras."""
-    assert ventana._max_players() == 6
+def test_arranca_en_auto(ventana):
+    """Acierta o se abstiene, nunca elige mal: es el arranque que menos exige al
+    usuario sin arriesgar nada. Cuando se abstiene cae a la de 6, que es la
+    disposicion con todas las mediciones del proyecto detras."""
+    assert ventana._max_players() is None
+    assert len(seat_map.zonas(None)["seats"]) == 6
 
 
 def test_la_jerarquia_principal_es_compacta_y_tiene_scroll(ventana):
@@ -81,15 +94,16 @@ def test_la_accion_en_castellano_es_la_lectura_principal(ventana):
     assert "Código de tabla: OPEN RAISE (2 BB)" in texto
 
 
-def test_estan_las_cinco_mesas_y_en_el_orden_del_combo(ventana):
+def test_estan_las_seis_opciones_y_en_el_orden_del_combo(ventana):
     """Si el orden se desincroniza, elegir 8-Max daria la geometria de otra mesa
     y el fallo no se veria: leeria nombres donde no hay nadie."""
-    assert gui.PokerAssistantWindow._MESA_OPCIONES == (2, 3, 6, 8, 9)
+    assert gui.PokerAssistantWindow._MESA_OPCIONES == (None, 2, 3, 6, 8, 9)
     for i, plazas in enumerate(gui.PokerAssistantWindow._MESA_OPCIONES):
         ventana.mesa_combo.set_active(i)
         assert ventana._max_players() == plazas
         etiqueta = ventana.mesa_combo.get_active_text()
-        assert str(plazas) in etiqueta, f"{etiqueta!r} no habla de {plazas} plazas"
+        esperado = "Auto" if plazas is None else str(plazas)
+        assert esperado in etiqueta, f"{etiqueta!r} no habla de {esperado}"
 
 
 def test_cada_opcion_da_una_geometria_coherente(ventana):
@@ -97,8 +111,12 @@ def test_cada_opcion_da_una_geometria_coherente(ventana):
     resto la de 6, que es lo que hay medido. Une el combo con seat_map, que es
     donde se podria desincronizar sin que se note: elegir 9 plazas y recibir la
     geometria de otra mesa no falla de forma visible, lee nombres donde no hay
-    nadie."""
-    esperado = {2: 6, 3: 6, 6: 6, 8: 8, 9: 9}
+    nadie.
+
+    Auto tambien cae a la de 6, y eso es lo correcto: es la que se usa MIENTRAS
+    el detector no tiene evidencia. Cuando la tiene, quien cambia la geometria es
+    el Analizador (ver core.Analizador._usar_plazas), no esta funcion."""
+    esperado = {None: 6, 2: 6, 3: 6, 6: 6, 8: 8, 9: 9}
     for i, plazas in enumerate(gui.PokerAssistantWindow._MESA_OPCIONES):
         ventana.mesa_combo.set_active(i)
         n = len(seat_map.zonas(ventana._max_players())["seats"])

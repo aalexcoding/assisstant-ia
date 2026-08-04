@@ -228,6 +228,17 @@ panel "Mano anterior" no pierde ni un frame.
   evita la interacción, solo el permiso). Necesita `PyGObject`/`GStreamer` del
   sistema — el venv del proyecto se creó con `include-system-site-packages = true`
   en `.venv/pyvenv.cfg` para verlos sin tener que compilarlos aparte.
+- `vision/disposicion.py` — **qué mesa es**, leído del tapete en vez de elegido a
+  mano. A cada geometría conocida (6, 8 y 9 plazas) se le pregunta si SUS zonas
+  tienen cápsula de nameplate y cuánto se descentra, y se penaliza la que deje
+  cápsulas sin explicar —que es lo único que separa una mesa de 6 de una de 8, que
+  comparten asientos—. Detecta la GEOMETRÍA, no cuánta gente hay sentada: un
+  6-max con tres jugadores sigue siendo un 6-max. **Se abstiene cuando no está
+  claro**, y entonces se usa la de 6 y no se recomienda, porque las posiciones
+  salen del recuento de ocupados y con la geometría equivocada serían plausibles y
+  falsas. Sobre las 29 sesiones grabadas con disposición conocida: 20 aciertos, 9
+  abstenciones, **0 errores**. El selector "Mesa" arranca en Auto; elegirla a mano
+  sigue mandando (y entonces el detector solo avisa si no cuadra).
 - `vision/` — Fase 3: reconocimiento del estado de mesa (cartas, stacks, pot...).
   `table_state.py` (`analyze(image_path) -> GameState`) orquesta `table_region.py`
   (localiza el ovalo por el borde rojo), `card_detector.py` (cartas por contorno

@@ -1042,6 +1042,22 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         return state
     state["table_reference_valid"] = True
 
+    # UN ASIENTO QUE NO EXISTE EN ESTA DISPOSICION NO CUENTA PARA NADA. Lo que
+    # llega de fuera -el censo y el boton fijados de la mano en curso- se midio
+    # con la disposicion que hubiera entonces, y esa puede haber cambiado: el
+    # selector puede estar en "Auto" y la deteccion fijarse a mitad de sesion
+    # (ver vision/disposicion.py). Sin este filtro, un boton fijado en TOPC
+    # -asiento que existe en la mesa de 6 y no en la de 9- se colaba en `occupied`
+    # mas abajo y reventaba el reparto de posiciones con un KeyError.
+    #
+    # Es ademas la respuesta correcta y no solo la que no peta: si ese asiento no
+    # existe en la mesa que se esta mirando, no puede haber nadie sentado en el.
+    _existentes = set(seat_map.zonas(max_players)["seats"])
+    if asientos_estables:
+        asientos_estables = [s for s in asientos_estables if s in _existentes]
+    if boton_fijado is not None and boton_fijado not in _existentes:
+        boton_fijado = None
+
     # LA DISPOSICION DE LA MESA sale de max_players, que ya viajaba hasta aqui.
     # Es coherente: ese parametro siempre ha querido decir "cuantos jugadores
     # caben", y cuantos caben determina DONDE estan. Sin decirlo se usa la de 6,
