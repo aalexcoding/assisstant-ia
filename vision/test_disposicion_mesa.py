@@ -126,8 +126,12 @@ def test_cada_ancla_de_8_es_de_UN_asiento():
 def test_una_disposicion_desconocida_cae_a_la_de_6():
     """NO se adivina. Una disposicion equivocada no falla de forma visible: lee
     nombres donde no hay nadie y deja jugadores invisibles, y eso desplaza TODAS
-    las posiciones, que salen del recuento de asientos ocupados."""
-    for n in (None, 3, 7, 99):
+    las posiciones, que salen del recuento de asientos ocupados.
+
+    La de 7 SALIO de esta lista el 04-08-2026, cuando el usuario señalo el frame
+    4317 de sesion-2026-08-03_221628 -la mesa final de un torneo- y se pudo medir.
+    Las que quedan siguen sin tabla propia."""
+    for n in (None, 3, 5, 99):
         assert seat_map.zonas(n)["seats"] is seat_map.SEATS_6MAX, n
 
 

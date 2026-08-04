@@ -1234,11 +1234,21 @@ latentes:
    zonas de la de 6. Ahora sale de `zonas()`, así que no pueden volver a
    desincronizarse.
 
-**La mesa de 7 no está, y no es un olvido.** Se buscó: barrido de cápsulas sobre
-las 53 sesiones sin partir de ninguna geometría, y las 38 con tapete detectable
-salen de 6, 8 o 9. Una final de 7 jugadores es una mesa de **9 con dos huecos**,
-que es justo lo que el detector resuelve bien. Inventar una tabla de 7 a ojo sería
-exactamente lo que este proyecto no hace con las geometrías.
+**La mesa de 7 SÍ existe, y me equivoqué dos veces con ella.** Primero dije que no
+había ninguna en el corpus: había barrido las 53 sesiones mirando solo sus
+primeros frames, y esa mesa aparece en el **frame 4317 de una sesión de 6.573** —
+la final del torneo, que el usuario señaló con nombre y apellidos. Y luego supuse
+que sería "una de 9 con dos huecos": tampoco. Es una geometría propia y **mixta**,
+con los dos de arriba donde los pone la de 9 y los cuatro laterales donde los pone
+la de 6. Ya está medida (`seat_map.SEATS_7MAX`) y **se elige a mano**; eligiéndola,
+en ese tramo los stacks leídos suben de 525 a 627 (+19 %).
+
+El detector automático **no la propone todavía**, y también está medido: metiéndola
+entre las candidatas se pasa de 25 aciertos a 20 (sigue sin errores) porque al ser
+mixta hunde la señal de exclusividad, y en el único tramo grabado no llega al
+mínimo de evidencia igualmente — ahí la referencia del tapete oscila entre núcleos
+de alto 498, 421 y 343 sobre la misma mesa. **Cuesta 5 y gana 0.** Lo que hace
+falta para meterla es arreglar la referencia (§2.0c), no tocar el detector.
 
 ### 2.3b Corpus etiquetado
 

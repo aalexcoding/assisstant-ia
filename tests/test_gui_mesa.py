@@ -94,10 +94,10 @@ def test_la_accion_en_castellano_es_la_lectura_principal(ventana):
     assert "Código de tabla: OPEN RAISE (2 BB)" in texto
 
 
-def test_estan_las_seis_opciones_y_en_el_orden_del_combo(ventana):
+def test_estan_las_siete_opciones_y_en_el_orden_del_combo(ventana):
     """Si el orden se desincroniza, elegir 8-Max daria la geometria de otra mesa
     y el fallo no se veria: leeria nombres donde no hay nadie."""
-    assert gui.PokerAssistantWindow._MESA_OPCIONES == (None, 2, 3, 6, 8, 9)
+    assert gui.PokerAssistantWindow._MESA_OPCIONES == (None, 2, 3, 6, 7, 8, 9)
     for i, plazas in enumerate(gui.PokerAssistantWindow._MESA_OPCIONES):
         ventana.mesa_combo.set_active(i)
         assert ventana._max_players() == plazas
@@ -116,7 +116,7 @@ def test_cada_opcion_da_una_geometria_coherente(ventana):
     Auto tambien cae a la de 6, y eso es lo correcto: es la que se usa MIENTRAS
     el detector no tiene evidencia. Cuando la tiene, quien cambia la geometria es
     el Analizador (ver core.Analizador._usar_plazas), no esta funcion."""
-    esperado = {None: 6, 2: 6, 3: 6, 6: 6, 8: 8, 9: 9}
+    esperado = {None: 6, 2: 6, 3: 6, 6: 6, 7: 7, 8: 8, 9: 9}
     for i, plazas in enumerate(gui.PokerAssistantWindow._MESA_OPCIONES):
         ventana.mesa_combo.set_active(i)
         n = len(seat_map.zonas(ventana._max_players())["seats"])
@@ -171,3 +171,55 @@ def test_la_sesion_grabada_anota_MESA_Y_MAZO(ventana, tmp_path, monkeypatch):
     ses.meta["mazo"] = ventana._mazo()
     assert ses.meta["max_players"] == 9
     assert ses.meta["mazo"] == "solid"
+
+
+# --- se ve QUE MESA se esta usando ------------------------------------------
+# Lo pidio el usuario: "ponme en algun punto de la gui que geometria de mesa ha
+# encontrado". Es lo que decide DONDE se buscan los asientos, y de su recuento
+# salen todas las posiciones, asi que cuando algo no cuadra es lo primero que hay
+# que poder mirar.
+
+def test_mientras_decide_lo_dice_y_dice_con_que_esta_mirando(ventana):
+    texto = ventana._texto_mesa({"max_players": None, "disposicion_detectada": None,
+                                 "mesa_elegida": None})
+    assert "mirando" in texto
+    assert "6" in texto, "hay que decir con que geometria se esta mirando entretanto"
+
+
+def test_cuando_la_detecta_se_ve_el_numero_Y_que_es_detectada(ventana):
+    texto = ventana._texto_mesa({"max_players": 9, "disposicion_detectada": 9,
+                                 "mesa_elegida": None})
+    assert "9" in texto and "detect" in texto.lower()
+
+
+def test_elegida_a_mano_se_ve_como_elegida(ventana):
+    texto = ventana._texto_mesa({"max_players": 6, "disposicion_detectada": 6,
+                                 "mesa_elegida": 6})
+    assert "6" in texto and "elegida" in texto
+
+
+def test_si_el_tapete_no_cuadra_con_lo_elegido_se_avisa_ahi_mismo(ventana):
+    """El fallo mudo que esto destapa: elegir 6-Max en una mesa de 9 lee 6 de los
+    9 asientos y el recuento desplaza todas las posiciones."""
+    texto = ventana._texto_mesa({"max_players": 6, "disposicion_detectada": 9,
+                                 "mesa_elegida": 6})
+    assert "6" in texto and "9" in texto
+    assert "parece" in texto
+
+
+def test_el_panel_de_sistema_tiene_la_etiqueta(ventana):
+    assert ventana.mesa_label.get_parent() is not None
+
+
+def test_la_mesa_de_7_se_puede_elegir_a_mano(ventana):
+    """Es la de las FINALES, y la encontro el usuario señalando el frame 4317 de
+    una sesion de 6.573 despues de que se dijera que no existia. Se elige a mano
+    porque el detector automatico todavia no la propone: meterla entre sus
+    candidatas le cuesta 5 aciertos en las demas y, medido sobre el unico tramo
+    grabado de mesa de 7, no gana ninguno -ahi la referencia del tapete esta rota
+    y no llega al minimo de evidencia-. Ver vision/disposicion.PLAZAS_CANDIDATAS."""
+    i = gui.PokerAssistantWindow._MESA_OPCIONES.index(7)
+    ventana.mesa_combo.set_active(i)
+    assert ventana._max_players() == 7
+    assert len(seat_map.zonas(7)["seats"]) == 7
+    assert 7 not in disposicion.PLAZAS_CANDIDATAS

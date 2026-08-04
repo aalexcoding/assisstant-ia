@@ -426,3 +426,41 @@ def test_la_zona_revelada_de_cada_asiento_cabe_en_la_imagen():
             recortado = max(0, int(ref[0] + ancho_pedido) - shape[1])
             assert recortado < 0.09 * ref[2], (
                 f"{plazas}/{asiento}: se recortan {recortado} px, mas de una carta")
+
+
+# --- la mesa de 7, la de las finales -----------------------------------------
+# La encontro el usuario señalando el frame 4317 de sesion-2026-08-03_221628
+# ("tiene 7 sentados y no termina de encontrar que es de 7") despues de que se
+# hubiera dicho que no existia ninguna en el corpus. Existia: en el tramo final
+# de una sesion de 6.573 frames.
+
+def test_la_mesa_de_7_tiene_sus_siete_asientos():
+    zonas = seat_map.zonas(7)["seats"]
+    assert set(zonas) == {"TL", "TR", "UL", "UR", "ML", "MR", "HERO"}
+    assert len(seat_map.SEATING_BY_N[7]) == 7, "y sus siete etiquetas de posicion"
+
+
+def test_la_mesa_de_7_es_simetrica():
+    """Dos arriba, dos por cada lado y el hero abajo. La simetria izquierda-
+    derecha es la comprobacion mas barata de que las zonas no estan movidas: MR se
+    derivo por espejo de ML, asi que si el espejo esta mal esto se cae."""
+    z = seat_map.zonas(7)["seats"]
+
+    def centro(nombre):
+        p = z[nombre]["plate"]
+        return (p[0] + p[2]) / 2, (p[1] + p[3]) / 2
+
+    for izq, der in (("TL", "TR"), ("UL", "UR"), ("ML", "MR")):
+        cx_i, cy_i = centro(izq)
+        cx_d, cy_d = centro(der)
+        assert abs(cy_i - cy_d) < 0.03, f"{izq} y {der} a distinta altura"
+        assert abs((cx_i + cx_d) / 2 - 0.465) < 0.05, f"{izq}/{der} descentrados"
+
+
+def test_las_tres_tablas_de_la_de_7_hablan_de_los_mismos_asientos():
+    """Un asiento con nameplate y sin zona de apuesta lee el importe de otro
+    sitio, y eso no falla de forma visible."""
+    z = seat_map.zonas(7)
+    assert set(z["apuestas"]) == set(z["seats"])
+    # los dorsos no incluyen al hero: sus cartas se ven, no su dorso
+    assert set(z["dorsos"]) == set(z["seats"]) - {"HERO"}

@@ -35,6 +35,7 @@ from core import VIGILANCIA_PERIODO_S, Analizador
 from core.analisis import Ritmo
 from decision.rag import postmano
 from vision import hand_result as hr
+from vision import seat_map
 from vision.ocr_client import cerrar_workers
 from capture import portal_capture as pc
 
@@ -1101,17 +1102,21 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         mesa_label.add_css_class("field-label")
         self.mesa_combo = Gtk.ComboBoxText()
         for etiqueta in ("Auto (la lee del tapete)", "2 (heads-up)", "3-Max",
-                         "6-Max", "8-Max", "9 plazas"):
+                         "6-Max", "7 plazas (finales)", "8-Max", "9 plazas"):
             self.mesa_combo.append_text(etiqueta)
         self.mesa_combo.set_active(self._MESA_OPCIONES.index(None))
         self.mesa_combo.set_tooltip_text(
             "Cuantas plazas tiene la mesa. Ademas de acotar el recuento, decide "
             "DONDE se buscan los asientos. Hay geometria medida para 6, 8 y 9; 2 y "
-            "3 usan la de 6, que es la que habia.\n\n"
+            "3 usan la de 6, que es la que habia; la de 7 es la de las finales.\n\n"
             "Auto la deduce de donde caen los nameplates y se abstiene si no lo "
             "tiene claro (entonces usa la de 6 y avisa). Elegirla a mano sigue "
             "mandando: si la eliges, Auto no toca nada, pero te avisa si lo que ve "
-            "no cuadra con lo que has elegido.")
+            "no cuadra con lo que has elegido.\n\n"
+            "La de 7 es la de las FINALES (dos arriba, dos por lado y tu abajo) y "
+            "hay que elegirla a mano: Auto todavia no la propone porque meterla "
+            "entre las candidatas le cuesta aciertos en las demas. Ver "
+            "vision/disposicion.py.")
 
         # EL RITMO SE VE, NO SE ELIGE. Antes habia aqui un spin de 0,25 a 10 s
         # cuyo numero no describia nada: 8 de sus 40 valores son fisicamente
@@ -1185,6 +1190,11 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         panel, box = self._panel("Sistema y diagnóstico")
 
         self.region_label = self._markup_label("Recuadro: <i>-</i>")
+        # QUE MESA SE ESTA USANDO Y POR QUE. Es lo que decide DONDE se buscan los
+        # asientos, y de su recuento salen todas las posiciones, asi que cuando
+        # algo no cuadra es lo primero que hay que poder mirar. Sin esto, con el
+        # selector en "Auto" no habia forma de saber que habia deducido.
+        self.mesa_label = self._markup_label("Mesa: <i>-</i>")
         self.status_label = self._markup_label("Parado.")
         self.testing_label = self._markup_label("")
         self.testing_label.set_wrap(True)
@@ -1193,6 +1203,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.warnings_label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
 
         box.append(self.region_label)
+        box.append(self.mesa_label)
         box.append(self.status_label)
         box.append(self.testing_label)
         box.append(self.warnings_label)
@@ -1276,7 +1287,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
     # None = "Auto": la disposicion la decide vision/disposicion.py mirando el
     # tapete. Va la PRIMERA porque es lo que uno quiere por defecto: acierta o se
     # abstiene, nunca elige mal. Ver el combo.
-    _MESA_OPCIONES = (None, 2, 3, 6, 8, 9)
+    _MESA_OPCIONES = (None, 2, 3, 6, 7, 8, 9)
 
     # mismo orden que el combo de mazo; None = diagnóstico con ambos detectores
     _MAZO_OPCIONES = ("solid", "glyph", None)
@@ -1398,6 +1409,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
 
     def on_result(self, state, recommendation, hand=None):
         self._set_run_state("ANALIZANDO", "status-live")
+        self.mesa_label.set_markup(self._texto_mesa(state))
         # cachea el nombre del hero (ultimo no-nulo del asiento is_hero): su
         # nameplate a veces muestra la accion ("Igualar"/"Pasar") en vez del
         # nombre, asi que solo se actualiza cuando hay nombre.
@@ -1493,6 +1505,32 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
                 ["• " + warnings[0], *warnings[1:]]))) if warnings else
             '<span foreground="#6ee7a7">Sin avisos activos.</span>')
         return False
+
+    @staticmethod
+    def _texto_mesa(state):
+        """Que geometria se esta usando y de donde sale.
+
+        Se distinguen los tres casos que le importan al usuario, porque cada uno
+        se arregla de una manera: la ha deducido la app, la ha elegido el, o
+        todavia no lo sabe y esta usando la de 6 por defecto. Y si lo que ve el
+        tapete no cuadra con lo elegido, se dice AQUI ademas de en los avisos: es
+        el sitio donde uno mira cuando las posiciones no cuadran."""
+        usadas = state.get("max_players")
+        detectada = state.get("disposicion_detectada")
+        elegida = state.get("mesa_elegida")
+        asientos = len(seat_map.zonas(usadas)["seats"])
+        if elegida is None:                       # el selector esta en "Auto"
+            if detectada is None:
+                return ('Mesa: <span foreground="#e67e22">mirando cual es</span> '
+                        '(mientras tanto, geometria de 6)')
+            return (f'Mesa: <b>{detectada}</b> plazas '
+                    f'<span foreground="#6ee7a7">detectada</span> '
+                    f'({asientos} asientos en el mapa)')
+        texto = f'Mesa: <b>{elegida}</b> plazas elegida ({asientos} asientos en el mapa)'
+        if detectada is not None and detectada != elegida:
+            texto += (f' — <span foreground="#e67e22">el tapete parece de '
+                      f'{detectada}</span>')
+        return texto
 
     @staticmethod
     def _no_reco_reason(state):

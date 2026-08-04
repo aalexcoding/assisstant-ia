@@ -121,14 +121,14 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
   etiquetadas. Sigue mandando lo que elijas a mano; en Auto, mientras no hay
   evidencia se usa la de 6 y **no se recomienda**, porque las posiciones salen del
   recuento de ocupados y con la geometría equivocada son plausibles y falsas.
-- **La mesa de 7 sigue sin tabla, y no por olvido.** Se buscó a propósito: se
-  barrieron las cápsulas de las 53 sesiones grabadas sin partir de ninguna
-  geometría, y las 38 con tapete detectable salen todas de 6, 8 o 9 —incluidas las
-  12 que no llevan la disposición apuntada en su metadata—. **Una final de 7
-  jugadores no es una mesa de 7 plazas**: es una de 9 con dos asientos vacíos, y
-  eso ya está cubierto (la geometría sale 9 y el recuento, 7). Medir una tabla de
-  7 hace falta el día que aparezca una mesa que de verdad no encaje; mientras
-  tanto el detector se abstiene en vez de inventarla.
+- ~~**La mesa de 7 sigue sin tabla**~~ — **ya está medida** (04-08-2026), y la
+  encontró el usuario: *"el 4317.png tiene 7 sentados y no termina de encontrar
+  que es de 7"*. Yo había dicho que no existía porque barrí las 53 sesiones
+  mirando solo sus primeros frames, y esa mesa aparece en el **frame 4317 de una
+  sesión de 6.573**: la final del torneo. Ver la sección "La mesa de 7" abajo.
+  **Se elige a mano**; el detector automático todavía no la propone, y eso también
+  está medido (cuesta 5 aciertos y no gana ninguno mientras la referencia siga
+  rota en ese tramo).
 - **Las zonas de APUESTA siguen siendo derivadas y sin validar.** Se asume por
   cómo se usan: el importe leído ahí nunca crea una subida, solo atribuye una que
   el botón "Igualar" ya ha demostrado que existe, así que una zona mal puesta
@@ -390,3 +390,61 @@ todos contra `zonas()`, que sí tiene el 9. Por eso el hueco pasó desapercibido
 es una deducción del código, no una medición. El arreglo natural es que
 `disposicion()` salga de `ZONAS_POR_DISPOSICION` en vez de un segundo diccionario
 que se desincroniza.
+
+
+## La mesa de 7: la de las finales
+
+La señaló el usuario con un frame concreto. Siete plazas: **dos arriba, dos por
+cada lado y el hero abajo**, sin los dos de abajo-lados que tiene la de 9.
+
+Y **no es una mesa de 9 con dos huecos**, que era la suposición de partida. Es una
+geometría propia y **mixta**: sus dos asientos de arriba caen donde los pone la
+mesa de 9 (a 0,04 y 0,09 de `TL` y `TR`) y sus cuatro laterales donde los pone la
+de 6 (a 0,04-0,05 de `UL`, `UR` y `ML`, frente a 0,09-0,21 de los de la de 9).
+Tiene sentido: siete asientos alrededor de un óvalo se reparten entre lo que hace
+una de 6 y lo que hace una de 9.
+
+    asiento   centro (fracción del núcleo)      de dónde sale su posición
+    TL        (+0.25, -0.22)                    como la de 9
+    TR        (+0.68, -0.21)                    como la de 9
+    UL        (+0.00, +0.11)                    como la de 6
+    UR        (+0.93, +0.10)                    como la de 6
+    ML        (+0.00, +0.69)                    como la de 6
+    MR        (+0.93, +0.69)                    ESPEJO de ML, no medida
+    HERO      (+0.47, +1.09)
+
+Verificado dibujando las siete zonas sobre los frames: caen sobre los siete
+nameplates, **incluida la MR derivada**.
+
+### La cautela que hubo que tomar al medirla
+
+**En ese tramo la referencia del tapete oscila entre tres núcleos muy distintos**
+—alto 498, 421 y 343 sobre la misma mesa— porque los dos nameplates de arriba
+parten la banda de fieltro superior y el detector a veces se la come. Mezclar
+frames de las tres da fracciones que no significan nada: el mismo nameplate sale a
+dos alturas. Así que se midió **solo con los 46 frames (de 251) cuyo óvalo sale
+entero** y luego se pasó el resultado al marco de referencia que usan las demás
+tablas.
+
+Es la misma causa de fondo de siempre (§2.0c de PENDIENTE) y aquí es lo que limita
+todo lo demás: eligiendo la mesa de 7 a mano, sobre 280 frames de ese tramo, los
+stacks leídos suben de 525 a **627** (+19 %) y los nicks distintos de 16 a 18 —
+pero no más, porque con la referencia bailando la mitad de los frames no se puede
+leer bien nada.
+
+### Por qué el detector automático todavía no la propone
+
+| candidatas | aciertos | errores | abstenciones |
+|---|---|---|---|
+| 6, 8 y 9 | **25** | 0 | 4 |
+| 6, 7, 8 y 9 | 20 | 0 | 9 |
+
+El motivo es geométrico y no se arregla afinando umbrales: al ser **mixta**, la de
+7 deja sin asientos exclusivos a la de 6 (comparte sus laterales) y a la de 9
+(comparte su fila de arriba), y esa exclusividad es la señal que más distingue.
+
+Y lo que se ganaría a cambio está medido: en el único tramo grabado de mesa de 7,
+la de 7 **sí es la mejor explicación** (0,69 puntos de media contra 0,34 de la
+siguiente, y gana en 100 frames sueltos) pero **no llega al mínimo de evidencia**
+porque la referencia está rota ahí. O sea: cuesta 5 y gana 0. **Lo que hace falta
+para meterla es arreglar la referencia**, no tocar el detector.

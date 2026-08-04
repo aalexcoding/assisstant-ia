@@ -55,19 +55,45 @@ decide nunca y la mesa se ve llena, lo que hay que mirar es la referencia. Es la
 causa de fondo que el proyecto ya tiene abierta -que find_reference no es
 reproducible frame a frame-, no una limitacion de la deteccion de mesa.
 
-LA MESA DE 7 NO ESTA, y no es un olvido: no hay un solo frame de una en el
-corpus. Se busco a proposito, barriendo las capsulas de las 53 sesiones grabadas
-sin partir de ninguna geometria; las 38 con tapete detectable salen todas de 6, 8
-o 9, incluidas las 12 que no llevan la disposicion apuntada en su metadata. Una
-final de 7 jugadores no es una mesa de 7 plazas: es una de 9 con dos asientos
-vacios, y eso ya esta cubierto -la geometria sale 9 y el recuento, 7-. Si algun
-dia aparece una mesa que de verdad no encaje, esto se abstiene en vez de
-inventarsela, que es justo lo que hay que hacer con una tabla sin medir.
+LA MESA DE 7 EXISTE -es la de las FINALES- y esta medida en seat_map.SEATS_7MAX,
+pero NO entra entre las candidatas de aqui. La encontro el usuario señalando un
+frame concreto despues de que yo dijera que no existia: yo habia barrido las 53
+sesiones grabadas mirando solo sus primeros frames, y esa mesa aparece en el
+frame 4317 de una sesion de 6.573. Tampoco es "una de 9 con dos huecos", que fue
+mi otra suposicion equivocada: es una geometria propia y mixta. Ver
+PLAZAS_CANDIDATAS para los numeros de por que no se detecta sola todavia y que
+haria falta.
 """
 from vision import seat_map
 from vision import table_state
 
-# las que tienen tabla MEDIDA. Ver el docstring para la de 7.
+# LA MESA DE 7 EXISTE Y ESTA MEDIDA (seat_map.SEATS_7MAX) PERO NO ENTRA AQUI, y
+# es una decision con numeros detras. Metiendola entre las candidatas, sobre las
+# 29 sesiones etiquetadas:
+#
+#     candidatas        aciertos   errores   abstenciones
+#     6, 8 y 9                25         0              4
+#     6, 7, 8 y 9             20         0              9   (con el peso mejor
+#                                                            que se encontro)
+#
+# El motivo es geometrico y no se arregla afinando: la de 7 es MIXTA -sus dos
+# asientos de arriba son los de la mesa de 9 y sus cuatro laterales los de la de
+# 6-, asi que al entrar deja de haber asientos exclusivos y se hunde la señal que
+# mas distingue (ver ESCALA_EXCLUSIVIDAD). Cuesta 5 detecciones.
+#
+# Y lo que se GANA a cambio, medido en el unico tramo de mesa de 7 que hay
+# grabado (frames 4180-4750 de la sesion del 03-08 a las 22:16, 338 analizables):
+# la de 7 SI es la mejor explicacion -0,69 puntos de media contra 0,34 de la
+# siguiente, y gana en 100 frames sueltos- pero NO llega al minimo de evidencia,
+# porque en ese tramo la referencia del tapete esta rota (oscila entre nucleos de
+# alto 498, 421 y 343 sobre la misma mesa). O sea: cuesta 5 y gana 0.
+#
+# QUE HARIA FALTA PARA METERLA: que la referencia sea estable ahi. Entonces los
+# puntos de la de 7 subirian por encima del minimo y la cuenta cambiaria. Es la
+# misma causa de fondo de siempre (docs/PENDIENTE §2.0c).
+#
+# Mientras tanto la mesa de 7 se elige a mano en el selector, y con eso funciona
+# entera: zonas de nameplate, de apuesta, de dorso y posiciones.
 PLAZAS_CANDIDATAS = (6, 8, 9)
 
 # Un asiento vale 1 punto si su capsula esta centrada en la zona, y menos cuanto

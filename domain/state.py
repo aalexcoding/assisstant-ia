@@ -44,6 +44,10 @@ class GameState(TypedDict, total=False):
     # que mesa dice el tapete que es (vision/disposicion.py), independientemente
     # de la que se este usando. None mientras no haya evidencia suficiente.
     disposicion_detectada: int | None
+    # lo que el usuario eligio en el selector, o None si lo dejo en "Auto". Va
+    # aparte de max_players porque en Auto los dos valen lo mismo y entonces no
+    # habria forma de saber si la mesa la puso el o la dedujo la app.
+    mesa_elegida: int | None
     hero_cards: list[str]
     hero_cards_dimmed: bool
     board: list[str]

@@ -207,6 +207,48 @@ SEATS_9MAX = {
     "HERO": {"plate": (0.33, 1.04, 0.69, 1.28), "button": (0.359, 0.907)},
 }
 
+# MESA DE 7: DOS ARRIBA, DOS POR CADA LADO Y EL HERO. Es la de las FINALES, y la
+# encontro el usuario señalando un frame concreto -el 4317 de la sesion del 03-08
+# a las 22:16, "tiene 7 sentados y no termina de encontrar que es de 7"-. Yo habia
+# dicho antes que no existia, y me equivocaba: barri las 53 sesiones grabadas pero
+# mirando solo sus primeros frames, y esta mesa aparece en el frame 4317 de una
+# sesion de 6.573. La final del torneo.
+#
+# Y NO ES UNA MESA DE 9 CON DOS HUECOS, que es lo que yo suponia. Es una geometria
+# propia, y curiosamente MIXTA: los dos de arriba caen donde los pone la mesa de 9
+# (a 0,04 y 0,09 de TL y TR) y los cuatro laterales donde los pone la de 6 (a
+# 0,04-0,05 de UL, UR y ML), no donde los pone la de 9 (0,09-0,21). Tiene sentido:
+# siete asientos alrededor de un ovalo se reparten entre lo que hace la de 6 y lo
+# que hace la de 9.
+#
+# MEDIDA sobre el tramo 4180-4700 de esa sesion, y con una cautela que hubo que
+# tomar: EN ESE TRAMO LA REFERENCIA DEL TAPETE OSCILA entre tres nucleos muy
+# distintos (alto 498, 421 y 343 sobre la misma mesa), porque los dos nameplates
+# de arriba parten la banda de fieltro superior y el detector a veces se la come.
+# Mezclar frames de las tres da fracciones que no significan nada -el mismo
+# nameplate sale a dos alturas-, asi que se midio SOLO con los frames cuyo ovalo
+# sale entero (46 de 251) y luego se paso el resultado al marco de referencia que
+# usan las demas tablas. Verificado dibujando las siete zonas sobre el frame: caen
+# sobre los siete nameplates, incluido el de la derecha que es el unico derivado.
+#
+# MR ES ESPEJO DE ML, no medida: ese jugador se levanta a mitad del tramo y su
+# capsula ademas se funde con la del hero en la mascara. El espejo cae sobre su
+# nameplate en los frames en que si esta, que es toda la comprobacion que hay.
+SEATS_7MAX = {
+    "TL":   {"plate": (0.07, -0.34, 0.43, -0.10), "button": (0.259, 0.057)},
+    "TR":   {"plate": (0.50, -0.33, 0.86, -0.09), "button": (0.685, 0.099)},
+    "UL":   {"plate": (-0.18, -0.01, 0.18, 0.23), "button": (0.104, 0.320)},
+    "UR":   {"plate": (0.75, -0.01, 1.11, 0.22), "button": (0.901, 0.308)},
+    "ML":   {"plate": (-0.18, 0.57, 0.18, 0.81), "button": (0.090, 0.570)},
+    "MR":   {"plate": (0.75, 0.57, 1.11, 0.81), "button": (0.833, 0.803)},
+    "HERO": {"plate": (0.29, 0.97, 0.65, 1.21), "button": (0.368, 0.872)},
+}
+# LAS ANCLAS DEL BOTON DE LA DE 7 SON PRESTADAS -las de arriba de la mesa de 9 y
+# las de los lados de la de 6- y NO estan medidas. Es lo mismo que se hizo con las
+# de 8 y de 9 antes de medirlas, y con el mismo aviso: disco_dealer atribuye el
+# boton al ancla mas cercana, asi que un ancla mal puesta se lo da al vecino. En
+# las capturas que hay el disco apenas se ve, asi que no se pudieron medir.
+
 # La de 6 sigue siendo la de por defecto: es la que tiene detras todas las
 # mediciones del proyecto, y una mesa de 6 es lo que el usuario juega
 # habitualmente. SEATS se conserva como nombre para no reescribir los modulos
@@ -224,9 +266,8 @@ def disposicion(max_players=None):
     si mira la mesa para decidirlo -con evidencia y abstencion- es
     vision/disposicion.py.
 
-    La mesa de 7 no tiene tabla y cae a la de 6; ver el docstring de
-    vision/disposicion.py para por que no se ha medido (no hay un solo frame de
-    una en el corpus).
+    La mesa de 7 -la de las finales- YA tiene tabla: ver SEATS_7MAX. Las de 2 y 3
+    siguen cayendo a la de 6, que es lo que hacian.
 
     SALE DE zonas() Y NO DE UNA TABLA PROPIA, y eso arregla un fallo real: habia
     un DISPOSICIONES = {6, 8} que se quedo sin la mesa de 9 al añadirla, asi que
@@ -1277,6 +1318,20 @@ CARD_BACK_ZONES_9MAX = {
     "DR":   (0.77, 0.66, 1.02, 0.83),
 }
 
+# LAS DE 7 SON DERIVADAS, como las de 8: a cada asiento se le aplica el
+# desplazamiento que el mismo asiento tiene en la mesa de la que sale su posicion
+# -los dos de arriba de la de 9, los laterales de la de 6-. Sin validar contra
+# frames: en el unico tramo de mesa de 7 que hay grabado casi no se reparten
+# cartas visibles.
+CARD_BACK_ZONES_7MAX = {
+    "TL":   (0.11, -0.47, 0.35, -0.31),
+    "TR":   (0.59, -0.46, 0.82, -0.30),
+    "UL":   (-0.15, -0.09, 0.08, 0.06),
+    "UR":   (0.84, -0.10, 1.07, 0.06),
+    "ML":   (-0.18, 0.47, 0.06, 0.65),
+    "MR":   (0.87, 0.47, 1.10, 0.65),
+}
+
 CARD_BACK_ZONES = CARD_BACK_ZONES_6MAX
 
 
@@ -1615,6 +1670,21 @@ SEAT_BET_ZONES_9MAX = {
     "HERO": (0.38, 0.71, 0.66, 0.90),
 }
 
+# LAS DE 7, derivadas igual que sus zonas de dorso y con la misma advertencia que
+# las de 8: el desplazamiento de la zona de apuesta respecto al nameplate no es
+# tan estable como el del dorso porque apunta al centro del tapete. Se asume por
+# como se usan: el importe leido ahi nunca crea una subida, solo atribuye una que
+# el boton "Igualar" ya ha demostrado que existe.
+SEAT_BET_ZONES_7MAX = {
+    "TL":   (0.11, -0.23, 0.35, -0.07),
+    "TR":   (0.58, -0.28, 0.82, -0.12),
+    "UL":   (0.07, 0.17, 0.31, 0.35),
+    "UR":   (0.59, 0.12, 0.85, 0.30),
+    "ML":   (0.06, 0.54, 0.26, 0.72),
+    "MR":   (0.66, 0.54, 0.82, 0.72),
+    "HERO": (0.21, 0.76, 0.49, 0.95),
+}
+
 SEAT_BET_ZONES = SEAT_BET_ZONES_6MAX
 
 # Las tres tablas por asiento van juntas: pedir una disposicion tiene que dar las
@@ -1624,6 +1694,8 @@ ZONAS_POR_DISPOSICION = {
         "apuestas": SEAT_BET_ZONES_6MAX},
     8: {"seats": SEATS_8MAX, "dorsos": CARD_BACK_ZONES_8MAX,
         "apuestas": SEAT_BET_ZONES_8MAX},
+    7: {"seats": SEATS_7MAX, "dorsos": CARD_BACK_ZONES_7MAX,
+        "apuestas": SEAT_BET_ZONES_7MAX},
     9: {"seats": SEATS_9MAX, "dorsos": CARD_BACK_ZONES_9MAX,
         "apuestas": SEAT_BET_ZONES_9MAX},
 }

@@ -164,18 +164,38 @@ def test_sin_evidencia_sigue_intentandolo():
 
 # --- la mesa de 7 ------------------------------------------------------------
 
-def test_la_mesa_de_7_no_esta_y_no_se_inventa():
-    """No hay tabla de 7 porque no hay un solo frame de una en el corpus (se
-    busco: ver el docstring del modulo). Lo que NO se hace es colocar una a ojo:
-    una disposicion inventada lee nombres donde no hay nadie."""
+def test_la_mesa_de_7_esta_medida_pero_NO_la_propone_el_detector():
+    """La de 7 es la de las FINALES y la encontro el usuario señalando el frame
+    4317 de una sesion de 6.573, despues de que se hubiera dicho que no existia.
+    Existe y esta medida; lo que no hace el detector es proponerla sola.
+
+    Y eso es una decision con numeros: metiendola entre las candidatas se pasa de
+    25 aciertos a 20 sobre las 29 sesiones etiquetadas -es MIXTA, comparte los
+    laterales con la de 6 y la fila de arriba con la de 9, asi que hunde el peso
+    por exclusividad- y en el unico tramo grabado de mesa de 7 no llega al minimo
+    de evidencia igualmente, porque ahi la referencia del tapete esta rota. Cuesta
+    5 y gana 0. Ver disposicion.PLAZAS_CANDIDATAS."""
     assert 7 not in disp.PLAZAS_CANDIDATAS
-    assert len(seat_map.zonas(7)["seats"]) == 6, "cae a la de 6, como siempre"
+    assert len(seat_map.zonas(7)["seats"]) == 7, "la tabla SI existe"
+    assert set(seat_map.zonas(7)["seats"]) == {"TL", "TR", "UL", "UR", "ML", "MR", "HERO"}
 
 
-def test_una_final_de_7_es_una_mesa_de_9_con_dos_huecos():
-    """Que es lo que de verdad pasa en un torneo: los asientos no se mueven, se
-    vacian. Aqui se comprueba que eso se detecta como 9, que es lo correcto."""
-    assert disp.decidir(disp.puntuar(mesa(9, 7), REF)) == 9
+def test_la_de_7_es_mixta_y_por_eso_estorba_al_detector():
+    """Sus dos de arriba caen donde los pone la mesa de 9 y sus laterales donde
+    los pone la de 6. Es lo que se midio sobre los frames, y es la razon de que no
+    se pueda meter entre las candidatas sin perder aciertos."""
+    c7 = {k: ((z["plate"][0] + z["plate"][2]) / 2, (z["plate"][1] + z["plate"][3]) / 2)
+          for k, z in seat_map.zonas(7)["seats"].items()}
+
+    def dista(centro, plazas):
+        return min(((centro[0] - (z["plate"][0] + z["plate"][2]) / 2) ** 2
+                    + (centro[1] - (z["plate"][1] + z["plate"][3]) / 2) ** 2) ** 0.5
+                   for z in seat_map.zonas(plazas)["seats"].values())
+
+    for arriba in ("TL", "TR"):
+        assert dista(c7[arriba], 9) < dista(c7[arriba], 6), arriba
+    for lado in ("UL", "UR", "ML"):
+        assert dista(c7[lado], 6) < dista(c7[lado], 9), lado
 
 
 # --- cada asiento pesa lo que distingue --------------------------------------

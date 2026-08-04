@@ -434,6 +434,11 @@ class Analizador:
         # fallo mudo -se leen 6 de los 9 asientos y el recuento desplaza todas las
         # posiciones- y hasta ahora no habia forma de enterarse.
         state["disposicion_detectada"] = detectada
+        # lo que el usuario eligio en el selector, o None si lo dejo en "Auto".
+        # Hace falta APARTE de max_players porque en Auto los dos valen lo mismo
+        # -max_players ES la detectada- y entonces no habria forma de saber si la
+        # mesa la puso el o la dedujo la app.
+        state["mesa_elegida"] = self.max_players
         if self.max_players is None:
             if detectada is None:
                 state["warnings"].append(
