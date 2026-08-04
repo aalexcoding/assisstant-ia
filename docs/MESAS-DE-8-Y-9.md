@@ -9,7 +9,7 @@ quitado con razón: entonces solo quería decir "no acotes y usa la disposición
 de nada — una opción que dice deducir algo y no lo deduce invita a dejarla
 puesta. El de ahora mira **dónde caen los nameplates** y lo contrasta con las
 tres geometrías medidas (`vision/disposicion.py`): sobre las 29 sesiones grabadas
-con disposición conocida **acierta 20, se abstiene en 9 y no se equivoca en
+con disposición conocida **acierta 25, se abstiene en 4 y no se equivoca en
 ninguna**. Mientras no lo tiene claro usa la de 6 —como antes— pero lo dice, y no
 recomienda, que es justo lo que la versión vieja no hacía.
 
@@ -117,7 +117,7 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
   preguntarle a cada geometría conocida si SUS zonas tienen cápsula, que es una
   pregunta acotada. Ver `vision/disposicion.py`.
 - ~~**La disposición la eliges tú**~~ — **ya se detecta sola** (04-08-2026), con
-  abstención: 20 aciertos, 9 abstenciones y 0 errores sobre las 29 sesiones
+  abstención: 25 aciertos, 4 abstenciones y 0 errores sobre las 29 sesiones
   etiquetadas. Sigue mandando lo que elijas a mano; en Auto, mientras no hay
   evidencia se usa la de 6 y **no se recomienda**, porque las posiciones salen del
   recuento de ocupados y con la geometría equivocada son plausibles y falsas.

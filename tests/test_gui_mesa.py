@@ -44,8 +44,8 @@ def test_el_auto_del_selector_significa_DETECTARLA(ventana):
     La version vieja se retiro con razon: solo queria decir "no acotes y usa la
     disposicion de 6", asi que en una mesa de 8 leia 4,69 asientos de 8 y 2 nicks
     de 10 sin avisar de nada. La de ahora mira DONDE caen los nameplates y lo
-    contrasta con las tres geometrias medidas (vision/disposicion.py): 20
-    aciertos, 9 abstenciones y CERO errores sobre las 29 sesiones grabadas con
+    contrasta con las tres geometrias medidas (vision/disposicion.py): 25
+    aciertos, 4 abstenciones y CERO errores sobre las 29 sesiones grabadas con
     disposicion conocida. Lo que hace None ahora es entregar la decision a ese
     detector, no dejar la mesa sin acotar.
 

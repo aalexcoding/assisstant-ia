@@ -1093,8 +1093,8 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         # asi que en una mesa de 8 leia 4,69 asientos de 8 y 2 nicks de 10 sin
         # avisar de nada. Ahora mira DONDE caen los nameplates del tapete y lo
         # contrasta con las tres geometrias medidas (vision/disposicion.py): sobre
-        # las 29 sesiones grabadas con disposicion conocida acierta 20, se
-        # abstiene en 9 y NO se equivoca en ninguna. Cuando se abstiene se queda
+        # las 29 sesiones grabadas con disposicion conocida acierta 25, se
+        # abstiene en 4 y NO se equivoca en ninguna. Cuando se abstiene se queda
         # con la de 6 y lo dice en los avisos, que es lo que la version vieja no
         # hacia.
         mesa_label = Gtk.Label(label="MESA")

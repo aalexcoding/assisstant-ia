@@ -13,7 +13,7 @@ jugadores invisibles-, y eso desplaza TODAS las posiciones, que salen del
 recuento de ocupados. Abstenerse, en cambio, solo significa seguir con la de 6 y
 avisar, que es lo que hacia la app antes de existir esto.
 
-Medido al escribirlo: 20 aciertos, 9 abstenciones, 0 errores.
+Medido al escribirlo: 25 aciertos, 4 abstenciones, 0 errores.
 """
 import collections
 

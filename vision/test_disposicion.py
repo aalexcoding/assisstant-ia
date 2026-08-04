@@ -12,7 +12,7 @@ sesiones grabadas).
 LA REGLA QUE MAS IMPORTA es la abstencion. Una disposicion equivocada no falla de
 forma visible -lee nombres donde no hay nadie y deja jugadores invisibles-, y eso
 desplaza TODAS las posiciones, que salen del recuento de ocupados. Por eso sobre
-el corpus el detector acierta 20 de 29, se abstiene en 9 y no se equivoca en
+el corpus el detector acierta 25 de 29, se abstiene en 4 y no se equivoca en
 ninguna: el reparto de errores correcto.
 """
 import numpy as np
@@ -29,15 +29,19 @@ REF = (200, 150, 1000, 400, False)
 FORMA = (900, 1600, 3)
 
 
-def mesa(plazas, ocupados=None, ruido=()):
+def mesa(plazas, ocupados=None, ruido=(), asientos=None):
     """Un tapete con una capsula en cada asiento de esa disposicion.
 
     ocupados: cuantos asientos poner (None = todos). Sirve para el caso que el
     usuario describio: "en 6-max a veces hay sentados 3".
+    asientos: cuales exactamente, por nombre. Sirve para montar una mesa cuyas
+    capsulas caen SOLO donde dos disposiciones coinciden.
     """
     img = np.zeros(FORMA, dtype=np.uint8)
     img[:, :] = TAPETE
     zonas = list(seat_map.zonas(plazas)["seats"].items())
+    if asientos is not None:
+        zonas = [(n, z) for n, z in zonas if n in asientos]
     if ocupados is not None:
         zonas = zonas[:ocupados]
     for _nombre, z in zonas:
@@ -71,11 +75,23 @@ def test_un_tapete_vacio_no_decide_nada():
     assert disp.decidir(disp.puntuar(vacia, REF)) is None
 
 
-def test_dos_asientos_no_bastan_para_decidir():
-    """Un heads-up cae en sitios que comparten las tres disposiciones, asi que no
-    hay forma de saber que mesa es. Abstenerse es la respuesta correcta: con la
-    de 6 puesta por defecto se leen los dos asientos igual."""
-    assert disp.decidir(disp.puntuar(mesa(6, 2), REF)) is None
+def test_las_capsulas_en_sitios_COMPARTIDOS_no_deciden_nada():
+    """La mitad de abajo de la mesa (DL, DR y el hero) esta practicamente en el
+    mismo sitio en la de 8 y en la de 9 -0,02 a 0,04 del nucleo-, asi que ver
+    capsulas ahi es compatible con las dos y no distingue. Abstenerse es la
+    respuesta correcta; con la de 6 por defecto esos asientos se leen igual.
+
+    Es la razon de pesar cada asiento por lo exclusivo que es: sin ese peso,
+    estas tres capsulas puntuaban lo mismo que tres que si distinguen."""
+    solo_compartidos = mesa(9, asientos={"DL", "DR", "HERO"})
+    puntos = disp.puntuar(solo_compartidos, REF)
+    assert disp.decidir(puntos) is None, puntos
+
+
+def test_un_solo_asiento_exclusivo_tampoco_basta():
+    """Aunque distinga, una capsula sola no llega al minimo de evidencia."""
+    puntos = disp.puntuar(mesa(9, asientos={"TL"}), REF)
+    assert disp.decidir(puntos) is None, puntos
 
 
 def test_la_de_8_no_gana_en_una_mesa_de_6():
@@ -160,3 +176,28 @@ def test_una_final_de_7_es_una_mesa_de_9_con_dos_huecos():
     """Que es lo que de verdad pasa en un torneo: los asientos no se mueven, se
     vacian. Aqui se comprueba que eso se detecta como 9, que es lo correcto."""
     assert disp.decidir(disp.puntuar(mesa(9, 7), REF)) == 9
+
+
+# --- cada asiento pesa lo que distingue --------------------------------------
+
+def test_los_asientos_que_solo_existen_en_una_mesa_pesan_mas():
+    """Es lo que subio el acierto de 20 a 25 sobre las 29 sesiones etiquetadas.
+    Un asiento que las tres disposiciones ponen casi en el mismo sitio no dice
+    NADA sobre cual es la mesa; uno que solo existe en una es la evidencia."""
+    pesos = disp._pesos_por_exclusividad(disp.PLAZAS_CANDIDATAS)
+    # la de 6 se distingue por sus dos asientos a media altura
+    assert pesos[6]["ML"] == 1.0 and pesos[6]["MR"] == 1.0
+    # 8 y 9 se distinguen SOLO por la fila de arriba
+    assert pesos[9]["TL"] == 1.0 and pesos[9]["TR"] == 1.0
+    assert pesos[8]["TOPC"] > pesos[8]["DL"]
+    # y lo de abajo es casi identico en 8 y 9, asi que no decide
+    for plazas in (8, 9):
+        assert pesos[plazas]["DL"] < 0.5
+        assert pesos[plazas]["HERO"] < 0.5
+
+
+def test_el_peso_no_depende_de_cuantas_capsulas_haya():
+    """Es geometria pura: se calcula una vez y no cambia entre frames."""
+    a = disp._pesos_por_exclusividad(disp.PLAZAS_CANDIDATAS)
+    b = disp._pesos_por_exclusividad(disp.PLAZAS_CANDIDATAS)
+    assert a is b, "se cachea; si no, son 23 distancias por frame para nada"

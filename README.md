@@ -236,7 +236,7 @@ panel "Mano anterior" no pierde ni un frame.
   6-max con tres jugadores sigue siendo un 6-max. **Se abstiene cuando no está
   claro**, y entonces se usa la de 6 y no se recomienda, porque las posiciones
   salen del recuento de ocupados y con la geometría equivocada serían plausibles y
-  falsas. Sobre las 29 sesiones grabadas con disposición conocida: 20 aciertos, 9
+  falsas. Sobre las 29 sesiones grabadas con disposición conocida: 25 aciertos, 4
   abstenciones, **0 errores**. El selector "Mesa" arranca en Auto; elegirla a mano
   sigue mandando (y entonces el detector solo avisa si no cuadra).
 - `vision/` — Fase 3: reconocimiento del estado de mesa (cartas, stacks, pot...).
