@@ -683,3 +683,37 @@ def test_un_censo_con_asientos_de_otra_mesa_se_filtra(analizar, tmp_path):
     st = ts.analyze_layout(ruta, max_players=9,
                            asientos_estables=["TOPC", "UL", "HERO"])
     assert all(p["seat"] != "TOPC" for p in st["players"])
+
+
+# --- una VENTANA PEQUEÑA da un ovalo mas redondo -----------------------------
+# Lo destapo el usuario: "me dice todo el rato que no se encuentra la mesa". Tenia
+# una mesa perfecta y bien encuadrada y los 41 frames de su sesion salian sin
+# analizar. Habia hecho la ventana del cliente mas pequeña (1117x685 contra
+# 1595x971) y PokerStars dibuja la mesa MAS REDONDA al encogerla: su ovalo medía
+# 608x322, proporcion 1,89, y el suelo estaba en 2,0. Se rechazaba por 0,11.
+
+def test_un_ovalo_de_proporcion_1_89_se_acepta():
+    """El caso real, reproducido con las medidas de su frame."""
+    img = np.full((685, 1117, 3), 12, dtype=np.uint8)
+    cv2.ellipse(img, (552, 301), (304, 161), 0, 0, 360, (40, 140, 60), -1)
+    x, y, w, h, fallback = seat_map.find_reference(img)
+    assert not fallback, "una mesa asi de redonda tambien es una mesa"
+    assert 1.8 < w / h < 2.0
+
+
+def test_un_bloque_CUADRADO_se_sigue_rechazando():
+    """El suelo esta para eso: lo que separa un ovalo de tapete de un panel del
+    cliente soldado con el fondo. Bajarlo a 1,85 no puede convertirlo en un
+    colador."""
+    img = np.full((800, 1200, 3), 12, dtype=np.uint8)
+    cv2.rectangle(img, (300, 200), (900, 620), (40, 140, 60), -1)   # 600x420 = 1,43
+    assert seat_map.find_reference(img)[4] is True
+
+
+def test_lo_que_toca_el_borde_de_arriba_se_rechaza_igual():
+    """La otra condicion no se ha tocado, y es la que de verdad separa los temas
+    de fondo claro: se soldaban con el borde en el 80% de sus frames."""
+    img = np.full((800, 1200, 3), 12, dtype=np.uint8)
+    cv2.ellipse(img, (600, 400), (480, 215), 0, 0, 360, (40, 140, 60), -1)
+    cv2.rectangle(img, (100, 0), (1100, 200), (40, 140, 60), -1)    # banda hasta y=0
+    assert seat_map.find_reference(img)[4] is True

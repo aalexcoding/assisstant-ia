@@ -523,10 +523,39 @@ def find_reference(bgr):
 #     tema de fondo oscuro (2 sesiones)   proporcion 2.12-2.36   toca el borde  0%
 #     tema de fondo claro                 proporcion 1.24-2.12   toca el borde 80%
 #
-# 2.0 cae en el hueco entre las dos poblaciones. Cuando salta, analyze_layout
+# 2.0 caia en el hueco entre las dos poblaciones. Cuando salta, analyze_layout
 # corta el frame con su aviso, que es lo correcto: mejor no decir nada que leer
 # el sitio equivocado.
-NUCLEO_AR_MIN = 2.0
+#
+# BAJADO A 1.85 EL 04-08-2026, y lo destapo el usuario: "me dice todo el rato que
+# no se encuentra la mesa". Tenia una mesa PERFECTA y bien encuadrada y los 41
+# frames de su sesion salian sin analizar. El motivo: habia hecho la ventana del
+# cliente mas pequeña (1117x685 contra los 1595x971 de antes) y PokerStars dibuja
+# la mesa MAS REDONDA al encogerla. Su ovalo mide 608x322 -proporcion 1,89- y se
+# rechazaba por 0,11.
+#
+# Lo que cambia y lo que no, medido sobre las seis sesiones que hay:
+#
+#     sesion                       con 2.0        con 1.85
+#     08-03_214929 (125 frames)    121 pasan      igual
+#     08-03_220142 (138)           134 pasan      igual
+#     08-03_221628 (121)            73 pasan      igual
+#     08-04_210545 (124)            73 pasan      +11 frames
+#     08-04_230029 (75)              0 pasan      +30
+#     08-04_232020 (41)              0 pasan      +41  <- la mesa bien encuadrada
+#
+# O sea: NO cambia ni un frame de lo que ya funcionaba -bajar el suelo solo puede
+# ACEPTAR cajas que antes se rechazaban, nunca mover una aceptada- y desbloquea
+# las ventanas pequeñas. Verificado ademas a ojo: con la caja que acepta, las
+# nueve zonas de asiento caen sobre sus nameplates.
+#
+# EL RIESGO QUE QUEDA, y conviene tenerlo escrito: los temas de FONDO CLARO daban
+# 1,24-2,12, asi que entre 1,85 y 2,0 puede colarse uno. Lo que los separa de
+# verdad es la otra condicion -tocar el borde de arriba o abajo, que les pasaba al
+# 80%-, y esa sigue igual. El 20% restante es el hueco por el que se puede colar
+# uno; si aparece, el sintoma sera el de siempre (zonas desplazadas leyendo donde
+# no hay nada) y la respuesta es identificar el tema, no volver a subir esto.
+NUCLEO_AR_MIN = 1.85
 NUCLEO_MARGEN_BORDE = 3
 
 
