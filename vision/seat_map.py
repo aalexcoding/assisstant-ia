@@ -213,6 +213,9 @@ SEATS_9MAX = {
 # que solo leen la disposicion por defecto (herramientas de diagnostico y tests).
 SEATS = SEATS_6MAX
 
+# DESINCRONIZADO CON ZONAS_POR_DISPOSICION A PROPOSITO NO, POR DESCUIDO: aquel
+# tiene 6, 8 y 9 y este se quedo en 6 y 8 cuando se añadio la mesa de 9. Ver
+# disposicion() para lo que eso rompe.
 DISPOSICIONES = {6: SEATS_6MAX, 8: SEATS_8MAX}
 
 
@@ -225,7 +228,15 @@ def disposicion(max_players=None):
     posiciones porque salen del recuento de asientos ocupados. Mas vale leer de
     menos con la tabla conocida que leer de mas con una inventada.
 
-    La mesa de 7 no tiene tabla todavia y cae a la de 6."""
+    La mesa de 7 no tiene tabla todavia y cae a la de 6.
+
+    HUECO CONOCIDO: LA MESA DE 9 TAMPOCO ESTA AQUI, y esa si tiene tabla medida
+    -zonas(9) la devuelve-. Su unico consumidor es core/analisis.py, que con esto
+    construye el SeatWatch del LAZO RAPIDO, asi que en una mesa de 9 ese lazo
+    vigila las seis zonas de la mesa de 6: TOPC y los dos del medio caen en tapete
+    vacio y un verbo leido en el borde de DL se etiqueta ML. El analisis pesado NO
+    esta afectado: ese va por zonas(). Deducido del codigo y sin medir; ver
+    docs/MESAS-DE-8-Y-9.md, "El lazo rapido NO usa la geometria de 9"."""
     return DISPOSICIONES.get(max_players, SEATS_6MAX)
 
 
@@ -1650,6 +1661,69 @@ def zonas(max_players=None):
 # volveria a introducir el error de 1000x.
 _BB_AMOUNT_RE = re.compile(r"(?<![\d.,])(\d{1,4}(?:[.,]\d{1,2})?)\s*BB\b", re.IGNORECASE)
 
+# --- LOS IMPORTES DE TRES CIFRAS SE LEIAN COMO DE DOS -----------------------
+#
+# tesseract no siempre devuelve la linea entera en una caja: "144,2 BB" sale a
+# menudo partido en DOS, '1' y '44,2 BB'. Como el texto de la zona se juntaba con
+# espacios antes de buscar el importe, la expresion regular casaba el segundo
+# trozo -el lookbehind solo protege de un digito PEGADO, no de uno separado por
+# un espacio- y el stack se leia 44,2 en vez de 144,2.
+#
+# El fallo es MUDO y persistente: le pasa al mismo asiento frame tras frame
+# mientras tenga mas de 99 bb, asi que un jugador con 148,5 bb aparece con 8,5 bb
+# y el motor recomienda con conviccion sobre una profundidad falsa. Lo canto el
+# usuario ("las que son mayores de 99 no se leen").
+#
+# Medido sobre 578 frames de 12 sesiones, con el recorte que usa la app: 16
+# lecturas recuperan sus centenas ('10'+'2,2 BB' -> 102,2 y no 2,2).
+#
+# Y de propina quita una invencion que estaba viva: un nick que ACABA EN DIGITOS
+# con un "BB" suelto de ruido en otra linea ('SLYLY555' + 'BB') daba un stack de
+# 555 bb. Al buscar el importe DENTRO de cada linea visual en vez de en el texto
+# de la zona entera, ese emparejamiento imposible desaparece (9 casos en la misma
+# medicion; tambien 'mouse1089' -> 1089, 'Natalini333' -> 333).
+#
+# LO QUE CUESTA: 7 lecturas de las 2.473 pasan a None porque el numero y su
+# sufijo caen en cajas que no se reconocen como la misma linea. Son importes que
+# se dejan de leer -el motor se abstiene o tira del cache-, no importes que se
+# lean mal, que es el lado correcto del intercambio.
+SOLAPE_MISMA_LINEA = 0.6    # del alto de la caja mas baja
+HUECO_MISMA_LINEA = 2.0     # del alto: hasta aqui las dos cajas son una linea
+HUECO_MISMO_NUMERO = 0.45   # del alto: hasta aqui dos digitos son el MISMO numero
+
+
+def lineas_unidas(lines):
+    """El texto de cada LINEA VISUAL, recomponiendo las cajas que el OCR parte.
+
+    Dos cajas son la misma linea si se SOLAPAN EN VERTICAL y estan cerca en
+    horizontal. El solape es lo que hace segura la union: el nick vive en una
+    banda y el importe en otra, asi que un nick nunca se pega a un numero por
+    mucho que el hueco horizontal sea pequeño.
+
+    Cuando el corte cae ENTRE DOS DIGITOS y las cajas casi se tocan se unen SIN
+    espacio (es un numero partido: '1' + '44,2' -> '144,2'); en cualquier otro
+    caso con espacio, que es lo que deja casar "129,6" con su "BB"."""
+    grupos = []
+    for ln in sorted(lines, key=lambda l: l["left"]):
+        alto = max(1, ln["bottom"] - ln["top"])
+        for g in grupos:
+            solape = min(g["bottom"], ln["bottom"]) - max(g["top"], ln["top"])
+            ref = max(1, min(alto, g["bottom"] - g["top"]))
+            hueco = ln["left"] - g["right"]
+            if (solape < SOLAPE_MISMA_LINEA * ref
+                    or not -0.3 * ref <= hueco <= HUECO_MISMA_LINEA * ref):
+                continue
+            pegado = (hueco <= HUECO_MISMO_NUMERO * ref
+                      and g["text"][-1:].isdigit() and ln["text"][:1].isdigit())
+            g["text"] += ("" if pegado else " ") + ln["text"]
+            g["right"] = max(g["right"], ln["right"])
+            g["top"] = min(g["top"], ln["top"])
+            g["bottom"] = max(g["bottom"], ln["bottom"])
+            break
+        else:
+            grupos.append(dict(ln))
+    return [g["text"] for g in grupos]
+
 
 def parse_amount_bb(lines):
     """Modo BB: valor (float) que lleva el sufijo BB ("123,4 BB" -> 123.4,
@@ -1663,9 +1737,13 @@ def parse_amount_bb(lines):
     equivocada -y con ella el rango equivocado- sin que nada lo delate. Sin
     stack el motor se abstiene o tira del cache; con un stack falso recomienda
     con conviccion. Medido sobre samples_bb/: las tres zonas con importe dan un
-    unico valor, asi que hoy no cuesta cobertura."""
-    text = " ".join(ln["text"] for ln in lines)
-    valores = {float(m.group(1).replace(",", ".")) for m in _BB_AMOUNT_RE.finditer(text)}
+    unico valor, asi que hoy no cuesta cobertura.
+
+    El importe se busca DENTRO de cada linea visual, no en el texto de la zona
+    entera: ver lineas_unidas() para por que -los tres digitos de la izquierda-."""
+    valores = {float(m.group(1).replace(",", "."))
+               for texto in lineas_unidas(lines)
+               for m in _BB_AMOUNT_RE.finditer(texto)}
     if len(valores) == 1:
         return valores.pop()
     return None
@@ -1681,8 +1759,12 @@ def has_bb_amount(lines):
     suelto: valia para detectar la UNIDAD (donde el sufijo bastaba), pero como
     señal de ocupacion un "BB" suelto es ruido de OCR de dos caracteres, y un
     asiento vacio que lo produzca contaria como ocupado y desplazaria las
-    posiciones de TODOS. Se retiro con la deteccion de unidad."""
-    return _BB_AMOUNT_RE.search(" ".join(ln["text"] for ln in lines)) is not None
+    posiciones de TODOS. Se retiro con la deteccion de unidad.
+
+    Mira las mismas lineas visuales que parse_amount_bb, para que las dos
+    respondan sobre el mismo texto: un nick acabado en digitos con un "BB" suelto
+    en otra linea no es un importe para ninguna de las dos."""
+    return any(_BB_AMOUNT_RE.search(texto) for texto in lineas_unidas(lines))
 
 
 # La apuesta del asiento BB no puede tomarse como prueba de una subida: la BB ya

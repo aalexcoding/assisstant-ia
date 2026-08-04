@@ -16,6 +16,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import cv2
+import numpy as np
 
 from domain.state import GameState, new_game_state
 
@@ -397,6 +398,136 @@ def _hay_capsula(plate_bgr):
     return True if f is None else f >= CAPSULA_MIN_FRAC   # sin zona no se veta nada
 
 
+# --- el recorte que se OCR-ea va anclado a LA CAPSULA, no al ovalo -----------
+#
+# EL PROBLEMA: la zona de un asiento es una fraccion del nucleo del tapete, y el
+# nucleo que se usa en vivo es el FIJADO de la sesion (ReferenciaFijada), no el
+# que se ve en el frame. Los dos no coinciden: medido sobre 12 sesiones de
+# agosto, el borde de la zona baila entre 17 px (mediana) y 98 px (p95) respecto
+# al ovalo de cada frame, y hasta 133 px. La capsula mide ~380x115 px, asi que un
+# desvio asi la deja a medias fuera del recorte.
+#
+# LO QUE PASA CUANDO EL RECORTE MUERDE EL TEXTO, medido sobre 192 frames de dos
+# sesiones (771 importes con verdad de consenso; la verdad sale de leer el mismo
+# frame con SU ovalo y una zona holgada, en cuatro variantes que han de coincidir
+# al menos tres):
+#
+#     el recorte...      leido bien   leido MAL   no leido
+#     cabe entero             516          22         97
+#     muerde el texto          20          13        103
+#
+# O sea: si corta, casi nunca se lee, y cuando se lee suele leerse mal.
+#
+# LA CAPSULA SI SE VE en el propio frame -es gris oscuro y sin color, la misma
+# señal que ya usa _capsula_frac para el veto de asiento vacio-, asi que se busca
+# dentro de una ventana alrededor de la zona y se recorta ELLA. Es el mismo
+# recurso que ya se usa con el nameplate del hero, anclado a sus cartas.
+#
+# GANANCIA sobre esos mismos 192 frames (779 importes con verdad de consenso):
+#
+#                            bien   MAL   no leido    nicks legibles
+#     zona de siempre         545    34        200         940
+#     anclado a la capsula    640    16        123        1036
+#     LAS DOS lecturas        666     6        107        1097   <- lo que hay
+#
+# El recorte anclado NO gana en todos los asientos: en unos pocos el realce de
+# contraste sobre menos pixeles le da mas ruido de tapete y ahi se lee peor que
+# con la zona (a 'Kiruria' con 128,3 bb se le perdia el stack 8 frames seguidos).
+# Por eso analyze_layout encola LOS DOS recortes y junta lo leido, en vez de
+# elegir; ver alli.
+#
+# LOS DOS FILTROS DEL FINAL NO SON ADORNO. Sin ellos, en un asiento VACIO gana la
+# mancha oscura mas grande de la ventana -un trozo de la capsula del vecino o del
+# papel de pared- y de ahi salen nicks e importes de otro asiento: 4 asientos
+# fantasma de 78 zonas vacias en la primera version. Exigiendo que la mancha pise
+# de verdad la zona y que su centro caiga dentro, bajan a 0 sin perder ninguna de
+# las ganancias.
+#
+# Si no se reconoce ninguna capsula se devuelve None y quien llama usa la zona de
+# siempre: un asiento vacio sigue leyendose como hasta ahora.
+CAPSULA_BUSQUEDA_X, CAPSULA_BUSQUEDA_Y = 0.28, 0.35   # de la zona, por cada lado
+CAPSULA_ANCHO_MIN, CAPSULA_ANCHO_MAX = 0.45, 1.35     # de la zona
+# EL TOPE DE ALTO ES ESTRECHO A PROPOSITO. Debajo de la capsula estan la marca de
+# bounty y, cuando ese asiento ha apostado, SU MONTON DE FICHAS con el importe al
+# lado ("1 BB"): todo eso es oscuro y sin color, o sea que entra en la misma
+# mascara y a veces sale pegado en una unica mancha. Si esa mancha se acepta, el
+# recorte se traga la apuesta y la lectura del stack pasa a ser ambigua. Lo canto
+# el usuario con el frame 1861 de la sesion del 03-08: marta1525 tiene "27,8 BB"
+# escrito clarisimo y el asiento se quedaba sin stack, porque la capsula medida
+# era 1,36 veces el alto de la zona y llegaba hasta las fichas de su ciega.
+CAPSULA_ALTO_MIN, CAPSULA_ALTO_MAX = 0.45, 1.3
+CAPSULA_SOLAPE_MIN = 0.30                             # del area de la zona
+CAPSULA_MARGEN_PX = 14
+
+# margen (en pixeles del recorte YA escalado) que se le da a tesseract alrededor
+# del nameplate recortado a la capsula. Es el mismo remedio que add_text_job ya
+# usaba: un recorte ajustado, con el texto tocando el borde de la imagen, se lee
+# mucho peor. La zona de siempre no lo lleva porque ya trae tapete de sobra.
+PAD_NAMEPLATE = 30
+
+
+def _lineas_en_frame(lines, caja, escala, pad):
+    """Las mismas lineas OCR con las coordenadas del FRAME en vez de las del
+    recorte. Hace falta para poder juntar las lecturas de dos recortes distintos
+    del mismo asiento sin que su geometria mienta."""
+    x0, y0 = caja[0], caja[1]
+    fuera = []
+    for ln in lines:
+        izq = x0 + (ln["left"] - pad) / escala
+        der = x0 + (ln["right"] - pad) / escala
+        arr = y0 + (ln["top"] - pad) / escala
+        aba = y0 + (ln["bottom"] - pad) / escala
+        fuera.append(dict(ln, left=izq, right=der, top=arr, bottom=aba,
+                          cx=(izq + der) / 2, cy=(arr + aba) / 2))
+    return fuera
+
+
+def capsula_px(bgr, zona_px):
+    """Caja (x0,y0,x1,y1) de la capsula del nameplate buscada alrededor de
+    `zona_px`, o None si no se reconoce ninguna."""
+    x0, y0, x1, y1 = zona_px
+    w, h = x1 - x0, y1 - y0
+    if w <= 0 or h <= 0:
+        return None
+    alto_img, ancho_img = bgr.shape[:2]
+    mx, my = int(w * CAPSULA_BUSQUEDA_X), int(h * CAPSULA_BUSQUEDA_Y)
+    gx0, gy0 = max(0, x0 - mx), max(0, y0 - my)
+    gx1, gy1 = min(ancho_img, x1 + mx), min(alto_img, y1 + my)
+    sub = bgr[gy0:gy1, gx0:gx1]
+    if sub.size == 0:
+        return None
+    hsv = cv2.cvtColor(sub, cv2.COLOR_BGR2HSV)
+    s, v = hsv[:, :, 1], hsv[:, :, 2]
+    mascara = ((s < CAPSULA_S_MAX) & (v < CAPSULA_V_MAX)).astype(np.uint8) * 255
+    # el cierre pega el texto claro y el avatar al cuerpo de la capsula; sin el,
+    # la capsula sale troceada en las bandas del nombre y del stack.
+    nucleo = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 7))
+    mascara = cv2.morphologyEx(mascara, cv2.MORPH_CLOSE, nucleo)
+    n, _lab, stats, _cent = cv2.connectedComponentsWithStats(mascara, connectivity=8)
+    mejor, mejor_solape = None, 0
+    for i in range(1, n):
+        cx, cy, cw, ch, _area = stats[i]
+        ax0, ay0 = gx0 + int(cx), gy0 + int(cy)
+        ax1, ay1 = ax0 + int(cw), ay0 + int(ch)
+        solape = (max(0, min(ax1, x1) - max(ax0, x0))
+                  * max(0, min(ay1, y1) - max(ay0, y0)))
+        if solape > mejor_solape:
+            mejor_solape, mejor = solape, (ax0, ay0, ax1, ay1)
+    if mejor is None:
+        return None
+    ax0, ay0, ax1, ay1 = mejor
+    if not (CAPSULA_ANCHO_MIN * w <= ax1 - ax0 <= CAPSULA_ANCHO_MAX * w
+            and CAPSULA_ALTO_MIN * h <= ay1 - ay0 <= CAPSULA_ALTO_MAX * h):
+        return None
+    if mejor_solape < CAPSULA_SOLAPE_MIN * w * h:
+        return None                      # apenas pisa la zona: no es SU capsula
+    if not (x0 <= (ax0 + ax1) / 2 <= x1 and y0 <= (ay0 + ay1) / 2 <= y1):
+        return None                      # su centro cae en el asiento de al lado
+    return (max(0, ax0 - CAPSULA_MARGEN_PX), max(0, ay0 - CAPSULA_MARGEN_PX),
+            min(ancho_img, ax1 + CAPSULA_MARGEN_PX),
+            min(alto_img, ay1 + CAPSULA_MARGEN_PX))
+
+
 # --- los cuatro estados de un asiento ---------------------------------------
 #
 # La idea es del usuario, y es la especificacion que le faltaba a la ocupacion:
@@ -760,7 +891,7 @@ def _leer_solo_board_con_referencia_fijada(bgr, state, ref_fijada, mazo):
 def analyze_layout(image_path, max_players=None, asientos_estables=None,
                    plantilla_boton=None, referencia=None, escala_glifo=None,
                    leer_chat=True, mazo=None, seat_lines_cache=None,
-                   seat_lines_changed=None) -> GameState:
+                   seat_lines_changed=None, boton_fijado=None) -> GameState:
     """Reconocimiento por ZONAS FIJAS (mapa de asientos), el enfoque de
     produccion para el cliente real de PokerStars capturado limpio. Ancla una
     referencia independiente del color (nucleo del tapete por contraste) y lee
@@ -778,6 +909,40 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     salen del RECUENTO, un asiento que parpadea las desplaza todas. Medido: la
     posicion del hero pasa de cambiar dentro de la mano un 3,9% de las veces a un
     1,8%.
+
+    boton_fijado: el asiento del boton de la mano en curso, ya decidido por el
+    rastreador (hand_tracker.boton_de_la_mano). Manda sobre el disco que se vea
+    en ESTE frame, por la misma razon que asientos_estables y con mas fuerza: el
+    boton no se mueve dentro de una mano, es la regla mas dura que hay en la
+    mesa. Y hacia falta, porque congelar el censo SOLO no arreglaba nada: medido
+    sobre 415 manos de 6 sesiones, de las 152 con la posicion del hero inestable
+    el boton tambien se movia en 104 (68%), asi que el censo explicaba menos de
+    un tercio.
+
+    LO QUE DA DE SI, medido de punta a punta (replay de sesion-2026-08-01_211120,
+    2.879 frames), contando solo los frames que la app declara asentados -en los
+    demas se abstiene, asi que su posicion no se usa-:
+
+        manos con la posicion del hero inestable   30,0%  ->  26,0%
+        recomendaciones sobre posicion minoritaria     4  ->      3
+        frames sin asentar                           210  ->    335
+        manos con recomendacion                       13  ->     11
+
+    Es una mejora de verdad pero MODESTA, y bastante menor que la que salia
+    midiendo el censo por su cuenta (16,7% -> 1,6%): ahi el censo y el boton
+    fijados eran la unica fuente de posiciones, y en el pipeline real conviven
+    con la referencia del tapete perdida, las excepciones de ocupacion y el
+    descarte de asientos sobrantes, que siguen moviendo el recuento.
+
+    Y NO TOCA EL FONDO DEL PROBLEMA: los pasos de boton imposibles -saltar mas
+    asientos de los que hay vacios- se quedan en 10 de 57 igual que antes. Eso no
+    es ruido que fijar pueda arreglar, es el DETECTOR del disco equivocandose de
+    forma sistematica; fijarlo solo hace que se equivoque de manera consistente.
+
+    El disco LEIDO en el frame se sigue exponiendo en state["boton_leido"] y no
+    se pisa nunca: el rastreador vota sobre el, y un cambio de boton es lo que
+    CORTA la mano. Realimentarle el fijado cerraria el bucle y la mano no podria
+    terminar jamas.
 
     max_players: cuantos jugadores caben en la mesa (3 en un 3-Max, 6 en un
     6-Max...). Opcional pero MUY recomendable, porque las posiciones se derivan
@@ -908,6 +1073,34 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # texto por zona (nameplates, bote, chat, botones de accion). El nameplate
     # del hero se ancla a sus cartas (hero_plate_px); si no las hay ese frame
     # (entre manos), cae a la fraccion fija del ovalo.
+    #
+    # EL RECORTE QUE SE OCR-EA VA ANCLADO A LA CAPSULA que se ve en el frame (ver
+    # capsula_px): la zona colocada con la referencia fijada se desplaza decenas
+    # de pixeles y le muerde el texto. La zona SIGUE SIENDO la de siempre para
+    # todo lo demas -es la que mide _capsula_frac para el veto de asiento vacio-,
+    # asi que los cuatro estados no cambian de umbral.
+    #
+    # EL HERO NO PASA POR AHI a proposito: su nameplate ya va anclado a sus
+    # cartas, y con el badge de torneo la franja del stack se vuelve CLARA, o sea
+    # que la mancha oscura de la capsula se queda en la mitad del nombre y el
+    # recorte cortaria justo el stack (el fallo que arreglo hero_stack_tsv).
+    #
+    # Y SE LEEN LOS DOS RECORTES, no se elige uno. El OCR de un nameplate es
+    # FRAGIL: dos recortes que a ojo son el mismo dan lecturas distintas, porque
+    # el realce de contraste (CLAHE) normaliza sobre pixeles distintos y el
+    # tapete de alrededor entra como ruido. Medido sobre 192 frames, elegir el
+    # recorte anclado gana en unos asientos y pierde en otros -a 'Kiruria' con
+    # 128,3 bb dejaba de leerselo en 8 frames seguidos-, mientras que juntar las
+    # dos lecturas gana en los dos sitios:
+    #
+    #     importes con verdad de consenso    bien   MAL   no leido
+    #     solo la zona (lo de antes)          545    34        200
+    #     solo la capsula                     640    16        123
+    #     LAS DOS                             666     6        107
+    #
+    # Juntar es seguro porque parse_amount_bb ya devuelve None cuando ve DOS
+    # importes distintos: si los dos recortes discrepan, el asiento se queda sin
+    # stack -el motor se abstiene- en vez de elegir uno a cara o cruz.
     seat_tsv = {}
     seat_plate_px = {}
     for name in ZONAS["seats"]:
@@ -919,8 +1112,19 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         if (seat_lines_cache is not None and seat_lines_changed is not None
                 and name not in seat_lines_changed and name in seat_lines_cache):
             seat_tsv[name] = None
-        else:
-            seat_tsv[name] = batch.add_tsv_job(bgr[y0:y1, x0:x1], scale=3)
+            continue
+        # el del hero va con margen porque su recorte, anclado a las cartas, es
+        # AJUSTADO y el texto toca el borde; los de los rivales no lo necesitan
+        # -su zona trae tapete de sobra- y ponerselo solo añade ruido.
+        recortes = [((x0, y0, x1, y1),
+                     PAD_NAMEPLATE if name == seat_map.HERO_SEAT else 0)]
+        capsula = (capsula_px(bgr, (x0, y0, x1, y1))
+                   if name != seat_map.HERO_SEAT else None)
+        if capsula is not None:
+            recortes.append((capsula, PAD_NAMEPLATE))
+        seat_tsv[name] = [
+            (batch.add_tsv_job(bgr[c[1]:c[3], c[0]:c[2]], scale=3, pad=pad), c, pad)
+            for c, pad in recortes]
     # importe apostado por asiento (zona hacia el centro del tapete), para
     # inferir quien subio; se encola para todos y luego se lee solo en los
     # asientos ocupados.
@@ -958,10 +1162,21 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     #
     # Va como job aparte y no como sustituto porque el lote se resuelve en
     # paralelo: un job mas no cuesta una pasada mas.
+    #
+    # LOS DOS RECORTES DEL HERO VAN CON MARGEN (PAD_NAMEPLATE). Su nameplate se
+    # ancla a las cartas, o sea que sale AJUSTADO -207x91 px en la sesion del
+    # 03-08- y el texto toca el borde de la imagen, que es donde tesseract falla
+    # entero. El frame 0269 de esa sesion es el caso limpio: el mismo recorte,
+    # sin margen da solo 'alex_delg' y con margen da '101,3 BB'.
+    #
+    # Medido sobre los 220 frames de esa sesion en que la app dijo "no se lee tu
+    # stack": el margen recupera 8 (2 de ellos con mas de 99 bb) sin tocar la
+    # geometria, asi que no puede colarse el importe de un vecino.
     hero_stack_tsv = None
     if hero_plate_px is not None:
         hx0, hy0, hx1, hy1 = hero_plate_px
-        hero_stack_tsv = batch.add_tsv_job(bgr[hy0 + (hy1 - hy0) // 2:hy1, hx0:hx1], scale=3)
+        hero_stack_tsv = batch.add_tsv_job(bgr[hy0 + (hy1 - hy0) // 2:hy1, hx0:hx1],
+                                           scale=3, pad=PAD_NAMEPLATE)
 
     px = seat_map.zone_to_px(ref, seat_map.POT_ZONE, bgr.shape)
     pot_idx = batch.add_tsv_job(bgr[px[1]:px[3], px[0]:px[2]], scale=3)
@@ -1032,6 +1247,16 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         button_seat, dorsos = pendiente.result()
     reloj.marca("vision_paralela")
 
+    # EL DISCO LEIDO EN ESTE FRAME, antes de que la memoria de la mano opine. Es
+    # el equivalente de `asientos_leidos` para el boton, y se guarda por los dos
+    # mismos motivos: el rastreador tiene que votar sobre EVIDENCIA, y ademas un
+    # cambio de boton es uno de los dos motivos de corte de mano. Si al votar
+    # viese el boton FIJADO en vez del leido, coincidiria consigo mismo siempre y
+    # la mano no podria cerrarse nunca.
+    state["boton_leido"] = button_seat
+    if boton_fijado is not None:
+        button_seat = boton_fijado
+
     # {asiento: ['6c','4c']} solo cuando se resuelven LAS DOS. Una sola carta no
     # sirve para nada -no se puede evaluar media mano- y media lectura seria peor
     # que ninguna, porque invitaria a tratarla como conocida.
@@ -1057,11 +1282,16 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
     # motor se abstiene. Nunca lee un numero en la unidad equivocada.
     seat_lines = {}
     for name in ZONAS["seats"]:
-        idx = seat_tsv[name]
-        if idx is None:
+        trozos = seat_tsv[name]
+        if trozos is None:
             seat_lines[name] = seat_lines_cache[name]
         else:
-            seat_lines[name] = parse_tsv_lines(results[idx])
+            # las lineas de los dos recortes van EN COORDENADAS DEL FRAME, no de
+            # su recorte: si no, dos cajas de imagenes distintas parecerian estar
+            # una al lado de otra y lineas_unidas las pegaria (ver seat_map).
+            seat_lines[name] = [ln for idx, caja, pad in trozos
+                                for ln in _lineas_en_frame(
+                                    parse_tsv_lines(results[idx]), caja, 3, pad)]
             if seat_lines_cache is not None:
                 seat_lines_cache[name] = seat_lines[name]
 
@@ -1216,14 +1446,38 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
                 f"{max_players} y no se puede saber cual sobra: sin posiciones, porque "
                 f"un asiento de mas las desplaza todas")
 
-    # boton -> posiciones (orden de reparto horario entre los ocupados)
+    # LAS POSICIONES SALEN DEL CENSO FIJADO DE LA MANO, no de `occupied`.
+    #
+    # `occupied` sigue mandando para lo que se LEE de cada asiento -su nombre, su
+    # stack, su apuesta-, y ahi es correcto que la evidencia de este frame gane:
+    # es una lectura, y la mejor disponible es la de ahora. Pero el RECUENTO es
+    # otra cosa. De el sale la fila de posiciones entera, y un asiento que entra o
+    # sale las corre TODAS, asi que tiene que venir de algo que no pueda moverse
+    # dentro de una mano.
+    #
+    # Hacia falta separarlas: el censo se fijaba ya (hand_tracker.CENSO_FRAMES),
+    # pero llegaba aqui como una SUGERENCIA -se añadia salvo que el asiento se
+    # viese hueco, se borraba salvo que tuviese cartas o importe- y el recuento
+    # seguia oscilando igual. Medido en una sesion de 9-max: dentro de UNA mano
+    # `occupied` iba de 4 a 8 asientos y volvia, con el boton ya fijo.
+    #
+    # Un asiento de `occupied` que no este en el censo se queda sin posicion en
+    # vez de desplazar a los demas: se sigue pintando lo que se lee de el.
+    censo = set(asientos_estables) if asientos_estables else set(occupied)
+    if button_seat is not None:
+        censo.add(button_seat)          # el dealer es un jugador sentado
+    censo &= set(occupied)
+
     positions = {}
     if exceso is not None:
         pass                                   # ya avisado arriba
     elif button_seat is None:
         state["warnings"].append("no se detecto el boton del dealer; sin posiciones")
+    elif button_seat not in censo:
+        state["warnings"].append(
+            "el boton no cae en ningun asiento del censo de la mano; sin posiciones")
     else:
-        order = seat_map.dealing_order(list(occupied), ref, ZONAS["seats"])
+        order = seat_map.dealing_order(list(censo), ref, ZONAS["seats"])
         n = len(order)
         if n in seat_map.SEATING_BY_N:
             bi = order.index(button_seat)

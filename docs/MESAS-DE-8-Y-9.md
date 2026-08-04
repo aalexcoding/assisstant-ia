@@ -120,21 +120,20 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
 - **Las zonas de APUESTA siguen siendo derivadas y sin validar.** Se asume por
   cómo se usan: el importe leído ahí nunca crea una subida, solo atribuye una que
   el botón "Igualar" ya ha demostrado que existe, así que una zona mal puesta
-  hace que no se atribuya, no que se invente.
-- **Las zonas de DORSO ya están validadas** (sesión del 29-07 a las 20:12, 162
-  frames de una mesa de 8 real). DL y DR, que entraron derivadas y sin
-  comprobar, se comportan como las medidas:
+  hace que no se atribuya, no que se invente. El método para medirlas **ya está
+  probado** —se aplicó a la mesa de 9, ver abajo— y se puede repetir en cuanto
+  haya dos sesiones de 8 con apuestas.
+- **Las zonas de DORSO están validadas, y DL y DR se RE-MIDIERON** (30-07-2026).
+  Entraron derivadas sobre la sesión del 29-07 a las 20:12 y funcionaban, pero
+  con menos margen que las demás; barriendo su entorno sobre 339 frames se
+  movieron y ganaron el doble de margen:
 
-        asiento   p50    p90    % sobre el umbral (0,10)
-        UL       0,286  0,286        57 %
-        UR       0,359  0,359        57 %
-        DL       0,187  0,191        51 %   <- era la dudosa
-        DR       0,232  0,232        58 %   <- era la dudosa
+        asiento   p90 derivado   p90 re-medido   se movió
+        DL           0,191          0,341        (+0,10, -0,06)
+        DR           0,232          0,342        (-0,10, -0,06)
 
-  Bimodales igual que las demás -0 cuando no hay cartas- y por encima del
-  umbral. Tienen MENOS MARGEN que las medidas (1,9× el umbral frente a 2,9×), o
-  sea que se pueden centrar mejor; funcionan, pero son la primera candidata si
-  algún día se afinan.
+  Las de arriba y de los lados se quedan como estaban (UL 0,286, UR 0,359).
+  Todas bimodales -p50 = 0 cuando no hay cartas- y por encima del umbral (0,10).
 - La parte de DECISIÓN ya lo soporta entero: `SEATING_BY_N[8]` da
   `BTN, SB, BB, EP2, MP1, MP2, HJ, CO`, derivado por cuánta gente habla después
   de ti contra los rangos de 9-max digitalizados.
@@ -145,6 +144,9 @@ dealer cuando se pasó de seis puntos fijos a un barrido de la mesa.
 # Mesa de 9: cuatro por cada lado y nadie en frente
 
 Estado: **cableada y jugable**. Elige **9 plazas** en el selector "Mesa".
+Geometría completa y medida: asientos, dorsos y —desde el 30-07— también las
+zonas de apuesta. Dos salvedades que conviene leer antes: *"Heads-up en una mesa
+de 9"* y *"El lazo rápido NO usa la geometría de 9"*, más abajo.
 
 Lo describe el usuario así: *"si tenemos como referencia al hero que soy yo
 abajo, 4 andan a mi izquierda y otro 4 a la derecha, nadie en frente"*. La
@@ -213,19 +215,58 @@ salían de ahí.
   frames de dos sesiones largas). La primera versión las derivaba y se equivocaba
   una media de 0,083 del núcleo, hasta 0,158 en HERO y 0,144 en MR — y el disco se
   atribuye al ancla más cercana, así que a esa distancia el botón se le puede dar
-  al vecino. **`ML` sigue derivada**: el disco no pasó por ese asiento en ninguna
-  de las dos sesiones.
+  al vecino. **`ML` sigue derivada, y ya NO es por falta de datos**: se volvió a
+  buscar con **4.469 discos de tres sesiones sin muestrear** y ese asiento no
+  aparece. Las otras ocho se confirman dentro de 0,01. El único cúmulo nuevo (108
+  muestras, 2,4 %) cae entre TR y UR, o sea el disco pillado a medio deslizarse de
+  un asiento al siguiente. En esas mesas el medio-izquierda estuvo vacío casi
+  siempre y el botón lo saltaba.
 - **Las zonas de dorso están validadas** sobre 381 frames. Siete de las ocho
   salieron bien a la primera (p90 entre 0,234 y 0,393 contra un umbral de 0,10);
   **DR se quedaba en 0,123** y se re-midió barriendo su entorno hasta 0,369.
-- **Las zonas de apuesta siguen derivadas y sin validar.** Se asume por cómo se
-  usan: el importe leído ahí nunca crea una subida, solo atribuye una que el botón
-  "Igualar" ya ha demostrado.
+- **Las zonas de apuesta YA ESTÁN MEDIDAS** (ver abajo). Solo queda `DR` sin
+  validar.
+
+## Las zonas de apuesta, medidas: 93 → 588 importes leídos
+
+Eran lo único de esta disposición que seguía derivado del desplazamiento del
+asiento equivalente de la mesa de 6, y estaban muy mal puestas.
+
+La calibración por contenido no las cubre —no contienen cartas, así que no hay
+anchos que comparar— pero tienen una señal propia: **de una zona de apuesta tiene
+que salir un importe en BB legible cuando el jugador ha apostado.** Se barrió el
+desplazamiento contando importes leídos, sobre dos sesiones (A/B):
+
+    asiento   derivada (A/B)   medida (A/B)
+    TL             0 /   0        88 / 167
+    UL             5 /   6        39 / 129
+    TR             8 /  27        96 / 189
+    DL             0 /   0        47 /  58
+    ML             1 /  13        16 /  48
+    MR             2 /  27        13 /  43
+    HERO           0 /   0         8 /  10
+    UR             8 /  24        10 /  21   <- se queda como estaba
+    DR             0 /   0         0 /   0   <- no lee nada con ninguna posición
+
+Total sobre la misma muestra de la sesión B: **93 → 588 importes leídos.**
+
+**VALIDARLAS EN LAS DOS SESIONES CAMBIÓ EL RESULTADO**, y esa es la parte que
+merece quedar escrita. El primer barrido usó UNA sesión y daba para TR y UR unos
+desplazamientos que en la otra bajaban a CERO: sobreajuste puro, 23→0 y 24→0.
+Barriendo contra las dos a la vez y cogiendo el mínimo, TR sale a otro sitio -y
+mejor que el del sobreajuste- y UR resulta que no mejora, así que se deja donde
+estaba.
+
+`DR` no lee nada con ninguna de las 16 posiciones probadas. Puede que en esas dos
+sesiones ese asiento no apostara de forma visible, o que su importe caiga fuera
+del barrido. Queda derivada y sin validar, y es lo único de la tabla que no está
+medido. NO ES CRÍTICO por cómo se usan: el importe leído aquí nunca crea una
+subida, solo ATRIBUYE una que el botón "Igualar" ya ha demostrado que existe.
 
 ### Lo que se aprendió sobre derivar zonas
 
 Derivar el desplazamiento del asiento equivalente de la mesa de 6 **funciona
-arriba y en los lados, y se queda corto ABAJO**. Cuatro asientos entre las dos
+arriba y en los lados, y se queda corto ABAJO**. Tres asientos entre las dos
 mesas lo dicen:
 
     mesa    asiento   p90 derivado   p90 re-medido   se movió
@@ -237,3 +278,103 @@ Los tres se van **hacia dentro y hacia arriba**, en cantidades simétricas: ahí
 cliente dibuja la carta más pegada al nameplate, seguramente porque no tiene
 sitio. No son suficientes para llamarlo regla, pero sí para saber que los
 asientos de abajo hay que comprobarlos uno a uno.
+
+## La mesa de 9 ensanchó el margen de las cartas reveladas
+
+`REVELADA_MARGEN` pasó de 0,06 a **0,12**, y el motivo salió de esta disposición.
+
+En un torneo donde se ven las manos de todos se perdía el **14 % de las manos
+reveladas (24 de 173)**, y casi siempre el mismo asiento: `UR`, que salía con
+`revealed=True` y `cards=None`. O sea que el par SÍ se detectaba y los rangos NO
+se resolvían. La causa es la misma que cortaba la primera carta del board: la
+zona de revelada se deriva de la del DORSO, calibrada para el blob que asoma por
+detrás del nameplate -más pequeño que la carta entera-, y **en la mesa de 9 el
+asiento UR está lo bastante lejos como para que 0,06 de margen no llegue.**
+
+    margen   pares   ambas resueltas   cajas estrechas
+    0,06        61     58  (95%)              8
+    0,09        94     88  (94%)              5
+    0,12       101    100  (99%)              1
+    0,15       114    111  (97%)              2
+
+Los 40 pares que aparecen de más respecto a 0,06 son REALES, no falsos positivos:
+se ve porque resuelven los dos rangos. Manos reveladas leídas de 1,77 a 2,01 por
+frame.
+
+El comentario anterior decía *"ensanchar más no cambia el resultado, probado
+hasta 0,14"*, y **esa medición era correcta PARA SU CONTEXTO**: cuando se hizo, la
+única disposición era la de 6. Lo que cambió es que ahora hay mesas de 8 y 9 con
+asientos en otros sitios.
+
+## Heads-up en una mesa de 9: arreglado a medias
+
+Sesión del 30-07 a las 03:00, dos jugadores en una mesa de 9 plazas. La app dio
+**CERO recomendaciones en 80 frames.**
+
+**Lo que se arregló**, con un mínimo medido detrás de cada constante:
+
+- `REF_MIN_PARA_FIJAR` **10 → 30**. El ancho del núcleo salía 974 en los 80 frames
+  -perfectamente estable- y el ALTO era bimodal: 475 en 35 frames y 358 en 27. La
+  referencia se fijó en 358, **la minoría**, porque la mediana de las 10 primeras
+  cayó ahí. Barrido sobre 17 sesiones: 451 → 434 → 420 → 402 descartes con
+  N = 10/20/30/40. Se elige 30 y no 40 porque durante el calentamiento el guardián
+  de "la mesa no está donde dice" NO OPERA, y ese guardián existe porque una vez
+  apareció un jugador fantasma llamado *"Ciegas"* leído de un panel.
+- `REF_SEGUIDAS_PARA_REFIJAR` **15 → 10**. La racha más larga de descartes era 14,
+  UNO por debajo del umbral: la app se quedó 14 frames ciega y el contador se
+  reseteó sin re-fijar. Barrido: 496 / 468 / 451 / 518 / 469 con N = 15/12/10/8/6.
+  Hay mínimo y está en 10.
+
+Efecto en esa sesión: descartes del 50 % al 26 %, jugadores por frame de 0,80 a
+1,23. Y en una sesión de 9 sana no empeora nada: 26 % de descartes con 6,67
+jugadores por frame y 51 recomendaciones en 120 frames.
+
+**LO QUE SIGUE SIN ARREGLAR, y hay que decirlo: esa sesión sigue dando CERO
+recomendaciones.** El alto del núcleo se detecta **15 % corto** -el detector coge
+solo la banda central del óvalo- así que las zonas quedan comprimidas y el
+nameplate del rival cae **ENTRE `TL` y `UL`**, sin que ninguna lo pille. Capturado
+en `casos/mesa9_heads_up_geometria_mal.png` con las zonas pintadas encima.
+
+Es la misma causa de fondo de siempre -la precisión de la referencia- en su forma
+más dañina hasta ahora. La conclusión que ya salió de atacarla cinco veces sigue
+en pie: **la estrategia correcta es MARGEN EN LAS ZONAS, no precisión en la
+referencia.**
+
+## El lazo rápido NO usa la geometría de 9
+
+**Es el hueco abierto de esta disposición, y no está medido.**
+
+Hay dos funciones que reparten geometría en `vision/seat_map.py`, y **solo una
+conoce la mesa de 9**:
+
+    zonas(9)        -> 9 asientos   (ZONAS_POR_DISPOSICION, tiene 6, 8 y 9)
+    disposicion(9)  -> 6 asientos   (DISPOSICIONES, solo tiene 6 y 8)
+
+`zonas()` es la que usa el análisis pesado (`table_state.analyze_layout`), así que
+**todo lo medido en este documento sigue siendo cierto**. Pero `disposicion()`
+tiene un único consumidor —`core/analisis.py`, donde construye `self.seats` y con
+él **el `SeatWatch` del lazo rápido**— y ahí cae al `.get(..., SEATS_6MAX)`.
+
+O sea que en una mesa de 9 el lazo de 10 Hz que caza los verbos de acción vigila
+**las seis zonas de la mesa de 6**. Restando las coordenadas de las dos tablas:
+
+    zona de 6-max          dónde cae en la mesa de 9
+    TOPC  (x 0,36-0,69)    el hueco central entre TL y TR: tapete vacío
+    ML    (y 0,60-0,85)    el hueco entre ML (y 0,39-0,63) y DL (y 0,83-1,07)
+    MR    (y 0,60-0,85)    ídem, entre MR y DR
+    UL, UR, HERO           solapan parcialmente, desplazadas ~0,13
+
+Importa porque `vigilar()` escribe en `action_log.observar(seat, accion)`, y de
+ahí salen `primera_agresion_seat`, `ultimo_agresor_seat`, `rival_posterior_seat` y
+`limper_seats_observed`, que `decision/engine` lee en nueve puntos. Un verbo leído
+en el borde de `DL` y etiquetado `ML` **atribuye la agresión al asiento
+equivocado**.
+
+Ningún test cubre `disposicion()`: los de `vision/test_disposicion_mesa.py` van
+todos contra `zonas()`, que sí tiene el 9. Por eso el hueco pasó desapercibido.
+
+**No está medido cuánto daño hace** —haría falta reproducir una de las sesiones de
+9 de `testing/` contando qué asientos emite `vigilar()`— y hasta que lo esté, esto
+es una deducción del código, no una medición. El arreglo natural es que
+`disposicion()` salga de `ZONAS_POR_DISPOSICION` en vez de un segundo diccionario
+que se desincroniza.

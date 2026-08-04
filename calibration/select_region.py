@@ -7,6 +7,10 @@ de la mesa. El resultado (en pixeles del frame original, sin escalar) se
 guarda en calibration/config.local.json y es lo que luego usa Fase 1 para
 recortar cada frame capturado.
 
+SIEMPRE PREGUNTA QUE PANTALLA, aunque ya hubiera una guardada: calibrar es el
+momento en que el usuario decide donde esta la mesa. El analisis en marcha sigue
+sin preguntar nada y usa la que se haya elegido aqui.
+
 Uso: .venv/bin/python calibration/select_region.py
 Controles: arrastrar para dibujar el rectangulo, Enter para guardar, Esc para salir.
 """
@@ -123,8 +127,14 @@ class SelectorWindow(Gtk.ApplicationWindow):
 
 
 def main():
-    print("Capturando frame de referencia (confirma el dialogo si aparece)...")
-    frame = pc.get_one_frame()
+    # SIEMPRE se pregunta QUE PANTALLA. Calibrar es justo el momento de decidirlo
+    # -es cuando el usuario dice donde esta la mesa-, y con dos monitores la
+    # guardada puede ser la otra: entonces se dibujaba el recuadro sobre una
+    # pantalla que no era, y el fallo aparecia despues, en forma de recortes
+    # vacios. El resto de la app sigue arrancando sin preguntar, con la pantalla
+    # que se elija aqui (ver portal_capture.open_screencast_session).
+    print("Capturando frame de referencia (elige la pantalla en el dialogo)...")
+    frame = pc.get_one_frame(elegir_pantalla=True)
 
     app = Gtk.Application(application_id="org.pokerassistant.calibration")
 

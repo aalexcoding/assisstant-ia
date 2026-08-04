@@ -295,11 +295,19 @@ class Analizador:
 
     # --- lazo rapido ----------------------------------------------------------
     watch: sw.SeatWatch = field(default_factory=sw.SeatWatch)
-    # LA DISPOSICION DE LA MESA (6 u 8 plazas), derivada de max_players en
-    # __post_init__. Se guarda en el Analizador y no en un global de seat_map
-    # PORQUE HAY VARIOS A LA VEZ: la regresion de oro crea uno por sesion en el
-    # mismo proceso, asi que con un global una sesion de 8 contaminaria a la
-    # siguiente de 6 y el fallo saldria como una regresion fantasma.
+    # LA DISPOSICION DE LA MESA, derivada de max_players en __post_init__. Se
+    # guarda en el Analizador y no en un global de seat_map PORQUE HAY VARIOS A LA
+    # VEZ: la regresion de oro crea uno por sesion en el mismo proceso, asi que
+    # con un global una sesion de 8 contaminaria a la siguiente de 6 y el fallo
+    # saldria como una regresion fantasma.
+    #
+    # OJO, HUECO CONOCIDO: sale de seat_map.disposicion(), que solo tiene tabla
+    # para 6 y 8, mientras que seat_map.zonas() -la que usa el analisis pesado-
+    # tiene tambien la de 9. En una mesa de 9 esto cae a la de 6, asi que el
+    # SeatWatch del lazo rapido vigila las seis zonas de la mesa de 6: TOPC y los
+    # dos del medio caen en tapete vacio y los verbos que se lean ahi se atribuyen
+    # al asiento equivocado. Deducido del codigo y NO medido todavia; ver
+    # docs/MESAS-DE-8-Y-9.md, "El lazo rapido NO usa la geometria de 9".
     seats: dict = field(init=False, default=None)
     decision_context: engine.DecisionContext = field(default_factory=engine.DecisionContext)
     seat_lines_cache: dict = field(default_factory=dict)
@@ -359,8 +367,10 @@ class Analizador:
                      or ahora - self._ultimo_chat >= CHAT_MAX_S)
         self._frames_analizados += 1
 
-        # los asientos estables de la mano en curso se realimentan al
-        # reconocimiento: ver table_state.analyze_layout
+        # el censo de asientos Y el boton de la mano en curso se realimentan al
+        # reconocimiento: ver table_state.analyze_layout. Los dos van fijados por
+        # mano (hand_tracker.CENSO_FRAMES), porque ninguno de los dos puede
+        # moverse dentro de una mano y de los dos salen TODAS las posiciones.
         seat_lines_changed = None
         if self._ref is not None:
             try:
@@ -370,6 +380,7 @@ class Analizador:
         state = ts.analyze_layout(ruta, max_players=self.max_players,
                                   mazo=self.mazo,
                                   asientos_estables=self.tracker.asientos_estables(),
+                                  boton_fijado=self.tracker.boton_de_la_mano(),
                                   plantilla_boton=self.plantilla_boton,
                                   referencia=self.referencia,
                                   escala_glifo=self.escala_glifo,
@@ -527,7 +538,21 @@ class Analizador:
             for seat in cambiados:
                 x0, y0, x1, y1 = seat_map.zone_to_px(ref, self.seats[seat]["plate"],
                                                      crop.shape)
-                idx[seat] = batch.add_tsv_job(crop[y0:y1, x0:x1], scale=3)
+                # el mismo recorte anclado a la capsula que usa el analisis
+                # pesado: aqui se leen el verbo y el nick, y con la zona a secas
+                # la referencia fijada le muerde el texto (ver ts.capsula_px).
+                # Aqui SI se elige uno -y el anclado cuando lo hay- en vez de
+                # leer los dos: este lazo existe para ser barato, y lo que se
+                # saca de el (verbo y nombre) va a un voto por mayoria entre
+                # frames, no a una profundidad que haya que acertar al primer
+                # intento.
+                recorte, pad = (x0, y0, x1, y1), 0
+                if seat != seat_map.HERO_SEAT:
+                    capsula = ts.capsula_px(crop, (x0, y0, x1, y1))
+                    if capsula is not None:
+                        recorte, pad = capsula, ts.PAD_NAMEPLATE
+                cx0, cy0, cx1, cy1 = recorte
+                idx[seat] = batch.add_tsv_job(crop[cy0:cy1, cx0:cx1], scale=3, pad=pad)
             res = batch.run()
             self.vigilancia.capsulas_ocr += len(cambiados)
             for seat, i in idx.items():

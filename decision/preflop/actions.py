@@ -64,6 +64,12 @@ _BASE = {
                                     "subir sobre los que han entrado, justo"),
     "SQUEEZE":                     ("SQUEEZE", "resubir con gente dentro (squeeze)"),
     "4BET NON-ALL-IN":             ("4BET", "resubir sin ir all in"),
+    # POSTFLOP (decision/postflop_gto.py). No salen de ranges.json -no hay rango
+    # postflop digitalizado- pero pasan por aqui igual para que el HUD reciba
+    # action_en/action_es por el mismo camino que las preflop y no tenga dos
+    # formas distintas de pintar una accion.
+    "BET":                         ("BET", "apostar"),
+    "RAISE":                       ("RAISE", "subir"),
 }
 
 

@@ -254,6 +254,53 @@ def test_la_ocupacion_sobrevive_a_la_ambiguedad():
     assert _plate_occupied([L("36,6 BB"), L("Media: 89 BB")]) is True
 
 
+# --- los importes de TRES cifras se leian como de dos ------------------------
+# tesseract parte "144,2 BB" en dos cajas, '1' y '44,2 BB'. Como el texto de la
+# zona se juntaba con espacios antes de buscar el importe, casaba el segundo
+# trozo: un jugador con 148,5 bb aparecia con 8,5 bb, frame tras frame mientras
+# tuviera mas de 99. Lo canto el usuario: "las mayores de 99 no se leen".
+# Medido sobre 578 frames de 12 sesiones: 16 lecturas recuperan sus centenas.
+
+def C(text, left, right, top, bottom):
+    """Una caja OCR con posicion, que es lo que distingue una linea de otra."""
+    return {"text": text, "left": left, "right": right, "top": top, "bottom": bottom,
+            "cx": (left + right) / 2, "cy": (top + bottom) / 2}
+
+
+@pytest.mark.parametrize("desc, cajas, esperado", [
+    ("el 1 partido del resto del numero",
+     [C("1", 273, 296, 234, 292), C("44,2 BB", 309, 563, 233, 302)], 144.2),
+    ("las dos primeras cifras partidas",
+     [C("10", 259, 305, 234, 292), C("2,2 BB", 311, 563, 233, 302)], 102.2),
+    ("el sufijo en su propia caja",
+     [C("129,6", 259, 500, 234, 292), C("BB", 520, 580, 233, 302)], 129.6),
+    ("sin partir se lee igual que siempre",
+     [C("110,6 BB", 300, 552, 216, 285)], 110.6),
+])
+def test_un_importe_partido_por_el_ocr_se_recompone(desc, cajas, esperado):
+    assert parse_amount_bb(cajas) == esperado, desc
+
+
+def test_un_nick_acabado_en_digitos_no_es_un_stack():
+    """'SLYLY555' con un "BB" suelto de ruido en OTRA linea daba un stack de 555
+    bb inventado. El nick vive en una banda y el importe en otra, asi que exigir
+    que las dos cajas se SOLAPEN EN VERTICAL lo deshace (9 casos en la misma
+    medicion: tambien 'mouse1089' -> 1089 y 'Natalini333' -> 333)."""
+    cajas = [C("SLYLY555", 240, 520, 120, 175), C("BB", 300, 360, 250, 305)]
+    assert parse_amount_bb(cajas) is None
+    # el asiento SIGUE contando como ocupado: lo dice su nick, que es una señal
+    # de ocupacion por si sola. Lo que desaparece es el importe inventado.
+    assert _plate_occupied(cajas) is True
+    assert seat_map.has_bb_amount(cajas) is False
+
+
+def test_dos_numeros_lejanos_de_la_misma_linea_no_se_pegan():
+    """Pegar sin espacio es para un numero PARTIDO (las cajas casi se tocan). La
+    denominacion de una ficha a media capsula de distancia no lo es."""
+    cajas = [C("25", 100, 150, 234, 292), C("4,2 BB", 400, 560, 233, 302)]
+    assert parse_amount_bb(cajas) == 4.2
+
+
 # --- A-1d el importe del boton "Igualar" -------------------------------------
 # Evidencia INDEPENDIENTE de que hay una subida.
 

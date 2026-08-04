@@ -447,6 +447,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         estado = self._build_state_frame()
         mano = self._build_hand_frame()
         equity = self._build_equity_frame()
+        gto_panel = self._build_gto_frame()
         reco = self._build_recommendation_frame()
         anterior = self._build_prev_hand_frame()
         nota = self._build_note_frame()
@@ -466,6 +467,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         contenido = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
         contenido.add_css_class("content")
         contenido.append(reco)
+        # Justo debajo de la recomendacion: postflop es el unico momento en que
+        # aquella se queda en blanco, asi que este panel ocupa su sitio en vez de
+        # aparecer al final de un scroll.
+        contenido.append(gto_panel)
         contenido.append(estado)
 
         # Mano formada y equity son dos lecturas relacionadas y secundarias.
@@ -635,6 +640,121 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.equity_frame = panel
         panel.set_visible(False)
         return panel
+
+    def _build_gto_frame(self):
+        """Guia postflop (decision/postflop_gto.py).
+
+        Panel propio y no una linea mas en el de la recomendacion, porque su
+        procedencia es OTRA: la recomendacion sale de rangos digitalizados y
+        esto de heuristicas publicas aplicadas aqui. Mezclarlas en el mismo
+        bloque haria que las dos parecieran tener el mismo respaldo."""
+        panel, box = self._panel("Guía postflop (GTO)")
+
+        self.gto_action_label = Gtk.Label()
+        self.gto_action_label.set_use_markup(True)
+        self.gto_action_label.set_halign(Gtk.Align.START)
+        self.gto_action_label.set_xalign(0.0)
+
+        self.gto_board_label = self._markup_label("")
+        self.gto_math_label = self._markup_label("")
+        self.gto_reason_label = self._markup_label("")
+        panel.set_tooltip_text(
+            "Heurísticas GTO públicas (GTO Wizard) aplicadas a este spot: alpha "
+            "y MDF son exactos porque salen del bote y la apuesta; la frecuencia "
+            "de c-bet es una banda derivada de una ordenación cualitativa, no una "
+            "frecuencia de solver. No hay rango postflop digitalizado.")
+
+        for w in (self.gto_board_label, self.gto_math_label, self.gto_reason_label):
+            w.set_wrap(True)
+            w.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+
+        box.append(self.gto_action_label)
+        box.append(self.gto_board_label)
+        box.append(self.gto_math_label)
+        box.append(self.gto_reason_label)
+        self.gto_frame = panel
+        panel.set_visible(False)
+        return panel
+
+    def on_gto(self, guia):
+        """Pinta la guia postflop. La accion va en AZUL, el color que esta app
+        reserva para lo que viene de una guia publica y no de las tablas del
+        usuario (ver on_result)."""
+        if not guia:
+            self.gto_frame.set_visible(False)
+            return False
+        self.gto_frame.set_visible(True)
+        esc = GLib.markup_escape_text
+
+        accion = guia.get("action_es") or guia.get("action_en") or guia.get("action")
+        if accion:
+            self.gto_action_label.set_markup(
+                f'<span size="x-large" weight="bold" foreground="#38bdf8">'
+                f'{esc(str(accion).upper())}</span>')
+        else:
+            self.gto_action_label.set_markup(
+                '<span size="large" weight="bold" foreground="#8b98a7">'
+                'SIN ACCIÓN PROPUESTA</span>')
+
+        textura = guia.get("textura_texto") or ""
+        posicion = {"IP": "en posición", "OOP": "fuera de posición"}.get(
+            guia.get("posicion"), "posición desconocida")
+        rivales = guia.get("rivales_vivos")
+        self.gto_board_label.set_markup(
+            f'<span size="small">Board: <b>{esc(textura)}</b> · {esc(posicion)}'
+            f' · {rivales} rival{"es" if rivales != 1 else ""}</span>')
+
+        self.gto_math_label.set_markup(self._gto_math_markup(guia))
+
+        texto = guia.get("reasoning") or guia.get("motivo") or ""
+        confianza = guia.get("confidence")
+        bloque = esc(texto)
+        if confianza:
+            bloque += f'\n<i>Confianza — {esc(confianza)}</i>'
+        self.gto_reason_label.set_markup(f'<span size="small">{bloque}</span>')
+        return False
+
+    @staticmethod
+    def _gto_math_markup(guia):
+        """La linea de cifras, distinta segun la rama. Vacia si no hay ninguna:
+        preferible a un renglon de guiones que parezca un dato."""
+        precio = guia.get("precio")
+        if precio:
+            texto = (
+                f'Apuesta del rival <b>{precio["tamano_rival_pct"]:.0f}%</b> del bote '
+                f'· necesitaba <b>{100 * precio["alpha_rival"]:.0f}%</b> de foldeos '
+                f'(alpha) · defiendes como rango el <b>{100 * precio["mdf"]:.0f}%</b> '
+                f'(MDF) · equilibrio '
+                f'<b>{precio["ratio_valor_farol_equilibrado"]:g}:1</b> valor:farol'
+                f'\nPrecio: pagas <b>{precio["pagar_bb"]:g} BB</b> y necesitas '
+                f'<b>{100 * precio["equity_requerida"]:.0f}%</b>')
+            if precio.get("margen_pp") is not None:
+                texto += f' · margen <b>{precio["margen_pp"]:+.0f} puntos</b>'
+            return f'<span size="small">{texto}</span>'
+
+        cbet = guia.get("cbet")
+        if cbet:
+            tamano = (f' (<b>{cbet["tamano_bb"]:g} BB</b>)'
+                      if cbet.get("tamano_bb") is not None else "")
+            texto = f'Tamaño <b>{cbet["tamano_pct_del_bote"]}%</b> del bote{tamano}'
+            # En turn y river no hay banda: la heuristica importada es de flop y
+            # postflop_gto la omite en vez de extrapolarla. El renglon tiene que
+            # sobrevivir a ese None, no pintar "None" ni quedarse en blanco.
+            if cbet.get("banda_frecuencia"):
+                texto += (
+                    f' · frecuencia '
+                    f'<b>{GLib.markup_escape_text(cbet["banda_frecuencia"])}</b> '
+                    f'({GLib.markup_escape_text(cbet["banda_glosa"] or "")})')
+            else:
+                texto += (
+                    ' · <i>sin banda de frecuencia: la heurística es de flop</i>')
+            if cbet.get("ratio_valor_farol") is not None:
+                texto += (
+                    f'\nA ese tamaño: necesita <b>{100 * cbet["alpha"]:.0f}%</b> de '
+                    f'foldeos · mezcla <b>{cbet["ratio_valor_farol"]:g}:1</b> '
+                    f'valor:farol')
+            return f'<span size="small">{texto}</span>'
+        return ""
 
     def on_ritmo(self, texto):
         """Lo que esta tardando de verdad, en la ventana. Sustituye al selector de
@@ -974,7 +1094,7 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         self.mesa_combo.set_tooltip_text(
             "Cuantas plazas tiene la mesa. Elige la que estas jugando: ademas de "
             "acotar el recuento, decide DONDE se buscan los asientos. Hay geometria "
-            "medida para 6 y para 8; 2, 3 y 9 usan la de 6, que es la que habia.")
+            "medida para 6, 8 y 9; 2 y 3 usan la de 6, que es la que habia.")
 
         # EL RITMO SE VE, NO SE ELIGE. Antes habia aqui un spin de 0,25 a 10 s
         # cuyo numero no describia nada: 8 de sus 40 valores son fisicamente
@@ -1131,10 +1251,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             self.worker.start()
 
     # MISMO ORDEN QUE EL COMBO. Ademas de acotar cuantos asientos puede haber,
-    # esto elige la GEOMETRIA: seat_map tiene tabla medida para 6 y para 8, y
-    # para el resto usa la de 6 (ver seat_map.zonas). En una mesa de 8 con la
-    # tabla de 6 no es que falten dos asientos: los laterales caen en el hueco
-    # entre los de verdad y se pierden DOS jugadores por lado.
+    # esto elige la GEOMETRIA: seat_map tiene tabla medida para 6, 8 y 9, y para
+    # el resto usa la de 6 (ver seat_map.zonas). En una mesa de 8 con la tabla de
+    # 6 no es que falten dos asientos: los laterales caen en el hueco entre los
+    # de verdad y se pierden DOS jugadores por lado.
     #
     # SIN None: ya no hay "auto". Ver el combo para el porque.
     _MESA_OPCIONES = (2, 3, 6, 8, 9)
@@ -1292,6 +1412,10 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
         else:
             self.acciones_label.set_markup("")
         self._update_hand(hand)
+        # state["gto"] ya viene con equity: analizar() corre decide() Y
+        # postflop_equity antes de publicar, y la segunda pisa la guia que dejo
+        # la primera (ver engine.guia_postflop).
+        self.on_gto(state.get("gto"))
 
         if recommendation:
             # La interfaz está en castellano: la acción legible va primero y el
@@ -1370,8 +1494,16 @@ class PokerAssistantWindow(Gtk.ApplicationWindow):
             return ("No se detecta una mesa de poker (¿estas en el lobby o fuera de una mano?). "
                     "La app solo recomienda con una mesa activa en pantalla.")
         if state.get("board"):
-            return ("Postflop: no hay rango postflop digitalizado, asi que no se recomienda "
-                    "una ACCION. Lo que si hay es la equity estimada de arriba — pero es una "
+            base = ("Postflop: no hay rango postflop digitalizado, asi que este panel "
+                    "-que es el de tus tablas- no propone accion.")
+            guia = state.get("gto") or {}
+            if guia.get("action"):
+                return (base + " La propuesta postflop va en el panel 'Guia postflop "
+                        "(GTO)': sale de heuristicas publicas aplicadas al bote y a la "
+                        "textura del board, no de una celda tuya.")
+            if guia.get("motivo"):
+                return f"{base} La guia postflop tampoco propone accion: {guia['motivo']}."
+            return (base + " Lo que si hay es la equity estimada — pero es una "
                     "probabilidad, no una decision: un 20% puede ser un call correcto con el "
                     "precio adecuado y un 60% un fold con malas implied odds.")
         if len(cards) != 2:

@@ -178,7 +178,10 @@ aparte y actualiza los widgets vía `GLib.idle_add`, así que la UI no se congel
 estado detectado (tus cartas, board, bote, jugadores con posición y stack), una sección
 "Mano actual" con la mano formada y los proyectos + % que devuelve `decision/hand_strength.py`
 (oculta entre manos, cuando no hay cartas del hero), la recomendación de `engine.decide` en
-grande (o el motivo si no la hay), una sección "Mano anterior" que resume la última mano
+grande (o el motivo si no la hay), un panel **"Guía postflop (GTO)"** justo debajo —que es
+donde `engine.decide` se queda en blanco a propósito— con la textura del board, alpha, MDF
+y el tamaño o la acción que proponen las heurísticas de `decision/postflop_gto.py`, en azul
+porque su procedencia **no** son las tablas digitalizadas, una sección "Mano anterior" que resume la última mano
 terminada leyendo el resultado del panel de chat (`vision/hand_result.py`: ganador, importe,
 mano ganadora, jugadores de showdown y si el hero ganó/perdió/**empató** el bote), un panel
 para **marcar una situación** rara y anotarla mientras juegas (fija el frame en el momento y
@@ -213,6 +216,11 @@ panel "Mano anterior" no pierde ni un frame.
 - `calibration/` — Fase 0: `select_region.py` toma un frame de referencia (vía
   `capture/portal_capture.py`) y deja dibujar con el ratón el recuadro de la mesa;
   guarda las coordenadas en `calibration/config.local.json` (no versionado).
+  **Calibrar pregunta SIEMPRE qué pantalla** (`elegir_pantalla=True`, o sea que no
+  manda el `restore_token` guardado): es el momento en que se decide dónde está la
+  mesa, y con dos monitores el recuadro se estaba dibujando sobre la pantalla que
+  tocó la vez anterior. La elección nueva se guarda, así que el análisis sigue
+  arrancando sin preguntar.
 - `capture/` — Fase 1: `portal_capture.py` abre una sesión de
   `org.freedesktop.portal.ScreenCast` y consume el stream de PipeWire con GStreamer.
   El `restore_token` se guarda en `capture/config.local.json`, aunque en KDE Plasma
@@ -353,7 +361,39 @@ panel "Mano anterior" no pierde ni un frame.
 - `decision/postflop_math.py` — precio matemático de un call: `call / bote final`,
   además de stack efectivo y SPR del instante capturado. Nunca emite una acción. El bote
   mostrado por PokerStars ya incluye la apuesta rival (contrastado contra frames reales);
-  las fórmulas y sus límites están documentados en el propio módulo.
+  las fórmulas y sus límites están documentados en el propio módulo. Desde la entrada de
+  `decision/gto.py` acompaña el precio con `alpha`, `mdf`, `value_to_bluff` y
+  `bet_pct_of_pot` del **mismo** tamaño.
+- `decision/gto.py` — aritmética de equilibrio, sin cartas ni `GameState`: alpha
+  (`riesgo/(riesgo+recompensa)`), MDF (`1-alpha`), fracción de farol y ratio valor:farol
+  por tamaño (33%→4:1, 50%→3:1, 66%→2,5:1, 100%→2:1), alpha de una **subida** —que no es
+  la misma cuenta que la de una apuesta— y EV de un farol. Convive con **los dos convenios
+  de bote** (el de la literatura, sin la apuesta dentro; el de la pantalla, con ella) en
+  funciones separadas y nombradas, porque confundirlos da un número plausible y
+  equivocado. Fuente: <https://blog.gtowizard.com/mdf-alpha/>.
+- `decision/board_texture.py` — textura del board por los tres ejes con los que están
+  enunciadas las heurísticas: emparejamiento, conexión y palos, más la carta alta. La
+  conexión se razona por **ventanas de escalera reales** y no por la distancia entre dos
+  cartas: A y K están a distancia 1 y no son un proyecto abierto (JQKA solo se completa
+  con el T). Devuelve `None` con un board ilegible en vez de una textura neutra.
+- `decision/postflop_gto.py` — la guía postflop, y **la única pieza que propone una acción
+  postflop**. Dos ramas: *defensa* (hay apuesta que igualar → precio, alpha, MDF, mezcla
+  de equilibrio, y acción comparando con la equity estimada) y *c-bet* (el hero fue el
+  agresor preflop y nadie ha apostado → banda de frecuencia y tamaño según textura). Lo
+  deja en `state["gto"]`; el HUD lo pinta en un panel propio, en azul, para que no se
+  confunda con lo que sale de las tablas digitalizadas del usuario. Distingue lo exacto
+  (alpha y MDF salen del bote y la apuesta) de lo aproximado (las bandas traducen una
+  ordenación cualitativa, no son frecuencias de solver) y de lo prestado (el ajuste
+  multiway es propio; la fuente resuelve heads-up y en posición). Fuentes:
+  <https://blog.gtowizard.com/flop-heuristics-ip-c-betting-in-cash-games/> y
+  <https://blog.gtowizard.com/the-mechanics-of-c-bet-sizing/>.
+- `decision/preflop/gto_baseline.py` — RFI de referencia a 100 BB para mesas de 6 y 9,
+  usado **solo** por encima de 70 BB (el punto medio con la tabla digitalizada de 40) y
+  solo donde no llega nada mejor: antes, una mesa de 9 a 100 BB recibía el rango de 40 BB
+  estirado. Las etiquetas de posición se traducen por **cuánta gente queda detrás** y no
+  por el nombre (el primero en hablar de una mesa de 6 es `MP2` aquí y `UTG` en el
+  gráfico). Las posiciones que la fuente no publica no se interpolan. Fuente:
+  <https://www.preflopwizard.app/blog/preflop-charts>.
 - `decision/rag/` — Fase 4.2: transcripción de vídeos. El retrieval está construido y
   cableado al estudio post-mano (ver `postmano.py` arriba). `video_index.py` localiza y ordena los vídeos de
   `TORNEOS/6. EL CURSO ABSOLUTO...` y `TORNEOS/5. CONTENIDO DE TEORÍA POSTFLOP...`

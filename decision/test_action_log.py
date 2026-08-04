@@ -415,3 +415,53 @@ def test_una_agresion_en_el_mismo_frame_que_la_ultima_ciega_es_ambigua():
     r = al.estado_preflop(st)
     assert r["nivel"] == "sin_agresion_observada"
     assert r["agresion_ambigua_arranque"] is True
+
+
+# --- vocabularios: el filtro de "no es un nick" y el mapa de verbos ----------
+# Divergieron sin que nada saltase: "Ciegas" y "Ganado" estaban solo en
+# table_state y aqui caian al .get() generico. Devolvian None igual, pero por el
+# mismo camino que un nick cualquiera, no por estar declarados.
+
+def test_todo_verbo_que_pasa_el_filtro_esta_declarado_aqui():
+    """Si table_state decide que un texto NO es un nombre, este modulo tiene que
+    saber que hacer con el: convertirlo en accion o declararlo como estado."""
+    from vision.table_state import SEAT_STATUS_WORDS
+    from decision.action_log import _NO_SON_ACCION, _VERBO_A_ACCION
+    huerfanos = SEAT_STATUS_WORDS - set(_VERBO_A_ACCION) - _NO_SON_ACCION
+    assert not huerfanos, f"reconocidos como verbo pero sin declarar aqui: {huerfanos}"
+
+
+def test_el_texto_de_la_interfaz_no_entra_en_el_historial():
+    """Medido en la sesion 2026-08-03: 'Ganado' 84 veces, 'Ciegas' 111."""
+    for texto in ("Ganado", "Ciegas", "Ganador", "\\Ganado", "Ganado ="):
+        assert al.normalizar(texto) is None
+
+
+# --- ante ---------------------------------------------------------------------
+
+def test_ante_observado_mira_el_verbo_crudo_y_no_la_accion():
+    """'Ante' y 'Poner' normalizan los dos a 'post', que es correcto para la
+    secuencia y borra justo la diferencia que necesita elegir un rango."""
+    con = {"acciones": {"acciones": [
+        {"seat": "S1", "accion": "post", "verbo": "Ante"}]}}
+    sin = {"acciones": {"acciones": [
+        {"seat": "S1", "accion": "post", "verbo": "Poner"}]}}
+    assert al.ante_observado(con) is True
+    assert al.ante_observado(sin) is False
+    assert al.normalizar("Ante") == al.normalizar("Poner") == "post"
+
+
+def test_ante_observado_aguanta_la_basura_del_ocr():
+    for verbo in ("ante", "An te", "Ante »", "ante —", "‘ante", "Ante = —"):
+        assert al.ante_observado(
+            {"acciones": {"acciones": [{"seat": "S1", "verbo": verbo}]}}) is True
+
+
+@pytest.mark.parametrize("state", [
+    {}, {"acciones": None}, {"acciones": {}}, {"acciones": {"acciones": []}},
+    {"acciones": {"acciones": [None, {"seat": "S1"}, {"verbo": None}]}},
+])
+def test_sin_evidencia_de_ante_no_se_afirma_que_lo_haya(state):
+    """Es evidencia POSITIVA: no haberlo visto no demuestra que no exista, y por
+    eso False significa 'no consta', no 'no hay'."""
+    assert al.ante_observado(state) is False

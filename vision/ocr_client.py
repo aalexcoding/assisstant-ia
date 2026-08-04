@@ -58,12 +58,18 @@ class OcrBatch:
     def job_count(self):
         return len(self._jobs)
 
-    def add_tsv_job(self, bgr_full_frame, scale=1, lang=None):
+    def add_tsv_job(self, bgr_full_frame, scale=1, lang=None, pad=0):
         """Encola un OCR de texto libre. lang=None usa el idioma por defecto del
         worker (ingles); lang="spa" pide el modelo espanol para las zonas que
         contienen PROSA en castellano (ver LANG_SPANISH_PROSE en ocr_worker.py:
         el espanol ayuda con los acentos pero perjudica a los nicks de jugador,
-        que son ASCII y el modelo tiende a "corregir" hacia palabras con tilde)."""
+        que son ASCII y el modelo tiende a "corregir" hacia palabras con tilde).
+
+        pad: pixeles de margen (ya escalados) alrededor del recorte, replicando
+        el borde. Es el mismo remedio que ya usaba add_text_job y por el mismo
+        motivo -tesseract falla en un recorte donde el glifo toca el borde-, y
+        aqui hace falta desde que el nameplate se recorta AJUSTADO a la capsula
+        (ver table_state.capsula_px)."""
         if bgr_full_frame is None or bgr_full_frame.size == 0:
             idx = len(self._jobs)
             self._jobs.append(None)
@@ -72,6 +78,9 @@ class OcrBatch:
         if scale != 1:
             enhanced = cv2.resize(enhanced, (enhanced.shape[1] * scale, enhanced.shape[0] * scale),
                                    interpolation=cv2.INTER_LANCZOS4)
+        if pad:
+            enhanced = cv2.copyMakeBorder(enhanced, pad, pad, pad, pad,
+                                          cv2.BORDER_REPLICATE)
         idx = len(self._jobs)
         job = {"mode": "tsv", "png_b64": _png_b64(enhanced), "scale": scale}
         if lang:

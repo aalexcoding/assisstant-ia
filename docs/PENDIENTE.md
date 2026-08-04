@@ -1048,6 +1048,104 @@ regla de mayoría dentro de la mano que ya funciona para los nombres) y **9 son 
 manos pegadas** (el 4% de cortes reales que se perdió). Los frames sueltos llegan
 a emitir recomendación con una posición minoritaria.
 
+### 2.3f · Los stacks de más de 99 BB salían con dos cifras — ✅ ARREGLADO
+
+Lo cantó el usuario: *"las cajas de donde se leen los nicks y las fichas están
+demasiado ajustadas; las que son mayores de 99 no se leen"*. Eran **dos fallos
+distintos** que se sumaban en el mismo sitio.
+
+**1. El OCR parte el número y el parseo se quedaba con el trozo de la derecha.**
+tesseract devuelve `144,2 BB` en dos cajas, `'1'` y `'44,2 BB'`. Como
+`parse_amount_bb` juntaba el texto de la zona con espacios antes de aplicar la
+expresión regular, casaba el segundo trozo —el *lookbehind* solo protege de un
+dígito **pegado**, no de uno separado por un espacio— y un jugador con 148,5 bb
+aparecía con **8,5 bb**, frame tras frame mientras tuviera más de 99. El fallo es
+mudo y da una profundidad plausible, que es la peor clase de error de esta app.
+
+Ahora el importe se busca **dentro de cada línea visual** (`seat_map.lineas_unidas`
+recompone las cajas que se solapan en vertical y están pegadas en horizontal).
+Medido sobre 578 frames de 12 sesiones: **16 lecturas recuperan sus centenas**, y
+de propina desaparecen **9 stacks inventados** por un nick acabado en dígitos con
+un `BB` suelto de ruido en otra línea (`SLYLY555` → 555 bb, `mouse1089` → 1089).
+Cuesta 7 lecturas que pasan a *no leído* porque el número y su sufijo caen en
+cajas que no se reconocen como la misma línea: se deja de leer, no se lee mal.
+
+**2. La zona del nameplate le muerde el texto.** Las zonas son fracciones del
+núcleo del tapete, y en vivo el núcleo es el **fijado** de la sesión, no el que se
+ve en el frame. Medido sobre 12 sesiones de agosto, el borde de la zona baila
+**17 px de mediana, 98 de p95 y hasta 133** respecto al óvalo del frame; la
+cápsula mide ~380×115 px.
+
+| el recorte… | leído bien | leído MAL | no leído |
+|---|---|---|---|
+| cabe entero | 516 | 22 | 97 |
+| muerde el texto | 20 | 13 | 103 |
+
+La cápsula **sí se ve** en el frame (gris oscuro y sin color: la misma señal del
+veto de asiento vacío), así que ahora se busca dentro de una ventana alrededor de
+la zona y se recorta ella, con margen (`table_state.capsula_px`). Es el mismo
+recurso que ya usaba el nameplate del hero anclado a sus cartas —y el hero se
+queda como estaba, porque con el badge de torneo su franja de stack se vuelve
+clara y la mancha oscura solo cubriría el nombre—.
+
+| sobre 192 frames, 779 importes con verdad de consenso | bien | MAL | no leído |
+|---|---|---|---|
+| zona de siempre | 545 | 34 | 200 |
+| anclado a la cápsula | 640 | 16 | 123 |
+| **las dos lecturas juntas** | **666** | **6** | **107** |
+
+Se leen **los dos recortes**, no se elige uno: el OCR de un nameplate es frágil y
+el anclado gana en unos asientos y pierde en otros (a `Kiruria` con 128,3 bb le
+perdía el stack 8 frames seguidos). Juntarlos es seguro porque `parse_amount_bb`
+ya devuelve `None` ante dos importes distintos: si discrepan, el asiento se queda
+sin stack en vez de elegir a cara o cruz. Los nicks legibles suben de 940 a 1097,
+y en las 78 zonas vacías de otra medida **no se inventa ninguno** (los filtros del
+final de `capsula_px` son justo eso: sin ellos aparecían 4 asientos fantasma).
+
+**Y el tope de alto de la cápsula es estrecho a propósito** (1,3 veces la zona).
+Debajo del nameplate están la marca de bounty y, si ese asiento ha apostado, su
+montón de fichas con el importe al lado: todo oscuro y sin color, o sea que entra
+en la misma máscara y a veces sale pegado en una sola mancha. El usuario lo cazó
+con el frame 1861: `marta1525` tiene "27,8 BB" clarísimo, la mancha medía 1,36
+veces el alto de la zona —llegaba hasta las fichas de su ciega— y el asiento se
+quedaba **sin stack**, porque los dos recortes discrepaban. Rechazar esa mancha
+cuesta 10 lecturas de las 779 y quita esa clase de fallo entera.
+
+**Lo que NO arregla**: el sufijo se sigue exigiendo literal, y el OCR lo lee a
+veces `8B`, `RR` o `BR`; esas lecturas se pierden. Aflojarlo tocaría la garantía
+de que si el cliente no está en modo BB no se lee nada, así que se deja como está.
+
+#### El stack del HERO es otro problema, y está medido
+
+El usuario señaló frames de `sesion-2026-08-03_221628` con "115 BB" y "116,5 BB"
+en los que la app decía *"no se lee tu stack"*. En esa sesión el mensaje sale en
+el **13,1%** de los frames con stack real <100 y en el **11,3%** con stack ≥100:
+o sea que al hero le falla parecido a cualquier tamaño, **no es el bug de las
+centenas**. Sobre los 220 frames en que salió el mensaje, las causas medidas:
+
+| | frames | |
+|---|---|---|
+| no se detecta ninguna carta del hero | 49 | 22% — sin cartas no hay plate anclado |
+| se detecta UNA sola carta | 92 | 42% — el plate sale de la mitad de ancho y corta el importe |
+| dos cartas y aun así no se lee | 79 | 36% |
+
+Lo único que se ha aplicado es **el margen para tesseract en los dos recortes del
+hero**, que no toca geometría y por tanto no puede colar el importe de un vecino.
+Caso limpio, frame 0269: el mismo recorte sin margen da `'alex_delg'` y con
+margen da `'101,3 BB'`. Recupera 8 de esos 220 frames en la prueba aislada;
+medido de punta a punta sobre 300 frames no mueve el contador, así que la
+ganancia es pequeña y está donde el recorte llega ajustado.
+
+**Lo que se midió y NO se aplicó**: ensanchar el plate una carta a cada lado
+cuando solo se detecta una (no se sabe si la detectada es la izquierda o la
+derecha). Recupera bastante más —30 de 220— pero entre lo recuperado aparece un
+error de 10x: en el frame 3832 lee `154,0` donde pone `15,4 BB`, la coma perdida.
+Un stack falso vale menos que ninguno, así que queda pendiente con la medida
+hecha. **La vía buena es la de arriba**: la causa raíz es que el plate del hero
+depende de detectar sus cartas, y hay una señal mejor —su cápsula— que ya se usa
+para los rivales; falta comprobar qué hace con el badge de torneo, que vuelve
+clara la franja del stack.
+
 ### 2.3b Corpus etiquetado
 
 El modo testing ya recoge la materia prima y las notas de §2.3 aportan los casos
@@ -1057,6 +1155,18 @@ un cambio de umbral mejora o rompe. Sin eso no se pueden tocar con seguridad los
 
 ### 2.4 Deuda estructural
 
+- **`seat_map.disposicion()` no conoce la mesa de 9, y `seat_map.zonas()` sí.**
+  Son dos diccionarios que reparten la misma geometría (`DISPOSICIONES` con 6 y 8,
+  `ZONAS_POR_DISPOSICION` con 6, 8 y 9) y se desincronizaron al añadir la de 9.
+  El análisis pesado va por `zonas()` y no está afectado; el que cae a la
+  disposición de 6 es el **`SeatWatch` del lazo rápido**, que en una mesa de 9
+  vigila seis zonas de las cuales dos caen en tapete vacío. Lo que se lea ahí se
+  atribuye al asiento equivocado, y de `action_log` eso llega a `decision/engine`.
+  Arreglo natural: que `disposicion()` salga de `ZONAS_POR_DISPOSICION`, con su
+  test —hoy ninguno la cubre—. **Deducido del código y sin medir**: falta
+  reproducir una sesión de 9 de `testing/` contando qué asientos emite
+  `vigilar()`. Ver [`MESAS-DE-8-Y-9.md`](MESAS-DE-8-Y-9.md), *"El lazo rápido NO
+  usa la geometría de 9"*.
 - **Empaquetar de verdad** (`pyproject.toml`, paquete real en vez de 4
   `sys.path.insert`): hoy bloquea pytest *y* el Flatpak de la Fase 6. Además hay
   dos `ocr_worker.py` con el mismo basename en el path, que solo no colisionan

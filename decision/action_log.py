@@ -51,10 +51,23 @@ _VERBO_A_ACCION = {
     "ante": "post",
 }
 
-# Verbos que NO son una accion sino un ESTADO del asiento. Se reconocen para no
-# tomarlos por nombre, pero no entran en el historial: "Ausente" no es una
-# decision de poker, y meterlo desordenaria la secuencia.
-_NO_SON_ACCION = {"ausente", "sentado", "espera"}
+# Verbos que NO son una accion sino un ESTADO del asiento, o texto de la interfaz
+# que cae encima del nameplate. Se reconocen para no tomarlos por nombre, pero no
+# entran en el historial: "Ausente" no es una decision de poker, y meterlo
+# desordenaria la secuencia.
+#
+# LOS TRES ULTIMOS ESTABAN SOLO EN table_state.SEAT_STATUS_WORDS, o sea que el
+# filtro de "esto no es un nick" los conocia y este mapa no. Devolvian None
+# igualmente, pero por caer al .get() generico -el mismo camino que un nick
+# cualquiera-, no por estar declarados. Auditado sobre la sesion 2026-08-03:
+# "Ganado" aparece 84 veces y "Ciegas" 111, o sea que no es un caso teorico.
+# Declararlos aqui hace que los dos vocabularios se puedan comparar y que un
+# test pueda exigir que no vuelvan a divergir.
+_NO_SON_ACCION = {
+    "ausente", "sentado", "espera",
+    "ciegas",           # panel del torneo encima del nameplate
+    "ganado", "ganador",  # resultado de la mano, no una decision
+}
 
 # Acciones que meten dinero de forma voluntaria y agresiva. Es lo que hay que
 # mirar para saber si el bote esta abierto o subido.
@@ -81,6 +94,39 @@ def normalizar(verbo):
     if limpio in _NO_SON_ACCION:
         return None
     return _VERBO_A_ACCION.get(limpio)
+
+
+# Verbos crudos que significan ANTE y no ciega. Los dos normalizan a "post", que
+# es correcto para la secuencia -ni uno ni otro es una decision- pero borra la
+# diferencia, y para elegir un rango la diferencia importa: con ante hay mas
+# muerto en el bote y se abre mas ancho. Por eso ante_observado() mira el verbo
+# CRUDO y no la accion canonica.
+_VERBOS_DE_ANTE = frozenset({"ante"})
+
+
+def ante_observado(state):
+    """True si en esta mano se ha visto a alguien poner ANTE.
+
+    Es evidencia POSITIVA y solo eso: que no se haya visto no demuestra que no
+    lo haya (el verbo dura menos que el muestreo). Por eso quien lo consume debe
+    tratarlo como "aqui seguro que hay ante", nunca como "aqui seguro que no".
+
+    _ante_total_bb del motor responde a otra pregunta -CUANTO ante hay, leyendo
+    lo que la BB puso de mas- y sobre esta sesion no es fiable: devolvio None en
+    867 de 1.252 muestras y valores imposibles (79 BB) en otras 34, porque un
+    all-in visible en la BB contamina la resta. El verbo del nameplate, en
+    cambio, salio en el 81% de las manos.
+    """
+    for registro in ((state.get("acciones") or {}).get("acciones") or []):
+        if not isinstance(registro, dict):
+            continue
+        verbo = registro.get("verbo")
+        if not verbo:
+            continue
+        limpio = "".join(c for c in str(verbo).lower() if c.isalnum())
+        if limpio in _VERBOS_DE_ANTE:
+            return True
+    return False
 
 
 def estado_preflop(state):

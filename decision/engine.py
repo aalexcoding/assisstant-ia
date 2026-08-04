@@ -5,9 +5,16 @@ datos suficientes, devuelve una recomendacion consultando
 decision/preflop/lookup.py.
 
 decide() solo recomienda ACCION en preflop: no hay rango postflop digitalizado,
-asi que con board no devuelve accion. Lo que si hay postflop es equity estimada
-por simulacion, en postflop_equity(), deliberadamente separado: es una
-probabilidad, no una decision.
+asi que con board no devuelve accion. Lo que si hay postflop son otras dos
+cosas, deliberadamente separadas de decide() y una de otra:
+
+  * equity estimada por simulacion, en postflop_equity(). Es una PROBABILIDAD.
+  * una guia GTO, en guia_postflop(), que deja su resultado en state["gto"].
+    Sale de heuristicas publicas (ver decision/postflop_gto.py) y no de las
+    tablas del usuario: da textura del board, precio, alpha y MDF siempre, y
+    una accion propuesta cuando ademas hay equity. Va aparte y con su propio
+    panel en el HUD justamente porque su respaldo es otro; mezclarla con lo que
+    devuelve decide() haria que las dos pareciesen tener el mismo.
 
 Defensa contra una subida ajena (facing="threebet_call"): si el GameState
 trae facing="bet" (hay un boton "Igualar/Pagar", asi que hay una apuesta que
@@ -94,11 +101,13 @@ from decision import action_log
 from decision import equity
 from decision import hand_tracker
 from decision import journal
+from decision import postflop_gto
 from decision import postflop_math
 
 from decision.preflop.actions import translate_into
 from decision.preflop.derive import bb_option, squeeze, vs_limp
-from decision.preflop import bb_multi_limp, lookup, open_push, rangeconverter
+from decision.preflop import (
+    bb_multi_limp, gto_baseline, lookup, open_push, rangeconverter)
 from decision.preflop.lookup import recommend
 
 _HERO_STACK_TTL_S = 90.0
@@ -768,7 +777,47 @@ def postflop_equity(state: GameState, iterations=None, seed=None, context=None):
         resultado.setdefault("warnings", []).append(
             "no se leyeron los botones de accion: puede que no sea tu turno")
     resultado["pot_odds"] = postflop_math.calcular(state, resultado)
+    # Se recalcula CON equity: decide() ya dejo la guia en el estado, pero se
+    # abstiene postflop antes de que exista ningun numero, asi que aquella no
+    # podia pasar de textura y precio. Esta si puede proponer accion.
+    #
+    # NO se copia dentro de "resultado". Vive en state["gto"] y solo ahi: el
+    # modo testing serializa el Analisis entero -state Y equity- a un JSON por
+    # frame, y una guia repetida en los dos sitios se llevaria unos 2 KB de mas
+    # por frame en sesiones de miles. Es la misma decision que ya se tomo con
+    # preflop_action.
+    guia_postflop(state, resultado)
     return resultado
+
+
+def guia_postflop(state, equity_resultado=None):
+    """Guia GTO postflop del frame. La deja en ``state["gto"]`` y la devuelve.
+
+    Vive aqui y no dentro de decide() porque se llama DOS veces por frame y en
+    momentos distintos: decide() la deja con lo que no depende de las cartas
+    -textura del board, precio, MDF- y postflop_equity la repite cuando ya hay
+    equity y por tanto puede haber accion. La segunda pisa a la primera.
+
+    De paso deja en el estado el resumen de la agresion preflop, que decide()
+    postflop no llegaba a calcular (se abstiene antes) y que la guia necesita
+    para saber si la iniciativa era del hero.
+
+    NO PUEDE TUMBAR EL ANALISIS. Se llama desde decide(), que en analisis.py no
+    esta protegido por ningun try (a diferencia de la equity), asi que un fallo
+    aqui dejaria al usuario sin recomendacion PREFLOP -que es la que si sale de
+    sus tablas- por culpa de una guia complementaria. Un board que el OCR deja
+    imposible tiene que costar un aviso, no el frame entero.
+    """
+    try:
+        state["preflop_action"] = action_log.estado_preflop(state)
+        guia = postflop_gto.evaluar(
+            state, equity_resultado, secuencia=state["preflop_action"])
+    except Exception as e:  # noqa: BLE001
+        state.setdefault("warnings", []).append(
+            f"guia postflop: fallo interno ({type(e).__name__}); no se calcula")
+        guia = None
+    state["gto"] = guia
+    return guia
 
 
 def _recommend_response_to_3bet(state, secuencia, context):
@@ -992,10 +1041,19 @@ def decide(state: GameState, context=None) -> Recommendation | None:
         # leyo en el HUD como "se ha perdido la equity".
         detalle = (f"se detectaron {board_detected_count} caja(s) en la zona del board"
                    if not state.get("board") else "hay board resuelto")
+        # SIGUE SIN HABER ACCION PREFLOP AQUI, y la que se devuelve sigue siendo
+        # None: decide() es el motor de rangos preflop y postflop no tiene rango
+        # que consultar. Lo que si hay desde la entrada de decision/postflop_gto
+        # es una guia aparte -textura, precio, MDF y, cuando llegue la equity,
+        # una accion propuesta- que se deja en state["gto"] para el HUD. Se
+        # calcula aqui, sin equity todavia, porque decide() corre antes que
+        # postflop_equity y asi el panel nunca aparece vacio.
+        guia_postflop(state)
         return abstain(
             f"{detalle}: no se recomienda accion preflop (no hay rango postflop "
-            "digitalizado). La probabilidad de ganar solo se calcula cuando las "
-            "cartas comunitarias estan resueltas")
+            "digitalizado); la guia postflop va en su propio panel. La "
+            "probabilidad de ganar solo se calcula cuando las cartas "
+            "comunitarias estan resueltas")
 
     hero_cards = state.get("hero_cards") or []
     if len(hero_cards) != 2:
@@ -1536,6 +1594,21 @@ def decide(state: GameState, context=None) -> Recommendation | None:
                     public = rangeconverter.recommend_open_raise(
                         hero_cards, hero_position, stack_bb)
 
+            # RFI DE REFERENCIA A 100 BB, solo si no hay nada mejor. Tapa el
+            # hueco de las mesas de 9 y de la posicion mas temprana de las de 6:
+            # ahi no entra el suplemento 8-max de RangeConverter y lo unico que
+            # quedaba era la tabla digitalizada de 40 BB estirada hasta 100, que
+            # es un rango de otra profundidad servido como si fuera el del spot.
+            # gto_baseline solo responde por encima de 70 BB -el punto medio
+            # entre las dos tablas- para no desplazar a la digitalizada donde
+            # esta es la referencia mas cercana.
+            baseline = (
+                gto_baseline.recommend(
+                    hero_cards, hero_position, state.get("max_players"), stack_bb,
+                    ante_observado=action_log.ante_observado(state))
+                if public is None else None
+            )
+
             if public is not None:
                 action = public["action"]
                 assumptions = list(public["assumptions"])
@@ -1593,6 +1666,25 @@ def decide(state: GameState, context=None) -> Recommendation | None:
                     confidence=confidence,
                     assumptions=assumptions,
                 )
+            elif baseline is not None:
+                action = baseline["action"]
+                distancia = baseline["stack_distance_bb"]
+                nota_profundidad = (
+                    "" if distancia <= _STACK_KEY_EXACT_TOL else
+                    f"; el grafico es de 100 BB y estas a {stack_bb:.1f} BB "
+                    f"({distancia:g} BB de distancia)"
+                )
+                reasoning = (
+                    f"RFI de referencia de {hero_position} a {stack_bb:.1f} BB "
+                    f"en mesa de {baseline['max_players']} plazas. Grafico "
+                    f"publico de {baseline['max_players']}-max a 100 BB, fila "
+                    f"'{baseline['table_position']}' ({baseline['range_pct']}% "
+                    f"de las manos){nota_profundidad}. Se usa porque tus tablas "
+                    "digitalizadas llegan a 40 BB y a esta profundidad el "
+                    "grafico de 100 BB esta mas cerca; no es una celda tuya y "
+                    "no trae sizing, asi que no se inventa ninguno."
+                )
+                derivada_meta = baseline
             else:
                 result = recommend(
                     hero_cards, hero_position, stack_bb, facing="open_raise")

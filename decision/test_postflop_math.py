@@ -44,6 +44,27 @@ def test_se_abstiene_sin_una_decision_de_call_completa(changes):
     assert pm.calcular(state(**changes)) is None
 
 
+def test_el_precio_viene_con_el_equilibrio_del_mismo_tamano():
+    """5,75 de bote CON 1 dentro = apuesta de 1 sobre un bote previo de 4,75, o
+    sea el 21%: necesitaba un 17,4% de foldeos y hay que defender el 82,6%."""
+    r = pm.calcular(state())
+    assert r["bet_pct_of_pot"] == pytest.approx(21.1, abs=0.1)
+    assert r["alpha"] == pytest.approx(1 / 5.75, abs=1e-4)
+    assert r["mdf"] == pytest.approx(4.75 / 5.75, abs=1e-4)
+    assert r["value_to_bluff"] == pytest.approx(5.75, abs=0.01)
+    assert r["alpha"] + r["mdf"] == pytest.approx(1.0, abs=1e-3)
+
+
+def test_un_bote_que_no_supera_la_apuesta_deja_el_equilibrio_en_blanco():
+    """El bote mostrado incluye la apuesta rival, así que no puede ser menor.
+    Si el OCR devuelve eso, el precio se sigue dando -es una división honesta-
+    pero alpha y MDF quedan a None en vez de calcularse sobre un bote negativo."""
+    r = pm.calcular(state(pot=1.0, to_call=1.0))
+    assert r["required_equity"] == pytest.approx(0.5)
+    assert r["alpha"] is None and r["mdf"] is None
+    assert r["value_to_bluff"] is None and r["bet_pct_of_pot"] is None
+
+
 def test_un_call_de_un_bb_postflop_es_valido():
     """El >1 BB preflop distingue una subida de las ciegas; aquí 1 BB sí puede
     ser una apuesta real y el botón ``Igualar 1 BB`` la confirma."""

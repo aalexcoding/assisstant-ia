@@ -7,7 +7,12 @@ persist_mode, el portal devuelve un restore_token que se guarda en
 config.local.json (no versionado) para que las siguientes ejecuciones no
 vuelvan a pedir permiso.
 
+CALIBRAR ES LA EXCEPCION y pasa `elegir_pantalla=True`: ahi el dialogo TIENE que
+salir, porque elegir donde esta la mesa es justo lo que el usuario va a hacer.
+Ver open_screencast_session.
+
 Uso: .venv/bin/python capture/portal_capture.py [--frames N] [--timeout-s S]
+                                                [--elegir-pantalla]
 """
 import argparse
 import json
@@ -201,16 +206,26 @@ def grab_frames(fd, node_id, n_frames, timeout_s):
     return frames, timestamps
 
 
-def open_screencast_session(log=print):
+def open_screencast_session(log=print, elegir_pantalla=False):
     """
     Hace todo el intercambio con el portal (sesion, seleccion de fuente,
     start, pipewire remote) y devuelve (portal, session_handle, fd, node_id,
     stream_props). El llamador es responsable de cerrar la sesion
     (portal.close_session(session_handle)) y el fd (os.close(fd)) cuando
     termine.
+
+    elegir_pantalla: NO mandar el restore_token guardado, con lo que el portal
+    vuelve a abrir su dialogo de "que pantalla quieres compartir". Es lo que
+    quiere la CALIBRACION -ahi el usuario esta decidiendo justamente eso, y con
+    varias pantallas la guardada puede no ser la de la mesa-, mientras que el
+    lazo de analisis quiere lo contrario: arrancar sin preguntar nada.
+
+    La eleccion nueva NO se pierde: el token que devuelve Start se guarda igual
+    que siempre, asi que despues de calibrar el analisis arranca solo, y sobre la
+    pantalla recien elegida.
     """
     portal = Portal()
-    restore_token = _load_restore_token()
+    restore_token = None if elegir_pantalla else _load_restore_token()
 
     log("Creando sesion de ScreenCast...")
     session_handle = portal.create_session()
@@ -232,21 +247,23 @@ def open_screencast_session(log=print):
     return portal, session_handle, fd, node_id, stream_props
 
 
-def open_frame_stream(log=print):
+def open_frame_stream(log=print, elegir_pantalla=False):
     """
     Como open_screencast_session pero ademas deja el pipeline de GStreamer
     listo para leer frames repetidamente con FrameStream.read(). Devuelve
     (portal, session_handle, fd, stream, stream_props); el llamador cierra
     con stream.close(), os.close(fd) y portal.close_session(session_handle).
     """
-    portal, session_handle, fd, node_id, stream_props = open_screencast_session(log=log)
+    portal, session_handle, fd, node_id, stream_props = open_screencast_session(
+        log=log, elegir_pantalla=elegir_pantalla)
     stream = FrameStream(fd, node_id)
     return portal, session_handle, fd, stream, stream_props
 
 
-def get_one_frame(timeout_s=10.0, log=print):
+def get_one_frame(timeout_s=10.0, log=print, elegir_pantalla=False):
     """Abre una sesion, captura un unico frame (numpy BGR) y cierra todo."""
-    portal, session_handle, fd, node_id, _props = open_screencast_session(log=log)
+    portal, session_handle, fd, node_id, _props = open_screencast_session(
+        log=log, elegir_pantalla=elegir_pantalla)
     try:
         frames, _timestamps = grab_frames(fd, node_id, 1, timeout_s)
     finally:
@@ -261,9 +278,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--frames", type=int, default=10)
     parser.add_argument("--timeout-s", type=float, default=10.0)
+    parser.add_argument("--elegir-pantalla", action="store_true",
+                        help="ignora la pantalla guardada y vuelve a preguntar cual")
     args = parser.parse_args()
 
-    portal, session_handle, fd, node_id, stream_props = open_screencast_session()
+    portal, session_handle, fd, node_id, stream_props = open_screencast_session(
+        elegir_pantalla=args.elegir_pantalla)
     print(f"Stream de PipeWire obtenido: node_id={node_id}, props={stream_props}")
 
     print(f"Capturando hasta {args.frames} frames (timeout {args.timeout_s}s por frame)...")

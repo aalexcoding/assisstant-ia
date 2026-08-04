@@ -317,3 +317,79 @@ def test_sin_el_campo_in_hand_se_pinta_normal():
     """Las sesiones grabadas antes de que existiera el campo no lo traen; no se
     les puede inventar que estaban fuera de la mano."""
     assert "#7f8c8d" not in gui.players_markup([{"name": "c", "stack": 5.0}])
+
+
+# --- guia postflop (GTO) -----------------------------------------------------
+# La linea de cifras del panel nuevo. Se testea aparte del motor porque el fallo
+# que importa aqui es de PINTADO: un None que se cuela en un formato numerico
+# deja el panel entero en blanco y el usuario no ve ni el aviso.
+
+def test_la_linea_de_defensa_nombra_alpha_mdf_y_precio():
+    guia = {"precio": {
+        "tamano_rival_pct": 33.3, "alpha_rival": 0.25, "mdf": 0.75,
+        "ratio_valor_farol_equilibrado": 4.0, "pagar_bb": 2.0,
+        "equity_requerida": 0.20, "margen_pp": 15.0}}
+    m = VENTANA._gto_math_markup(guia)
+    assert "25%" in m and "75%" in m and "4:1" in m
+    assert "20%" in m and "+15 puntos" in m
+
+
+def test_la_linea_de_defensa_sin_equity_no_pinta_un_margen_vacio():
+    guia = {"precio": {
+        "tamano_rival_pct": 50.0, "alpha_rival": 0.333, "mdf": 0.667,
+        "ratio_valor_farol_equilibrado": 3.0, "pagar_bb": 2.0,
+        "equity_requerida": 0.25}}
+    m = VENTANA._gto_math_markup(guia)
+    assert "margen" not in m
+    assert "33%" in m and "67%" in m
+
+
+def test_la_linea_de_cbet_nombra_tamano_y_banda():
+    guia = {"cbet": {
+        "tamano_pct_del_bote": 33, "tamano_bb": 1.98,
+        "banda_frecuencia": "muy alta", "banda_glosa": "por encima del 70%",
+        "alpha": 0.2481, "ratio_valor_farol": 4.03}}
+    m = VENTANA._gto_math_markup(guia)
+    assert "33%" in m and "1.98 BB" in m and "muy alta" in m
+    assert "25%" in m and "4.03:1" in m
+
+
+def test_la_linea_de_cbet_sin_bote_leido_no_inventa_un_importe():
+    guia = {"cbet": {
+        "tamano_pct_del_bote": 66, "tamano_bb": None,
+        "banda_frecuencia": "media", "banda_glosa": "en torno al 40-55%"}}
+    m = VENTANA._gto_math_markup(guia)
+    assert "BB" not in m and "66%" in m
+
+
+def test_sin_cifras_la_linea_queda_vacia_y_no_llena_de_guiones():
+    """Un renglon de guiones se lee como un dato que vale cero."""
+    assert VENTANA._gto_math_markup({"motivo": "no es tu turno"}) == ""
+
+
+def test_postflop_manda_al_panel_de_la_guia_cuando_esta_propone_algo():
+    """El panel de la recomendacion es el de SUS tablas y postflop se queda en
+    blanco a proposito; el usuario tiene que saber donde mirar."""
+    st = {"warnings": [], "hero_cards": ["Ah", "Kd"], "board": ["2c", "5c", "9d"],
+          "players": [{"name": "a"}], "gto": {"action": "BET (2 BB)"}}
+    r = VENTANA._no_reco_reason(st)
+    assert "Guia postflop" in r or "Guía postflop" in r
+
+
+def test_postflop_repite_el_motivo_de_la_guia_cuando_esta_tampoco_propone():
+    st = {"warnings": [], "hero_cards": ["Ah", "Kd"], "board": ["2c", "5c", "9d"],
+          "players": [{"name": "a"}],
+          "gto": {"motivo": "el hero no fue el agresor preflop"}}
+    assert "no fue el agresor preflop" in VENTANA._no_reco_reason(st)
+
+
+def test_la_linea_de_cbet_sobrevive_a_una_banda_ausente():
+    """En turn y river postflop_gto omite la banda -su heuristica es de flop-.
+    El renglon no puede pintar "None" ni quedarse en blanco."""
+    guia = {"cbet": {
+        "tamano_pct_del_bote": 33, "tamano_bb": 3.0,
+        "banda_frecuencia": None, "banda_glosa": None,
+        "alpha": 0.248, "ratio_valor_farol": 4.03}}
+    m = VENTANA._gto_math_markup(guia)
+    assert "None" not in m
+    assert "33%" in m and "3 BB" in m and "flop" in m

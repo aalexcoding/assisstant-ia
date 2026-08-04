@@ -125,8 +125,16 @@ def _vista(state, hand_number=None):
         "table_reference_valid": state.get("table_reference_valid", True) is not False,
         "hero_cards": list(state.get("hero_cards") or []),
         "hand_number": hand_number,
-        "boton": next((p.get("seat") for p in state.get("players") or []
-                       if p.get("position") == "BTN"), None),
+        # EL DISCO LEIDO EN EL FRAME, no el que acabo pintado en las posiciones.
+        # Desde que el boton se FIJA por mano (ver CENSO_FRAMES), `position ==
+        # "BTN"` es el fijado, o sea la propia salida de este rastreador: votar
+        # sobre el seria votarse a si mismo, y como un cambio de boton es uno de
+        # los dos motivos de corte, la mano no podria cerrarse nunca. Se cae a
+        # las posiciones para los estados antiguos y para los tests que no
+        # declaran la señal.
+        "boton": (state.get("boton_leido")
+                  or next((p.get("seat") for p in state.get("players") or []
+                           if p.get("position") == "BTN"), None)),
         "stacks": stacks,
     }
 
@@ -331,6 +339,49 @@ MOTIVOS_DE_CORTE = frozenset({"board_vacio", "boton"})
 # pierde ninguna.
 MIN_FRAMES_POR_MANO = 4
 
+# Frames de la mano tras los cuales el censo de asientos y el boton QUEDAN
+# FIJADOS y ya no cambian hasta la mano siguiente.
+#
+# POR QUE FIJARLOS. Dentro de una mano ninguna de las dos cosas puede moverse:
+# nadie se levanta a mitad de mano y el boton no rota hasta la siguiente. Lo que
+# varia frame a frame es ruido de lectura, y sale caro porque las posiciones
+# salen del RECUENTO de ocupados rotado al boton: cualquiera de los dos que
+# parpadee las desplaza TODAS, y con ellas el rango que se sirve.
+#
+# POR QUE LOS DOS Y NO SOLO EL CENSO. Fijar el censo solo no arregla el sintoma.
+# Medido sobre 415 manos de 6 sesiones grabadas, de las 152 manos con la posicion
+# del hero inestable el boton se movia tambien en 104 (68%); el censo por su
+# cuenta explicaba 42. Sobre el censo aislado, fijando solo el censo las manos con
+# posicion inestable van del 16,7% al 16,0% -o sea, nada- y fijando los dos caen
+# al 1,6%.
+#
+# OJO CON ESA ULTIMA CIFRA: es de un modelo en que el censo y el boton fijados son
+# la UNICA fuente de posiciones. En el pipeline real conviven con la referencia
+# del tapete perdida, las excepciones de ocupacion y el descarte de asientos
+# sobrantes, y lo que se mide de punta a punta es bastante menos: 30,0% -> 26,0%.
+# El desglose completo esta en table_state.analyze_layout, con lo que cuesta.
+#
+# POR QUE 2 Y NO MAS. Barrido sobre las mismas 6 sesiones, con verdad de terreno
+# que NO sale de la votacion (un asiento con cartas o con un importe en BB esta
+# ocupado, se vote como se vote):
+#
+#     estrategia        inestab.censo   manos con pos. inestable   recall duro
+#     hoy (mayoria movil)      2,52%              16,7%               90,4%
+#     fijar en el frame 2      0,46%               1,6%               95,4%
+#     fijar en el frame 3      0,75%               9,9%               92,3%
+#     fijar en el frame 5      1,08%              12,1%               92,5%
+#
+# Cuanto antes se fija, mejor sale, y no es casualidad: justo despues del reparto
+# TODO EL MUNDO tiene cartas delante, que es la evidencia mejor medida que hay
+# (13,6x de separacion). Esperar solo añade frames en los que la gente ya se ha
+# retirado y su asiento se lee peor.
+#
+# El precio esta medido y es pequeño: los asientos del censo sin ninguna
+# evidencia independiente en toda la mano suben del 11,7% al 14,3%, y parte de
+# esa subida ni siquiera es real -un asiento con el DISCO del dealer delante
+# cuenta como fantasma en esa cuenta y esta ocupado con total seguridad-.
+CENSO_FRAMES = 2
+
 # Frames SEGUIDOS sin board que hacen falta para cortar por "board_vacio".
 #
 # EL FALLO: una sola lectura mala del board parte una mano en dos. Se ve sin
@@ -442,6 +493,14 @@ class HandTracker:
         self._frames = 0
         self._motivos = frozenset()
         self._botones = []
+        # censo y boton FIJADOS de la mano en curso (ver CENSO_FRAMES). None
+        # mientras la mano se esta formando.
+        self._censo_fijo = None
+        self._votos_boton = {}
+        self._boton_fijo = None
+        # el disco leido en el ultimo frame contradice al boton fijado con el que
+        # ese frame se reconocio: sus posiciones son de la mano anterior
+        self._boton_discrepa = False
         # ultimo nombre conocido de cada asiento, de manos ANTERIORES. Sobrevive a
         # _abrir a proposito; es el respaldo del voto de esta mano (ver _nombres).
         self._nombres_previos = {}
@@ -555,6 +614,11 @@ class HandTracker:
         self._calle = 0            # cartas de board de la calle en curso
         self._frames = 0
         self._motivos = frozenset(motivos)
+        # la mano nueva vuelve a formar su censo y su boton desde cero: son de la
+        # mano, no de la sesion (ver CENSO_FRAMES)
+        self._censo_fijo = None
+        self._votos_boton = {}
+        self._boton_fijo = None
 
     def update(self, state, hand_number=None):
         """Incorpora un GameState y devuelve el resumen de la mano en curso. No
@@ -565,7 +629,28 @@ class HandTracker:
                 and actual["boton"] != self._ultimo_boton_visto):
             motivos = frozenset(motivos) | {"boton"}
         motivos = self._board_vacio_sostenido(motivos, actual)
-        if motivos & MOTIVOS_DE_CORTE and self._frames >= MIN_FRAMES_POR_MANO:
+        # EL FRAME DE FRONTERA, que es el que se acaba de reconocer CON EL BOTON
+        # FIJADO de la mano que se esta cerrando. Se calcula ANTES de _abrir, que
+        # es quien tira ese boton.
+        #
+        # El reconocimiento pide boton_de_la_mano() antes de que este update()
+        # pueda cortar, asi que en el frame en que el disco YA ha rotado las
+        # posiciones se han calculado con el boton de la mano anterior: el hero
+        # sale en su puesto de la mano pasada. Es el mismo desfase que documenta
+        # _abrir, y el fallo que produce es el caro de esta app -una respuesta
+        # plausible y falsa-, asi que ese frame se marca como no asentado y el
+        # motor se abstiene en vez de recomendar sobre una posicion caducada.
+        # SOLO cuando la mano se corta de verdad. Que el disco leido difiera del
+        # fijado sin que haya frontera es una lectura suelta -es justo el ruido
+        # del que protege fijarlo-, y abstenerse ahi tiraria el beneficio entero:
+        # medido, marcar toda discrepancia dejaba 432 frames sin asentar frente a
+        # los 210 de antes y perdia 3 manos de cobertura.
+        discrepa = bool(actual["boton"] and self._boton_fijo
+                        and actual["boton"] != self._boton_fijo)
+        corta = bool(motivos & MOTIVOS_DE_CORTE
+                     and self._frames >= MIN_FRAMES_POR_MANO)
+        self._boton_discrepa = discrepa and corta
+        if corta:
             self._abrir(motivos)
         self._previo = actual
         self._frames += 1
@@ -608,6 +693,10 @@ class HandTracker:
             leidos = [p.get("seat") for p in state.get("players") or [] if p.get("seat")]
         for seat in leidos:
             self._veces[seat] = self._veces.get(seat, 0) + 1
+        if actual["boton"]:
+            self._votos_boton[actual["boton"]] = \
+                self._votos_boton.get(actual["boton"], 0) + 1
+        self._fijar_censo()
 
         self._nombres_pendientes()
 
@@ -705,6 +794,10 @@ class HandTracker:
         """False mientras el boton siga donde estaba en la mano anterior, o sea
         mientras las posiciones que se leen sean todavia las de esa mano. Ver
         _abrir para la medicion y para por que no se espera siempre."""
+        # el disco de ESTE frame contradice al boton con el que se calcularon sus
+        # posiciones: son de la mano que se acaba de cerrar (ver update)
+        if self._boton_discrepa:
+            return False
         if self._boton_previo is None or not self._botones:
             return True
         return self._botones[-1] != self._boton_previo
@@ -724,10 +817,47 @@ class HandTracker:
 
         Nadie se levanta a mitad de mano, asi que dentro de una mano el conjunto
         es constante por las reglas del juego: lo que se mide aqui es ruido de
-        lectura, no gente entrando y saliendo."""
+        lectura, no gente entrando y saliendo. Por eso, pasados CENSO_FRAMES, el
+        conjunto se FIJA y esta funcion deja de recalcularlo: la mayoria movil
+        solo manda mientras la mano se esta formando."""
+        if self._censo_fijo is not None:
+            return set(self._censo_fijo)
+        return self._censo_movil()
+
+    def _censo_movil(self):
         if not self._veces:
             return set()
         return {s for s, v in self._veces.items() if v * 2 >= self._frames}
+
+    def boton_de_la_mano(self):
+        """El asiento del boton de la mano en curso, ya fijado. None mientras la
+        mano se esta formando o si todavia no se ha visto el disco.
+
+        El boton no rota hasta la mano siguiente, asi que una vez decidido no hay
+        nada que recalcular. Se decide por MAYORIA de lo leido en los primeros
+        frames y no por el ultimo visto: el barrido del disco falla en un 4% de
+        los frames y acierta un asiento vecino en algunos mas, y un solo frame
+        malo rotaria las posiciones de todos."""
+        return self._boton_fijo
+
+    def _fijar_censo(self):
+        """Congela censo y boton en cuanto la mano tiene CENSO_FRAMES frames."""
+        if self._frames < CENSO_FRAMES:
+            return
+        if self._censo_fijo is None:
+            self._censo_fijo = self._censo_movil()
+        # El boton se fija en cuanto HAY con que fijarlo, no solo en el frame de
+        # corte: si al llegar a CENSO_FRAMES todavia no se habia visto el disco,
+        # rendirse dejaria la mano ENTERA sin posiciones. Medido: esperarlo
+        # recupera 21 de las 126 manos que si no se quedaban sin ninguna.
+        if self._boton_fijo is None and self._votos_boton:
+            self._boton_fijo = _mas_visto(self._votos_boton)
+        # quien tiene el disco delante esta sentado -_fuerza_ocupacion ya le da la
+        # confianza maxima-, asi que el boton no puede quedarse fuera del censo:
+        # si lo hiciera, no habria a quien rotar y la mano se quedaria sin
+        # posiciones a pesar de haber detectado el disco.
+        if self._boton_fijo and self._censo_fijo is not None:
+            self._censo_fijo = set(self._censo_fijo) | {self._boton_fijo}
 
     def resumen(self):
         asientos = {}
@@ -758,6 +888,11 @@ class HandTracker:
         return {
             "mano": self.mano,
             "posiciones_asentadas": self.posiciones_asentadas(),
+            # censo y boton de la mano, ya fijados (None mientras se forma). Van
+            # al JSON de la sesion para poder auditar DE DONDE salio cada
+            # posicion sin reconstruir la sesion entera.
+            "censo_fijado": sorted(self._censo_fijo) if self._censo_fijo else None,
+            "boton_de_la_mano": self._boton_fijo,
             "frames": self._frames,
             "calle": _NOMBRE_CALLE.get(self._calle, "?"),
             "motivos_apertura": sorted(self._motivos),

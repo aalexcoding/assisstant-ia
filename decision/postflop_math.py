@@ -12,7 +12,15 @@ https://blog.gtowizard.com/what-are-pot-odds-in-poker/
 Compararla con equity de check-down es solo una referencia. No modela que el
 rango que apuesta es más fuerte, equity realization, apuestas futuras, implied
 odds, rake ni ICM; por eso este módulo nunca devuelve CALL/FOLD.
+
+Desde la entrada de decision/gto.py el precio viene acompañado de las dos cifras
+de equilibrio del MISMO tamaño: cuántos foldeos necesitaba el farol del rival
+(alpha) y qué parte del rango hay que defender para negárselos (MDF). Son
+exactas -salen de bote y apuesta, no de una estimación- y siguen sin ser una
+orden: el MDF habla de un RANGO y las pot odds de una MANO. Quién junta las dos
+cosas con la equity y sí propone acción es decision/postflop_gto.py.
 """
+from decision import gto
 
 
 def _numero_positivo(value):
@@ -54,10 +62,28 @@ def calcular(state, equity=None):
         "estimated_equity": None,
         "raw_margin_pp": None,
         "raw_call_ev_bb": None,
+        # Equilibrio del tamaño que acaba de apostar el rival. bote_antes es el
+        # bote SIN su apuesta: las fórmulas publicadas usan ese, no el que
+        # dibuja el cliente. Si la resta no da un bote positivo, las tres cifras
+        # quedan a None en vez de calcularse sobre una lectura imposible.
+        "alpha": None,
+        "mdf": None,
+        "value_to_bluff": None,
+        "bet_pct_of_pot": None,
         "note": (
             "comparación orientativa con equity de check-down; no es CALL/FOLD "
             "porque el rango que apuesta y la equity realizable no están modelados"),
     }
+    bote_antes = gto.bote_antes_de(pot, call)
+    equilibrio = gto.resumen(call, bote_antes) if bote_antes is not None else None
+    if equilibrio is not None:
+        result.update(
+            alpha=equilibrio["alpha"],
+            mdf=equilibrio["mdf"],
+            value_to_bluff=equilibrio["ratio_valor_farol"],
+            bet_pct_of_pot=equilibrio["tamano_pct"],
+        )
+
     estimate = (equity or {}).get("equity")
     if isinstance(estimate, (int, float)) and 0 <= estimate <= 1:
         result["estimated_equity"] = round(float(estimate), 4)

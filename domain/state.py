@@ -62,6 +62,11 @@ class GameState(TypedDict, total=False):
     tiempos: dict[str, float]
     acciones: dict[str, Any]
     preflop_action: dict[str, Any]
+    # Guía postflop de decision/postflop_gto.py (textura, precio, MDF y, cuando
+    # hay equity, una acción propuesta). Va en el estado y no en Recommendation
+    # porque NO sale de los rangos digitalizados: es una fuente distinta y el
+    # HUD la pinta en su propio panel para que no se confundan.
+    gto: dict[str, Any] | None
     vigilancia: dict[str, Any]
 
 

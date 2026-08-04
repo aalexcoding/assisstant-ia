@@ -691,31 +691,136 @@ def test_un_asiento_que_no_se_lee_NO_suma_votos():
     assert tr.asientos_estables() == {"HERO", "UL"}, "MR nunca se leyo"
 
 
-def test_un_asiento_que_se_deja_de_leer_acaba_soltandose():
-    """Antes no podia: cada frame en que la memoria lo mantenia en players le
-    sumaba un voto, asi que el ratio nunca bajaba del 50%."""
+def test_un_asiento_que_se_deja_de_leer_se_suelta_EN_LA_MANO_SIGUIENTE():
+    """El voto sigue yendo sobre lo LEIDO, no sobre la salida del rastreador; lo
+    que cambia es el plazo. Dentro de la mano el censo esta fijado a proposito
+    (nadie se levanta a mitad de mano), asi que un asiento fantasma no se suelta
+    hasta que la mano siguiente vuelve a formar el suyo. Antes no se soltaba
+    NUNCA: cada frame en que la memoria lo mantenia en players le sumaba un voto
+    y el ratio no bajaba del 50%."""
     tr = ht.HandTracker()
     todos = {"HERO": 10.0, "UL": 20.0, "MR": 30.0}
     for _ in range(6):
         tr.update(leido(todos, ["HERO", "UL", "MR"]))
     assert "MR" in tr.asientos_estables()
+
+    mano = tr.mano
+    # MR deja de verse. Dentro de la mano el censo NO se mueve.
     for _ in range(8):
-        tr.update(leido(todos, ["HERO", "UL"]))     # MR ya no se ve
+        tr.update(leido(todos, ["HERO", "UL"]))
+    assert "MR" in tr.asientos_estables(), "el censo no puede cambiar a media mano"
+
+    nueva_mano(tr, leido(todos, ["HERO", "UL"]))
+    assert tr.mano > mano, "no llego a abrirse una mano nueva"
     assert "MR" not in tr.asientos_estables(), "el asiento fantasma no se soltaba"
 
 
-def test_un_asiento_nuevo_PUEDE_entrar_aunque_no_llegue_a_players():
+def test_un_asiento_nuevo_entra_mientras_la_mano_se_forma():
     """El otro lado del mismo candado: el override BORRA de `occupied` lo que no
     esta en el conjunto estable, asi que un asiento leido por primera vez no
-    llegaba a players y por tanto no podia votarse nunca. El conjunto quedaba
-    cerrado desde el primer frame de la mano."""
+    llegaba a players y por tanto no podia votarse nunca. Se vota sobre lo leido,
+    asi que puede entrar; el plazo para hacerlo son los CENSO_FRAMES en que la
+    mano todavia se esta formando."""
     tr = ht.HandTracker()
-    for _ in range(4):
-        tr.update(leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL"]))
-    # UR empieza a verse, pero el override todavia no lo deja pasar a players
-    for _ in range(6):
-        tr.update(leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL", "UR"]))
+    tr.update(leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL"]))
+    # UR se ve por primera vez, y todavia no ha llegado a players
+    tr.update(leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL", "UR"]))
     assert "UR" in tr.asientos_estables()
+
+
+# --- el censo y el boton se FIJAN por mano ----------------------------------
+#
+# Ninguna de las dos cosas puede moverse dentro de una mano, y de las dos salen
+# TODAS las posiciones. Medido sobre 415 manos de 6 sesiones: de las 152 con la
+# posicion del hero inestable, el boton se movia en 104 (68%). Fijar solo el
+# censo dejaba el sintoma igual (16,7% -> 16,0%); fijando los dos, 1,6%.
+
+def nueva_mano(tr, st, boton=None):
+    """Fuerza una frontera: el board se vacia el numero de frames que hace falta."""
+    for _ in range(ht.BOARD_VACIO_FRAMES + 1):
+        con_board = dict(st)
+        con_board["board"] = ["As", "Kd", "2c"]
+        tr.update(con_board)
+    for _ in range(ht.MIN_FRAMES_POR_MANO):
+        info = tr.update(st)
+    return info
+
+
+def test_el_censo_queda_fijado_pasados_CENSO_FRAMES():
+    tr = ht.HandTracker()
+    for _ in range(ht.CENSO_FRAMES):
+        tr.update(leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL"]))
+    fijado = tr.asientos_estables()
+    # a partir de aqui da igual lo que se lea: el censo es el de la mano
+    for _ in range(20):
+        tr.update(leido({"HERO": 10.0}, ["HERO"]))
+    assert tr.asientos_estables() == fijado
+
+
+def test_el_boton_no_se_mueve_dentro_de_la_mano():
+    """Un solo frame con el disco mal detectado rotaria las posiciones de todos."""
+    tr = ht.HandTracker()
+    st = leido({"HERO": 10.0, "UL": 20.0, "MR": 30.0}, ["HERO", "UL", "MR"])
+    for _ in range(ht.CENSO_FRAMES):
+        tr.update(dict(st, boton_leido="UL"))
+    assert tr.boton_de_la_mano() == "UL"
+    tr.update(dict(st, boton_leido="MR"))       # lectura suelta del disco
+    assert tr.boton_de_la_mano() == "UL", "el boton no rota hasta la mano siguiente"
+
+
+def test_el_boton_espera_a_que_se_vea_el_disco():
+    """Si al fijar el censo todavia no se ha visto el disco, rendirse dejaria la
+    mano ENTERA sin posiciones."""
+    tr = ht.HandTracker()
+    st = leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL"])
+    for _ in range(ht.CENSO_FRAMES + 3):
+        tr.update(st)                            # sin boton_leido
+    assert tr.boton_de_la_mano() is None
+    tr.update(dict(st, boton_leido="UL"))
+    assert tr.boton_de_la_mano() == "UL"
+
+
+def test_el_boton_nunca_se_queda_fuera_del_censo():
+    """Quien tiene el disco delante esta sentado. Si el censo fijado no lo trae,
+    no hay a quien rotar y la mano se queda sin posiciones."""
+    tr = ht.HandTracker()
+    st = leido({"HERO": 10.0, "UL": 20.0}, ["HERO", "UL"])
+    for _ in range(ht.CENSO_FRAMES + 2):
+        tr.update(dict(st, boton_leido="MR"))    # MR no se lee como ocupado
+    assert "MR" in tr.asientos_estables()
+
+
+def test_el_frame_en_que_el_disco_rota_NO_sale_asentado():
+    """El reconocimiento pide el boton fijado ANTES de que update() pueda cortar,
+    asi que en el frame en que el disco ya ha rotado las posiciones se calcularon
+    con el boton de la mano anterior. Recomendar ahi seria servir el rango del
+    puesto de la mano pasada: el fallo caro de esta app."""
+    tr = ht.HandTracker()
+    st = leido({"HERO": 10.0, "UL": 20.0, "MR": 30.0}, ["HERO", "UL", "MR"])
+    for _ in range(ht.MIN_FRAMES_POR_MANO):
+        info = tr.update(dict(st, boton_leido="UL"))
+    assert info["posiciones_asentadas"] is True
+    info = tr.update(dict(st, boton_leido="MR"))   # el disco rota
+    assert info["posiciones_asentadas"] is False
+
+
+def test_el_voto_del_boton_va_sobre_lo_LEIDO_y_la_mano_puede_cerrarse():
+    """El bucle que NO se puede cerrar: si el rastreador votase el boton FIJADO
+    -que es el que acaba en players como position 'BTN'- coincidiria consigo
+    mismo siempre, 'boton' no volveria a dispararse como motivo de frontera y la
+    mano no terminaria nunca."""
+    tr = ht.HandTracker()
+    st = leido({"HERO": 10.0, "UL": 20.0, "MR": 30.0}, ["HERO", "UL", "MR"])
+    # players dice BTN=UL (la salida), pero el disco leido dice MR
+    for _ in range(ht.MIN_FRAMES_POR_MANO):
+        tr.update(dict(st, boton_leido="UL",
+                       players=[dict(p, position="BTN" if p["seat"] == "UL" else None)
+                                for p in st["players"]]))
+    mano = tr.mano
+    tr.update(dict(st, boton_leido="MR",
+                   players=[dict(p, position="BTN" if p["seat"] == "UL" else None)
+                            for p in st["players"]]))
+    assert tr.mano == mano + 1, "un cambio del disco LEIDO tiene que cortar la mano"
 
 
 def test_sin_asientos_leidos_se_cuenta_como_antes():
