@@ -18,12 +18,12 @@ de 8- y ahi no hay capsula, o la hay a medias.
 LAS CUATRO SEÑALES, y hacen falta las cuatro. Medido sobre las 29 sesiones
 grabadas con disposicion conocida, decidiendo con los umbrales de abajo:
 
-    contar capsulas a secas                          24 de 29 si solo se ordena,
-                                                     pero 5 de esos ordenes son
-                                                     de mesas casi vacias
-    + descontar lo descentradas que estan            \  con los dos umbrales:
-    + penalizar las que deja SIN EXPLICAR            /  20 aciertos, 0 errores
-    + PESAR CADA ASIENTO POR LO QUE DISTINGUE        25 aciertos, 0 errores
+    contar capsulas a secas                         24 de 29 si solo se ordena,
+                                                    pero 5 de esos ordenes salen
+                                                    de mesas casi vacias
+    + descontar lo descentradas que estan           con los dos umbrales de
+    + penalizar las que deja SIN EXPLICAR           abajo: 20 aciertos, 0 errores
+    + PESAR CADA ASIENTO POR LO QUE DISTINGUE       25 aciertos, 0 errores
 
 La tercera costo encontrarla: una mesa de 6 y una de 8 comparten varios asientos,
 asi que la de 8 puntuaba casi como la de 6 en una mesa de 6 (3,07 contra 3,13 en
@@ -43,6 +43,17 @@ y deja jugadores invisibles-, y eso desplaza TODAS las posiciones, que salen del
 recuento de asientos ocupados. Mas vale leer de menos con la tabla que el usuario
 dice que leer de mas con una adivinada. Con los umbrales elegidos, sobre esas 29
 sesiones: 25 aciertos, 4 abstenciones y CERO errores.
+
+Y LAS 4 ABSTENCIONES NO SON UN FALLO DE ESTO. Se miraron una a una: en dos, la
+mesa esta practicamente vacia -la mediana de la fraccion de capsula por zona es
+0,002, o sea tapete pelado- y no hay nada que decidir. En las otras dos la mesa
+esta llena pero LA REFERENCIA DEL TAPETE ESTA MAL FIJADA, asi que las zonas caen
+desplazadas y no pisan ningun nameplate (verificado a ojo dibujandolas sobre el
+frame). En ese estado la app tampoco lee bien los asientos, con esto o sin esto,
+asi que abstenerse es lo correcto y de paso es un CANARIO: si la disposicion no se
+decide nunca y la mesa se ve llena, lo que hay que mirar es la referencia. Es la
+causa de fondo que el proyecto ya tiene abierta -que find_reference no es
+reproducible frame a frame-, no una limitacion de la deteccion de mesa.
 
 LA MESA DE 7 NO ESTA, y no es un olvido: no hay un solo frame de una en el
 corpus. Se busco a proposito, barriendo las capsulas de las 53 sesiones grabadas

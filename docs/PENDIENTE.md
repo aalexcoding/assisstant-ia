@@ -1175,15 +1175,32 @@ La tercera costó encontrarla. La de 8 puntuaba casi como la de 6 en una mesa de
 de 8 **deja fuera** las cápsulas de los sitios que solo existen en 6. Contando
 eso, la misma sesión pasa a 1,12 contra 1,91.
 
+Y una cuarta señal, la que más subió el acierto (de 20 a 25): **cada asiento pesa
+lo que distingue**. Medida la distancia de cada asiento al más cercano de otra
+disposición, la de 6 se distingue por sus **dos asientos a media altura** (0,21
+del núcleo, no existen en ninguna otra) y **8 y 9 se distinguen solo por la fila
+de arriba** —la de 8 tiene uno en el centro y la de 9 dos en las esquinas—;
+lo de abajo (DL, DR, hero) es casi idéntico en las dos (0,02-0,04) y no decide
+nada. Ver `ESCALA_EXCLUSIVIDAD`.
+
 **El resultado, sobre las 29 sesiones grabadas con disposición conocida** (la
 verdad de terreno es gratis: cada `_sesion.json` guarda el `max_players` que el
 usuario eligió al grabar):
 
 | | |
 |---|---|
-| aciertos | **20** |
-| abstenciones | 9 |
+| aciertos | **25** |
+| abstenciones | 4 |
 | **errores** | **0** |
+
+**Las 4 abstenciones no son un fallo del detector**, y se miraron una a una: en
+dos la mesa está prácticamente vacía (mediana de fracción de cápsula por zona =
+0,002, o sea tapete pelado) y en las otras dos la mesa está llena pero **la
+referencia del tapete está mal fijada**, así que las zonas caen desplazadas y no
+pisan ningún nameplate (verificado dibujándolas sobre el frame). En ese estado la
+app tampoco lee bien los asientos, con detector o sin él. De paso queda un
+**canario**: si la disposición no se decide nunca y la mesa se ve llena, lo que
+hay que mirar es la referencia — la causa de fondo que ya está abierta en §2.0c.
 
 Cero errores es el reparto correcto, y es deliberado: los umbrales se barrieron y
 se eligieron **del centro de la zona sin errores**, no del borde (con margen 1,2
