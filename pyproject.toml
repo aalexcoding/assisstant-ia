@@ -9,7 +9,10 @@ requires-python = ">=3.12"
 # tests/ para lo que cruza capas. Como todo son paquetes de verdad, pytest los
 # importa por su ruta completa (vision.test_glyph_cards) y no hay colision de
 # nombres entre los dos ocr_worker.py.
-testpaths = ["tests", "core", "vision", "decision"]
+# capture/ y calibration/ ENTRAN el 04-08-2026: tenian tests desde el dia
+# anterior y no los corria nadie, porque no estaban en esta lista. Un test que no
+# se ejecuta no protege de nada y ademas engaña, que es peor que no tenerlo.
+testpaths = ["tests", "core", "vision", "decision", "capture", "calibration"]
 addopts = "-q --strict-markers"
 
 # El proyecto NO se instala en el venv, asi que la raiz tiene que estar en
