@@ -15,7 +15,7 @@ from decision import engine
 from decision import hand_strength as hs
 from vision import seat_map
 from vision.seat_map import detect_raiser, parse_amount_bb
-from vision.table_state import _plate_occupied
+from vision.table_state import _apuesta_creible, _plate_occupied
 from vision.text_extract import find_pot, find_pot_bb
 
 
@@ -1091,3 +1091,28 @@ def test_defensa_selecciona_tabla_por_stack_efectivo_con_el_agresor():
     assert r["effective_stack_bb"] == pytest.approx(13.0)
     assert r["action"] == "ALL IN"
     assert "stack inicial del agresor 13.0bb" in r["reasoning"]
+
+
+# --- una apuesta que vale lo mismo que el stack no es una apuesta -------------
+# Las zonas de apuesta son fracciones del nucleo del tapete, y el nucleo que
+# detecta cada sesion no es el mismo: las de la mesa de 9, medidas en una sesion,
+# caen sobre el NAMEPLATE en otra. Medido sobre la sesion del 04-08: 1.916 de
+# 3.574 importes leidos (54%) eran exactamente el stack de ese asiento.
+
+def test_una_apuesta_igual_al_stack_del_asiento_se_descarta():
+    """El caso real: en la sesion del 04-08 el asiento TL tenia 226,1 BB de stack
+    y se le leia una "apuesta" de 226,1 BB. Con eso, detect_raiser ve una subida
+    gigante donde no ha apostado nadie."""
+    assert _apuesta_creible(226.1, 226.1) is None
+
+
+@pytest.mark.parametrize("apuesta, stack", [(2.5, 226.1), (1.0, 20.0), (0.5, 6.8)])
+def test_una_apuesta_distinta_del_stack_se_conserva(apuesta, stack):
+    assert _apuesta_creible(apuesta, stack) == apuesta
+
+
+def test_sin_stack_no_hay_con_que_comparar_y_la_apuesta_vale():
+    """Entre manos el nameplate se lee mal y el stack sale None; ahi la apuesta es
+    lo unico que hay y tirarla no arreglaria nada."""
+    assert _apuesta_creible(2.5, None) == 2.5
+    assert _apuesta_creible(None, 20.0) is None

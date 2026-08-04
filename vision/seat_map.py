@@ -295,7 +295,27 @@ HERO_SEAT = "HERO"
 # rodeado de fondo mucho mejor que texto cortado por el borde.
 # Fracciones (x0,y0,x1,y1): x respecto al borde izq. de las cartas y su ancho;
 # y respecto al borde inferior de las cartas y su alto.
-HERO_PLATE_FROM_CARDS = (0.13, 0.02, 1.32, 1.60)
+# ENSANCHADA EL 04-08-2026, y por un fallo caro: en una mesa de 9 el usuario tenia
+# 196,8 BB y la app leia 6,8. El recorte arrancaba en 0,13 del ancho de las cartas
+# y ahi es justo donde empieza el numero en esa mesa, asi que se comia las dos
+# primeras cifras. Medido sobre cuatro sesiones, donde cae el importe respecto al
+# bbox de las cartas:
+#
+#     sesion              el importe va de ... a
+#     08-03 (6-max)       +0,36 / +0,49  ..  +0,98 / +1,57
+#     08-04 (9-max)       -0,01          ..  +0,55
+#
+# O sea que el nameplate NO esta en el mismo sitio respecto a las cartas en las
+# dos mesas: en la de 9 esta desplazado casi medio ancho de carta a la izquierda.
+# Con (-0,20 .. +1,75) caben los dos, con margen por los dos lados.
+#
+# Y ENSANCHAR BASTA: sobre 80 frames de cada sesion, los importes truncados del
+# hero pasan de 16 a 0 en la mesa de 9, y en la de 6 se leen DOS MAS que antes (29
+# contra 27), o sea que la zona vieja tambien mordia ahi de vez en cuando. Se
+# probo ademas a leer al hero de los DOS sitios -esta zona y la fija del ovalo- y
+# a juntar las lecturas, como se hace con los rivales: no aporta nada (78 y 28
+# lecturas contra 78 y 29), asi que no esta.
+HERO_PLATE_FROM_CARDS = (-0.20, 0.02, 1.75, 1.60)
 
 # zonas fijas de los elementos de mesa (fracciones del nucleo del tapete)
 #

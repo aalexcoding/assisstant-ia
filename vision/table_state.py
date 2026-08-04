@@ -578,6 +578,32 @@ def estado_asiento(capsula_frac, tiene_dorsos, ensena_cartas):
     return SENTADO if capsula_frac >= CAPSULA_MIN_FRAC else HUECO
 
 
+def _apuesta_creible(apuesta, stack):
+    """La apuesta leida, o None si es el stack de ese mismo asiento colado.
+
+    UN IMPORTE QUE COINCIDE CON EL STACK DEL PROPIO ASIENTO NO ES UNA APUESTA: es
+    su nameplate metiendose en la zona de apuesta. Las zonas de apuesta son
+    fracciones del nucleo del tapete, y el nucleo que detecta cada sesion NO es el
+    mismo, asi que las de la mesa de 9 -medidas sobre una sesion- caen encima del
+    nameplate en otra. Medido sobre la sesion del 04-08 a las 21:05: 1.916 de los
+    3.574 importes de apuesta leidos (54%) eran exactamente el stack de ese
+    asiento; en una sesion de 6 son el 1%.
+
+    Y NO SE TRAGA UN ALL-IN DE VERDAD, que es la unica forma legitima de apostar
+    justo lo que tienes: sobre las 213 observaciones de un jugador con accion
+    "All-in" en el corpus, NUNCA se leen a la vez su apuesta y su stack -el
+    cliente le sustituye el nameplate por "All-in"-, asi que los dos numeros no
+    pueden coincidir.
+
+    Es un parche sobre un problema de geometria, y conviene no olvidarlo: lo que
+    hay que arreglar es que la referencia del tapete sea reproducible entre
+    sesiones (docs/PENDIENTE §2.0c). Mientras tanto, esto evita que un stack de
+    226 bb se lea como una apuesta de 226 bb e invente un raiser."""
+    if apuesta is None or stack is None:
+        return apuesta
+    return None if abs(apuesta - stack) < 0.05 else apuesta
+
+
 def _plate_occupied(lines):
     """True si la zona del nameplate contiene texto propio de un asiento
     ocupado: un importe en BB, un nombre (por palabra suelta, para pillar
@@ -1134,6 +1160,13 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         # -su zona trae tapete de sobra- y ponerselo solo añade ruido.
         recortes = [((x0, y0, x1, y1),
                      PAD_NAMEPLATE if name == seat_map.HERO_SEAT else 0)]
+        # AL HERO NO SE LE AÑADE SU ZONA FIJA COMO SEGUNDO RECORTE, y se probo: la
+        # idea era cubrir con una lo que falla en la otra, como se hace con los
+        # rivales. Medido sobre 80 frames de dos sesiones, no aporta -78 y 28
+        # lecturas contra 78 y 29 sin ella- porque lo que fallaba era el recorte
+        # anclado cortando por la izquierda, y eso ya lo arregla la zona
+        # ensanchada (ver seat_map.HERO_PLATE_FROM_CARDS). Sin cartas detectadas
+        # se sigue cayendo a la zona fija, que es el respaldo que ya habia.
         capsula = (capsula_px(bgr, (x0, y0, x1, y1))
                    if name != seat_map.HERO_SEAT else None)
         if capsula is not None:
@@ -1346,7 +1379,8 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
             bet_idx = bet_tsv[name]
             bet_lines = parse_tsv_lines(results[bet_idx]) if bet_idx is not None else []
             occupied[name] = {"name": n, "stack": stk, "action": accion,
-                              "bet": seat_map.parse_amount_bb(bet_lines)}
+                              "bet": _apuesta_creible(
+                                  seat_map.parse_amount_bb(bet_lines), stk)}
 
     # LO QUE SE LEE EN ESTE FRAME, antes de que la memoria del rastreador opine.
     # Se guarda porque el rastreador tiene que votar sobre EVIDENCIA y no sobre su
