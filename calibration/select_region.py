@@ -18,6 +18,7 @@ import json
 import os
 
 from capture import portal_capture as pc
+from vision import seat_map
 
 import gi
 
@@ -62,9 +63,13 @@ class SelectorWindow(Gtk.ApplicationWindow):
         if self.scale != 1.0:
             self.pixbuf = self.pixbuf.scale_simple(disp_w, disp_h, GdkPixbuf.InterpType.BILINEAR)
 
+        self.frame = frame
         self.drag_start = None
         self.rect_display = None
         self.saved_rect = None
+        # se pone a True cuando ya se ha avisado de que en el recuadro no hay
+        # mesa: el segundo Enter guarda igual, porque el usuario manda
+        self.forzar = False
 
         self.area = Gtk.DrawingArea()
         self.area.set_content_width(disp_w)
@@ -102,15 +107,42 @@ class SelectorWindow(Gtk.ApplicationWindow):
     def _on_key(self, _controller, keyval, _keycode, _state):
         if keyval == Gdk.KEY_Return and self.rect_display and self.rect_display[2] > 5 and self.rect_display[3] > 5:
             x, y, w, h = self.rect_display
-            self.saved_rect = (
-                int(x / self.scale), int(y / self.scale),
-                int(w / self.scale), int(h / self.scale),
-            )
+            rect = (int(x / self.scale), int(y / self.scale),
+                    int(w / self.scale), int(h / self.scale))
+            if not self._hay_mesa(rect) and not self.forzar:
+                # NO SE GUARDA A LA PRIMERA UN RECUADRO SIN MESA. Es el fallo que
+                # el usuario se comio: recalibro, dibujo el recuadro donde no
+                # estaba la mesa, y no se entero hasta que la app llevaba un rato
+                # diciendo "no se encuentra la mesa en este frame" partida tras
+                # partida. El calibrador tiene delante el unico dato que hace
+                # falta para avisar -si en ese recuadro se ve un ovalo de tapete-
+                # y callarselo es dejar el fallo para dentro de media hora.
+                self.set_title("En ese recuadro NO se ve una mesa de poker. "
+                               "Dibuja otro, o pulsa Enter otra vez para guardarlo igual.")
+                self.forzar = True
+                return True
+            self.saved_rect = rect
             save_region((self.frame_w, self.frame_h), self.saved_rect)
             print(f"Guardado en {CONFIG_PATH}: {self.saved_rect}")
             self.get_application().quit()
         elif keyval == Gdk.KEY_Escape:
             self.get_application().quit()
+        return False
+
+    def _hay_mesa(self, rect):
+        """¿Se ve el ovalo del tapete dentro de ese recuadro?
+
+        Es exactamente la pregunta que se hace analyze_layout en cada frame (ver
+        seat_map.find_reference): si aqui no se encuentra, en la partida tampoco,
+        y todas las zonas quedarian desplazadas."""
+        x, y, w, h = rect
+        recorte = self.frame[y:y + h, x:x + w]
+        if recorte.size == 0:
+            return False
+        try:
+            return not seat_map.find_reference(recorte)[4]
+        except Exception:                     # noqa: BLE001 - avisar nunca puede tumbar el calibrador
+            return True
 
     def _on_draw(self, _area, cr, _width, _height):
         Gdk.cairo_set_source_pixbuf(cr, self.pixbuf, 0, 0)
