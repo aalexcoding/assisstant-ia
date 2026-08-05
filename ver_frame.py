@@ -126,6 +126,10 @@ def main():
     ap.add_argument("--calentar", help="sesion con la que calentar la referencia "
                                        "si `entrada` es un PNG suelto")
     ap.add_argument("-o", "--salida", default="zonas.png")
+    ap.add_argument("--olmocr", action="store_true",
+                    help="pide ademas una SEGUNDA OPINION a olmOCR sobre este "
+                         "frame (~8 s, necesita el servidor local; ver "
+                         "docs/OCR-OLMOCR-MEDICION.md)")
     args = ap.parse_args()
 
     sesion, hasta = args.calentar, None
@@ -170,8 +174,38 @@ def main():
                 print(f"   {p.get('seat'):5} {str(p.get('name'))[:14]:14} "
                       f"stack={str(p.get('stack')):8} bet={str(p.get('bet')):8} "
                       f"in_hand={p.get('in_hand')}")
+    if args.olmocr:
+        segunda_opinion(img)
+
     print(f"\n-> {args.salida}")
     return 0
+
+
+def segunda_opinion(img):
+    """Lo que un modelo de vision lee de este mismo frame.
+
+    SOLO PARA ESTUDIAR UN CASO, nunca en vivo: son ~8 s por frame contra los
+    ~0,3 s del ciclo entero, o sea que como OCR de la partida no cabe (la
+    medicion completa esta en docs/OCR-OLMOCR-MEDICION.md). Lo que si hace es
+    dar una lectura INDEPENDIENTE cuando algo se lee raro y no esta claro si el
+    fallo es del OCR o de la geometria: si el modelo lee bien lo que la app no
+    lee, el recorte esta donde debe y el problema es el OCR; si tampoco lo lee,
+    mira la zona pintada."""
+    from vision import ocr_vlm
+    ok, motivo = ocr_vlm.disponible()
+    if not ok:
+        print(f"\nsegunda opinion no disponible: {motivo}")
+        print(f"   arrancalo con:  ollama serve  &&  ollama pull {ocr_vlm.MODELO}")
+        return
+    print("\nsegunda opinion (olmOCR, tarda unos segundos)...")
+    try:
+        r = ocr_vlm.leer_mesa(img)
+    except Exception as e:                       # noqa: BLE001
+        print(f"   fallo: {e}")
+        return
+    print(f"   bote: {r['bote']}   ({r['segundos']:.1f} s)")
+    for nombre, importe in r["jugadores"].items():
+        print(f"   {nombre[:20]:20} {importe}")
 
 
 if __name__ == "__main__":

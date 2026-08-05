@@ -48,8 +48,15 @@ solo nucleo), que es una mejora pendiente aparte y de mayor calado.
 
 Degradacion limpia: si no hay spa.traineddata disponible se usa ingles para
 todo, es decir el comportamiento anterior. Para tenerlo, cualquiera de las dos:
-  - sudo dnf install tesseract-langpack-spa        (a nivel de sistema)
+  - sudo dnf install tesseract-langpack-spa        (Fedora, a nivel de sistema)
+    sudo apt-get install tesseract-ocr-spa         (Debian/Ubuntu, idem)
+    brew install tesseract-lang                    (macOS, trae TODOS los idiomas)
   - vision/tessdata/{spa,eng}.traineddata          (local al repo, no versionado)
+    curl -sL -o vision/tessdata/spa.traineddata \
+      https://github.com/tesseract-ocr/tessdata_fast/raw/main/spa.traineddata
+    Es la via ligera y la que se usa en Mac: 6 MB los dos modelos, y ademas la
+    rueda de tesserocr ya trae su propia libtesseract, asi que con esto el OCR
+    funciona sin instalar tesseract en el sistema.
 tesseract exige que todos los idiomas de una misma llamada vivan en el MISMO
 directorio de tessdata, de ahi que se prefiera un directorio que tenga los dos.
 
@@ -81,6 +88,13 @@ _SYSTEM_TESSDATA_CANDIDATES = [
     "/usr/share/tessdata/",
     "/usr/share/tesseract-ocr/5/tessdata/",
     "/usr/share/tesseract-ocr/4.00/tessdata/",
+    # macOS con Homebrew: arm64 instala en /opt/homebrew, Intel en /usr/local.
+    # La rueda de tesserocr trae SU PROPIA libtesseract, asi que en un Mac no
+    # hace falta `brew install tesseract` para nada mas que estos modelos; el
+    # camino ligero es dejarlos en vision/tessdata/ (_BUNDLED_TESSDATA), que son
+    # 6 MB frente al giga largo de tesseract-lang.
+    "/opt/homebrew/share/tessdata/",
+    "/usr/local/share/tessdata/",
 ]
 
 # idioma por defecto (nicks, numeros, rangos de carta) y el que se usa cuando un
@@ -136,7 +150,12 @@ def _run_job(api, job):
     im = _abrir(job)
     api.SetImage(im)
     if job["mode"] == "tsv":
-        api.SetPageSegMode(tesserocr.PSM.SPARSE_TEXT)
+        # SPARSE_TEXT por defecto (texto suelto repartido por la zona, que es lo
+        # que hay en el tapete y en el chat). Un job puede pedir otro: la capsula
+        # de un nameplate NO es texto suelto, es una columna de dos lineas, y en
+        # SPARSE_TEXT tesseract se deja una de las dos. Ver PSM_NAMEPLATE en
+        # vision/table_state.py, donde esta la medicion.
+        api.SetPageSegMode(getattr(tesserocr.PSM, job.get("psm", "SPARSE_TEXT")))
         api.SetVariable("tessedit_char_whitelist", "")
         return api.GetTSVText(0)
     psm = getattr(tesserocr.PSM, job.get("psm", "SINGLE_LINE"))

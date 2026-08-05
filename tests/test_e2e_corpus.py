@@ -186,6 +186,27 @@ def al_dia():
         pytest.skip(f"ninguna sesion grabada con el commit actual ({actual}); "
                     f"graba una con 'Grabar sesion de testing' para tener oro")
 
+    # NI DE OTRA PLATAFORMA. El mismo argumento que el del commit, y se descubrio
+    # igual de caro: el 05-08-2026, al abrir la suite en un Mac por primera vez,
+    # cinco tests de oro salieron rojos -board, facing, vs_position, la
+    # recomendacion y el recuento- contra una sesion grabada en Linux. No habia
+    # nada roto: el OCR es una libreria del SISTEMA con su propio traineddata, y
+    # la misma imagen se lee distinto en una distro y en un Mac. Comparar campo a
+    # campo entre plataformas es un test que falla por haber cambiado de maquina,
+    # que es exactamente lo que este fichero ya evitaba con los commits.
+    #
+    # Las sesiones viejas no guardan plataforma y se dan por linux, que es donde
+    # se grabaron todas (ver corpus.plataforma_de_sesion).
+    aqui = corpus.plataforma_actual()
+    frames = [f for f in frames if corpus.plataforma_de_sesion(f.carpeta) == aqui]
+    if not frames:
+        pytest.skip(
+            f"las sesiones del commit actual se grabaron en otra plataforma y "
+            f"esto corre en {aqui}: el OCR del sistema no es el mismo, asi que "
+            f"una comparacion campo a campo diria que ha cambiado el codigo "
+            f"cuando lo que ha cambiado es la maquina. Graba una sesion aqui "
+            f"para tener oro de esta plataforma.")
+
     por_sesion = {}
     for fr in frames:
         por_sesion.setdefault(fr.sesion, []).append(fr)

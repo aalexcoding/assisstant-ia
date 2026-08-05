@@ -141,6 +141,65 @@ def test_cerrar_workers_vacia_el_pool_y_no_deja_procesos_sueltos():
     assert procesos_vivos() == []
 
 
+# --- el modo de segmentacion, que se elige por job --------------------------
+
+def capsula(nick, importe):
+    """Dos bandas de POLARIDAD OPUESTA, como el nameplate del jugador al que le
+    toca actuar: el nick claro sobre oscuro y el importe oscuro sobre claro. Es
+    el caso en que SPARSE_TEXT se deja una de las dos lineas."""
+    img = np.zeros((160, 420, 3), dtype=np.uint8)
+    img[:80] = 30
+    img[80:] = 235
+    cv2.putText(img, nick, (20, 55), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (240, 240, 240), 3)
+    cv2.putText(img, importe, (20, 135), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (20, 20, 20), 3)
+    return img
+
+
+def test_el_psm_viaja_hasta_el_worker():
+    """LO QUE PROTEGE: que `psm` no se quede por el camino. Si se pierde, el job
+    cae en SPARSE_TEXT sin avisar y el fallo aparece como un stack que no se lee,
+    tres capas mas abajo. Ver PSM_NAMEPLATE en vision/table_state.py."""
+    # el lote se reparte en varios trozos y cada uno llega en su propia llamada
+    # (y en su propio hilo), asi que se ACUMULA en vez de guardar la ultima
+    visto = []
+
+    def espia(jobs):
+        visto.extend(j.get("psm") for j in jobs)
+        return [""] * len(jobs)
+
+    anterior = oc.usar_backend(espia)
+    try:
+        b = oc.OcrBatch()
+        b.add_tsv_job(capsula("Colas2888", "208,2 BB"), scale=1)
+        b.add_tsv_job(capsula("Colas2888", "208,2 BB"), scale=1, psm="SINGLE_COLUMN")
+        b.run()
+    finally:
+        oc.usar_backend(anterior)
+    assert sorted(visto, key=str) == [None, "SINGLE_COLUMN"]
+
+
+def test_single_column_lee_las_dos_bandas_de_la_capsula():
+    """Lo que justifica el job extra: sobre una capsula con las dos bandas de
+    polaridad opuesta, SINGLE_COLUMN saca el nick Y el importe.
+
+    NO se comprueba aqui que SPARSE_TEXT falle, aunque es lo que se midio sobre
+    frames reales (ver docs/OCR-OLMOCR-MEDICION.md). Eso depende de la version de
+    tesseract y del traineddata que tenga cada maquina -este Mac usa
+    tessdata_fast en vision/tessdata/ y una distro trae el suyo-, y un test que
+    se pone rojo en la otra plataforma por un detalle del modelo no protege
+    nada: solo enseña a ignorarlo. Lo que si tiene que cumplirse en las dos es
+    que este modo lea la capsula entera."""
+    b = oc.OcrBatch()
+    b.add_tsv_job(capsula("Colas2888", "208,2 BB"), scale=2, psm="SINGLE_COLUMN")
+    (columna,) = b.run()
+    from vision.text_extract import parse_tsv_lines
+    lineas = parse_tsv_lines(columna)
+    texto = " ".join(l["text"] for l in lineas)
+    assert "Colas2888" in texto, texto
+    assert "208" in texto, texto
+    assert len(lineas) >= 2, f"el nick y el importe tienen que ir en lineas distintas: {lineas}"
+
+
 # --- la costura para los tests que NO quieren tesseract ---------------------
 
 def test_el_backend_de_ocr_se_puede_sustituir():

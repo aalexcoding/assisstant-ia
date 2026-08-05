@@ -465,6 +465,32 @@ CAPSULA_MARGEN_PX = 14
 # mucho peor. La zona de siempre no lo lleva porque ya trae tapete de sobra.
 PAD_NAMEPLATE = 30
 
+# MODO DE SEGMENTACION DE LA CAPSULA. Los demas jobs tsv van en SPARSE_TEXT, que
+# es lo correcto para texto suelto repartido por una zona (el tapete, el chat).
+# Una capsula de nameplate NO es eso: es UNA COLUMNA de dos lineas, el nick
+# encima y el importe debajo, y en SPARSE_TEXT tesseract se deja una de las dos
+# cuando las dos bandas tienen POLARIDAD OPUESTA -nick claro sobre oscuro,
+# importe oscuro sobre claro-, que es justo lo que pasa cuando el cliente
+# RESALTA al jugador al que le toca actuar.
+#
+# El caso limpio es Colas2888 en el frame 1274 de la sesion del 04-08 a las
+# 21:05: el mismo recorte, mismo preprocesado, distinto PSM:
+#
+#     SPARSE_TEXT     1 linea    'Colas2888'                <- el stack, perdido
+#     SINGLE_BLOCK    1 linea    '208,2 BB'                 <- ahora el nick
+#     AUTO            2 lineas   'Colas2888' / '208,2 BB «&'
+#     SINGLE_COLUMN   2 lineas   'Colas2888' / '208,2 BB'   <- limpias y en orden
+#
+# SINGLE_COLUMN y no AUTO porque AUTO arrastra basura al final de la linea del
+# importe, y esa linea la parsea una regex de numero: cuanta menos cola, mejor.
+#
+# Es el MISMO fallo que ya tenia documentado el hero unas lineas mas abajo (el
+# badge de torneo le aclara la franja del stack), y alli se parcheo con un job
+# extra sobre la franja de abajo. Aquello decia "a los RIVALES no les pasa", y
+# les pasa: lo que no pasaba era el badge, que es raro, mientras que el
+# resaltado del turno lo tiene alguien en casi todos los frames.
+PSM_NAMEPLATE = "SINGLE_COLUMN"
+
 
 def _lineas_en_frame(lines, caja, escala, pad):
     """Las mismas lineas OCR con las coordenadas del FRAME en vez de las del
@@ -1159,7 +1185,7 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         # AJUSTADO y el texto toca el borde; los de los rivales no lo necesitan
         # -su zona trae tapete de sobra- y ponerselo solo añade ruido.
         recortes = [((x0, y0, x1, y1),
-                     PAD_NAMEPLATE if name == seat_map.HERO_SEAT else 0)]
+                     PAD_NAMEPLATE if name == seat_map.HERO_SEAT else 0, None)]
         # AL HERO NO SE LE AÑADE SU ZONA FIJA COMO SEGUNDO RECORTE, y se probo: la
         # idea era cubrir con una lo que falla en la otra, como se hace con los
         # rivales. Medido sobre 80 frames de dos sesiones, no aporta -78 y 28
@@ -1170,10 +1196,29 @@ def analyze_layout(image_path, max_players=None, asientos_estables=None,
         capsula = (capsula_px(bgr, (x0, y0, x1, y1))
                    if name != seat_map.HERO_SEAT else None)
         if capsula is not None:
-            recortes.append((capsula, PAD_NAMEPLATE))
+            recortes.append((capsula, PAD_NAMEPLATE, None))
+            # LA CAPSULA SE LEE DOS VECES, con los dos modos de segmentacion, y
+            # las dos lecturas se juntan. Es la misma idea de "cubrir con un
+            # recorte lo que falla en el otro" que ya se usa aqui con la zona y
+            # la capsula, aplicada al PSM en vez de a la geometria.
+            #
+            # Hace falta porque NINGUNO DE LOS DOS GANA SOLO. Medido sobre 40
+            # frames seguidos de la sesion del 04-08 a las 21:05, reanalizados
+            # con 60 frames de calentamiento:
+            #
+            #                          nombres/frame   stacks/frame   nick estable
+            #     solo SPARSE_TEXT              7,58           5,12         99,0%
+            #     solo SINGLE_COLUMN            6,15           3,25         94,3%
+            #     los dos                        ver abajo
+            #
+            # SINGLE_COLUMN solo es peor de largo, y aun asi es el unico que lee
+            # la capsula del jugador RESALTADO (ver PSM_NAMEPLATE). Juntarlas
+            # cuesta un job por asiento ocupado, y el lote va en paralelo.
+            recortes.append((capsula, PAD_NAMEPLATE, PSM_NAMEPLATE))
         seat_tsv[name] = [
-            (batch.add_tsv_job(bgr[c[1]:c[3], c[0]:c[2]], scale=3, pad=pad), c, pad)
-            for c, pad in recortes]
+            (batch.add_tsv_job(bgr[c[1]:c[3], c[0]:c[2]], scale=3, pad=pad,
+                               psm=psm), c, pad)
+            for c, pad, psm in recortes]
     # importe apostado por asiento (zona hacia el centro del tapete), para
     # inferir quien subio; se encola para todos y luego se lee solo en los
     # asientos ocupados.

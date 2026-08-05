@@ -28,6 +28,12 @@ _SYSTEM_TESSDATA_CANDIDATES = [
     "/usr/share/tessdata/",
     "/usr/share/tesseract-ocr/5/tessdata/",
     "/usr/share/tesseract-ocr/4.00/tessdata/",
+    # macOS con Homebrew (arm64 / Intel). En un Mac sin `brew install tesseract`
+    # el modelo hay que dejarlo en decision/preflop/tessdata/, que es
+    # _BUNDLED_TESSDATA y esta en .gitignore. Ver el docstring de
+    # vision/ocr_worker.py, que explica de donde bajarlo.
+    "/opt/homebrew/share/tessdata/",
+    "/usr/local/share/tessdata/",
 ]
 
 

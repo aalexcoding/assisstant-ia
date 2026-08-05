@@ -54,12 +54,15 @@ pytest --corpus-seleccion testing/_seleccion.local.json  # exactamente la anteri
 
 ### Entorno reproducible
 
-`requirements.txt` fija las dependencias directas y `pylock.toml` contiene la
-resolución transitiva para la plataforma/Python con que se generó. Se regenera
-tras cambiar dependencias con `python -m pip lock -r requirements.txt -o
-pylock.toml`. La comprobación de contratos se ejecuta con `python -m mypy
-domain`; la CI ejecuta además toda la suite rápida bajo Xvfb, incluidos los
-tests GTK.
+`requirements.txt` fija las dependencias directas y los `pylock.*.toml`
+contienen la resolución transitiva. **Un lock es de UNA plataforma**, no del
+proyecto: `pylock.toml` es el de Linux y `pylock.macos-arm64.toml` el del Mac de
+Apple Silicon, y ninguno de los dos sirve en la otra máquina (las ruedas son
+distintas, y `mss` solo se instala en macOS). Se regeneran tras cambiar
+dependencias, cada uno en su sistema, con `python -m pip lock -r
+requirements.txt -o <el que toque>`. La comprobación de contratos se ejecuta con
+`python -m mypy domain`; la CI ejecuta además toda la suite rápida bajo Xvfb,
+incluidos los tests GTK.
 
 Sin `testing/` esos tests salen como **skipped** con el motivo, nunca como
 passed.
@@ -118,7 +121,9 @@ sin perder precisión pasa por fijar el conjunto al abrir la mano (medido offlin
 ```bash
 python replay.py testing/sesion-<fecha> --diff     # ¿mi cambio altera lo que la app dijo?
 python ver_frame.py testing/sesion-<fecha> 485     # ¿de DÓNDE sacó ese número?
+python ver_frame.py testing/sesion-<fecha> 485 --olmocr   # segunda opinión de un modelo
 python vigilar_sesion.py                           # avisa en vivo de lo que merece mirarse
+herramientas/comparar_ocr.py --n 40 --modo seguidos --reanalizar   # tesseract vs olmOCR
 ```
 
 `replay.py` vuelve a pasar los PNG grabados por el mismo `core.Analizador`, sin
@@ -131,6 +136,15 @@ se fija con la mediana de las primeras diez lecturas buenas de la sesión, así 
 un frame suelto se analiza en frío y puede colocar todas las zonas desplazadas —
 la herramienta avisa cuando eso pasa, y con una carpeta de sesión la calienta
 como en vivo.
+
+**Una segunda opinión, para cuando no está claro si el fallo es del OCR o de la
+geometría**: `ver_frame.py --olmocr` le pasa el frame a un modelo de visión
+(olmOCR bajo Ollama) y enseña su lectura al lado de la de la app. Si el modelo
+lee lo que la app no lee, el recorte está donde debe. Son ~8 s por frame, o sea
+que es para estudiar UN caso: como OCR del ciclo en vivo se midió y no cabe —30
+veces el ciclo—, y toda la comparación está en
+[`docs/OCR-OLMOCR-MEDICION.md`](docs/OCR-OLMOCR-MEDICION.md), incluida la mejora
+de lectura de stacks que salió de ella.
 
 ## Modo testing
 
@@ -162,6 +176,57 @@ haber apostado, por lo que nunca se convierte automáticamente en CALL/FOLD.
 `testing_session.resumen(carpeta)` da un agregado de la sesión (frames, cuántos
 con recomendación, motivos de abstención más frecuentes) sin abrir los frames uno
 a uno. La carpeta `testing/` no se versiona.
+
+## Dos sistemas: Linux y macOS
+
+De la app solo hay **tres piezas** que sepan en qué sistema corren: la captura, la
+ventana y de dónde salen los modelos de tesseract. Todo lo demás (`core/`,
+`vision/`, `decision/`, `domain/`) es numpy y opencv y no se entera.
+
+|  | Linux/Wayland | macOS |
+|---|---|---|
+| captura | `xdg-desktop-portal` + PipeWire + GStreamer | CoreGraphics vía `mss` |
+| calibrar | `python -m calibration.select_region` (GTK4) | `python -m calibration.select_region_cv` (opencv) |
+| ventana | `gui.py` (GTK4) | todavía no: por consola con `alpha.py` |
+| tessdata | paquete del sistema | `vision/tessdata/` (ver abajo) |
+
+Quien elige el backend de captura es `capture/pantalla.py` según la plataforma;
+`POKER_CAPTURA=portal|mac` lo fuerza. Los llamadores (`alpha.py`, `gui.py`, el
+calibrador) piden un stream a esa fachada y no saben cuál les toca.
+
+### Montarlo en un Mac (Apple Silicon)
+
+```bash
+/opt/homebrew/bin/python3.13 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+
+# los modelos de tesseract: 6 MB, y no hace falta instalar tesseract en el
+# sistema porque la rueda de tesserocr ya trae su propia libtesseract
+mkdir -p vision/tessdata && for l in eng spa; do
+  curl -sL -o vision/tessdata/$l.traineddata \
+    https://github.com/tesseract-ocr/tessdata_fast/raw/main/$l.traineddata
+done
+
+.venv/bin/python -m capture.mac_capture --frames 30   # comprobar la captura
+.venv/bin/python -m calibration.select_region_cv      # dibujar el recuadro
+./poker-assistant                                     # a jugar
+```
+
+**El permiso de grabación de pantalla es lo primero que falla.** macOS no da
+error cuando falta: devuelve la pantalla **en negro** y se queda tan tranquilo,
+y el síntoma aparece tres capas más abajo como "no se encuentra la mesa en este
+frame". Hay que activar la app desde la que se lanza python (Terminal, iTerm, VS
+Code…) en *Ajustes del Sistema → Privacidad y seguridad → Grabación de pantalla*
+y **cerrarla y volver a abrirla**, porque el permiso se lee al arrancar. Si el
+primer frame llega negro, `capture/mac_capture.py` lo dice con esas palabras en
+vez de dejar pasar la imagen.
+
+Se captura a **resolución nativa** (en una pantalla Retina, el doble de píxeles
+que en puntos), porque es lo que hace el backend de Linux y porque el OCR de los
+nameplates se juega ahí la mitad de la señal. Medido en un MacBook Pro de 14":
+3024x1964 a p50 21,6 ms / p95 24,3 ms por frame, frente a 1512x982 a 9,8 / 10,7.
+El lazo rápido pide una captura cada 0,1 s, así que sobra. Si en alguna máquina
+no sobrara, `POKER_CAPTURA_ESCALA=logica` vuelve a la mitad de píxeles.
 
 ## Uso (alpha)
 
@@ -213,15 +278,25 @@ panel "Mano anterior" no pierde ni un frame.
 
 ## Estructura
 
-- `calibration/` — Fase 0: `select_region.py` toma un frame de referencia (vía
-  `capture/portal_capture.py`) y deja dibujar con el ratón el recuadro de la mesa;
-  guarda las coordenadas en `calibration/config.local.json` (no versionado).
+- `calibration/` — Fase 0: `select_region.py` (GTK4) y `select_region_cv.py`
+  (opencv, el de Mac) toman un frame de referencia vía `capture/pantalla.py` y
+  dejan dibujar con el ratón el recuadro de la mesa; guardan las coordenadas en
+  `calibration/config.local.json` (no versionado). **Los dos comparten
+  `recuadro.py`**, que es donde vive lo que de verdad importa de calibrar: en qué
+  unidades se guarda el recuadro y cuándo hay que avisar de que ahí no se ve una
+  mesa. Dos calibradores que avisen distinto son peores que uno solo.
   **Calibrar pregunta SIEMPRE qué pantalla** (`elegir_pantalla=True`, o sea que no
   manda el `restore_token` guardado): es el momento en que se decide dónde está la
   mesa, y con dos monitores el recuadro se estaba dibujando sobre la pantalla que
   tocó la vez anterior. La elección nueva se guarda, así que el análisis sigue
   arrancando sin preguntar.
-- `capture/` — Fase 1: `portal_capture.py` abre una sesión de
+- `capture/` — Fase 1. `pantalla.py` es la **fachada**: se le pide un stream y
+  devuelve algo con `.read()` y `.close()`, sin que el llamador sepa de qué
+  sistema es. Antes cada llamador recibía la tupla de cinco del portal
+  (`portal, session_handle, fd, stream, props`) y repetía el mismo bloque de
+  cuatro `try/except` para cerrarla; eso además hacía imposible cambiar de
+  backend, porque la forma del portal estaba escrita en cada sitio.
+  `mac_capture.py` es el backend de macOS. `portal_capture.py` abre una sesión de
   `org.freedesktop.portal.ScreenCast` y consume el stream de PipeWire con GStreamer.
   El `restore_token` se guarda en `capture/config.local.json`, aunque en KDE Plasma
   6.7 el selector de pantalla vuelve a aparecer en cada arranque del proceso (no

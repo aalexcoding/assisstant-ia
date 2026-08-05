@@ -23,6 +23,7 @@ import json
 import os
 import random
 import subprocess
+import sys
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -87,6 +88,21 @@ def meta_de_sesion(carpeta, _cache={}):
         except (OSError, ValueError):
             _cache[carpeta] = {}
     return _cache[carpeta]
+
+
+def plataforma_de_sesion(carpeta):
+    """En que sistema se grabo una sesion ("linux", "darwin"...).
+
+    LAS SESIONES ANTIGUAS NO LO GUARDAN, y para ellas la respuesta es "linux":
+    todo lo que hay grabado hasta el 05-08-2026 se jugo en la maquina de Linux,
+    que era la unica que ejecutaba la app. A partir de ahi lo escribe
+    testing_session (meta["plataforma"]).
+    """
+    return meta_de_sesion(carpeta).get("plataforma", "linux")
+
+
+def plataforma_actual():
+    return sys.platform
 
 
 def _commit_de_sesion(carpeta):

@@ -32,6 +32,7 @@ desde un script sin levantar la ventana, y se puede testear.
 import json
 import os
 import subprocess
+import sys
 import threading
 import time
 
@@ -98,6 +99,12 @@ class TestingSession:
             "intervalo_s": interval,
             "recuadro": region,
             "commit": _commit_actual(),
+            # EN QUE SISTEMA SE GRABO, y no es un dato de adorno: el OCR es una
+            # libreria del sistema con SU traineddata, asi que la misma imagen se
+            # lee distinto en una distro y en un Mac. La regresion de oro compara
+            # campo a campo, o sea que solo tiene sentido contra sesiones de la
+            # MISMA plataforma; ver tests/test_e2e_corpus.al_dia.
+            "plataforma": sys.platform,
         }
         self._escribir_meta()
 

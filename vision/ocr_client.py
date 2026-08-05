@@ -58,7 +58,7 @@ class OcrBatch:
     def job_count(self):
         return len(self._jobs)
 
-    def add_tsv_job(self, bgr_full_frame, scale=1, lang=None, pad=0):
+    def add_tsv_job(self, bgr_full_frame, scale=1, lang=None, pad=0, psm=None):
         """Encola un OCR de texto libre. lang=None usa el idioma por defecto del
         worker (ingles); lang="spa" pide el modelo espanol para las zonas que
         contienen PROSA en castellano (ver LANG_SPANISH_PROSE en ocr_worker.py:
@@ -85,6 +85,8 @@ class OcrBatch:
         job = {"mode": "tsv", "png_b64": _png_b64(enhanced), "scale": scale}
         if lang:
             job["lang"] = lang
+        if psm:
+            job["psm"] = psm
         self._jobs.append(job)
         return idx
 
