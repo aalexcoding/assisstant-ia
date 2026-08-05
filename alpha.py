@@ -18,7 +18,7 @@ import os
 import time
 
 from core import Analizador
-from capture import portal_capture as pc
+from capture import pantalla
 
 CALIBRATION_PATH = os.path.join(os.path.dirname(__file__), "calibration", "config.local.json")
 
@@ -62,29 +62,29 @@ def main():
     # decide() por su cuenta, sin rastreador ni registro de acciones, asi que
     # diagnosticaba una version mas pobre de lo que el usuario ve en el HUD.
     analizador = Analizador()
-    portal, session_handle, fd, stream, _props = pc.open_frame_stream()
-    print(f"Analizando cada {args.interval}s (Ctrl+C para parar)...\n")
     last_printed = None
     try:
-        while True:
-            frame = stream.read(timeout_s=5.0)
-            if frame is not None:
-                crop = frame[y:y + h, x:x + w]
-                res = analizador.analizar(crop)
-                text = format_state(res.state, res.recommendation)
-                if text != last_printed:
-                    print(f"--- {time.strftime('%H:%M:%S')} ---")
-                    print(text)
-                    print()
-                    last_printed = text
-            time.sleep(args.interval)
+        # El stream lo da la FACHADA, no un backend concreto: en Linux es el
+        # portal + PipeWire y en Mac CoreGraphics, y aqui no se nota la
+        # diferencia. Cerrarlo cierra todo lo suyo (ver capture/pantalla.py).
+        with pantalla.abrir_stream() as stream:
+            print(f"Analizando cada {args.interval}s (Ctrl+C para parar)...\n")
+            while True:
+                frame = stream.read(timeout_s=5.0)
+                if frame is not None:
+                    crop = frame[y:y + h, x:x + w]
+                    res = analizador.analizar(crop)
+                    text = format_state(res.state, res.recommendation)
+                    if text != last_printed:
+                        print(f"--- {time.strftime('%H:%M:%S')} ---")
+                        print(text)
+                        print()
+                        last_printed = text
+                time.sleep(args.interval)
     except KeyboardInterrupt:
         print("\nParado.")
     finally:
         analizador.cerrar()
-        stream.close()
-        os.close(fd)
-        portal.close_session(session_handle)
 
 
 if __name__ == "__main__":

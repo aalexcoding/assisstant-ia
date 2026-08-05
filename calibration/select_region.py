@@ -1,7 +1,7 @@
 """
 Fase 0: selector de recuadro de calibracion.
 
-Captura un frame de referencia (reutilizando capture/portal_capture.py) y lo
+Captura un frame de referencia (reutilizando capture/pantalla.py) y lo
 muestra en una ventana para que el usuario dibuje con el raton el rectangulo
 de la mesa. El resultado (en pixeles del frame original, sin escalar) se
 guarda en calibration/config.local.json y es lo que luego usa Fase 1 para
@@ -14,11 +14,13 @@ sin preguntar nada y usa la que se haya elegido aqui.
 Uso: .venv/bin/python calibration/select_region.py
 Controles: arrastrar para dibujar el rectangulo, Enter para guardar, Esc para salir.
 """
-import json
-import os
-
-from capture import portal_capture as pc
-from vision import seat_map
+from capture import pantalla
+# Donde se guarda el recuadro y cuando es valido NO vive aqui: lo comparten
+# esta ventana y el calibrador de consola (select_region_cv.py). Ver
+# calibration/recuadro.py.
+from calibration.recuadro import (AVISO_SIN_MESA, CONFIG_PATH,
+                                  a_coordenadas_de_frame, escala_de_vista,
+                                  hay_mesa, save_region)
 
 import gi
 
@@ -26,32 +28,12 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.local.json")
-MAX_DISPLAY_SIZE = 1500
-
-
-def save_region(frame_size, rect):
-    data = {}
-    if os.path.exists(CONFIG_PATH):
-        with open(CONFIG_PATH) as f:
-            data = json.load(f)
-    data["capture_region"] = {
-        "frame_width": frame_size[0],
-        "frame_height": frame_size[1],
-        "x": rect[0],
-        "y": rect[1],
-        "width": rect[2],
-        "height": rect[3],
-    }
-    with open(CONFIG_PATH, "w") as f:
-        json.dump(data, f, indent=2)
-
 
 class SelectorWindow(Gtk.ApplicationWindow):
     def __init__(self, app, frame):
         super().__init__(application=app, title="Dibuja el recuadro de la mesa (Enter para guardar, Esc para salir)")
         self.frame_h, self.frame_w = frame.shape[0], frame.shape[1]
-        self.scale = min(1.0, MAX_DISPLAY_SIZE / max(self.frame_w, self.frame_h))
+        self.scale = escala_de_vista(self.frame_w, self.frame_h)
         disp_w, disp_h = int(self.frame_w * self.scale), int(self.frame_h * self.scale)
 
         rgb = frame[:, :, ::-1].copy()
@@ -106,9 +88,7 @@ class SelectorWindow(Gtk.ApplicationWindow):
 
     def _on_key(self, _controller, keyval, _keycode, _state):
         if keyval == Gdk.KEY_Return and self.rect_display and self.rect_display[2] > 5 and self.rect_display[3] > 5:
-            x, y, w, h = self.rect_display
-            rect = (int(x / self.scale), int(y / self.scale),
-                    int(w / self.scale), int(h / self.scale))
+            rect = a_coordenadas_de_frame(self.rect_display, self.scale)
             if not self._hay_mesa(rect) and not self.forzar:
                 # NO SE GUARDA A LA PRIMERA UN RECUADRO SIN MESA. Es el fallo que
                 # el usuario se comio: recalibro, dibujo el recuadro donde no
@@ -117,8 +97,8 @@ class SelectorWindow(Gtk.ApplicationWindow):
                 # partida. El calibrador tiene delante el unico dato que hace
                 # falta para avisar -si en ese recuadro se ve un ovalo de tapete-
                 # y callarselo es dejar el fallo para dentro de media hora.
-                self.set_title("En ese recuadro NO se ve una mesa de poker. "
-                               "Dibuja otro, o pulsa Enter otra vez para guardarlo igual.")
+                self.set_title(AVISO_SIN_MESA +
+                               " Dibuja otro, o pulsa Enter otra vez para guardarlo igual.")
                 self.forzar = True
                 return True
             self.saved_rect = rect
@@ -130,19 +110,8 @@ class SelectorWindow(Gtk.ApplicationWindow):
         return False
 
     def _hay_mesa(self, rect):
-        """¿Se ve el ovalo del tapete dentro de ese recuadro?
-
-        Es exactamente la pregunta que se hace analyze_layout en cada frame (ver
-        seat_map.find_reference): si aqui no se encuentra, en la partida tampoco,
-        y todas las zonas quedarian desplazadas."""
-        x, y, w, h = rect
-        recorte = self.frame[y:y + h, x:x + w]
-        if recorte.size == 0:
-            return False
-        try:
-            return not seat_map.find_reference(recorte)[4]
-        except Exception:                     # noqa: BLE001 - avisar nunca puede tumbar el calibrador
-            return True
+        """Ver hay_mesa(), que es la que usan los dos calibradores."""
+        return hay_mesa(self.frame, rect)
 
     def _on_draw(self, _area, cr, _width, _height):
         Gdk.cairo_set_source_pixbuf(cr, self.pixbuf, 0, 0)
@@ -164,9 +133,9 @@ def main():
     # guardada puede ser la otra: entonces se dibujaba el recuadro sobre una
     # pantalla que no era, y el fallo aparecia despues, en forma de recortes
     # vacios. El resto de la app sigue arrancando sin preguntar, con la pantalla
-    # que se elija aqui (ver portal_capture.open_screencast_session).
+    # que se elija aqui (ver capture/pantalla.py y cada backend).
     print("Capturando frame de referencia (elige la pantalla en el dialogo)...")
-    frame = pc.get_one_frame(elegir_pantalla=True)
+    frame = pantalla.un_frame(elegir_pantalla=True)
 
     app = Gtk.Application(application_id="org.pokerassistant.calibration")
 

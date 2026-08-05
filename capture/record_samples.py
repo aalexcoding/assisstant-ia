@@ -14,7 +14,7 @@ import time
 import cv2
 import numpy as np
 
-from capture import portal_capture as pc
+from capture import pantalla
 
 CALIBRATION_PATH = os.path.join(os.path.dirname(__file__), "..", "calibration", "config.local.json")
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "vision", "samples")
@@ -54,30 +54,27 @@ def main():
     x, y, w, h = load_region()
     os.makedirs(args.out_dir, exist_ok=True)
 
-    portal, session_handle, fd, stream, _props = pc.open_frame_stream()
-    print(f"Grabando cada {args.interval}s en {args.out_dir} (Ctrl+C para parar)...")
     n = 0
     start = time.monotonic()
     try:
-        while args.duration is None or time.monotonic() - start < args.duration:
-            frame = stream.read(timeout_s=5.0)
-            if frame is not None:
-                crop = frame[y:y + h, x:x + w]
-                if looks_like_table(crop):
-                    path = os.path.join(args.out_dir, f"sample_{int(time.time() * 1000)}.png")
-                    cv2.imwrite(path, crop)
-                    n += 1
-                    print(f"[{n}] {os.path.basename(path)}")
-                else:
-                    print("(descartado, no parece la mesa)")
-            time.sleep(args.interval)
+        with pantalla.abrir_stream() as stream:
+            print(f"Grabando cada {args.interval}s en {args.out_dir} (Ctrl+C para parar)...")
+            while args.duration is None or time.monotonic() - start < args.duration:
+                frame = stream.read(timeout_s=5.0)
+                if frame is not None:
+                    crop = frame[y:y + h, x:x + w]
+                    if looks_like_table(crop):
+                        path = os.path.join(args.out_dir, f"sample_{int(time.time() * 1000)}.png")
+                        cv2.imwrite(path, crop)
+                        n += 1
+                        print(f"[{n}] {os.path.basename(path)}")
+                    else:
+                        print("(descartado, no parece la mesa)")
+                time.sleep(args.interval)
     except KeyboardInterrupt:
         pass
     finally:
         print(f"\nParado. {n} capturas guardadas en {args.out_dir}")
-        stream.close()
-        os.close(fd)
-        portal.close_session(session_handle)
 
 
 if __name__ == "__main__":

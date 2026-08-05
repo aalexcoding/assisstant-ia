@@ -260,6 +260,54 @@ def open_frame_stream(log=print, elegir_pantalla=False):
     return portal, session_handle, fd, stream, stream_props
 
 
+class StreamPortal:
+    """El stream del portal con TODO lo suyo dentro: el pipeline, el fd y la
+    sesion con el compositor.
+
+    Existe para que capture/pantalla.py pueda tratar a este backend y al de
+    macOS igual. Lo que hace close() es exactamente el bloque de cuatro
+    try/except que estaba copiado en alpha.py y en gui.py: cerrar el pipeline,
+    cerrar el fd y cerrar la sesion, y que un fallo en uno no impida los otros.
+    """
+
+    def __init__(self, portal, session_handle, fd, stream):
+        self._portal = portal
+        self._session_handle = session_handle
+        self._fd = fd
+        self._stream = stream
+
+    def read(self, timeout_s=5.0):
+        if self._stream is None:
+            return None
+        return self._stream.read(timeout_s=timeout_s)
+
+    def close(self):
+        stream, self._stream = self._stream, None
+        if stream is None:
+            return
+        for cerrar in (lambda: stream.close(),
+                       lambda: os.close(self._fd),
+                       lambda: self._portal.close_session(self._session_handle)):
+            try:
+                cerrar()
+            except Exception:  # noqa: BLE001 - cerrar lo que se pueda; el resto da igual
+                pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_excepcion):
+        self.close()
+        return False
+
+
+def abrir_stream(log=print, elegir_pantalla=False):
+    """Ver capture/pantalla.abrir_stream. Es la puerta de este backend."""
+    portal, session_handle, fd, stream, _props = open_frame_stream(
+        log=log, elegir_pantalla=elegir_pantalla)
+    return StreamPortal(portal, session_handle, fd, stream)
+
+
 def get_one_frame(timeout_s=10.0, log=print, elegir_pantalla=False):
     """Abre una sesion, captura un unico frame (numpy BGR) y cierra todo."""
     portal, session_handle, fd, node_id, _props = open_screencast_session(

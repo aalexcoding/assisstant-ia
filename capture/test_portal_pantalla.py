@@ -15,7 +15,13 @@ delante.
 """
 import pytest
 
-from capture import portal_capture as pc
+# El backend del portal es de Linux: importa gi/GStreamer al cargarse. En un Mac
+# eso es un error de COLECCION, no un test que falla, y tumba la suite entera
+# antes de llegar a lo que si se puede probar aqui. Con importorskip el fichero
+# se salta con su motivo, que es lo que ya hacia calibration/test_select_region.
+pytest.importorskip("gi", reason="el backend del portal necesita PyGObject (Linux)")
+
+from capture import portal_capture as pc              # noqa: E402
 
 
 class PortalFalso:

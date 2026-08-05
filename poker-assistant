@@ -4,12 +4,22 @@
 set -e
 cd "$(dirname "$0")"
 
+# EL CALIBRADOR DEPENDE DEL SISTEMA, igual que la captura: en Linux es el de
+# GTK4 y en macOS el de opencv, porque ahi no hay PyGObject. Los dos guardan el
+# mismo recuadro en el mismo sitio y avisan igual si no se ve la mesa (comparten
+# calibration/recuadro.py); lo unico distinto es la ventana.
+if [ "$(uname)" = "Darwin" ]; then
+    CALIBRADOR=calibration.select_region_cv
+else
+    CALIBRADOR=calibration.select_region
+fi
+
 if [ "$1" == "--recalibrate" ]; then
     shift
-    .venv/bin/python -m calibration.select_region
+    .venv/bin/python -m "$CALIBRADOR"
 elif [ ! -f calibration/config.local.json ]; then
     echo "No hay recuadro calibrado todavia, calibrando..."
-    .venv/bin/python -m calibration.select_region
+    .venv/bin/python -m "$CALIBRADOR"
 fi
 
 .venv/bin/python alpha.py "$@"

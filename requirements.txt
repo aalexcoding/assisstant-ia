@@ -4,6 +4,12 @@ pillow==12.3.0
 numpy==2.5.1
 tesserocr==2.10.0
 
+# --- captura de pantalla en macOS ---
+# El backend de Linux (portal + PipeWire + GStreamer) no lleva nada aqui: va por
+# los paquetes del sistema, como GTK. El de macOS es CoreGraphics via mss, que si
+# es un paquete de pip y solo se instala ahi. Ver capture/pantalla.py.
+mss==10.2.0 ; sys_platform == "darwin"
+
 # --- estudio offline post-mano (decision/rag/) ---
 # No hacen falta para jugar: solo para transcribir video y consultar el indice.
 faster-whisper==1.2.1
